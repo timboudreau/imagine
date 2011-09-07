@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+OpenIDE-Module-Localizing-Bundle: net/dev/java/imagine/effects/Bundle.properties
+OpenIDE-Module-Layer: net/dev/java/imagine/effects/layer.xml

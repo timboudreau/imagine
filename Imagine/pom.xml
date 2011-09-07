@@ -74,6 +74,7 @@
     <module>toolcustomizers</module>
     <module>misc-swing</module>
     <module>splines</module>
+    <module>effects</module>
   </modules>
 
     <properties>
