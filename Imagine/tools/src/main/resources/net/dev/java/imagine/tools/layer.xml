@@ -1,5 +1,96 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.0//EN" "http://www.netbeans.org/dtds/filesystem-1_0.dtd">
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
 <filesystem>
- 
+    <folder name="brushes">
+	<attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.paint.tools.Bundle"/>
+
+        <file name="org-netbeans-paint-tools-brushes-StandardBrush.instance">
+            <attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.paint.tools.Bundle"/>
+            <attr name="SystemFileSystem.icon" urlvalue="nbresloc:/org/netbeans/paint/tools/resources/standardbrush.png"/>
+        </file>
+    </folder>
+    <folder name="fills">
+	<attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.paint.tools.Bundle"/>
+	    
+        <file name="org-netbeans-paint-tools-fills-SolidColorFill.instance">
+            <attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.paint.tools.Bundle"/>
+            <attr name="SystemFileSystem.icon" urlvalue="nbresloc:/org/netbeans/paint/tools/resources/solidfill.png"/>
+            <attr name="position" intvalue="100"/>
+        </file>
+        <file name="org-netbeans-paint-tools-fills-GradientFill.instance">
+            <attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.paint.tools.Bundle"/>
+            <attr name="SystemFileSystem.icon" urlvalue="nbresloc:/org/netbeans/paint/tools/resources/gradientfill.png"/>
+            <attr name="position" intvalue="300"/>
+        </file>
+        
+        <file name="TestFill.instance" url="resources/smudge.png">
+            <attr name="SystemFileSystem.icon" urlvalue="nbfs:/SystemFileSystem/fills/TestFill.instance"/>
+            <attr name="instanceClass" stringvalue="org.netbeans.paint.tools.fills.PatternFill"/>
+            <attr name="instanceCreate" methodvalue="org.netbeans.paint.tools.fills.PatternFill.create"/>
+            <attr name="position" intvalue="400"/>
+        </file>
+        
+    </folder>
+    
+    <folder name="brushtips">
+	<attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.paint.tools.Bundle"/>
+	<file name="org-netbeans-paint-tools-brushes-tips-RoundBrushTip.instance">
+            <attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.paint.tools.Bundle"/>
+            <attr name="SystemFileSystem.icon" urlvalue="nbresloc:/org/netbeans/paint/tools/resources/roundbrushtip.png"/>
+	    <attr name="position" intvalue="100"/>
+        </file>
+	<file name="org-netbeans-paint-tools-brushes-tips-FunkyBrushTip.instance">
+            <attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.paint.tools.Bundle"/>
+            <attr name="SystemFileSystem.icon" urlvalue="nbresloc:/org/netbeans/paint/tools/resources/funkybrushtip.png"/>
+	    <attr name="position" intvalue="600"/>
+        </file>
+	<file name="org-netbeans-paint-tools-brushes-tips-TriangleBrushTip.instance">
+            <attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.paint.tools.Bundle"/>
+            <attr name="SystemFileSystem.icon" urlvalue="nbresloc:/org/netbeans/paint/tools/resources/trianglebrushtip.png"/>
+	    <attr name="position" intvalue="500"/>
+        </file>
+	<file name="org-netbeans-paint-tools-brushes-tips-MultiPointTip.instance">
+            <attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.paint.tools.Bundle"/>
+            <attr name="SystemFileSystem.icon" urlvalue="nbresloc:/org/netbeans/paint/tools/resources/roundbrushtip.png"/>
+	    <attr name="position" intvalue="400"/>
+        </file>
+	<file name="org-netbeans-paint-tools-brushes-tips-HashTip.instance">
+            <attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.paint.tools.Bundle"/>
+            <attr name="SystemFileSystem.icon" urlvalue="nbresloc:/org/netbeans/paint/tools/resources/roundbrushtip.png"/>
+	    <attr name="position" intvalue="150"/>
+        </file>
+    </folder>
+    
+    <folder name="tools">
+        <folder name="raster">
+            <file name="org-netbeans-paint-tools-BrushTool.instance"/>
+            <file name="org-netbeans-paint-tools-DrawTool.instance"/>
+            <file name="org-netbeans-paint-tools-EraserTool.instance"/>
+            <file name="org-netbeans-paint-tools-ImageTool.instance"/>
+            <file name="org-netbeans-paint-tools-LineTool.instance"/>
+            <file name="org-netbeans-paint-tools-MoveTool.instance"/>
+            <file name="org-netbeans-paint-tools-OvalTool.instance"/>
+            <file name="org-netbeans-paint-tools-PencilTool.instance"/>
+            <file name="org-netbeans-paint-tools-RectangleTool.instance"/>
+            <file name="org-netbeans-paint-tools-RoundRectTool.instance"/>
+            <file name="org-netbeans-paint-tools-TextTool.instance"/>
+<!--            <file name="org-netbeans-paint-tools-MagicWandSelectionTool.instance"/> -->
+            <file name="org-netbeans-paint-tools-RectangularSelectionTool.instance"/>
+            <file name="org-netbeans-paint-tools-OvalSelectionTool.instance"/>
+        </folder>
+        <folder name="vector">
+            <file name="org-netbeans-paint-tools-EraserTool.instance"/>
+            <file name="org-netbeans-paint-tools-ImageTool.instance"/>
+            <file name="org-netbeans-paint-tools-LineTool.instance"/>
+            <file name="org-netbeans-paint-tools-MoveTool.instance"/>
+            <file name="org-netbeans-paint-tools-OvalTool.instance"/>
+            <file name="org-netbeans-paint-tools-RectangleTool.instance"/>
+            <file name="org-netbeans-paint-tools-RoundRectTool.instance"/>
+            <file name="org-netbeans-paint-tools-TextTool.instance"/>
+            
+            <file name="org-netbeans-paint-tools-MagicWandSelectionTool.instance"/>
+            <file name="org-netbeans-paint-tools-RectangularSelectionTool.instance"/>
+            <file name="org-netbeans-paint-tools-OvalSelectionTool.instance"/>
+        </folder>
+    </folder>
 </filesystem>

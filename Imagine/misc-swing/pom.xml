@@ -68,7 +68,7 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-filesystems</artifactId>
-            <version>RELEASE70</version>
+            <version>RELEASE701</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
@@ -78,7 +78,7 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-actions</artifactId>
-            <version>RELEASE70</version>
+            <version>RELEASE701</version>
         </dependency>
     </dependencies>
 

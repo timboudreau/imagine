@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+OpenIDE-Module-Localizing-Bundle: net/dev/java/imagine/toolconfigurationui/Bundle.properties
+OpenIDE-Module-Layer: net/dev/java/imagine/toolconfigurationui/layer.xml

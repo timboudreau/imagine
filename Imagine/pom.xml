@@ -76,6 +76,11 @@
     <module>splines</module>
     <module>effects</module>
     <module>effectsui</module>
+    <module>layersui</module>
+    <module>layers.raster</module>
+    <module>misc.nio</module>
+    <module>paintui</module>
+    <module>toolconfigurationui</module>
   </modules>
 
     <properties>
