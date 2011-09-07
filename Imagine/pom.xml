@@ -81,6 +81,9 @@
     <module>misc.nio</module>
     <module>paintui</module>
     <module>toolconfigurationui</module>
+    <module>imagecachediagnostics</module>
+    <module>vector</module>
+    <module>vectorlayers</module>
   </modules>
 
     <properties>
