@@ -75,6 +75,7 @@
     <module>misc-swing</module>
     <module>splines</module>
     <module>effects</module>
+    <module>effectsui</module>
   </modules>
 
     <properties>
