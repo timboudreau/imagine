@@ -56,11 +56,11 @@
                         <target>1.6</target>
                     </configuration>
                 </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>2.3.1</version>
-            </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>2.3.1</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
@@ -68,23 +68,23 @@
     <modules>
         <module>branding</module>
         <module>application</module>
-    <module>colorchooser</module>
-    <module>paintapi</module>
-    <module>tools</module>
-    <module>toolcustomizers</module>
-    <module>misc-swing</module>
-    <module>splines</module>
-    <module>effects</module>
-    <module>effectsui</module>
-    <module>layersui</module>
-    <module>layers.raster</module>
-    <module>misc.nio</module>
-    <module>paintui</module>
-    <module>toolconfigurationui</module>
-    <module>imagecachediagnostics</module>
-    <module>vector</module>
-    <module>vectorlayers</module>
-  </modules>
+        <module>colorchooser</module>
+        <module>paintapi</module>
+        <module>tools</module>
+        <module>toolcustomizers</module>
+        <module>misc-swing</module>
+        <module>splines</module>
+        <module>effects</module>
+        <module>effectsui</module>
+        <module>layersui</module>
+        <module>layers.raster</module>
+        <module>misc.nio</module>
+        <module>paintui</module>
+        <module>toolconfigurationui</module>
+        <module>imagecachediagnostics</module>
+        <module>vector</module>
+        <module>vectorlayers</module>
+    </modules>
 
     <properties>
         <netbeans.version>RELEASE701</netbeans.version>
