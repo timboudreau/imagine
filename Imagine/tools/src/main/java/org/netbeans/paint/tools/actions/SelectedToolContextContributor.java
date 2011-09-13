@@ -27,6 +27,8 @@ public class SelectedToolContextContributor implements SelectionContextContribut
     private InstanceContent content = new InstanceContent();
     private AbstractLookup lkp = new AbstractLookup (content);
 
+    //XXX get this package non-public!
+    
     private static SelectedToolContextContributor INSTANCE = null;
 
     public SelectedToolContextContributor() {
@@ -37,7 +39,7 @@ public class SelectedToolContextContributor implements SelectionContextContribut
         return lkp;
     }
 
-    static void setSelectedTool (Tool tool) {
+    public static void setSelectedTool (Tool tool) {
 	ensureCreated();
         INSTANCE.content.set(tool == null ? Collections.EMPTY_SET :
             Collections.singleton(tool), null);

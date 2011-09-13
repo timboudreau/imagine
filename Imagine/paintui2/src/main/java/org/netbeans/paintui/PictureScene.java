@@ -58,6 +58,7 @@ import org.netbeans.paint.api.editing.LayerFactory;
 import org.netbeans.paint.api.editor.Zoom;
 import org.netbeans.paint.api.util.GraphicsUtils;
 import org.netbeans.paint.api.util.RasterConverter;
+import org.netbeans.paintui.widgetlayers.WidgetLayer;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Exceptions;
 import org.openide.util.ImageUtilities;
@@ -129,7 +130,7 @@ final class PictureScene extends Scene {
     private Widget createWidget(LayerImplementation layer) {
         Widget result = layer.getLookup().lookup(Widget.class);
         if (result == null) {
-            result = new OneLayerWidget(layer, this);
+            result = new OneLayerWidget(layer, this, layer.getLookup().lookup(WidgetLayer.class));
         }
         return result;
     }

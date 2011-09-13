@@ -9,13 +9,14 @@
 
 package net.java.dev.imagine.api.image;
 
-import java.awt.EventQueue;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
@@ -46,7 +47,7 @@ public final class Layer {
         try {
             Class.forName(c.getName(), true, c.getClassLoader());
         } catch (Exception e) {
-            e.printStackTrace();
+            Logger.getLogger(Layer.class.getName()).log(Level.INFO, null, e);
         }
         Accessor.DEFAULT = new AccessorImpl();
     }
@@ -231,6 +232,14 @@ public final class Layer {
      */
     public Lookup getLookup() {
         return impl.getLookup();
+    }
+    
+    public boolean equals(Object o) {
+        return o instanceof Layer && ((Layer) o).impl.equals(impl);
+    }
+    
+    public int hashCode() {
+        return impl.hashCode();
     }
 
     static final class AccessorImpl extends Accessor {

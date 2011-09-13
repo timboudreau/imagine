@@ -19,35 +19,62 @@ import org.netbeans.api.visual.border.BorderFactory;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
 import org.netbeans.paint.api.util.GraphicsUtils;
+import org.netbeans.paintui.widgetlayers.WidgetLayer;
+import org.netbeans.paintui.widgetlayers.WidgetLayer.WidgetController;
+import org.netbeans.paintui.widgetlayers.WidgetLayer.WidgetFactory;
+import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
+import org.openide.util.lookup.ProxyLookup;
 
 /**
  *
  * @author Tim Boudreau
  */
-class OneLayerWidget extends Widget {
+final class OneLayerWidget extends Widget {
     private final InternalRepaintHandle repaintHandle = new InternalRepaintHandle();
     final LayerImplementation layer;
     private final PCL pcl = new PCL();
+    private final WidgetLayer widgetLayer;
 
-    public OneLayerWidget(LayerImplementation layer, Scene scene) {
+    public OneLayerWidget(LayerImplementation layer, Scene scene, WidgetLayer widgetLayer) {
         super(scene);
         this.layer = layer;
         setOpaque(false);
         layer.addRepaintHandle(repaintHandle);
         layer.addPropertyChangeListener(pcl);
         setBorder(BorderFactory.createEmptyBorder());
+        this.widgetLayer = widgetLayer;
+        addNotify();
     }
 
+    @Override
+    public Lookup getLookup() {
+        return new ProxyLookup(super.getLookup(), Lookups.fixed(this), layer.getLookup());
+    }
+    
+    private WidgetFactory factory;
     void addNotify() {
+        if (widgetLayer != null) {
+            factory = widgetLayer.createWidgetController(this, new WidgetController(){});
+            if (factory != null) {
+                factory.attach();
+            }
+        }
     }
 
     void removeNotify() {
         layer.removeRepaintHandle(repaintHandle);
         layer.removePropertyChangeListener(pcl);
+        if (factory != null) {
+            factory.detach();
+        }
     }
 
     @Override
     protected Rectangle calculateClientArea() {
+        if (factory != null) {
+            return super.calculateClientArea();
+        }
         /*
         //Have the layer corner always at 0,0
         Rectangle r = new Rectangle(layer.getBounds());

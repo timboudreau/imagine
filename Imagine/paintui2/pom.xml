@@ -18,7 +18,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-  
 
     <dependencies>
         <dependency>
@@ -109,6 +108,11 @@
                 <artifactId>nbm-maven-plugin</artifactId>
                 <version>3.5</version>
                 <extensions>true</extensions>
+                <configuration>
+                    <publicPackages>
+                        <publicPackage>org.netbeans.paintui.widgetlayers</publicPackage>
+                    </publicPackages>
+                </configuration>
             </plugin>
 
             <plugin>

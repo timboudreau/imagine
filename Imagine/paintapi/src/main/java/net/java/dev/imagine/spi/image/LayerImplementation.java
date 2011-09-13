@@ -32,7 +32,7 @@ import org.openide.util.lookup.ProxyLookup;
  *
  * @author Timothy Boudreau
  */
-public abstract class LayerImplementation {
+public abstract class LayerImplementation<T extends LayerFactory> {
     protected static final String PROP_BOUNDS = Layer.PROP_BOUNDS;
     protected static final String PROP_NAME = Layer.PROP_NAME;
     protected static final String PROP_VISIBLE = Layer.PROP_VISIBLE;
@@ -57,10 +57,14 @@ public abstract class LayerImplementation {
     }
 
     protected final Layer layer;
-    private final LayerFactory factory;
-    protected LayerImplementation(LayerFactory factory) {
+    private final T factory;
+    protected LayerImplementation(T factory) {
         layer = Accessor.DEFAULT.createLayer(this);
         this.factory = factory;
+    }
+    
+    protected final T getFactory() {
+        return factory;
     }
 
     /** Get the bounds of this layer.  This may or may not
@@ -187,6 +191,15 @@ public abstract class LayerImplementation {
      * @return A new LayerImplementation identical to the old one
      */
     public abstract LayerImplementation clone (boolean isUserCopy, boolean deepCopy);
+    
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+    
+    public final int hashCode() {
+        return super.hashCode();
+    }
 
     private static final class IA extends InverseAccessor {
         //Trampoline to allow methods of the API classes to find

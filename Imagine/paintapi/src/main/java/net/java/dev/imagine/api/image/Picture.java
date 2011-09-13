@@ -17,12 +17,15 @@ import java.awt.datatransfer.Transferable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.netbeans.paint.api.util.ConvertList;
 import org.openide.util.ChangeSupport;
+import org.openide.util.NbCollections;
 
 /**
  * An ordered stack of one or more images which compose an overall image.
@@ -68,13 +71,28 @@ public final class Picture implements Iterable<Layer> {
      * @return A list of layers.
      */
     public List <Layer> getLayers() {
-        List <LayerImplementation> impls = impl.getLayers();
-        List <Layer> result = new ArrayList <Layer> (impls.size());
-        for (LayerImplementation curr : impls) {
-            result.add (Accessor.layerFor(curr));
-        }
-        return result;
+//        List <LayerImplementation> impls = impl.getLayers();
+//        List <Layer> result = new ArrayList <Layer> (impls.size());
+//        for (LayerImplementation curr : impls) {
+//            result.add (Accessor.layerFor(curr));
+//        }
+//        return result;
+        return new ConvertList<Layer, LayerImplementation>(Layer.class, 
+                LayerImplementation.class, impl.getLayers(), CVT);
     }
+    
+    static ConvertList.Converter<Layer, LayerImplementation> CVT = new ConvertList.Converter<Layer, LayerImplementation>() {
+
+        @Override
+        public Layer convert(LayerImplementation r) {
+            return r == null ? null : Accessor.INVERSE.layerFor(r);
+        }
+
+        @Override
+        public LayerImplementation unconvert(Layer t) {
+            return t == null ? null : Accessor.DEFAULT.getImpl(t);
+        }
+    };
 
     /**
      * Move a layer to a different position in the order of layers.
@@ -127,12 +145,25 @@ public final class Picture implements Iterable<Layer> {
     public void addChangeListener (ChangeListener cl) {
         supp.addChangeListener(cl);
         if (!listening) {
-            impl.addChangeListener (cl);
+            impl.addChangeListener (implListener);
         }
     }
 
     public void removeChangeListener (ChangeListener cl) {
         supp.removeChangeListener(cl);
+        if (!supp.hasListeners()) {
+            impl.removeChangeListener(implListener);
+        }
+    }
+    
+    private final CL implListener = new CL();
+    private final class CL implements ChangeListener {
+
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            supp.fireChange();
+        }
+        
     }
 
     /**

@@ -85,7 +85,8 @@
         <module>imagecachediagnostics</module>
         <module>vector</module>
         <module>vectorlayers</module>
-    </modules>
+        <module>layers.text.widget</module>
+  </modules>
 
     <properties>
         <netbeans.version>RELEASE701</netbeans.version>

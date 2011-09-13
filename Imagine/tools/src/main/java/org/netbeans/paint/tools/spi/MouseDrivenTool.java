@@ -89,7 +89,7 @@ public abstract class MouseDrivenTool extends MouseAdapter implements Tool, Mous
     }
     
     protected final boolean isActive() {
-        return layer != null;
+        return layer != null && layer.getSurface() != null;
     }
     
     public final JComponent getCustomizer(boolean create) {
