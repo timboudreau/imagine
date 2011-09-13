@@ -25,6 +25,7 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
 import java.util.Iterator;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -119,14 +120,23 @@ public class EffectsMenu extends JMenu {
 		}
 	    }
 	    assert applicator.canApply();
-	    
-	    Composite composite = applicator.getComposite();
-            Selection sel = applyTo.getLookup().lookup(Selection.class);
-            Shape clip = null;
-            if (sel != null) {
-                clip = sel.asShape();
+            if (applicator instanceof Effect.BufferedImageOpApplicator) {
+                BufferedImageOp op = ((Effect.BufferedImageOpApplicator) applicator).getOp();
+                Selection sel = applyTo.getLookup().lookup(Selection.class);
+                Shape clip = null;
+                if (sel != null) {
+                    clip = sel.asShape();
+                }
+                surface.applyBufferedImageOp(op, clip);
+            } else {
+                Composite composite = applicator.getComposite();
+                Selection sel = applyTo.getLookup().lookup(Selection.class);
+                Shape clip = null;
+                if (sel != null) {
+                    clip = sel.asShape();
+                }
+                surface.applyComposite(composite, clip);
             }
-	    surface.applyComposite(composite, clip);
 	}
     }
     /*
@@ -278,13 +288,20 @@ public class EffectsMenu extends JMenu {
 		    GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
 
 	    imageGr = (Graphics2D) back.createGraphics();
-	    //Set the composite
-	    Composite comp = imageGr.getComposite();
-	    imageGr.setComposite (applicator.getComposite());
-	    //And copy the temp image into it, applying our effect
-	    imageGr.drawRenderedImage(temp, 
-		    AffineTransform.getTranslateInstance(0,0));
-	    imageGr.setComposite(comp);
+            if (applicator instanceof Effect.BufferedImageOpApplicator) {
+                BufferedImageOp op = ((Effect.BufferedImageOpApplicator) applicator).getOp();
+                temp = op.filter(temp, null);
+                imageGr.drawRenderedImage(temp, 
+                        AffineTransform.getTranslateInstance(0,0));
+            } else {
+                //Set the composite
+                Composite comp = imageGr.getComposite();
+                imageGr.setComposite (applicator.getComposite());
+                //And copy the temp image into it, applying our effect
+                imageGr.drawRenderedImage(temp, 
+                        AffineTransform.getTranslateInstance(0,0));
+                imageGr.setComposite(comp);
+            }
 	    synchronized (this) {
 		this.backingImage = back;
 	    }

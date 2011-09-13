@@ -16,6 +16,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
 import net.dev.java.imagine.spi.tools.Tool;
 import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.api.image.Surface;
@@ -133,5 +134,9 @@ public abstract class SurfaceImplementation {
     
     public final Surface getSurface() {
         return surface;
+    }
+
+    public void applyBufferedImageOp(BufferedImageOp op, Shape clip) {
+        throw new UnsupportedOperationException();
     }
 }

@@ -9,6 +9,7 @@
 
 package net.dev.java.imagine.spi.effects;
 import java.awt.Composite;
+import java.awt.image.BufferedImageOp;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
 
@@ -43,6 +44,10 @@ public interface Effect {
         public boolean canPreview();
         /** Determine if the settings in the customizer are valid */
         public boolean canApply();
+    }
+    
+    public interface BufferedImageOpApplicator extends Applicator { //XXX not nice
+        public BufferedImageOp getOp();
     }
     
 }

@@ -86,6 +86,7 @@
         <module>vector</module>
         <module>vectorlayers</module>
         <module>layers.text.widget</module>
+        <module>fx</module>
   </modules>
 
     <properties>

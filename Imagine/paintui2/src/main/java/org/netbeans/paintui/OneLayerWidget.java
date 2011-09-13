@@ -130,6 +130,7 @@ final class OneLayerWidget extends Widget {
             if (Layer.PROP_VISIBLE.equals(evt.getPropertyName())) {
                 setVisible(layer.isVisible());
             } else if (Layer.PROP_BOUNDS.equals(evt.getPropertyName())) {
+                revalidate();
 //                setPreferredLocation(((Rectangle) evt.getNewValue()).getLocation());
 //                setPreferredBounds((Rectangle) evt.getNewValue());
                 repaintHandle.repaint();

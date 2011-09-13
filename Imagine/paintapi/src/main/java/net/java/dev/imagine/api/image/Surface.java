@@ -15,6 +15,7 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Shape;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
 import net.dev.java.imagine.spi.tools.Tool;
 import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
@@ -47,6 +48,10 @@ public final class Surface {
     /** Apply an effect, in the form of a Composite, to the image */
     public void applyComposite (Composite composite, Shape clip) {
         impl.applyComposite(composite, clip);
+    }
+    
+    public void applyBufferedImageOp (BufferedImageOp op, Shape clip) {
+        impl.applyBufferedImageOp(op, clip);
     }
 
     public void setLocation (Point p) {

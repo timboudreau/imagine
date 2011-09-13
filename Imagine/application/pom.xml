@@ -129,6 +129,11 @@
             <artifactId>layers.text.widget</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>fx</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

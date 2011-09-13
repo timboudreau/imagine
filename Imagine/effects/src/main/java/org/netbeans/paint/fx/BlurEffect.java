@@ -108,6 +108,7 @@ public class BlurEffect implements Effect, Effect.Applicator {
                     GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
 	    a.getRaster().setDataElements(0, 0, src);
 
+            @SuppressWarnings("UseOfObsoleteCollectionType")
 	    BufferedImage out = new BufferedImage (this.dst, dstOut, false, new Hashtable());
 
 	    AffineTransform at = AffineTransform.getTranslateInstance(0, -0);

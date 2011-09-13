@@ -16,6 +16,7 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
 import java.awt.image.RasterFormatException;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -283,6 +284,30 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         }
     }
     
+    public void applyBufferedImageOp(BufferedImageOp op, Shape clip) {
+        Tool tool = currentTool;
+        currentTool = null;
+        try {
+            doApplyBufferedImageOp(op, clip);
+        } finally {
+            currentTool = tool;
+        }
+    }
+    
+    private void doApplyBufferedImageOp (BufferedImageOp op, Shape region) {
+        BufferedImage old = img;
+        if (region == null || region.getBounds().contains(0, 0, img.getWidth(), img.getHeight())) {
+            img = op.filter(old, null);
+        } else {
+            Rectangle regBounds = region.getBounds(); //XXX check that it fits within image!
+            BufferedImage nue = img.getSubimage(regBounds.x, regBounds.y, regBounds.width, regBounds.height);
+            nue = op.filter(nue, null);
+            Graphics2D g = img.createGraphics();
+            g.setClip(region);
+            g.drawRenderedImage(nue, AffineTransform.getTranslateInstance(0, 0));
+        }
+    }
+
     private void doApplyComposite (Composite composite, Shape region) {
         if (location.x != 0 && location.y != 0) {
             // Rectangle r = new Rectangle (location.x, location.y,

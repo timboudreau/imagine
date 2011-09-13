@@ -94,7 +94,7 @@ final class PictureScene extends Scene {
 
     private void init() {
         setBackground(CHECKERBOARD_BACKGROUND);
-        getActions().addAction(new ToolEventDispatchAction());
+//        getActions().addAction(new ToolEventDispatchAction());
         syncLayers(picture.getLayers());
         mainLayer.setLayout(LayoutFactory.createAbsoluteLayout());
         mainLayer.setBorder(BorderFactory.createEmptyBorder());
@@ -110,6 +110,9 @@ final class PictureScene extends Scene {
     }
 
     private Widget findWidget(LayerImplementation layer) {
+        if (layer == null) {
+            return null;
+        }
         for (Widget w : mainLayer.getChildren()) {
             if (w instanceof OneLayerWidget && ((OneLayerWidget) w).layer == layer) {
                 return w;
@@ -131,6 +134,18 @@ final class PictureScene extends Scene {
         return result;
     }
 
+    public void repaint(Widget widget, Rectangle bounds) {
+        JComponent v = getView();
+        if (v == null) {
+            repaint();
+        } else {
+            Rectangle r = widget.convertLocalToScene(bounds);
+            r = convertSceneToView(r);
+            v.repaint(r);
+        }
+    }
+    private final WidgetAction toolAction = new ToolEventDispatchAction();
+
     public void syncLayers(List<LayerImplementation> layers) {
         //make thsi more efficient later
         List<Widget> widgets = new ArrayList<Widget>();
@@ -149,7 +164,15 @@ final class PictureScene extends Scene {
         mainLayer.removeChildren();
         for (Widget w : widgets) {
             if (w instanceof OneLayerWidget) {
-                ((OneLayerWidget) w).addNotify();
+                OneLayerWidget wid = (OneLayerWidget) w;
+                wid.addNotify();
+                assert wid.layer != null;
+                assert toolAction != null;
+                //picture is null if called from PI constructor as it populates
+                //its layers
+                if (picture == null || wid.layer == picture.getActiveLayer()) {
+                    wid.getActions().addAction(toolAction);
+                }
             }
             mainLayer.addChild(w);
         }
@@ -218,10 +241,10 @@ final class PictureScene extends Scene {
             Component source = getView();
             Point p = evt.getPoint();
 
-            if (!(activeTool instanceof NonPaintingTool)) {
-                Rectangle activeLayerBounds = picture.getActiveLayer().getBounds();
-                p.translate(-activeLayerBounds.x, -activeLayerBounds.y);
-            }
+//            if (!(activeTool instanceof NonPaintingTool)) {
+//                Rectangle activeLayerBounds = picture.getActiveLayer().getBounds();
+//                p.translate(-activeLayerBounds.x, -activeLayerBounds.y);
+//            }
             return new MouseEvent(source, awtId, evt.getWhen(), evt.getModifiers(), p.x, p.y, evt.getClickCount(), evt.isPopupTrigger(), evt.getButton());
         }
 
@@ -392,26 +415,24 @@ final class PictureScene extends Scene {
         public void requestRepaint() {
             if (picture.getActiveLayer() != null) {
                 Widget w = findWidget(picture.getActiveLayer());
-                w.repaint();
+                repaint(w, w.getBounds());
             }
-//            validate();
-//            repaint();
-//            JComponent c = getView();
-//            c.paintImmediately(0, 0, c.getWidth(), c.getHeight());
+            if (activeTool instanceof NonPaintingTool) {
+                validate();
+                repaint();
+            }
         }
 
         @Override
         public void requestRepaint(Rectangle bounds) {
+            if (bounds == null) {
+                mainLayer.repaint();
+                return;
+            }
             JComponent v = getScene().getView();
-            if (v != null) {
-                if (picture.getActiveLayer() != null) {
-                    Widget w = findWidget(picture.getActiveLayer());
-                    Rectangle r = w.convertLocalToScene(w.getBounds());
-                    r = convertSceneToView(bounds);
-                    v.repaint(r);
-                } else {
-                    getScene().repaint();
-                }
+            if (picture.getActiveLayer() != null) {
+                Widget w = findWidget(picture.getActiveLayer());
+                repaint(w, bounds);
             } else {
                 getScene().repaint();
             }
@@ -438,8 +459,8 @@ final class PictureScene extends Scene {
                             RenderingHints.VALUE_RENDER_QUALITY);
                     g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
                             RenderingHints.VALUE_STROKE_PURE);
-                    PaintParticipant painter = activeTool == null ? null :
-                            activeTool.getLookup().lookup(PaintParticipant.class);
+                    PaintParticipant painter = activeTool == null ? null
+                            : activeTool.getLookup().lookup(PaintParticipant.class);
                     if (painter == null && activeTool instanceof PaintParticipant) {
                         painter = (PaintParticipant) activeTool;
                     }
@@ -489,6 +510,14 @@ final class PictureScene extends Scene {
             //XXX attach tool action to the active layer?  May be
             //problematic if user clicks outside the official bounds of the
             //layer
+            Widget oldW = findWidget(old);
+            Widget newW = findWidget(nue);
+            if (oldW != null) {
+                oldW.getActions().removeAction(toolAction);
+            }
+            if (newW != null) {
+                newW.getActions().addAction(toolAction);
+            }
         }
 
         @Override
