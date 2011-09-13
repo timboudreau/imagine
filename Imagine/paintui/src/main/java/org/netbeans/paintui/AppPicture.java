@@ -46,9 +46,9 @@ import net.java.dev.imagine.spi.image.PictureImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.netbeans.paint.api.editing.LayerFactory;
-import org.netbeans.paint.api.util.ChangeListenerSupport;
 import org.netbeans.paint.api.util.GraphicsUtils;
 import org.netbeans.paint.api.util.RasterConverter;
+import org.openide.util.ChangeSupport;
 import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
@@ -332,13 +332,13 @@ class AppPicture extends PictureImplementation {
         endUndoableOperation();
         return nue;
     }
-    private ChangeListenerSupport changes = new ChangeListenerSupport(this);
+    private ChangeSupport changes = new ChangeSupport(this);
     private boolean pendingChange = false;
 
     private void fire() {
         // We suspend firing until the end of an undoable operation
         if (undoEntryCount <= 0) {
-            changes.fire();
+            changes.fireChange();
             pendingChange = false;
         }
         else {
@@ -347,11 +347,11 @@ class AppPicture extends PictureImplementation {
     }
 
     public void addChangeListener(ChangeListener cl) {
-        changes.add(cl);
+        changes.addChangeListener(cl);
     }
 
     public void removeChangeListener(ChangeListener cl) {
-        changes.remove(cl);
+        changes.removeChangeListener(cl);
     }
 
     public Dimension getSize() {

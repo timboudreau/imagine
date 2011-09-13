@@ -20,11 +20,11 @@ import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.api.image.Layer;
-import org.netbeans.paint.api.util.ChangeListenerSupport;
 import net.dev.java.imagine.spi.tools.Customizer;
 import net.dev.java.imagine.spi.tools.PaintParticipant.Repainter;
 import net.dev.java.imagine.spi.tools.Tool;
 import net.java.dev.imagine.api.image.Surface;
+import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
@@ -43,7 +43,7 @@ public abstract class MouseDrivenTool extends MouseAdapter implements Tool, Mous
     private final String iconBase;
     private final String name;
     private Icon icon = null;
-    private final ChangeListenerSupport changes = new ChangeListenerSupport(this);
+    private final ChangeSupport changes = new ChangeSupport(this);
     protected MouseDrivenTool(Icon icon, String name) {
 	this.icon = icon;
 	this.iconBase = null;
@@ -187,15 +187,15 @@ public abstract class MouseDrivenTool extends MouseAdapter implements Tool, Mous
 //    }
     
     public void addChangeListener (ChangeListener l) {
-        changes.add (l);
+        changes.addChangeListener(l);
     }
     
     public void removeChangeListener (ChangeListener l) {
-        changes.remove(l);
+        changes.removeChangeListener(l);
     }
     
     protected void fireChangeEvent() {
-        changes.fire();
+        changes.fireChange();
     }
     
     public Object get() {

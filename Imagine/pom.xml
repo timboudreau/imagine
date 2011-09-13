@@ -80,6 +80,7 @@
         <module>layers.raster</module>
         <module>misc.nio</module>
         <module>paintui</module>
+        <module>paintui2</module>
         <module>toolconfigurationui</module>
         <module>imagecachediagnostics</module>
         <module>vector</module>

@@ -52,11 +52,11 @@ import net.java.dev.imagine.spi.image.PictureImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.netbeans.paint.api.editor.Zoom;
-import org.netbeans.paint.api.util.ChangeListenerSupport;
 import net.dev.java.imagine.spi.tools.PaintParticipant;
 import net.dev.java.imagine.spi.tools.PaintParticipant.Repainter;
 import net.dev.java.imagine.spi.tools.Tool;
 import org.netbeans.paint.api.util.GraphicsUtils;
+import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.Utilities;
 import org.openide.util.WeakListeners;
@@ -577,7 +577,7 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
 
     private class ZoomImpl implements Zoom {
 
-        private ChangeListenerSupport supp = new ChangeListenerSupport(this);
+        private ChangeSupport supp = new ChangeSupport(this);
 
         public float getZoom() {
             return PaintCanvas.this.getZoom();
@@ -586,16 +586,16 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
         public void setZoom(float val) {
             if (val != getZoom()) {
                 PaintCanvas.this.setZoom(val);
-                supp.fire();
+                supp.fireChange();
             }
         }
 
         public void addChangeListener(ChangeListener cl) {
-            supp.add(cl);
+            supp.addChangeListener(cl);
         }
 
         public void removeChangeListener(ChangeListener cl) {
-            supp.remove(cl);
+            supp.removeChangeListener(cl);
         }
     }
 

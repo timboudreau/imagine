@@ -426,7 +426,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
             Layer l = picture.getActiveLayer();
             int ix = picture.getLayers().indexOf(l);
 
-            if (ix != 0) {
+            if (ix >= 1) {
                 picture.move(l, ix - 1);
             }
         }

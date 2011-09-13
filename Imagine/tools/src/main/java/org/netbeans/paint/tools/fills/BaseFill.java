@@ -9,7 +9,6 @@
 
 package org.netbeans.paint.tools.fills;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Paint;
@@ -21,8 +20,8 @@ import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
 import net.java.dev.colorchooser.ColorChooser;
 import org.netbeans.paint.api.components.explorer.Customizable;
-import org.netbeans.paint.api.util.ChangeListenerSupport;
 import org.netbeans.paint.tools.spi.Fill;
+import org.openide.util.ChangeSupport;
 import org.openide.util.NbBundle;/**
  * A base class to share a little logic between SolidColorFill and
  * GradientFill without creating the possibility of either being 
@@ -80,16 +79,16 @@ class BaseFill implements Customizable, Fill, ActionListener {
         fire();
     }
 
-    private ChangeListenerSupport changes = new ChangeListenerSupport(this);
+    private ChangeSupport changes = new ChangeSupport(this);
     public void addChangeListener(ChangeListener cl) {
-	changes.add(cl);
+	changes.addChangeListener(cl);
     }
 
     public void removeChangeListener(ChangeListener cl) {
-	changes.remove(cl);
+	changes.removeChangeListener(cl);
     }
     
     private void fire() {
-	changes.fire();
+	changes.fireChange();
     }
 }

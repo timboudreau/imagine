@@ -110,6 +110,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>paintui</artifactId>
+<!--            <artifactId>paintui2</artifactId> -->
             <version>${project.version}</version>
         </dependency>
         <dependency>

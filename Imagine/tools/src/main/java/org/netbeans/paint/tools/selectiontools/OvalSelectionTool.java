@@ -24,8 +24,8 @@ import net.dev.java.imagine.api.selection.Selection;
 import net.dev.java.imagine.api.selection.Selection.Op;
 import net.dev.java.imagine.spi.tools.PaintParticipant;
 import net.java.dev.imagine.api.image.Layer;
-import org.netbeans.paint.api.util.ChangeListenerSupport;
 import org.netbeans.paint.tools.spi.MouseDrivenTool;
+import org.openide.util.ChangeSupport;
 import org.openide.util.NbBundle;
 
 /**
@@ -60,19 +60,19 @@ public class OvalSelectionTool extends MouseDrivenTool implements PaintParticipa
 	return shape;
     }
 
-    private ChangeListenerSupport changes = new ChangeListenerSupport(this);
+    private ChangeSupport changes = new ChangeSupport(this);
     @Override
     public void addChangeListener(ChangeListener cl) {
-	changes.add(cl);
+	changes.addChangeListener(cl);
     }
 
     @Override
     public void removeChangeListener(ChangeListener cl) {
-	changes.remove(cl);
+	changes.removeChangeListener(cl);
     }
     
     private void fire() {
-	changes.fire();
+	changes.fireChange();
     }
 
     public void clear() {

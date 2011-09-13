@@ -15,13 +15,14 @@ import java.awt.Rectangle;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.Transferable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
-import org.netbeans.paint.api.util.ChangeListenerSupport;
+import org.openide.util.ChangeSupport;
 
 /**
  * An ordered stack of one or more images which compose an overall image.
@@ -33,7 +34,7 @@ import org.netbeans.paint.api.util.ChangeListenerSupport;
  *
  * @author Timothy Boudreau
  */
-public final class Picture {
+public final class Picture implements Iterable<Layer> {
     public static final int POSITION_BOTTOM = -1;
     public static final int POSITION_TOP = -2;
     final PictureImplementation impl;
@@ -48,6 +49,10 @@ public final class Picture {
                     "Picture for " + impl); //NOI18N
         }
         this.impl = impl;
+    }
+    
+    public Iterator<Layer> iterator() {
+        return getLayers().iterator();
     }
 
     /**
@@ -117,17 +122,17 @@ public final class Picture {
             impl.duplicate (Accessor.DEFAULT.getImpl (toClone)));
     }
 
-    final ChangeListenerSupport supp = new ChangeListenerSupport(this);
+    final ChangeSupport supp = new ChangeSupport(this);
     volatile boolean listening;
     public void addChangeListener (ChangeListener cl) {
-        supp.add (cl);
+        supp.addChangeListener(cl);
         if (!listening) {
             impl.addChangeListener (cl);
         }
     }
 
     public void removeChangeListener (ChangeListener cl) {
-        supp.remove (cl);
+        supp.removeChangeListener(cl);
     }
 
     /**

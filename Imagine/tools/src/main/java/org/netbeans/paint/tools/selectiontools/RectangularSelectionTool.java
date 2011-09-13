@@ -12,6 +12,7 @@
  * Microsystems, Inc. All Rights Reserved.
  */
 package org.netbeans.paint.tools.selectiontools;
+import org.openide.util.ChangeSupport;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -20,17 +21,11 @@ import java.awt.event.KeyEvent;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.selection.Selection;
 import net.dev.java.imagine.api.selection.Selection.Op;
-import net.dev.java.imagine.api.selection.ShapeSelection;
 import net.dev.java.imagine.spi.tools.PaintParticipant;
 import net.java.dev.imagine.api.image.Layer;
-import org.netbeans.paint.api.util.ChangeListenerSupport;
 import org.netbeans.paint.tools.spi.MouseDrivenTool;
 import org.openide.util.NbBundle;
-import static  org.netbeans.paint.tools.selectiontools.MutableRectangle.SW;
-import static org.netbeans.paint.tools.selectiontools.MutableRectangle.SE;
-import static org.netbeans.paint.tools.selectiontools.MutableRectangle.ANY;
-import static org.netbeans.paint.tools.selectiontools.MutableRectangle.NW;
-import static org.netbeans.paint.tools.selectiontools.MutableRectangle.NE;
+import static org.netbeans.paint.tools.selectiontools.MutableRectangle.*;
 
 /**
  *
@@ -57,20 +52,20 @@ public class RectangularSelectionTool extends MouseDrivenTool implements PaintPa
         return selection == null ? null
                                  : new Rectangle(selection);
     }
-    private ChangeListenerSupport changes = new ChangeListenerSupport(this);
+    private ChangeSupport changes = new ChangeSupport(this);
 
     @Override
     public void addChangeListener(ChangeListener cl) {
-        changes.add(cl);
+        changes.addChangeListener(cl);
     }
 
     @Override
     public void removeChangeListener(ChangeListener cl) {
-        changes.remove(cl);
+        changes.removeChangeListener(cl);
     }
 
     private void fire() {
-        changes.fire();
+        changes.fireChange();
     }
 
     private MutableRectangle selection = null;
