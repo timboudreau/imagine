@@ -38,6 +38,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.undo.UndoManager;
 import net.dev.java.imagine.api.selection.Selection;
+import net.dev.java.imagine.spi.tools.NonPaintingTool;
 import net.dev.java.imagine.spi.tools.PaintParticipant;
 import net.dev.java.imagine.spi.tools.PaintParticipant.Repainter;
 import net.dev.java.imagine.spi.tools.Tool;
@@ -48,6 +49,7 @@ import net.java.dev.imagine.spi.image.PictureImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.netbeans.api.visual.action.WidgetAction;
+import org.netbeans.api.visual.border.BorderFactory;
 import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.widget.LayerWidget;
 import org.netbeans.api.visual.widget.Scene;
@@ -98,6 +100,7 @@ final class PictureScene extends Scene {
         getActions().addAction(new ToolEventDispatchAction());
         syncLayers(picture.getLayers());
         mainLayer.setLayout(LayoutFactory.createAbsoluteLayout());
+        mainLayer.setBorder(BorderFactory.createEmptyBorder());
         addChild(mainLayer);
     }
 
@@ -217,8 +220,11 @@ final class PictureScene extends Scene {
         private MouseEvent toMouseEvent(WidgetMouseEvent evt, int awtId) {
             Component source = getView();
             Point p = evt.getPoint();
-            Rectangle activeLayerBounds = picture.getActiveLayer().getBounds();
-            p.translate(activeLayerBounds.x, activeLayerBounds.y);
+            
+            if (!(activeTool instanceof NonPaintingTool)) {
+                Rectangle activeLayerBounds = picture.getActiveLayer().getBounds();
+                p.translate(-activeLayerBounds.x, -activeLayerBounds.y);
+            }
             return new MouseEvent(source, awtId, evt.getWhen(), evt.getModifiers(), p.x, p.y, evt.getClickCount(), evt.isPopupTrigger(), evt.getButton());
         }
 

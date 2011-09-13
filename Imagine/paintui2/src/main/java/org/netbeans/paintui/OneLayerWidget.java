@@ -8,12 +8,14 @@ import java.awt.AlphaComposite;
 import java.awt.Composite;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.netbeans.api.visual.border.BorderFactory;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
 import org.netbeans.paint.api.util.GraphicsUtils;
@@ -25,7 +27,6 @@ import org.netbeans.paint.api.util.GraphicsUtils;
 class OneLayerWidget extends Widget {
     private final InternalRepaintHandle repaintHandle = new InternalRepaintHandle();
     final LayerImplementation layer;
-    private boolean validated;
     private final PCL pcl = new PCL();
 
     public OneLayerWidget(LayerImplementation layer, Scene scene) {
@@ -34,6 +35,7 @@ class OneLayerWidget extends Widget {
         setOpaque(false);
         layer.addRepaintHandle(repaintHandle);
         layer.addPropertyChangeListener(pcl);
+        setBorder(BorderFactory.createEmptyBorder());
     }
 
     void addNotify() {
@@ -44,20 +46,28 @@ class OneLayerWidget extends Widget {
         layer.removePropertyChangeListener(pcl);
     }
 
-//    @Override
-//    public boolean isValidated() {
-//        return validated;
-//    }
-
     @Override
     protected Rectangle calculateClientArea() {
-        return new Rectangle(layer.getBounds());
+        /*
+        //Have the layer corner always at 0,0
+        Rectangle r = new Rectangle(layer.getBounds());
+        if (r.x > 0) {
+            r.width += r.x;
+            r.x = 0;
+        }
+        if (r.y > 0) {
+            r.height += r.y;
+            r.y = 0;
+        }
+        return r;
+        */
+        return layer.getBounds();
     }
 
     @Override
     protected void paintWidget() {
-        validated = true;
         Rectangle r = getBounds();
+        Point p = r.getLocation();
         r.x = 0;
         r.y = 0;
         Graphics2D g = getGraphics();
@@ -69,12 +79,14 @@ class OneLayerWidget extends Widget {
             AlphaComposite comp = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity);
             g.setComposite(comp);
         }
+        g.translate(p.x, p.y);
         try {
             layer.paint(g, r, true);
         } finally {
             if (old != null) {
                 g.setComposite(old);
             }
+            g.translate(-p.x, -p.y);
         }
     }
 
@@ -90,7 +102,8 @@ class OneLayerWidget extends Widget {
             if (Layer.PROP_VISIBLE.equals(evt.getPropertyName())) {
                 setVisible(layer.isVisible());
             } else if (Layer.PROP_BOUNDS.equals(evt.getPropertyName())) {
-                setPreferredLocation(((Rectangle) evt.getNewValue()).getLocation());
+//                setPreferredLocation(((Rectangle) evt.getNewValue()).getLocation());
+//                setPreferredBounds((Rectangle) evt.getNewValue());
                 repaintHandle.repaint();
                 getScene().getView().paintImmediately(new Rectangle(0,0, 2000,2000)); //XXX
             } else if (!Layer.PROP_NAME.equals(evt.getPropertyName())) {
