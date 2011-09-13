@@ -21,6 +21,7 @@ import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.openide.util.Lookup;
+import org.openide.util.Mutex;
 
 /**
  * A single "layer" - one element in a composite stack of images
@@ -119,11 +120,7 @@ public final class Layer {
                     }
                 }
             };
-            if (EventQueue.isDispatchThread()) {
-                r.run();
-            } else {
-                EventQueue.invokeLater(r);
-            }
+            Mutex.EVENT.readAccess(r);
         }
     }
 
@@ -212,17 +209,15 @@ public final class Layer {
 
     private class PCL implements PropertyChangeListener {
         public void propertyChange(final PropertyChangeEvent evt) {
-            if (EventQueue.isDispatchThread()) {
-                fire (evt.getPropertyName(), evt.getOldValue(),
+            Mutex.EVENT.readAccess(new Runnable() {
+
+                @Override
+                public void run() {
+                    fire (evt.getPropertyName(), evt.getOldValue(),
                         evt.getNewValue());
-            } else {
-                EventQueue.invokeLater (new Runnable() {
-                    public void run() {
-                        fire (evt.getPropertyName(), evt.getOldValue(),
-                            evt.getNewValue());
-                    }
-                });
-            }
+                }
+                
+            });
         }
     }
 

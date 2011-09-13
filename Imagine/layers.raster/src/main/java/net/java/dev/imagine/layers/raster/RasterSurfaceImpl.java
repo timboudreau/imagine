@@ -17,6 +17,8 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.awt.image.RasterFormatException;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,6 +53,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     private Tool currentTool = null;
     private Point location = new Point();
     private Selection<Shape> selection;
+    private final PropertyChangeSupport supp = new PropertyChangeSupport(this);
 
     RasterSurfaceImpl(RepaintHandle handle, Dimension d, Selection<Shape> selection) {
         this (handle, d, null, selection);
@@ -81,6 +84,18 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             img = ByteNIOBufferedImage.copy(other.img);
         }
         this.selection = selection;
+    }
+    
+    void addPropertyChangeListener (PropertyChangeListener pcl) {
+        supp.addPropertyChangeListener(pcl);
+    }
+    
+    void removePropertyChangeListener(PropertyChangeListener pcl) {
+        supp.removePropertyChangeListener(pcl);
+    }
+    
+    void firePropertyChange(String name, Object old, Object nue) {
+        supp.firePropertyChange(name, old, nue);
     }
 
     @Override
@@ -516,16 +531,18 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         return selection.asShape();
     }
     
+    public static final String PROP_LOCATION = "Move";
     private Dimension grow = null;
     private Point imageReplacePosition = null;
     private Point actualImagePosition = null;
     public void setLocation(Point p) {
         if (!location.equals(p)) {
+            Point old = new Point(location);
+            Point nue = new Point(p);
+            firePropertyChange(PROP_LOCATION, old, nue);
             if (actualImagePosition == null) {
                 actualImagePosition = new Point (location);
             }
-
-            Point old = new Point (location);
             location.setLocation(p);
 
             int wdiff = Math.abs(location.x - actualImagePosition.x);

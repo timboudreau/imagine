@@ -12,6 +12,7 @@
     <packaging>nbm-application</packaging>
 
     <name>Imagine - NB App</name>
+    <description>An Extensible Image Editor</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -109,8 +110,8 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>paintui</artifactId>
-<!--            <artifactId>paintui2</artifactId> -->
+            <artifactId>paintui2</artifactId>
+<!--            <artifactId>paintui</artifactId> -->
             <version>${project.version}</version>
         </dependency>
         <dependency>

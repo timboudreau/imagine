@@ -48,6 +48,8 @@ import net.java.dev.imagine.spi.image.PictureImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.netbeans.api.visual.action.WidgetAction;
+import org.netbeans.api.visual.layout.LayoutFactory;
+import org.netbeans.api.visual.widget.LayerWidget;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
 import org.netbeans.paint.api.editing.LayerFactory;
@@ -75,6 +77,7 @@ final class PictureScene extends Scene {
             ((BufferedImage) ImageUtilities.loadImage(
             "org/netbeans/paintui/resources/backgroundpattern.png")), //NOI18N
             new Rectangle(0, 0, 16, 16));
+    private final Widget mainLayer = new LayerWidget(this);
 
     public PictureScene() {
         this(new Dimension(640, 480), BackgroundStyle.TRANSPARENT);
@@ -94,6 +97,8 @@ final class PictureScene extends Scene {
         setBackground(CHECKERBOARD_BACKGROUND);
         getActions().addAction(new ToolEventDispatchAction());
         syncLayers(picture.getLayers());
+        mainLayer.setLayout(LayoutFactory.createAbsoluteLayout());
+        addChild(mainLayer);
     }
 
     private static String getDefaultLayerName(int ix) {
@@ -105,7 +110,7 @@ final class PictureScene extends Scene {
     }
 
     private Widget findWidget(LayerImplementation layer) {
-        for (Widget w : getChildren()) {
+        for (Widget w : mainLayer.getChildren()) {
             if (w instanceof OneLayerWidget && ((OneLayerWidget) w).layer == layer) {
                 return w;
             }
@@ -141,12 +146,12 @@ final class PictureScene extends Scene {
             }
             widgets.add(w);
         }
-        removeChildren();
+        mainLayer.removeChildren();
         for (Widget w : widgets) {
             if (w instanceof OneLayerWidget) {
                 ((OneLayerWidget) w).addNotify();
             }
-            addChild(w);
+            mainLayer.addChild(w);
         }
         validate();
     }
@@ -212,6 +217,8 @@ final class PictureScene extends Scene {
         private MouseEvent toMouseEvent(WidgetMouseEvent evt, int awtId) {
             Component source = getView();
             Point p = evt.getPoint();
+            Rectangle activeLayerBounds = picture.getActiveLayer().getBounds();
+            p.translate(activeLayerBounds.x, activeLayerBounds.y);
             return new MouseEvent(source, awtId, evt.getWhen(), evt.getModifiers(), p.x, p.y, evt.getClickCount(), evt.isPopupTrigger(), evt.getButton());
         }
 
@@ -222,18 +229,22 @@ final class PictureScene extends Scene {
 
         State dispatch(WidgetKeyEvent evt, int awtId) {
             KeyListener kl = toolAs(KeyListener.class);
-            if (kl != null) {
-                return dispatchToTool(toKeyEvent(evt, awtId), kl);
+            if (picture.getActiveLayer() != null) {
+                if (kl != null) {
+                    return dispatchToTool(toKeyEvent(evt, awtId), kl);
+                }
             }
             return State.REJECTED;
         }
 
         State dispatch(WidgetMouseEvent evt, int awtId) {
             Point pt = evt.getPoint();
-            pslep.setStatus(new StringBuilder(pt.x).append(',').append(pt.y).toString());
-            MouseListener ml = toolAs(MouseListener.class);
-            if (ml != null) {
-                return dispatchToTool(toMouseEvent(evt, awtId), ml);
+            pslep.setStatus(new StringBuilder(Integer.toString(pt.x)).append(',').append(pt.y).toString());
+            if (picture.getActiveLayer() != null) {
+                MouseListener ml = toolAs(MouseListener.class);
+                if (ml != null) {
+                    return dispatchToTool(toMouseEvent(evt, awtId), ml);
+                }
             }
             return State.REJECTED;
         }
@@ -454,6 +465,18 @@ final class PictureScene extends Scene {
         @Override
         public void layersChanged(List<LayerImplementation> layers) {
             syncLayers(layers);
+        }
+
+        @Override
+        public void activeLayerChanged(LayerImplementation old, LayerImplementation nue) {
+            //XXX attach tool action to the active layer?  May be
+            //problematic if user clicks outside the official bounds of the
+            //layer
+        }
+
+        @Override
+        public void sizeChanged(Dimension old, Dimension nue) {
+            validate();
         }
     }
 

@@ -32,11 +32,11 @@ class OneLayerWidget extends Widget {
         super(scene);
         this.layer = layer;
         setOpaque(false);
+        layer.addRepaintHandle(repaintHandle);
+        layer.addPropertyChangeListener(pcl);
     }
 
     void addNotify() {
-        layer.addRepaintHandle(repaintHandle);
-        layer.addPropertyChangeListener(pcl);
     }
 
     void removeNotify() {
@@ -44,10 +44,10 @@ class OneLayerWidget extends Widget {
         layer.removePropertyChangeListener(pcl);
     }
 
-    @Override
-    public boolean isValidated() {
-        return validated;
-    }
+//    @Override
+//    public boolean isValidated() {
+//        return validated;
+//    }
 
     @Override
     protected Rectangle calculateClientArea() {
@@ -86,12 +86,13 @@ class OneLayerWidget extends Widget {
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) {
+            System.out.println("Prop change from layer " + evt.getPropertyName() + " " + evt.getNewValue());
             if (Layer.PROP_VISIBLE.equals(evt.getPropertyName())) {
                 setVisible(layer.isVisible());
             } else if (Layer.PROP_BOUNDS.equals(evt.getPropertyName())) {
                 setPreferredLocation(((Rectangle) evt.getNewValue()).getLocation());
-                setPreferredSize(((Rectangle) evt.getNewValue()).getSize());
                 repaintHandle.repaint();
+                getScene().getView().paintImmediately(new Rectangle(0,0, 2000,2000)); //XXX
             } else if (!Layer.PROP_NAME.equals(evt.getPropertyName())) {
                 repaintHandle.repaintArea(layer.getBounds());
                 ((PictureScene) getScene()).revalidate();
@@ -112,7 +113,6 @@ class OneLayerWidget extends Widget {
 
         @Override
         public void repaintArea(int x, int y, int w, int h) {
-            validated = false;
             revalidate();
             OneLayerWidget.this.repaint();
         }

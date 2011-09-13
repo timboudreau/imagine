@@ -11,11 +11,13 @@
  * Microsystems, Inc. All Rights Reserved.
  */
 package net.java.dev.imagine.layers.raster;
+
 import java.awt.AlphaComposite;
 import java.awt.Composite;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
@@ -31,98 +33,96 @@ import javax.swing.undo.UndoManager;
 import javax.swing.undo.UndoableEdit;
 import net.dev.java.imagine.api.selection.ShapeSelection;
 import net.java.dev.imagine.api.image.Hibernator;
-import net.java.dev.imagine.api.image.Picture;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.openide.util.Lookup;
-import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
 import org.openide.util.lookup.Lookups;
+
 public class RasterLayerImpl extends LayerImplementation implements Hibernator {
     //XXX class public only temporarily
+
     private final Rectangle bounds = new Rectangle();
     private String name;
-    private RasterSurfaceImpl surface;
+    private final RasterSurfaceImpl surface;
     private final ShapeSelection selection = new ShapeSelection();
+    private final PCL pcl = new PCL();
 
-    /** Creates a new instance of LayerImpl */
-    public RasterLayerImpl(LayerFactory factory, RepaintHandle handle, Dimension size, int index) {
-        super (factory);
-        addRepaintHandle (handle);
+    public RasterLayerImpl(LayerFactory factory, RasterLayerImpl copy, boolean isUserCopy) {
+        super(factory);
+        addRepaintHandle(copy.getMasterRepaintHandle());
+        bounds.setBounds(copy.getBounds());
+        if (isUserCopy) {
+            name = NbBundle.getMessage(RasterLayerImpl.class,
+                    "LBL_CopiedLayer", new Object[]{copy.getName()}); //NOI18N
+        } else {
+            name = copy.getName();
+        }
+        surface = new RasterSurfaceImpl(copy.surface(), isUserCopy, selection);
+        surface.addPropertyChangeListener(pcl);
+    }
+
+    public RasterLayerImpl(LayerFactory factory, RepaintHandle handle, Dimension size) {
+        super(factory);
         bounds.setSize(size);
-        name = NbBundle.getMessage (RasterLayerImpl.class,
-                "LBL_Layer", new Object[] { new Integer (index) }); //NOI18N
-
+        addRepaintHandle(handle);
+        name = NbBundle.getMessage(RasterLayerImpl.class,
+                "LBL_Layer", new Object[]{new Integer(0)}); //NOI18N
         surface = new RasterSurfaceImpl(getMasterRepaintHandle(), size, selection);
+        surface.addPropertyChangeListener(pcl);
     }
 
-    public RasterLayerImpl (LayerFactory factory, RasterLayerImpl copy,  boolean isUserCopy) {
-        super (factory);
-        addRepaintHandle (copy.getMasterRepaintHandle());
-        bounds.setBounds (copy.getBounds());
-	if (isUserCopy) {
-	    name = NbBundle.getMessage(RasterLayerImpl.class,
-		    "LBL_CopiedLayer", new Object[] { copy.getName() }); //NOI18N
-	} else {
-	    name = copy.getName();
-	}
-        surface = new RasterSurfaceImpl (copy.surface(), isUserCopy, selection);
-    }
-
-    public RasterLayerImpl (LayerFactory factory, Dimension size, RepaintHandle handle, Picture picture) {
-        super (factory);
-        bounds.setSize (size);
-        addRepaintHandle (handle);
-        surface = new RasterSurfaceImpl (size, handle, picture, selection);
-        name = NbBundle.getMessage (RasterLayerImpl.class,
-                "LBL_Layer", new Object[] { new Integer (0) }); //NOI18N
-    }
-    
-    public RasterLayerImpl (LayerFactory factory, RepaintHandle handle, Dimension size) {
-        super (factory);
-        bounds.setSize (size);
-        addRepaintHandle (handle);
-        surface = new RasterSurfaceImpl (getMasterRepaintHandle(), size, selection);
-        name = NbBundle.getMessage (RasterLayerImpl.class,
-                "LBL_Layer", new Object[] { new Integer (0) }); //NOI18N
-    }
-
-    public RasterLayerImpl (LayerFactory factory, RepaintHandle handle, BufferedImage img) {
-        super (factory);
+    public RasterLayerImpl(LayerFactory factory, RepaintHandle handle, BufferedImage img) {
+        super(factory);
         if (handle != null) {
-            addRepaintHandle (handle);
+            addRepaintHandle(handle);
         }
         bounds.width = img.getWidth();
         bounds.height = img.getHeight();
-        name = NbBundle.getMessage (RasterLayerImpl.class,
-                "LBL_Layer", new Object[] { new Integer (0) }); //NOI18N
-        surface = new RasterSurfaceImpl (getMasterRepaintHandle(), img, selection);
+        name = NbBundle.getMessage(RasterLayerImpl.class,
+                "LBL_Layer", new Object[]{new Integer(0)}); //NOI18N
+        surface = new RasterSurfaceImpl(getMasterRepaintHandle(), img, selection);
+        surface.addPropertyChangeListener(pcl);
     }
 
-    public LayerImplementation clone (boolean userCopy, boolean deepCopy) {
-        return new RasterLayerImpl (getLookup().lookup (LayerFactory.class), 
+    final class PCL implements PropertyChangeListener {
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            if (RasterSurfaceImpl.PROP_LOCATION.equals(evt.getPropertyName())) { //something is screwed up in property name
+                Point old = (Point) evt.getOldValue();
+                Point nue = (Point) evt.getNewValue();
+                surfaceLocationChanged(old, nue);
+            } else {
+                System.out.println("huh? " + evt);
+            }
+        }
+    }
+
+    public LayerImplementation clone(boolean userCopy, boolean deepCopy) {
+        return new RasterLayerImpl(getLookup().lookup(LayerFactory.class),
                 this, userCopy);
     }
-    
+
     void paintThumbnail(Graphics2D g, Rectangle bounds) {
-        surface.paint (g, bounds);
+        surface.paint(g, bounds);
     }
 
-    public boolean paint (Graphics2D g, Rectangle bounds, boolean showSelection) {
+    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection) {
         if (!visible) {
             return false;
         }
         if (bounds != null) {
-            return surface.paint (g, bounds);
+            return surface.paint(g, bounds);
         }
-	Composite comp = null;
-	if (opacity != 1.0f) {
-	    comp = (g).getComposite();
-	    (g).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-                                                         opacity));
-	}
+        Composite comp = null;
+        if (opacity != 1.0f) {
+            comp = (g).getComposite();
+            (g).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                    opacity));
+        }
         boolean result;
 //        if (bounds.x != 0 || bounds.y != 0) {
 //            g.translate (bounds.x, bounds.y);
@@ -131,18 +131,27 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
 //        } else {
 //            surface.paint(g, null);
 //        }
-        result = surface.paint (g, null);
-	if (opacity != 1.0f) {
-	    (g).setComposite(comp);
-	}
+        result = surface.paint(g, null);
+        if (opacity != 1.0f) {
+            (g).setComposite(comp);
+        }
         if (showSelection) {
             selection.paint(g);
         }
         return result;
     }
 
+    void surfaceLocationChanged(Point old, Point loc) {
+        Rectangle oldBounds = new Rectangle(old, bounds.getSize());
+        Rectangle newBounds = new Rectangle(loc, bounds.getSize());
+        System.out.println("Fire bounds change " + oldBounds + " " + newBounds);
+        fire(PROP_BOUNDS, oldBounds, newBounds);
+    }
+
     public Rectangle getBounds() {
-        return new Rectangle (bounds);
+        Rectangle result = new Rectangle(bounds);
+        result.setLocation(surface.getLocation());
+        return result;
     }
 
 //    public void setBounds(Rectangle r) {
@@ -153,7 +162,6 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
 //        }
 //        fire (PROP_BOUNDS, old, r);
 //    }
-
     public String getName() {
         return name;
     }
@@ -162,33 +170,32 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
         String old = this.name;
         if (!name.equals(this.name)) {
             this.name = name;
-            fire (PROP_NAME, old, name);
+            fire(PROP_NAME, old, name);
         }
     }
-
-    private List <PropertyChangeListener> 
-            listeners = Collections.<PropertyChangeListener>synchronizedList(
+    private List<PropertyChangeListener> listeners = Collections.<PropertyChangeListener>synchronizedList(
             new ArrayList<PropertyChangeListener>());
+
     public void addPropertyChangeListener(PropertyChangeListener l) {
-        listeners.add (l);
+        listeners.add(l);
     }
 
     public void removePropertyChangeListener(PropertyChangeListener l) {
-        listeners.remove (l);
+        listeners.remove(l);
     }
-
     private Object lastProp = null;
     private String lastPropertyName = null;
     private Object lastPropNewValue = null;
-    private void fire (String prop, Object old, Object nue) {
-        PropertyChangeListener[] l = (PropertyChangeListener[]) listeners.toArray (new PropertyChangeListener[0]);
+
+    private void fire(String prop, Object old, Object nue) {
+        PropertyChangeListener[] l = (PropertyChangeListener[]) listeners.toArray(new PropertyChangeListener[0]);
         if (lastProp == null || lastProp.getClass() != old.getClass()) {
             lastProp = old;
             lastPropertyName = prop;
         }
         lastPropNewValue = nue;
-        for (int i=0; i < l.length; i++) {
-            l[i].propertyChange(new PropertyChangeEvent (this, prop, old, nue));
+        for (int i = 0; i < l.length; i++) {
+            l[i].propertyChange(new PropertyChangeEvent(this, prop, old, nue));
         }
     }
 
@@ -199,12 +206,12 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
     public void repaintArea(int x, int y, int w, int h) {
         x -= bounds.x;
         y -= bounds.y;
-        bounds.width = Math.max (bounds.width, x + w);
-        bounds.height = Math.max (bounds.height, y + h);
-        getMasterRepaintHandle().repaintArea (x, y, w, h);
+        bounds.width = Math.max(bounds.width, x + w);
+        bounds.height = Math.max(bounds.height, y + h);
+        getMasterRepaintHandle().repaintArea(x, y, w, h);
     }
-
     private boolean visible = true;
+
     public void setVisible(boolean visible) {
         if (this.visible != visible) {
             this.visible = visible;
@@ -216,48 +223,43 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
     public boolean isVisible() {
         return visible;
     }
-
     private float opacity = 1.0f;
+
     public float getOpacity() {
         return opacity;
     }
 
     public void setOpacity(float f) {
         if (f != opacity) {
-            Float old = new Float (opacity);
+            Float old = new Float(opacity);
             this.opacity = f;
-            fire (PROP_OPACITY, old, new Float (f));
-	    getMasterRepaintHandle().repaintArea(bounds.x, bounds.y, bounds.width, bounds.height);
+            fire(PROP_OPACITY, old, new Float(f));
+            getMasterRepaintHandle().repaintArea(bounds.x, bounds.y, bounds.width, bounds.height);
         }
     }
-
     private boolean undoInProgress = false;
     private static final int OPACITY = 0;
     private static final int VISIBILITY = 1;
     private static final int NAME = 2;
     public static final String PROP_SIZE = "size";
-
-    private static final String[] props2ints = new String[] {
+    private static final String[] props2ints = new String[]{
         PROP_OPACITY, PROP_VISIBLE, PROP_NAME, PROP_BOUNDS, PROP_SIZE
     };
-    
-    private static final String[] locPropNames = new String[] {
-        NbBundle.getMessage (RasterSurfaceImpl.class, "OPACITY"),
-        NbBundle.getMessage (RasterSurfaceImpl.class, "VISIBILITY"),
-        NbBundle.getMessage (RasterSurfaceImpl.class, "NAME"),
-        NbBundle.getMessage (RasterSurfaceImpl.class, "BOUNDS"),
-        NbBundle.getMessage (RasterSurfaceImpl.class, "SIZE"),
-    };
+    private static final String[] locPropNames = new String[]{
+        NbBundle.getMessage(RasterSurfaceImpl.class, "OPACITY"),
+        NbBundle.getMessage(RasterSurfaceImpl.class, "VISIBILITY"),
+        NbBundle.getMessage(RasterSurfaceImpl.class, "NAME"),
+        NbBundle.getMessage(RasterSurfaceImpl.class, "BOUNDS"),
+        NbBundle.getMessage(RasterSurfaceImpl.class, "SIZE"),};
 
     public void commitLastPropertyChangeToUndoHistory() {
-        if (!undoInProgress && lastProp != null && lastPropNewValue != null &&
-                !lastProp.equals(lastPropNewValue)) {
-            int ix = Arrays.asList (props2ints).indexOf(lastPropertyName);
+        if (!undoInProgress && lastProp != null && lastPropNewValue != null
+                && !lastProp.equals(lastPropNewValue)) {
+            int ix = Arrays.asList(props2ints).indexOf(lastPropertyName);
             if (ix != -1) {
-                PropertyUndoableEdit ed = new PropertyUndoableEdit (ix,
+                PropertyUndoableEdit ed = new PropertyUndoableEdit(ix,
                         lastProp, lastPropNewValue);
-                UndoManager mgr = (UndoManager) 
-                        Utilities.actionsGlobalContext().lookup(UndoManager.class);
+                UndoManager mgr = (UndoManager) Utilities.actionsGlobalContext().lookup(UndoManager.class);
                 if (mgr != null) {
                     mgr.undoableEditHappened(new UndoableEditEvent(this, ed));
                 }
@@ -293,11 +295,13 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
     }
 
     private class PropertyUndoableEdit implements UndoableEdit {
+
         private final int type;
         private boolean isUndo = true;
         private final Object old;
         private final Object nue;
-        public PropertyUndoableEdit (int type, Object old, Object nue) {
+
+        public PropertyUndoableEdit(int type, Object old, Object nue) {
             this.type = type;
             this.old = old;
             this.nue = nue;
@@ -323,18 +327,18 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
             isUndo = true;
         }
 
-        private void setValueTo (Object val) {
+        private void setValueTo(Object val) {
             undoInProgress = true;
             try {
                 switch (type) {
-                    case OPACITY :
-                        setOpacity (((Float) val).floatValue());
+                    case OPACITY:
+                        setOpacity(((Float) val).floatValue());
                         break;
-                    case NAME :
-                        setName ((String) val);
+                    case NAME:
+                        setName((String) val);
                         break;
-                    case VISIBILITY :
-                        setVisible (((Boolean) val).booleanValue());
+                    case VISIBILITY:
+                        setVisible(((Boolean) val).booleanValue());
                         break;
                 }
             } finally {
@@ -362,7 +366,7 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
         }
 
         public String getPresentationName() {
-            return NbBundle.getMessage (getClass(), "LBL_Change", locPropNames[type]); //NOI18N
+            return NbBundle.getMessage(getClass(), "LBL_Change", locPropNames[type]); //NOI18N
         }
 
         public String getUndoPresentationName() {
@@ -376,6 +380,6 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
 
     @Override
     public void resize(int width, int height) {
-        surface.resize (width, height);
+        surface.resize(width, height);
     }
 }
