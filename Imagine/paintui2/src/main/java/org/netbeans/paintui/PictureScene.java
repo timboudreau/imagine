@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.netbeans.paintui;
 
 import java.awt.Color;
@@ -221,7 +217,7 @@ final class PictureScene extends Scene {
         private MouseEvent toMouseEvent(WidgetMouseEvent evt, int awtId) {
             Component source = getView();
             Point p = evt.getPoint();
-            
+
             if (!(activeTool instanceof NonPaintingTool)) {
                 Rectangle activeLayerBounds = picture.getActiveLayer().getBounds();
                 p.translate(-activeLayerBounds.x, -activeLayerBounds.y);
@@ -396,18 +392,29 @@ final class PictureScene extends Scene {
         public void requestRepaint() {
             if (picture.getActiveLayer() != null) {
                 Widget w = findWidget(picture.getActiveLayer());
-                w.revalidate(w instanceof OneLayerWidget);
+                w.repaint();
             }
-            validate();
-            repaint();
-            JComponent c = getView();
-            c.paintImmediately(0, 0, c.getWidth(), c.getHeight());
+//            validate();
+//            repaint();
+//            JComponent c = getView();
+//            c.paintImmediately(0, 0, c.getWidth(), c.getHeight());
         }
 
         @Override
         public void requestRepaint(Rectangle bounds) {
-            requestRepaint();
-            //XXX translate bounds and force the view to repaint
+            JComponent v = getScene().getView();
+            if (v != null) {
+                if (picture.getActiveLayer() != null) {
+                    Widget w = findWidget(picture.getActiveLayer());
+                    Rectangle r = w.convertLocalToScene(w.getBounds());
+                    r = convertSceneToView(bounds);
+                    v.repaint(r);
+                } else {
+                    getScene().repaint();
+                }
+            } else {
+                getScene().repaint();
+            }
         }
 
         @Override
@@ -431,10 +438,14 @@ final class PictureScene extends Scene {
                             RenderingHints.VALUE_RENDER_QUALITY);
                     g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
                             RenderingHints.VALUE_STROKE_PURE);
-                    PaintParticipant painter = get(activeTool, PaintParticipant.class);
+                    PaintParticipant painter = activeTool == null ? null :
+                            activeTool.getLookup().lookup(PaintParticipant.class);
+                    if (painter == null && activeTool instanceof PaintParticipant) {
+                        painter = (PaintParticipant) activeTool;
+                    }
                     if (painter != null) {
                         //XXX maybe not l.getBounds()?
-                        painter.paint(g, l.getBounds(), true);
+                        painter.paint(g, null, true);
                     }
                     surface.endUndoableOperation();
                     g.dispose();
@@ -452,13 +463,12 @@ final class PictureScene extends Scene {
 
         @Override
         public void repaintArea(int x, int y, int w, int h) {
-            //XXX find a way to do better at this
-            if (picture.getActiveLayer() != null) {
-                Widget wid = findWidget(picture.getActiveLayer());
-                wid.revalidate(wid instanceof OneLayerWidget);
+            JComponent v = getView();
+            if (v != null) {
+                Rectangle r = new Rectangle(x, y, w, h);
+                convertSceneToView(r);
+                v.repaint(r);
             }
-            validate();
-            repaint();
         }
 
         @Override
@@ -561,7 +571,8 @@ final class PictureScene extends Scene {
             l.addRepaintHandle(getMasterRepaintHandle());
             state.addLayer(ix, l);
             //XXX what is 1000 here?
-            getMasterRepaintHandle().repaintArea(0, 0, 1000, 1000);
+            Rectangle r = getScene().getBounds();
+            getMasterRepaintHandle().repaintArea(r.x, r.y, r.width, r.height);
             setActiveLayer(l);
         }
 

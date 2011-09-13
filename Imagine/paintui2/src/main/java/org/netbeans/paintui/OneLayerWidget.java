@@ -12,6 +12,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import javax.swing.JComponent;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
@@ -135,8 +136,8 @@ final class OneLayerWidget extends Widget {
                 getScene().getView().paintImmediately(new Rectangle(0,0, 2000,2000)); //XXX
             } else if (!Layer.PROP_NAME.equals(evt.getPropertyName())) {
                 repaintHandle.repaintArea(layer.getBounds());
-                ((PictureScene) getScene()).revalidate();
-                ((PictureScene) getScene()).getView().paintImmediately(new Rectangle(0, 0, 1000, 1000)); //XXX
+//                ((PictureScene) getScene()).revalidate();
+//                ((PictureScene) getScene()).getView().paintImmediately(new Rectangle(0, 0, 1000, 1000)); //XXX
             }
         }
     }
@@ -153,8 +154,16 @@ final class OneLayerWidget extends Widget {
 
         @Override
         public void repaintArea(int x, int y, int w, int h) {
-            revalidate();
-            OneLayerWidget.this.repaint();
+            JComponent v = getScene().getView();
+            if (v != null) {
+                Rectangle r = new Rectangle (x, y, w, h);
+                r = convertLocalToScene(r);
+                r = getScene().convertSceneToView(r);
+                v.repaint(r);
+            } else {
+                OneLayerWidget.this.repaint();
+            }
+            
         }
 
         @Override

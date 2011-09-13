@@ -13,7 +13,6 @@
 
 package org.netbeans.paintui;
 
-import org.netbeans.paintui.*;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -34,6 +33,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
+import javax.swing.JViewport;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -149,6 +149,7 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
         
         setLayout(new BorderLayout());
         JScrollPane pane = new JScrollPane(canvas.createView());
+        pane.getViewport().setScrollMode(JViewport.BLIT_SCROLL_MODE);
         pane.setBorder (BorderFactory.createEmptyBorder());
         pane.setViewportBorder (BorderFactory.createMatteBorder(1, 0, 0, 0,
                UIManager.getColor("controlShadow"))); //NOI18N

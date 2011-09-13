@@ -41,6 +41,7 @@ import org.openide.util.WeakSet;
 import org.openide.util.lookup.Lookups;
 
 /**
+ * A widget based layer which allows text items to be added and edited.
  *
  * @author Tim Boudreau
  */
