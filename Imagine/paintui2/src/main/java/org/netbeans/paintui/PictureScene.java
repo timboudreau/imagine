@@ -85,15 +85,16 @@ final class PictureScene extends Scene {
 
     public PictureScene(Dimension size, BackgroundStyle backgroundStyle) {
         picture = new PI(new RH(), size, backgroundStyle);
-        init();
+        init(size);
     }
 
     public PictureScene(BufferedImage img) {
         picture = new PI(new RH(), img);
-        init();
+        init(new Dimension(img.getWidth(), img.getHeight()));
     }
 
-    private void init() {
+    private void init(Dimension size) {
+        mainLayer.setPreferredBounds(new Rectangle(new Point(0,0), size));
         setBackground(CHECKERBOARD_BACKGROUND);
         syncLayers(picture.getLayers());
         mainLayer.setLayout(LayoutFactory.createAbsoluteLayout());
@@ -238,7 +239,8 @@ final class PictureScene extends Scene {
             setBackground(null);
             setZoomFactor(1.0D);
             setActiveTool((Tool) null);
-            paint(g);
+            validate();
+            paint(g); //XXX background still visible
         } finally {
             g.dispose();
             setActiveTool(oldTool);
@@ -536,6 +538,7 @@ final class PictureScene extends Scene {
 
         @Override
         public void sizeChanged(Dimension old, Dimension nue) {
+            mainLayer.setPreferredBounds(new Rectangle(0, 0, nue.width, nue.height));
             validate();
         }
     }

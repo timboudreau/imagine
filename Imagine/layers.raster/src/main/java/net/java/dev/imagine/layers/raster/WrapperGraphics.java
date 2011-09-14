@@ -340,6 +340,7 @@ class WrapperGraphics extends TrackingGraphics {
         int ht = Math.abs (y1 - y2);
         int x = Math.min (x1, x2);
         int y = Math.min (y1, y2);
+        //XXX this is not correct for a negative direction
         changed (x, y, wid, ht);
     }
 

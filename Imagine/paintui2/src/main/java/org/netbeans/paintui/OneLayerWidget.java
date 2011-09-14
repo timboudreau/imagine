@@ -8,7 +8,6 @@ import java.awt.AlphaComposite;
 import java.awt.Composite;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
