@@ -78,6 +78,7 @@ final class PictureScene extends Scene {
             "org/netbeans/paintui/resources/backgroundpattern.png")), //NOI18N
             new Rectangle(0, 0, 16, 16));
     private final Widget mainLayer = new LayerWidget(this);
+    private final SelectionWidget selectionLayer = new SelectionWidget();
 
     public PictureScene() {
         this(new Dimension(640, 480), BackgroundStyle.TRANSPARENT);
@@ -94,13 +95,14 @@ final class PictureScene extends Scene {
     }
 
     private void init(Dimension size) {
-        mainLayer.setPreferredBounds(new Rectangle(new Point(0,0), size));
+        mainLayer.setPreferredBounds(new Rectangle(new Point(0, 0), size));
         setBackground(CHECKERBOARD_BACKGROUND);
         syncLayers(picture.getLayers());
         mainLayer.setLayout(LayoutFactory.createAbsoluteLayout());
         mainLayer.setBorder(BorderFactory.createEmptyBorder());
         addChild(mainLayer);
         setBorder(BorderFactory.createEmptyBorder());
+        addChild(selectionLayer);
     }
 
     private static String getDefaultLayerName(int ix) {
@@ -196,7 +198,8 @@ final class PictureScene extends Scene {
             LayerImplementation l = picture.getActiveLayer();
             PaintParticipant participant = get(tool, PaintParticipant.class);
             if (participant != null) {
-                participant.attachRepainter(rp);
+                participant.attachRepainter(selectionLayer.rp);
+                
             }
             tool.activate(l.getLookup().lookup(Layer.class));
             SurfaceImplementation surf = l.getSurface();
@@ -249,6 +252,108 @@ final class PictureScene extends Scene {
             setZoomFactor(oldZoom);
         }
         return result;
+    }
+
+    private void selectionChange() {
+        selectionLayer.repaint();
+    }
+
+    private class SelectionWidget extends Widget {
+        private final Repainter rp = new RP();
+
+        SelectionWidget() {
+            super(PictureScene.this);
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintWidget() {
+            LayerImplementation layer = picture.getActiveLayer();
+            if (layer != null) {
+                Selection sel = picture.getActiveLayer().getLookup().lookup(Selection.class);
+                //XXX translate to layer coords?
+                if (sel != null) {
+                    System.out.println("paint selection");
+                    Graphics2D g = getGraphics();
+                    sel.paint(g);
+                }
+            }
+        }
+
+        @Override
+        protected boolean isRepaintRequiredForRevalidating() {
+            return true;
+        }
+        
+        class RP implements Repainter {
+
+            @Override
+            public void requestRepaint() {
+                if (picture.getActiveLayer() != null) {
+                    Widget w = findWidget(picture.getActiveLayer());
+                    PictureScene.this.repaint(w, w.getBounds());
+                }
+                if (activeTool instanceof NonPaintingTool) {
+                    validate();
+                    repaint();
+                }
+            }
+
+            @Override
+            public void requestRepaint(Rectangle bounds) {
+                if (bounds == null) {
+                    mainLayer.repaint();
+                    return;
+                }
+                if (picture.getActiveLayer() != null) {
+                    Widget w = findWidget(picture.getActiveLayer());
+                    PictureScene.this.repaint(w, bounds);
+                } else {
+                    getScene().repaint();
+                }
+            }
+
+            @Override
+            public void setCursor(Cursor cursor) {
+                PictureScene.this.setCursor(cursor);
+            }
+
+            @Override
+            public void requestCommit() {
+                LayerImplementation l = picture.getActiveLayer();
+                if (l != null) {
+                    SurfaceImplementation surface = l.getSurface();
+                    if (surface != null) {
+                        surface.beginUndoableOperation(activeTool.getName());
+                        Graphics2D g = surface.getGraphics();
+                        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                                RenderingHints.VALUE_ANTIALIAS_ON);
+                        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                        g.setRenderingHint(RenderingHints.KEY_RENDERING,
+                                RenderingHints.VALUE_RENDER_QUALITY);
+                        g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
+                                RenderingHints.VALUE_STROKE_PURE);
+                        PaintParticipant painter = activeTool == null ? null
+                                : activeTool.getLookup().lookup(PaintParticipant.class);
+                        if (painter == null && activeTool instanceof PaintParticipant) {
+                            painter = (PaintParticipant) activeTool;
+                        }
+                        if (painter != null) {
+                            //XXX maybe not l.getBounds()?
+                            painter.paint(g, null, true);
+                        }
+                        surface.endUndoableOperation();
+                        g.dispose();
+                    }
+                }
+            }
+
+            @Override
+            public Component getDialogParent() {
+                return getView();
+            }
+        }
     }
 
     private class ToolEventDispatchAction extends WidgetAction.Adapter {
@@ -429,77 +534,6 @@ final class PictureScene extends Scene {
             supp.removeChangeListener(cl);
         }
     }
-    private final Repainter rp = new RP();
-
-    class RP implements Repainter {
-
-        @Override
-        public void requestRepaint() {
-            if (picture.getActiveLayer() != null) {
-                Widget w = findWidget(picture.getActiveLayer());
-                repaint(w, w.getBounds());
-            }
-            if (activeTool instanceof NonPaintingTool) {
-                validate();
-                repaint();
-            }
-        }
-
-        @Override
-        public void requestRepaint(Rectangle bounds) {
-            if (bounds == null) {
-                mainLayer.repaint();
-                return;
-            }
-            if (picture.getActiveLayer() != null) {
-                Widget w = findWidget(picture.getActiveLayer());
-                repaint(w, bounds);
-            } else {
-                getScene().repaint();
-            }
-        }
-
-        @Override
-        public void setCursor(Cursor cursor) {
-            PictureScene.this.setCursor(cursor);
-        }
-
-        @Override
-        public void requestCommit() {
-            LayerImplementation l = picture.getActiveLayer();
-            if (l != null) {
-                SurfaceImplementation surface = l.getSurface();
-                if (surface != null) {
-                    surface.beginUndoableOperation(activeTool.getName());
-                    Graphics2D g = surface.getGraphics();
-                    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                            RenderingHints.VALUE_ANTIALIAS_ON);
-                    g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                    g.setRenderingHint(RenderingHints.KEY_RENDERING,
-                            RenderingHints.VALUE_RENDER_QUALITY);
-                    g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
-                            RenderingHints.VALUE_STROKE_PURE);
-                    PaintParticipant painter = activeTool == null ? null
-                            : activeTool.getLookup().lookup(PaintParticipant.class);
-                    if (painter == null && activeTool instanceof PaintParticipant) {
-                        painter = (PaintParticipant) activeTool;
-                    }
-                    if (painter != null) {
-                        //XXX maybe not l.getBounds()?
-                        painter.paint(g, null, true);
-                    }
-                    surface.endUndoableOperation();
-                    g.dispose();
-                }
-            }
-        }
-
-        @Override
-        public Component getDialogParent() {
-            return getView();
-        }
-    }
 
     class RH implements RepaintHandle {
 
@@ -634,12 +668,6 @@ final class PictureScene extends Scene {
             for (LayerImplementation l : state) {
                 result |= l.paint(g, r, showSelection);
             }
-            if (activeTool != null) {
-                PaintParticipant participant = get(activeTool, PaintParticipant.class);
-                if (participant != null) {
-                    participant.paint(g, getBounds(), false);
-                }
-            }
             return result;
         }
 
@@ -717,17 +745,6 @@ final class PictureScene extends Scene {
                 beginUndoableOperation(false, l == null ? NbBundle.getMessage(PI.class,
                         "MSG_CLEAR_ACTIVE_LAYER") : NbBundle.getMessage(PI.class,
                         "MSG_ACTIVATE_LAYER", l.getName()));
-                /*
-                try {
-                assert l == null || state.layers.contains(l);
-                //XXX shouldn't we fire after we set the field?
-                //                fire();
-                }
-                catch (RuntimeException re) {
-                cancelUndoableOperation();
-                throw re;
-                }
-                 */
                 LayerImplementation old = state.getActiveLayer();
                 state.setActiveLayer(l);
                 Selection oldSelection = old == null ? storedSelection : old.getLookup().lookup(Selection.class);

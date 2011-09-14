@@ -104,7 +104,7 @@ final class OneLayerWidget extends Widget {
             g.setComposite(comp);
         }
         try {
-            layer.paint(g, r, true);
+            layer.paint(g, r, false);
         } finally {
             if (old != null) {
                 g.setComposite(old);
