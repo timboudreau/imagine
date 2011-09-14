@@ -49,4 +49,12 @@ public class MoveTo extends LocationEntry {
     public int size() {
         return 3;
     }
+    
+    public int hashCode() {
+        return new Point2D.Double(x, y).hashCode() * 68023;
+    }
+    
+    public boolean equals(Object o) {
+        return o instanceof MoveTo && ((MoveTo) o).x == x && ((MoveTo)o).y == y;
+    }
 }

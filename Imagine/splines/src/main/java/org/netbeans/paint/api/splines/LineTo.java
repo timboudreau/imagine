@@ -3,7 +3,6 @@ package org.netbeans.paint.api.splines;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 
@@ -49,5 +48,15 @@ public class LineTo extends LocationEntry {
     
     public int size() {
         return 1;
+    }
+    
+    public int hashCode() {
+        return new Point2D.Double(x, y).hashCode() * 13063;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof LineTo && ((LineTo) obj).x == x && 
+                ((LineTo) obj).y == y;
     }
 }

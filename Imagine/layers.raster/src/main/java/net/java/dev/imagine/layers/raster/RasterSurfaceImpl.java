@@ -307,7 +307,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             regBounds = regBounds.intersection(new Rectangle(0, 0, img.getWidth(), img.getHeight()));
             BufferedImage nue = img.getSubimage(regBounds.x, regBounds.y, regBounds.width, regBounds.height);
             nue = op.filter(nue, null);
-            Graphics2D g = img.createGraphics();
+            Graphics2D g = nue.createGraphics();
             g.setClip(region);
             g.drawRenderedImage(nue, AffineTransform.getTranslateInstance(0, 0));
             repaintArea(regBounds);

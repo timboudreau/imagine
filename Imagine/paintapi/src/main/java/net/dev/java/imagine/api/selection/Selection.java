@@ -32,21 +32,35 @@ import org.openide.util.Utilities;
  * @author Tim Boudreau
  */
 public abstract class Selection<T> {
-    private final Class<T> type;
+    private final Class<? super T> type;
     public enum Op {
-        ADD, SUBTRACT, XOR, INTERSECT, REPLACE;
+        ADD(true), SUBTRACT(true), XOR(true), INTERSECT(true), REPLACE(true), CLEAR(false), INVERT(false);
+        
+        final boolean takesArgument;
+
+        private Op(boolean takesArgument) {
+            this.takesArgument = takesArgument;
+        }
+        
+        public boolean takesArgument() {
+            return takesArgument;
+        }
+        
         @Override
         public String toString() {
             return NbBundle.getMessage(Selection.class, name());
         }
-        
     };
+    
+    public abstract Selection<T> clone();
+    
+    public abstract boolean isEmpty();
     
     /**
      * Create a new selection object that operates on the given type.
      * @param type
      */
-    protected Selection (Class<T> type) {
+    protected Selection (Class<? super T> type) {
         this.type = type;
     }
         
@@ -56,7 +70,7 @@ public abstract class Selection<T> {
      * 
      * @return
      */
-    public final Class<T> type() {
+    public final Class<? super T> type() {
         return type;
     }
     
@@ -79,7 +93,13 @@ public abstract class Selection<T> {
      * Paint the selection.
      * @param g The graphics context
      */
-    public abstract void paint(Graphics2D g);
+    public abstract void paint(Graphics2D g, Rectangle bounds);
+    
+    public abstract void addShape(Shape shape, Op op);
+    
+    protected void onChange() {
+        
+    }
     /**
      * Hook method for a concrete implementation to shuffle an edit into the
      * undo stack for the application.  Implementations should create an
@@ -89,6 +109,7 @@ public abstract class Selection<T> {
      * @param edit
      */
     protected final void changed(UndoableEdit edit) {
+        onChange();
         UndoManager mgr = (UndoManager) 
             Utilities.actionsGlobalContext().lookup(UndoManager.class);
         if (mgr != null) {
@@ -106,7 +127,7 @@ public abstract class Selection<T> {
      * @param g The graphics context
      * @param content A shape
      */
-    public static void paintSelectionAsShape (Graphics2D g, Shape shape) {
+    public static void paintSelectionAsShape (Graphics2D g, Shape shape, Rectangle bounds) {
         Color fill = new Color (255, 255, 255, 120);
         Graphics2D g1 = (Graphics2D) g.create();
         g1.setColor (fill);
@@ -141,6 +162,8 @@ public abstract class Selection<T> {
     public abstract void clearNoUndo();
     
     public abstract void invert(Rectangle bds);
+    
+    public abstract boolean contains (T what);
     
     private Set<ChangeListener> listeners = Collections.synchronizedSet(new HashSet<ChangeListener>());
     public final void addChangeListener (ChangeListener l) {

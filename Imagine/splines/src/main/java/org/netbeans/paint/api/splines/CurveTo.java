@@ -83,6 +83,33 @@ public final class CurveTo extends LocationEntry {
         boolean result = toSet.getX() == getX() && toSet.getY() ==
                 getY();
         toSet.setLocation (loc);
+        nodes = null;
         return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final CurveTo other = (CurveTo) obj;
+        if (this.a != other.a && (this.a == null || !this.a.equals(other.a))) {
+            return false;
+        }
+        if (this.b != other.b && (this.b == null || !this.b.equals(other.b))) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 13063 * hash + (this.a != null ? this.a.hashCode() : 0);
+        hash = 13 * hash + (this.b != null ? this.b.hashCode() : 0);
+        return hash;
     }
 }

@@ -5,6 +5,7 @@
 package net.java.dev.imagine.layers.text.widget;
 
 import java.awt.AlphaComposite;
+import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -40,14 +41,14 @@ import org.openide.util.WeakListeners;
  * @author Tim Boudreau
  */
 final class TextWidget extends LabelWidget implements PropertyChangeListener, TextFieldInplaceEditor, MoveProvider, LookupListener {
+
     final Text text;
     private final Lookup.Result<TextItems> activeLayerResult = Utilities.actionsGlobalContext().lookupResult(TextItems.class);
     private final WidgetAction editAction = TextAreaInplaceEditorProvider.create(this);
     private final WidgetAction moveAction = ActionFactory.createMoveAction(ActionFactory.createFreeMoveStrategy(), this);
     private final TextLayer layer;
-    
-    //TODO: Modify TextWrapLabelUI to take a wrap char point parameter
 
+    //TODO: Modify TextWrapLabelUI to take a wrap char point parameter
     @SuppressWarnings(value = "LeakingThisInConstructor")
     TextWidget(TextLayer layer, Widget parent, Text text) {
         super(parent.getScene());
@@ -107,6 +108,11 @@ final class TextWidget extends LabelWidget implements PropertyChangeListener, Te
         } finally {
             g.setComposite(old);
         }
+        //XXX this will cause problems when saving as image
+        if (layer.isSelected(text)) {
+            g.setPaint(new Color(255, 220, 130, 128));
+            g.drawRect(0, 0, getBounds().width, getBounds().height);
+        }
     }
 
     @Override
@@ -161,5 +167,4 @@ final class TextWidget extends LabelWidget implements PropertyChangeListener, Te
         WidgetMouseEvent e = new WidgetMouseEvent(0, me);
         editAction.mouseClicked(this, e);
     }
-    
 }

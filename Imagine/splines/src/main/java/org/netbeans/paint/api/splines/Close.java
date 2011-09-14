@@ -1,7 +1,6 @@
 package org.netbeans.paint.api.splines;
 
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
@@ -25,7 +24,7 @@ public class Close implements Entry {
     }
 
     public boolean setPoint(int index, Point2D loc) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException("Meaningless");
     }
 
     public int size() {
@@ -34,5 +33,13 @@ public class Close implements Entry {
 
     public int hit(Point2D pt, int areaSize) {
         return 0;
+    }
+    
+    public boolean equals(Object o) {
+        return o instanceof Close;
+    }
+    
+    public int hashCode() {
+        return 17;
     }
 }

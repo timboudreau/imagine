@@ -10,11 +10,13 @@ import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.PathIterator;
+import java.awt.geom.Rectangle2D;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoableEdit;
 import net.dev.java.imagine.api.selection.Selection.Op;
 import org.openide.util.NbBundle;
+import org.openide.util.Parameters;
 /**
  * A selection involving shapes
  *
@@ -22,15 +24,22 @@ import org.openide.util.NbBundle;
  */
 public final class ShapeSelection extends Selection<Shape> {
     private Shape content = null;
+    private final Universe<Rectangle> universe;
     
-    public ShapeSelection() {
+    public ShapeSelection(Universe<Rectangle> universe) {
         super (Shape.class);
+        this.universe = universe;
     }
     
     @Override
     public void add(Shape toAdd, Op op) {
         Shape old = content;
         System.err.println("Add a " + toAdd.getClass() + " with " + op + " to " + this);
+        if (op == Op.CLEAR) {
+            assert toAdd == null;
+            content = null;
+            return;
+        }
         if (this.content == null || op == Op.REPLACE) {
             this.content = toAdd;
         } else {
@@ -48,6 +57,12 @@ public final class ShapeSelection extends Selection<Shape> {
                 case INTERSECT :
                     a.intersect(new Area(toAdd));
                     break;
+                case CLEAR :
+                    this.content = null;
+                    break;
+                case INVERT :
+                    invert(universe.getAll());
+                    break;
                 default :
                     throw new AssertionError();
             }
@@ -59,6 +74,17 @@ public final class ShapeSelection extends Selection<Shape> {
     @Override
     public Shape get() {
         return content;
+    }
+    
+    public boolean contains(Shape what) {
+        if (content == null) {
+            return false;
+        }
+        Area a = new Area(asArea());
+        Area a1 = what instanceof Area ? (Area) what : new Area(what);
+        a.intersect(a1);
+        Rectangle bds = a.getBounds();
+        return bds.width > 0 && bds.height > 0;
     }
     
     private Area asArea() {
@@ -87,10 +113,15 @@ public final class ShapeSelection extends Selection<Shape> {
     }
 
     @Override
-    public void paint(Graphics2D g) {
+    public void paint(Graphics2D g, Rectangle bounds) {
         if (content != null) {
-            paintSelectionAsShape (g, content);
+            paintSelectionAsShape (g, content, bounds);
         }
+    }
+
+    @Override
+    public void addShape(Shape shape, Op op) {
+        add(shape, op);
     }
     
     private static final class Ed implements UndoableEdit {
@@ -213,11 +244,34 @@ public final class ShapeSelection extends Selection<Shape> {
         }
         return sb.toString();
     }
+    
+    public Selection<Shape> clone() {
+        ShapeSelection result = new ShapeSelection(universe);
+        result.content = content;
+        return result;
+    }
 
     @Override
     public void translateFrom(Selection selection) {
-        content = selection.asShape();
+        Parameters.notNull("selection", selection);
+        Shape shape = null;
+        if (selection instanceof ObjectSelection<?>) {
+            ObjectSelection<?> objectSelection = (ObjectSelection<?>) selection;
+            shape = objectSelection.getStoredShape();
+        }
+        if (shape == null) {
+            shape = selection.asShape();
+        }
+        content = shape;
         selection.clearNoUndo();
+    }
+    
+    public boolean isEmpty() {
+        if (content == null) {
+            return true;
+        }
+        Rectangle2D r = content.getBounds2D();
+        return r.getWidth() == 0D || r.getHeight() == 0D;
     }
 
     @Override

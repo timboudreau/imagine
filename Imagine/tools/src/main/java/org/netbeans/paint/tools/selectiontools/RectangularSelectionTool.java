@@ -67,6 +67,10 @@ public class RectangularSelectionTool extends MouseDrivenTool implements PaintPa
     private void fire() {
         changes.fireChange();
     }
+    
+    public boolean canAttach (Layer layer) {
+        return layer.getLookup().lookup(Selection.class) != null;
+    }
 
     private MutableRectangle selection = null;
     private Point startingPoint = null;
@@ -109,10 +113,10 @@ public class RectangularSelectionTool extends MouseDrivenTool implements PaintPa
             op = Op.REPLACE;
         }
         Layer layer = this.getLayer();
-        Selection sel = layer.getLookup().lookup(Selection.class);
+        Selection<?> sel = layer.getLookup().lookup(Selection.class);
         if (sel != null) {
             if (selection != null) {
-                sel.add(selection, op);
+                sel.addShape(selection, op);
             } else {
                 sel.clear();
             }
@@ -167,7 +171,7 @@ public class RectangularSelectionTool extends MouseDrivenTool implements PaintPa
 
     public void paint(Graphics2D g2d, Rectangle layerBounds, boolean commit) {
         if (selection != null && !commit && startingPoint != null) {
-            Selection.paintSelectionAsShape(g2d, selection);
+            Selection.paintSelectionAsShape(g2d, selection, layerBounds);
         }
     }
 

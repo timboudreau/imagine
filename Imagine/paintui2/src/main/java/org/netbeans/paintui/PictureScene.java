@@ -31,9 +31,11 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
+import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.undo.UndoManager;
+import net.dev.java.imagine.api.selection.PictureSelection;
 import net.dev.java.imagine.api.selection.Selection;
 import net.dev.java.imagine.spi.tools.NonPaintingTool;
 import net.dev.java.imagine.spi.tools.PaintParticipant;
@@ -103,6 +105,7 @@ final class PictureScene extends Scene {
         addChild(mainLayer);
         setBorder(BorderFactory.createEmptyBorder());
         addChild(selectionLayer);
+        selectionLayer.attachToSelection();
     }
 
     private static String getDefaultLayerName(int ix) {
@@ -199,7 +202,7 @@ final class PictureScene extends Scene {
             PaintParticipant participant = get(tool, PaintParticipant.class);
             if (participant != null) {
                 participant.attachRepainter(selectionLayer.rp);
-                
+
             }
             tool.activate(l.getLookup().lookup(Layer.class));
             SurfaceImplementation surf = l.getSurface();
@@ -258,24 +261,44 @@ final class PictureScene extends Scene {
         selectionLayer.repaint();
     }
 
-    private class SelectionWidget extends Widget {
+    private class SelectionWidget extends Widget implements ChangeListener {
+
         private final Repainter rp = new RP();
 
         SelectionWidget() {
             super(PictureScene.this);
             setOpaque(false);
         }
+        
+        void attachToSelection() {
+            picture.getSelection().addChangeListener(new ChangeListener() {
+
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    System.out.println("change from picture selection " + picture.getSelection());
+                    repaint();
+                }
+                
+            });
+        }
 
         @Override
         protected void paintWidget() {
             LayerImplementation layer = picture.getActiveLayer();
-            if (layer != null) {
-                Selection sel = picture.getActiveLayer().getLookup().lookup(Selection.class);
-                //XXX translate to layer coords?
-                if (sel != null) {
-                    System.out.println("paint selection");
-                    Graphics2D g = getGraphics();
-                    sel.paint(g);
+            PictureSelection s = picture.getSelection();
+//                Selection sel = picture.getActiveLayer().getLookup().lookup(Selection.class);
+//                //XXX translate to layer coords?
+//                if (sel != null) {
+//                    System.out.println("paint selection");
+//                    Graphics2D g = getGraphics();
+//                    sel.paint(g);
+//                }
+            Graphics2D g = getGraphics();
+            s.paint(getGraphics(), PictureScene.this.getBounds());
+            if (activeTool != null && layer != null) {
+                PaintParticipant p = get(activeTool, PaintParticipant.class);
+                if (p != null) {
+                    p.paint(g, layer.getBounds(), false);
                 }
             }
         }
@@ -284,7 +307,12 @@ final class PictureScene extends Scene {
         protected boolean isRepaintRequiredForRevalidating() {
             return true;
         }
-        
+
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            repaint();
+        }
+
         class RP implements Repainter {
 
             @Override
@@ -568,6 +596,9 @@ final class PictureScene extends Scene {
             if (newW != null) {
                 newW.getActions().addAction(toolAction);
             }
+            if (picture != null && picture.psel != null) {
+                picture.psel.activeLayerChanged(old, nue);
+            }
         }
 
         @Override
@@ -581,7 +612,7 @@ final class PictureScene extends Scene {
 
         private ChangeSupport changes = new ChangeSupport(this);
         private boolean pendingChange = false;
-        private Selection storedSelection;
+//        private Selection storedSelection;
         private LayersUndoableOperation currentOp = null;
         private int undoEntryCount = 0;
         private boolean hibernated = false;
@@ -614,6 +645,9 @@ final class PictureScene extends Scene {
                     g.dispose();
                 }
             }
+            if (state.getActiveLayer() != null) {
+                psel.activeLayerChanged(null, state.getActiveLayer());
+            }
         }
 
         public PI(RepaintHandle handle, BufferedImage img) {
@@ -624,6 +658,9 @@ final class PictureScene extends Scene {
             } catch (NullPointerException e) {
             } finally {
                 g.dispose();
+            }
+            if (state.getActiveLayer() != null) {
+                psel.activeLayerChanged(null, state.getActiveLayer());
             }
         }
 
@@ -739,29 +776,37 @@ final class PictureScene extends Scene {
         LayerImplementation activeLayer() {
             return getActiveLayer();
         }
+        private final PictureSelection psel = new PictureSelection();
+
+        PictureSelection getSelection() {
+            return psel;
+        }
 
         public void setActiveLayer(LayerImplementation l) {
             if (l != state.getActiveLayer()) {
                 beginUndoableOperation(false, l == null ? NbBundle.getMessage(PI.class,
                         "MSG_CLEAR_ACTIVE_LAYER") : NbBundle.getMessage(PI.class,
                         "MSG_ACTIVATE_LAYER", l.getName()));
-                LayerImplementation old = state.getActiveLayer();
+//                LayerImplementation old = state.getActiveLayer();
                 state.setActiveLayer(l);
+                /*
                 Selection oldSelection = old == null ? storedSelection : old.getLookup().lookup(Selection.class);
                 if (oldSelection != null) {
-                    Selection newSelection = l == null ? null : l.getLookup().lookup(Selection.class);
-                    if (newSelection != null) {
-                        newSelection.translateFrom(oldSelection);
-                        oldSelection.clearNoUndo();
-                        storedSelection = null;
-                    } else {
-                        storedSelection = oldSelection;
-                    }
+                Selection newSelection = l == null ? null : l.getLookup().lookup(Selection.class);
+                if (newSelection != null) {
+                newSelection.translateFrom(oldSelection);
+                oldSelection.clearNoUndo();
+                storedSelection = null;
+                } else {
+                storedSelection = oldSelection;
                 }
+                }
+                 */
                 endUndoableOperation();
                 fire();
             }
         }
+        int layerCount = 0;
 
         public LayerImplementation add(int index) {
             beginUndoableOperation(false, NbBundle.getMessage(PI.class,
@@ -783,7 +828,7 @@ final class PictureScene extends Scene {
             LayerImplementation result;
 
             try {
-                result = factory.createLayer("foo", getMasterRepaintHandle(), //XXX
+                result = factory.createLayer("Layer " + ++layerCount, getMasterRepaintHandle(), //XXX
                         state.getSize());
                 if (index == POSITION_TOP) {
                     state.addLayer(result);

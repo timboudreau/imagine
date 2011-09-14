@@ -10,7 +10,6 @@
  * Code is Sun Microsystems, Inc. Portions Copyright 1997-2005 Sun
  * Microsystems, Inc. All Rights Reserved.
  */
-
 package org.netbeans.paint.tools.selectiontools;
 
 import java.awt.Graphics2D;
@@ -33,57 +32,57 @@ import org.openide.util.NbBundle;
  * @author Timothy Boudreau
  */
 public class OvalSelectionTool extends MouseDrivenTool implements PaintParticipant {
-    
+
     /** Creates a new instance of OvalSelectionTool */
     public OvalSelectionTool() {
-        super ( "org/netbeans/paint/tools/resources/roundselection.png", 
-                NbBundle.getMessage(OvalSelectionTool.class, 
-		"NAME_OvalSelectionTool"));   //XXX
+        super("org/netbeans/paint/tools/resources/roundselection.png",
+                NbBundle.getMessage(OvalSelectionTool.class,
+                "NAME_OvalSelectionTool"));   //XXX
     }
-
     private Ellipse2D.Double shape = null;
+
     protected void dragged(Point p, int modifiers) {
-	if (shape == null && !p.equals(startPoint)) {
-	    shape = new Ellipse2D.Double();
-	}
-	if (shape != null) {
-	    if (startPoint != null) {
-		shape.setFrame(startPoint.x, startPoint.y, p.x - 
-			startPoint.x, p.y - startPoint.y);
-		fire();
-	    }
-	}
+        if (shape == null && !p.equals(startPoint)) {
+            shape = new Ellipse2D.Double();
+        }
+        if (shape != null) {
+            if (startPoint != null) {
+                shape.setFrame(startPoint.x, startPoint.y, p.x
+                        - startPoint.x, p.y - startPoint.y);
+                fire();
+            }
+        }
         repainter.requestRepaint(null); //XXX bounds
     }
 
     public Shape getSelection() {
-	return shape;
+        return shape;
     }
-
     private ChangeSupport changes = new ChangeSupport(this);
+
     @Override
     public void addChangeListener(ChangeListener cl) {
-	changes.addChangeListener(cl);
+        changes.addChangeListener(cl);
     }
 
     @Override
     public void removeChangeListener(ChangeListener cl) {
-	changes.removeChangeListener(cl);
+        changes.removeChangeListener(cl);
     }
-    
+
     private void fire() {
-	changes.fireChange();
+        changes.fireChange();
     }
 
     public void clear() {
-	shape = null;
-	fire();
+        shape = null;
+        fire();
     }
-
     private Point startPoint = null;
+
     @Override
     protected void beginOperation(Point p, int modifiers) {
-	startPoint = p;
+        startPoint = p;
     }
 
     @Override
@@ -105,7 +104,7 @@ public class OvalSelectionTool extends MouseDrivenTool implements PaintParticipa
         Selection sel = layer.getLookup().lookup(Selection.class);
         if (sel != null) {
             if (shape != null) {
-                sel.add(shape, op);
+                sel.addShape(shape, op);
             } else {
                 sel.clear();
             }
@@ -119,8 +118,11 @@ public class OvalSelectionTool extends MouseDrivenTool implements PaintParticipa
 
     public void paint(Graphics2D g2d, Rectangle layerBounds, boolean commit) {
         if (shape != null && startPoint != null && !commit) {
-            Selection.paintSelectionAsShape(g2d, shape);
+            Selection.paintSelectionAsShape(g2d, shape, layerBounds);
         }
     }
 
+    public boolean canAttach(Layer layer) {
+        return layer.getLookup().lookup(Selection.class) != null;
+    }
 }

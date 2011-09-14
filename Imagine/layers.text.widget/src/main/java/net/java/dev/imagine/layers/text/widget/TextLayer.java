@@ -6,10 +6,14 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,6 +25,9 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import net.dev.java.imagine.api.selection.ObjectSelection;
+import net.dev.java.imagine.api.selection.ShapeConverter;
+import net.dev.java.imagine.api.selection.Universe;
 import net.dev.java.imagine.spi.tools.Customizer;
 import net.dev.java.imagine.spi.tools.CustomizerProvider;
 import net.java.dev.imagine.api.image.Layer;
@@ -57,6 +64,7 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
     TextItemsSupport.Editor editor = new Ed();
     private final TextItems items = new TextItemsSupport(editor);
     private final Set<WF> factories = new WeakSet<WF>();
+    private final ObjectSelection<Text> selection = new ObjectSelection<Text>(Text.class, new S(), new S());
 
     public TextLayer(TextLayerFactory factory, String name, RepaintHandle handle, Dimension size) {
         super(factory);
@@ -72,6 +80,45 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
         this.state = state.clone();
         addRepaintHandle(handle);
         System.out.println("created a text layer");
+    }
+    
+    public ObjectSelection<Text> getSelection() {
+        return selection;
+    }
+    
+    public boolean isSelected(Text text) {
+        return selection.contains(Collections.singleton(text));
+    }
+    
+    private class S implements ShapeConverter<Text>, Universe<Collection<Text>> {
+
+        @Override
+        public Class<Text> type() {
+            return Text.class;
+        }
+
+        @Override
+        public Shape toShape(Text obj) {
+            for (WF wf : factories) {
+                if (wf != null) {
+                    TextWidget w = wf.find(obj);
+                    if (w != null && w.getBounds() != null) {
+                        return w.convertLocalToScene(w.getBounds());
+                    }
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public Collection<Text> getAll() {
+            Set<Text> result = new HashSet<Text>();
+            for (Text t : items) {
+                result.add(t);
+            }
+            return result;
+        }
+        
     }
 
     private class Ed implements TextItemsSupport.Editor {
@@ -107,7 +154,7 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
 
     @Override
     protected Lookup createLookup() {
-        return Lookups.fixed(this, wl, items, new CP());
+        return Lookups.fixed(this, wl, items, new CP(), selection);
     }
     private final WL wl = new WL();
 

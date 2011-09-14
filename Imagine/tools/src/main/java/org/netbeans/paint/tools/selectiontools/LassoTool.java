@@ -172,18 +172,17 @@ public class LassoTool extends MouseAdapter implements Tool, PaintParticipant, K
     }
 
     public boolean canAttach(Layer layer) {
-        return layer.getLookup().lookup(Selection.class) != null &&
-                layer.getLookup().lookup(Selection.class).type() == Shape.class;
+        return layer.getLookup().lookup(Selection.class) != null;
     }
 
     public void attachRepainter(Repainter repainter) {
         this.repainter = repainter;
         repainter.requestRepaint();
     }
-
+    
     public void paint(Graphics2D g2d, Rectangle layerBounds, boolean commit) {
         if (mdl != null && !commit) {
-            Selection.paintSelectionAsShape(g2d, mdl);
+            Selection.paintSelectionAsShape(g2d, mdl, layerBounds);
             Node hitNode = hit == null ? null : hit.getNode();
             if (hitNode != null) {
                 hitNode.paint(g2d, true);

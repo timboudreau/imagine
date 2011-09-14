@@ -32,6 +32,7 @@ import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoManager;
 import javax.swing.undo.UndoableEdit;
 import net.dev.java.imagine.api.selection.ShapeSelection;
+import net.dev.java.imagine.api.selection.Universe;
 import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
@@ -47,7 +48,7 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
     private final Rectangle bounds = new Rectangle();
     private String name;
     private final RasterSurfaceImpl surface;
-    private final ShapeSelection selection = new ShapeSelection();
+    private final ShapeSelection selection = new ShapeSelection(new UV());
     private final PCL pcl = new PCL();
 
     public RasterLayerImpl(LayerFactory factory, RasterLayerImpl copy, boolean isUserCopy) {
@@ -85,6 +86,13 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
                 "LBL_Layer", new Object[]{new Integer(0)}); //NOI18N
         surface = new RasterSurfaceImpl(getMasterRepaintHandle(), img, selection);
         surface.addPropertyChangeListener(pcl);
+    }
+    
+    class UV implements Universe<Rectangle> {
+        @Override
+        public Rectangle getAll() {
+            return new Rectangle (getBounds());
+        }
     }
 
     final class PCL implements PropertyChangeListener {
@@ -136,7 +144,7 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
             (g).setComposite(comp);
         }
         if (showSelection) {
-            selection.paint(g);
+            selection.paint(g, bounds);
         }
         return result;
     }

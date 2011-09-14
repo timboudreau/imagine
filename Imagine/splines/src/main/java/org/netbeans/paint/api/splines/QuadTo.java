@@ -79,4 +79,19 @@ public final class QuadTo extends LocationEntry{
     public int size() {
         return 2;
     }
+    
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if (!(o instanceof QuadTo)) return false;
+        QuadTo q = (QuadTo) o;
+        return q.p.equals(p) && this.x == p.x && this.y == p.y;
+    }
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 101833 * hash + this.p.hashCode();
+        hash = 78511 * hash + java.lang.Double.valueOf(this.x).hashCode();
+        hash = 13063 * hash + java.lang.Double.valueOf(this.y).hashCode();
+        return hash;
+    }    
 }
