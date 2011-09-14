@@ -124,6 +124,7 @@
             <artifactId>toolconfigurationui</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- remove this dependency when using paintui not paintui2 -->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>layers.text.widget</artifactId>

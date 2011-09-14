@@ -10,7 +10,9 @@ import org.openide.util.Lookup;
 import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
 import org.openide.util.Utilities;
+import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
+import org.openide.windows.WindowManager;
 
 /**
  *
@@ -19,7 +21,7 @@ import org.openide.windows.TopComponent;
 @TopComponent.Description(preferredID = "LayerCustomizerTopComponent",
 //iconBase="SET/PATH/TO/ICON/HERE", 
 persistenceType = TopComponent.PERSISTENCE_ALWAYS)
-@TopComponent.Registration(mode = "explorer", openAtStartup = false)
+@TopComponent.Registration(mode = "layerCustomizerMode", openAtStartup = true)
 @ActionID(category = "Window", id = "org.netbeans.paint.layersui.LayerCustomizerTopComponent")
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
 @TopComponent.OpenActionRegistration(displayName = "#CTL_LayersCustomizerAction",
@@ -36,6 +38,19 @@ public class LayerCustomizerTopComponent extends TopComponent {
         setLayout(new BorderLayout());
     }
 
+    public String preferredID() {
+        return getClass().getSimpleName();
+    }
+
+    public void open() {
+        //XXX fix the metadata
+        Mode m = WindowManager.getDefault().findMode("layerCustomizerMode");
+        if (m != null) {
+            m.dockInto(this);
+        }
+        super.open();
+    }
+
     private void setCustomizer(Customizer<?> c) {
         setDisplayName(c.getName());
         removeAll();
@@ -47,6 +62,12 @@ public class LayerCustomizerTopComponent extends TopComponent {
         invalidate();
         revalidate();
         repaint();
+    }
+
+    @Override
+    protected void componentClosed() {
+        removeAll();
+        super.componentClosed();
     }
 
     private final class LL implements LookupListener {

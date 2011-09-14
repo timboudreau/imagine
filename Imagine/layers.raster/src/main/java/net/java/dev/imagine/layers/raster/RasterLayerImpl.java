@@ -51,7 +51,7 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
     private final PCL pcl = new PCL();
 
     public RasterLayerImpl(LayerFactory factory, RasterLayerImpl copy, boolean isUserCopy) {
-        super(factory);
+        super(factory, false);
         addRepaintHandle(copy.getMasterRepaintHandle());
         bounds.setBounds(copy.getBounds());
         if (isUserCopy) {
@@ -65,7 +65,7 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
     }
 
     public RasterLayerImpl(LayerFactory factory, RepaintHandle handle, Dimension size) {
-        super(factory);
+        super(factory, false);
         bounds.setSize(size);
         addRepaintHandle(handle);
         name = NbBundle.getMessage(RasterLayerImpl.class,
@@ -75,7 +75,7 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
     }
 
     public RasterLayerImpl(LayerFactory factory, RepaintHandle handle, BufferedImage img) {
-        super(factory);
+        super(factory, false);
         if (handle != null) {
             addRepaintHandle(handle);
         }
@@ -144,7 +144,6 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
     void surfaceLocationChanged(Point old, Point loc) {
         Rectangle oldBounds = new Rectangle(old, bounds.getSize());
         Rectangle newBounds = new Rectangle(loc, bounds.getSize());
-        System.out.println("Fire bounds change " + oldBounds + " " + newBounds);
         fire(PROP_BOUNDS, oldBounds, newBounds);
     }
 

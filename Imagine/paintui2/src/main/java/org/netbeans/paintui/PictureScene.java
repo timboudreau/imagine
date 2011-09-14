@@ -6,6 +6,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
@@ -145,8 +146,10 @@ final class PictureScene extends Scene {
         }
     }
     private final WidgetAction toolAction = new ToolEventDispatchAction();
+    private boolean hasResolutionDependentLayers;
 
     public void syncLayers(List<LayerImplementation> layers) {
+        hasResolutionDependentLayers = false;
         //make thsi more efficient later
         List<Widget> widgets = new ArrayList<Widget>();
         for (Widget w : getChildren()) {
@@ -155,6 +158,7 @@ final class PictureScene extends Scene {
             }
         }
         for (LayerImplementation layer : layers) {
+            hasResolutionDependentLayers |= !layer.isResolutionIndependent();
             Widget w = findWidget(layer);
             if (w == null) {
                 w = createWidget(layer);
@@ -223,9 +227,25 @@ final class PictureScene extends Scene {
         Dimension d = picture.getSize();
         BufferedImage result = new BufferedImage(d.width, d.height,
                 GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
+
+        double oldZoom = getZoomFactor();
+        Tool oldTool = activeTool;
+        Paint background = getBackground();
+        boolean oldOpaque = isOpaque();
         Graphics2D g = result.createGraphics();
-        paint(g);
-        g.dispose();
+        try {
+            setOpaque(false);
+            setBackground(null);
+            setZoomFactor(1.0D);
+            setActiveTool((Tool) null);
+            paint(g);
+        } finally {
+            g.dispose();
+            setActiveTool(oldTool);
+            setBackground(background);
+            setOpaque(oldOpaque);
+            setZoomFactor(oldZoom);
+        }
         return result;
     }
 
@@ -429,7 +449,6 @@ final class PictureScene extends Scene {
                 mainLayer.repaint();
                 return;
             }
-            JComponent v = getScene().getView();
             if (picture.getActiveLayer() != null) {
                 Widget w = findWidget(picture.getActiveLayer());
                 repaint(w, bounds);
@@ -484,12 +503,7 @@ final class PictureScene extends Scene {
 
         @Override
         public void repaintArea(int x, int y, int w, int h) {
-            JComponent v = getView();
-            if (v != null) {
-                Rectangle r = new Rectangle(x, y, w, h);
-                convertSceneToView(r);
-                v.repaint(r);
-            }
+            repaint(mainLayer, new Rectangle(x, y, w, h));
         }
 
         @Override

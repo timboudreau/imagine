@@ -18,6 +18,13 @@ import org.openide.util.Parameters;
  */
 public interface Text {
 
+    public static final String PROP_FONT = "font";
+    public static final String PROP_TEXT = "text";
+    public static final String PROP_LEADING = "leading";
+    public static final String PROP_LOCATION = "location";
+    public static final String PROP_TRANSFORM = "transform";
+    public static final String PROP_BACKGROUND = "background";
+
     void setText(String text);
 
     void setLocation(Point location);
@@ -86,7 +93,12 @@ public interface Text {
         }
 
         public final void setFont(Font font) {
-            this.font = font;
+            Parameters.notNull("font", font);
+            if (!font.equals(this.font)) {
+                Font old = this.font;
+                this.font = font;
+                fire(PROP_FONT, old, font);
+            }
         }
 
         public final double getLeading() {
@@ -94,7 +106,11 @@ public interface Text {
         }
 
         public final void setLeading(double leading) {
-            this.leading = leading;
+            if (leading != this.leading) {
+                double old = this.leading;
+                this.leading = leading;
+                fire(PROP_LEADING, old, leading);
+            }
         }
 
         public final Point getLocation() {
@@ -103,7 +119,11 @@ public interface Text {
 
         public final void setLocation(Point location) {
             Parameters.notNull("location", location);
-            this.location.setLocation(location);
+            if (!location.equals(this.location)) {
+                Point old = new Point(this.location);
+                this.location.setLocation(location);
+                fire(PROP_LOCATION, old, location);
+            }
         }
 
         public final String getText() {
@@ -112,7 +132,11 @@ public interface Text {
 
         public final void setText(String text) {
             Parameters.notNull("text", text);
-            this.text = text;
+            if (!text.equals(this.text)) {
+                String old = this.text;
+                this.text = text;
+                fire(PROP_TEXT, old, text);
+            }
         }
 
         public final AffineTransform getTransform() {
@@ -121,7 +145,11 @@ public interface Text {
 
         public final void setTransform(AffineTransform transform) {
             Parameters.notNull("transform", transform);
-            this.transform = transform;
+            if (!this.transform.equals(transform)) {
+                AffineTransform old = this.transform;
+                this.transform = transform;
+                fire(PROP_TRANSFORM, old, transform);
+            }
         }
 
         public final synchronized void removePropertyChangeListener(PropertyChangeListener listener) {
@@ -138,6 +166,7 @@ public interface Text {
 
         @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
         public final boolean equals(Object o) {
+            //should always be an identity check
             return super.equals(o);
         }
 

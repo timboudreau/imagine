@@ -20,6 +20,7 @@ import org.netbeans.api.visual.action.InplaceEditorProvider.EditorController;
 import org.netbeans.api.visual.action.InplaceEditorProvider.ExpansionDirection;
 import org.netbeans.api.visual.action.TextFieldInplaceEditor;
 import org.netbeans.api.visual.action.WidgetAction;
+import org.netbeans.api.visual.widget.LabelWidget;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
 
@@ -41,9 +42,7 @@ public class TextAreaInplaceEditorProvider implements InplaceEditorProvider<JTex
     }
 
     static WidgetAction create(TextFieldInplaceEditor editor) {
-//        return ActionFactory.createInplaceEditorAction(new TextAreaInplaceEditorProvider(editor, EnumSet.of(ExpansionDirection.RIGHT, ExpansionDirection.BOTTOM)));
         return ActionFactory.createInplaceEditorAction(new TextAreaInplaceEditorProvider(editor, EnumSet.of(ExpansionDirection.BOTTOM)));
-//        return new IAE(new TextAreaInplaceEditorProvider(editor, EnumSet.of(ExpansionDirection.BOTTOM)));
     }
 
     public JTextArea createEditorComponent(EditorController controller, Widget widget) {
@@ -73,8 +72,6 @@ public class TextAreaInplaceEditorProvider implements InplaceEditorProvider<JTex
     public void notifyOpened(final EditorController controller, Widget widget, JTextArea area) {
         area.setMinimumSize(widget.getPreferredSize());
         area.setFont(widget.getFont());
-        
-        
 
         Scene scene = widget.getScene();
         double zoomFactor = scene.getZoomFactor();
@@ -140,12 +137,13 @@ public class TextAreaInplaceEditorProvider implements InplaceEditorProvider<JTex
 
     public Rectangle getInitialEditorComponentBounds(EditorController controller, Widget widget, JTextArea editor, Rectangle viewBounds) {
         Rectangle widgetBoundsInView = widget.getScene().convertSceneToView(widget.convertLocalToScene(widget.getBounds()));
-        //We have a 20 column editor, so make sure our initial size accomodates 20 chars
-        //(will vary due to proportional fonts, so just pick a wide character).
-        String prototype = "OOOOOOOOOOOOOOOOOOOOOOO";
-        int twentyCharsWidth = editor.getFontMetrics(editor.getFont()).stringWidth(prototype) + editor.getInsets().left + editor.getInsets().right;
-        twentyCharsWidth *= widget.getScene().getZoomFactor();
-        widgetBoundsInView.width = Math.max(widgetBoundsInView.width, twentyCharsWidth);
+        String prototype = widget instanceof LabelWidget ? ((LabelWidget) widget).getLabel() : null;
+        if (prototype == null || prototype.length() < 10) {
+            prototype = "000000000";
+        }
+        int protoWidth = editor.getFontMetrics(editor.getFont()).stringWidth(prototype) + editor.getInsets().left + editor.getInsets().right;
+        protoWidth *= widget.getScene().getZoomFactor();
+        widgetBoundsInView.width = Math.max(widgetBoundsInView.width, protoWidth);
         return widgetBoundsInView;
     }
 

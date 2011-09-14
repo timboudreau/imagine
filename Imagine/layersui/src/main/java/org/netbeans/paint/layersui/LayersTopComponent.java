@@ -64,6 +64,7 @@ import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
+import org.openide.util.lookup.Lookups;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
@@ -75,7 +76,7 @@ import org.openide.windows.WindowManager;
 @TopComponent.Description(preferredID = "LayersTopComponent",
 //iconBase="SET/PATH/TO/ICON/HERE", 
 persistenceType = TopComponent.PERSISTENCE_ALWAYS)
-@TopComponent.Registration(mode = "properties", openAtStartup = true)
+@TopComponent.Registration(mode = "layersMode", openAtStartup = true)
 @ActionID(category = "Window", id = "org.netbeans.paint.layersui.LayersTopComponent")
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
 @TopComponent.OpenActionRegistration(displayName = "#CTL_LayersAction",
@@ -171,6 +172,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         associateLookup(lkp);
         // Show the empty label
         updateContents();
+        
     }
     private static final String NAME_NEW = "new";
     private static final String NAME_DELETE = "delete";
@@ -178,7 +180,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
     private static final String NAME_DOWN = "down";
     private static final String NAME_DUP = "dup";
     private static final String NAME_FLATTEN = "flatten";
-
+    
     @Override
     public void open() {
         Mode m = WindowManager.getDefault().findMode("layers");
@@ -221,6 +223,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         return instance;
     }
 
+    
  
     Result pictureLookupResult = null;
 
@@ -467,7 +470,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         private final JSlider opacity;
         private final Thumbnail thumbnail;
 
-        public LayerPanel(Layer layer) {
+        public LayerPanel(final Layer layer) {
             this.layer = layer;
             add(thumbnail = new Thumbnail());
             box = new JCheckBox();

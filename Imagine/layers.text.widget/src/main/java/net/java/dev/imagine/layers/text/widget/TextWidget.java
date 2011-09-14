@@ -79,6 +79,9 @@ final class TextWidget extends LabelWidget implements PropertyChangeListener, Te
         setLabel(text.getText());
         setPreferredLocation(text.getLocation());
         revalidate();
+        if (Text.PROP_FONT.equals(evt.getPropertyName())) {
+            getScene().validate();
+        }
     }
 
     @Override

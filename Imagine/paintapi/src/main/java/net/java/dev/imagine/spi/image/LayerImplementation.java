@@ -58,9 +58,9 @@ public abstract class LayerImplementation<T extends LayerFactory> {
 
     protected final Layer layer;
     private final T factory;
+    private final boolean resolutionIndependent;
     protected LayerImplementation(T factory) {
-        layer = Accessor.DEFAULT.createLayer(this);
-        this.factory = factory;
+        this(factory, true);
     }
     
     protected final T getFactory() {
@@ -97,6 +97,12 @@ public abstract class LayerImplementation<T extends LayerFactory> {
      */ 
     protected Lookup createLookup() {
         return null;
+    }
+    
+    protected LayerImplementation(T factory, boolean resolutionIndependent) {
+        this.factory = factory;
+        this.resolutionIndependent = resolutionIndependent;
+        layer = Accessor.DEFAULT.createLayer(this);
     }
     
     private Lookup lookup = null;
@@ -199,6 +205,10 @@ public abstract class LayerImplementation<T extends LayerFactory> {
     
     public final int hashCode() {
         return super.hashCode();
+    }
+
+    public boolean isResolutionIndependent() {
+        return resolutionIndependent;
     }
 
     private static final class IA extends InverseAccessor {

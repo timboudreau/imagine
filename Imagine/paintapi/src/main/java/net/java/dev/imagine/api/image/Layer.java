@@ -53,6 +53,12 @@ public final class Layer {
     }
 
 
+    /**
+     * Constructor is package private.  Instances will only be constructed
+     * inside of LayerImplementation.
+     * @param impl The SPI object this class provides a backward-compatibility-proof
+     * wrapper for
+     */
     Layer (LayerImplementation impl) {
         if (Accessor.layerFor(impl) != null) {
             throw new IllegalStateException ("Constructing a second " + //NOI18N
@@ -63,6 +69,16 @@ public final class Layer {
 
     public Layer clone (boolean isUserCopy, boolean deepCopy) {
         return Accessor.layerFor (impl.clone(isUserCopy, deepCopy));
+    }
+    
+    /**
+     * Determine if this is a bitmap-backed layer, or if it can be
+     * scaled up arbitrarily.
+     * 
+     * @return Whether or not this layer is resolution-independent
+     */
+    public boolean isResolutionIndependent() {
+        return impl.isResolutionIndependent();
     }
 
     /** Get the bounds of this layer.  This may or may not
@@ -161,6 +177,12 @@ public final class Layer {
         impl.setOpacity(f);
     }
     
+    /**
+     * Resize this layer, causing its contents to be scaled or clipped
+     * to the new size
+     * @param width
+     * @param height 
+     */
     public void resize (int width, int height) {
         assert width > 0;
         assert height > 0;
