@@ -94,11 +94,11 @@ final class PictureScene extends Scene {
 
     private void init() {
         setBackground(CHECKERBOARD_BACKGROUND);
-//        getActions().addAction(new ToolEventDispatchAction());
         syncLayers(picture.getLayers());
         mainLayer.setLayout(LayoutFactory.createAbsoluteLayout());
         mainLayer.setBorder(BorderFactory.createEmptyBorder());
         addChild(mainLayer);
+        setBorder(BorderFactory.createEmptyBorder());
     }
 
     private static String getDefaultLayerName(int ix) {

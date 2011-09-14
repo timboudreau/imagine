@@ -10,14 +10,12 @@
 package net.java.dev.imagine.api.toolcustomizers;
 
 import java.awt.EventQueue;
-import java.util.LinkedList;
-import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.spi.tools.Customizer;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
+import org.openide.util.ChangeSupport;
 
 /**
  * Convenience base class for customizer implementations.
@@ -59,25 +57,20 @@ public abstract class AbstractCustomizer <T extends Object> implements Customize
         return c;
     }
 
-    private List <ChangeListener> changeListeners = new LinkedList <ChangeListener> ();
+    private final ChangeSupport supp = new ChangeSupport(this);
     public void addChangeListener(ChangeListener l) {
         assert EventQueue.isDispatchThread();
-        changeListeners.add (l);
+        supp.addChangeListener(l);
     }
 
     protected void change() {
-        ChangeListener[] l = changeListeners.toArray(
-                new ChangeListener[changeListeners.size()]);
-        
-        for (int i = 0; i < l.length; i++) {
-            l[i].stateChanged(new ChangeEvent(this));
-        }
+        supp.fireChange();
         saveValue (get());
     }
 
     public void removeChangeListener(ChangeListener l) {
         assert EventQueue.isDispatchThread();
-        changeListeners.remove(l);
+        supp.removeChangeListener(l);
     }
 
     protected abstract JComponent[] createComponents();

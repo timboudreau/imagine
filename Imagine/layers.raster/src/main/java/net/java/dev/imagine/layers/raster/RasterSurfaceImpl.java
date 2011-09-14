@@ -69,6 +69,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         EventQueue.invokeLater(
                 new Runnable() {
                    public void run() {
+                       //XXX wouldn't a background thread be preferable?
                        takeSnapshot();
                    }
                });
@@ -298,14 +299,21 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         BufferedImage old = img;
         if (region == null || region.getBounds().contains(0, 0, img.getWidth(), img.getHeight())) {
             img = op.filter(old, null);
+            repaintArea(0, 0, img.getWidth(), img.getHeight());
         } else {
             Rectangle regBounds = region.getBounds(); //XXX check that it fits within image!
+            regBounds = regBounds.intersection(new Rectangle(0, 0, img.getWidth(), img.getHeight()));
             BufferedImage nue = img.getSubimage(regBounds.x, regBounds.y, regBounds.width, regBounds.height);
             nue = op.filter(nue, null);
             Graphics2D g = img.createGraphics();
             g.setClip(region);
             g.drawRenderedImage(nue, AffineTransform.getTranslateInstance(0, 0));
+            repaintArea(regBounds);
         }
+    }
+    
+    private void repaintArea(Rectangle r) {
+        repaintArea(r.x, r.y, r.width, r.height);
     }
 
     private void doApplyComposite (Composite composite, Shape region) {

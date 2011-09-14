@@ -49,5 +49,4 @@ public interface Effect {
     public interface BufferedImageOpApplicator extends Applicator { //XXX not nice
         public BufferedImageOp getOp();
     }
-    
 }

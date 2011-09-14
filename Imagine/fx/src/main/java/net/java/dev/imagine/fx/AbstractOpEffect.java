@@ -11,13 +11,16 @@ import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.spi.effects.Effect;
 import org.openide.util.NbBundle;
 import org.openide.util.Parameters;
+import org.openide.util.lookup.ServiceProvider;
 
 /**
  *
  * @author Tim Boudreau
  */
 public abstract class AbstractOpEffect implements Effect {
+
     private final String name;
+
     protected AbstractOpEffect(String bundleKey) {
         Parameters.notNull("bundleKey", bundleKey);
         this.name = NbBundle.getMessage(getClass(), bundleKey);
@@ -32,9 +35,9 @@ public abstract class AbstractOpEffect implements Effect {
     public Applicator getApplicator() {
         return new App();
     }
-    
+
     protected abstract BufferedImageOp getOp();
-    
+
     class App implements Effect.BufferedImageOpApplicator {
 
         @Override
@@ -71,7 +74,5 @@ public abstract class AbstractOpEffect implements Effect {
         public boolean canApply() {
             return true;
         }
-        
     }
-    
 }

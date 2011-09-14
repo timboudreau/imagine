@@ -53,6 +53,7 @@ import org.openide.util.Utilities;
  * @author Timothy Boudreau
  */
 public class EffectsMenu extends JMenu {
+    private static final RequestProcessor RP = new RequestProcessor("Effect Preview", 1);
     
     /** Creates a new instance of EffectsMenu */
     public EffectsMenu() {
@@ -312,14 +313,9 @@ public class EffectsMenu extends JMenu {
 	    repaint();
 	}
 	
-	Task t = null;
+	Task t = RP.create(this);
 	public void stateChanged(ChangeEvent e) {
-	    synchronized (this) {
-		if (t == null) {
-		    t = RequestProcessor.getDefault().create(this);
-		    t.setPriority(Thread.MAX_PRIORITY);
-		}
-	    }
+            t.setPriority(Thread.MAX_PRIORITY);
 	    t.schedule(30);
 	}
     }

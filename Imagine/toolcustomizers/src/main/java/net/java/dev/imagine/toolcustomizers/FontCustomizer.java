@@ -24,7 +24,9 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import net.java.dev.imagine.api.toolcustomizers.AbstractCustomizer;
+import org.netbeans.paint.api.components.FontComboBoxModel;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
+import org.netbeans.paint.api.util.Fonts;
 import org.openide.util.NbBundle;
 import org.openide.util.NbPreferences;
 
@@ -88,14 +90,7 @@ public final class FontCustomizer extends AbstractCustomizer <Font> implements A
         fontSelectBox = new JComboBox();
         fontSelectBox.addActionListener(this);
         Font[] f = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
-        DefaultComboBoxModel fontsModel = new DefaultComboBoxModel();
-        for (int i = 0; i < f.length; i++) {
-            Font ff = f[i].deriveFont(Font.PLAIN, 12F);
-            if (i == 0) {
-                fontSelectBox.setPrototypeDisplayValue(ff);
-            }
-            fontsModel.addElement(ff);
-        }
+        DefaultComboBoxModel fontsModel = new FontComboBoxModel();
         JLabel fontLabel = new JLabel (NbBundle.getMessage(FontCustomizer.class, 
                 "FONT_FACE")); //NOI18N
         fontSelectBox.setModel (fontsModel);
@@ -155,37 +150,10 @@ public final class FontCustomizer extends AbstractCustomizer <Font> implements A
         if (value == null) {
             return;
         }
-        String family = value.getFamily();
-        float size = value.getSize2D();
-        int style = value.getStyle();
-        AffineTransform xform = value.getTransform();
-        double[] matrix = new double[6];
-        xform.getMatrix(matrix);
-        Preferences p = NbPreferences.forModule(getClass());
-        p.put(getName() + ".family", family);
-        p.putFloat (getName() + ".size", size);
-        p.putInt(getName() + ".style", style);
-        for (int i=0; i < matrix.length; i++) {
-            p.putDouble(getName() + ".xform." + i, matrix[i]);
-        }
+        Fonts.getDefault().set(getName(), value);
     }
     
     private Font loadValue() {
-        Preferences p = NbPreferences.forModule(getClass());
-        String family = p.get(getName() + ".family", "Serif");
-        float size = p.getFloat(getName() + ".size", 24);
-        int style = p.getInt (getName() + ".style", Font.PLAIN);
-        double[] matrix = new double[6];
-        boolean hasXform = false;
-        for (int i=0; i < matrix.length; i++) {
-            matrix[i] = p.getDouble(getName() + ".xform." + i, 0);
-            hasXform |= matrix[i] != 0D;
-        }
-        AffineTransform xform = new AffineTransform (matrix);
-        Font result = new Font (family, style, (int) size);
-        if (hasXform) {
-            result = result.deriveFont(xform);
-        }
-        return result;
+        return Fonts.getDefault().get(getName());
     }
 }

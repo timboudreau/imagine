@@ -7,6 +7,7 @@ import java.awt.Point;
 import java.awt.geom.AffineTransform;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import org.netbeans.paint.api.util.Fonts;
 import org.openide.util.NbBundle;
 import org.openide.util.Parameters;
 
@@ -52,7 +53,7 @@ public interface Text {
         private String text = NbBundle.getMessage(TextImpl.class, "TEXT");
         private double leading = 1.0D;
         private final PropertyChangeSupport supp = new PropertyChangeSupport(this);
-        private Font font = new Font("Serif", Font.PLAIN, 24);
+        private Font font = Fonts.getDefault().get();
         private final Point location = new Point();
         private Paint paint = Color.BLACK;
 

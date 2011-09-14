@@ -1,20 +1,37 @@
 package net.java.dev.imagine.layers.text.widget;
 
+import java.awt.AlphaComposite;
+import java.awt.Composite;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import net.dev.java.imagine.spi.tools.Customizer;
+import net.dev.java.imagine.spi.tools.CustomizerProvider;
 import net.java.dev.imagine.api.image.Layer;
+import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import net.java.dev.imagine.layers.text.widget.api.Text;
 import net.java.dev.imagine.layers.text.widget.api.TextItems;
 import net.java.dev.imagine.layers.text.widget.api.TextItems.TextItemsSupport;
@@ -29,11 +46,17 @@ import org.netbeans.api.visual.layout.Layout;
 import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.widget.LabelWidget;
 import org.netbeans.api.visual.widget.Widget;
+import org.netbeans.paint.api.components.FontCellRenderer;
+import org.netbeans.paint.api.components.FontComboBoxModel;
+import org.netbeans.paint.api.components.PopupSliderUI;
+import org.netbeans.paint.api.components.TextWrapLabelUI;
+import org.netbeans.paint.api.util.Fonts;
 import org.netbeans.paintui.widgetlayers.WidgetLayer;
 import org.netbeans.paintui.widgetlayers.WidgetLayer.WidgetFactory;
 import org.openide.util.Lookup;
 import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
+import org.openide.util.NbBundle;
 import org.openide.util.Parameters;
 import org.openide.util.Utilities;
 import org.openide.util.WeakListeners;
@@ -68,7 +91,7 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
         addRepaintHandle(handle);
         System.out.println("created a text layer");
     }
-    
+
     private class Ed implements TextItemsSupport.Editor {
 
         @Override
@@ -90,18 +113,19 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
                 if (f != null) {
                     TextWidget w = f.find(text);
                     if (w != null) {
+                        w.revalidate();
+                        w.getScene().validate();
                         w.edit();
                         return;
                     }
                 }
             }
         }
-        
     }
 
     @Override
     protected Lookup createLookup() {
-        return Lookups.fixed(this, wl, items);
+        return Lookups.fixed(this, wl, items, new CP());
     }
     private final WL wl = new WL();
 
@@ -160,7 +184,7 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
                 for (Text t : items) {
                     TextWidget tw = widgetFor(t);
                     if (tw == null) {
-                        tw = new TextWidget(items, container, t);
+                        tw = new TextWidget(TextLayer.this, container, t);
                         toAdd.add(tw);
                     }
                 }
@@ -224,100 +248,9 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
             return null;
         }
     }
-
-    static final class TextWidget extends LabelWidget implements PropertyChangeListener, TextFieldInplaceEditor, MoveProvider, LookupListener {
-
-        private final Text text;
-        private final Lookup.Result<TextItems> activeLayerResult =
-                Utilities.actionsGlobalContext().lookupResult(TextItems.class);
-        private final WidgetAction editAction = ActionFactory.createInplaceEditorAction(this);
-        private final WidgetAction moveAction = ActionFactory.createMoveAction(ActionFactory.createFreeMoveStrategy(), this);
-        private final TextItems items;
-
-        @SuppressWarnings("LeakingThisInConstructor")
-        TextWidget(TextItems items, Widget parent, Text text) {
-            super(parent.getScene(), text.getText());
-            this.items = items;
-            this.text = text;
-            text.addPropertyChangeListener(WeakListeners.propertyChange(this, text));
-            setPreferredLocation(text.getLocation());
-            setFont(text.getFont());
-            System.out.println("Created a text widget for " + text);
-            resultChanged(null);
-        }
-
-        void attachActions() {
-            getActions().addAction(editAction);
-            getActions().addAction(moveAction);
-            setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
-        }
-
-        void detachActions() {
-            getActions().removeAction(editAction);
-            getActions().removeAction(moveAction);
-            setCursor(null);
-        }
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) {
-            assert evt.getSource() == text;
-            setFont(text.getFont());
-            setLabel(text.getText());
-            setPreferredLocation(text.getLocation());
-        }
-
-        @Override
-        public boolean isEnabled(Widget widget) {
-            return true;
-        }
-
-        @Override
-        public String getText(Widget widget) {
-            return getLabel();
-        }
-
-        @Override
-        public void setText(Widget widget, String string) {
-            text.setText(string);
-            setLabel(string);
-        }
-
-        @Override
-        public void movementStarted(Widget widget) {
-            //do nothing
-        }
-
-        @Override
-        public void movementFinished(Widget widget) {
-            text.setLocation(widget.getPreferredLocation());
-        }
-
-        @Override
-        public Point getOriginalLocation(Widget widget) {
-            return widget.getPreferredLocation();
-        }
-
-        @Override
-        public void setNewLocation(Widget widget, Point point) {
-            widget.setPreferredLocation(point);
-        }
-
-        @Override
-        public void resultChanged(LookupEvent le) {
-            boolean enableActions = activeLayerResult.allInstances().contains(items);
-            if (enableActions) {
-                attachActions();
-            } else {
-                detachActions();
-            }
-        }
-
-        private void edit() {
-            MouseEvent me = new MouseEvent(getScene().getView(), MouseEvent.MOUSE_CLICKED, 
-                    System.currentTimeMillis(), 0, 0, 0, 2, false, MouseEvent.BUTTON1);
-            WidgetMouseEvent e = new WidgetMouseEvent(0, me);
-            editAction.mouseClicked(this, e);
-        }
+    
+    TextItems getItems() {
+        return items;
     }
 
     @Override
@@ -423,6 +356,87 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
 
         public State clone() {
             return new State(this);
+        }
+    }
+
+//    private class CP implements CustomizerProvider {
+//        @Override
+//        public Customizer getCustomizer() {
+//            return Customizers.getCustomizer(Font.class, "default");
+//        }
+//    }
+    
+    private class CP implements CustomizerProvider, Customizer<Font> {
+
+        private Font font = Fonts.getDefault().get();
+
+        @Override
+        public Customizer getCustomizer() {
+            Iterator<Text> i = items.iterator();
+            if (i.hasNext()) {
+                font = i.next().getFont();
+            }
+            return this;
+        }
+
+        @Override
+        public JComponent getComponent() {
+            JPanel pnl = new JPanel(new FlowLayout()); //XXX just for now
+            final JComboBox box = new JComboBox(new FontComboBoxModel());
+            box.setRenderer(new FontCellRenderer());
+            box.setSelectedItem(font.deriveFont(Font.PLAIN, 12));
+            pnl.add(box);
+            final JSlider slider = new JSlider(4, 200);
+            slider.setValue(font.getSize());
+            slider.setUI(new PopupSliderUI());
+            pnl.add(slider);
+            final JCheckBox bold = new JCheckBox(NbBundle.getMessage(CP.class, "BOLD")); //NOI18N
+            final JCheckBox italic = new JCheckBox(NbBundle.getMessage(CP.class, "ITALIC")); //NOI18N
+            pnl.add(bold);
+            pnl.add(italic);
+
+            class L implements ActionListener, ChangeListener {
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    Font f = (Font) box.getSelectedItem();
+                    int size = slider.getValue();
+                    int style = Font.PLAIN;
+                    if (bold.isSelected()) {
+                        style |= Font.BOLD;
+                    }
+                    if (italic.isSelected()) {
+                        style |= Font.ITALIC;
+                    }
+                    f = f.deriveFont(style, size);
+                    CP.this.font = f;
+                    for (Text t : items) {
+                        t.setFont(font);
+                    }
+                    Fonts.getDefault().set(f);
+                }
+
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    actionPerformed(null);
+                }
+            }
+            L a = new L();
+            box.addActionListener(a);
+            bold.addActionListener(a);
+            italic.addActionListener(a);
+            slider.addChangeListener(a);
+            return pnl;
+        }
+
+        @Override
+        public String getName() {
+            return NbBundle.getMessage(CP.class, "TextCustomizer"); //NOI18N
+        }
+
+        @Override
+        public Font get() {
+            return font;
         }
     }
 }

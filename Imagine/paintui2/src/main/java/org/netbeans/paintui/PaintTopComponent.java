@@ -30,10 +30,12 @@ import java.util.List;
 import java.util.Set;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -148,7 +150,7 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
         setPreferredSize(new Dimension(500, 500));
         
         setLayout(new BorderLayout());
-        JScrollPane pane = new JScrollPane(canvas.createView());
+        JScrollPane pane = new JScrollPane(new InnerPanel(canvas.createView()));
         pane.getViewport().setScrollMode(JViewport.BLIT_SCROLL_MODE);
         pane.setBorder (BorderFactory.createEmptyBorder());
         pane.setViewportBorder (BorderFactory.createMatteBorder(1, 0, 0, 0,
@@ -157,6 +159,32 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
         undoManager.setLimit(UNDO_LIMIT);
     }
     private static final int UNDO_LIMIT = 15;
+    
+    static class InnerPanel extends JComponent {
+        private final JComponent inner;
+        InnerPanel(JComponent inner) {
+            this.inner = inner;
+            add(inner);
+            setBorder(BorderFactory.createEmptyBorder());
+        }
+        
+        public Dimension getPreferredSize() {
+            return inner.getPreferredSize();
+        }
+        
+        public void doLayout() {
+           Dimension d = inner.getPreferredSize();
+            int offX = 0;
+            int offY = 0;
+            if (d.width < getWidth()) {
+                offX = (getWidth() - d.width) / 2;
+            }
+            if (d.height < getHeight()) {
+                offY = (getHeight() - d.height) / 2;
+            }
+            inner.setBounds(offX, offY, d.width, d.height);
+        }
+    }
     
     @Override
     public int getPersistenceType() {

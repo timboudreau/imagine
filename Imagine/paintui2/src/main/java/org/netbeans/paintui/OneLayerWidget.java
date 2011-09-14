@@ -95,9 +95,6 @@ final class OneLayerWidget extends Widget {
     @Override
     protected void paintWidget() {
         Rectangle r = getBounds();
-        Point p = r.getLocation();
-        r.x = 0;
-        r.y = 0;
         Graphics2D g = getGraphics();
         GraphicsUtils.setHighQualityRenderingHints(g);
         Composite old = null;
@@ -107,14 +104,12 @@ final class OneLayerWidget extends Widget {
             AlphaComposite comp = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity);
             g.setComposite(comp);
         }
-        g.translate(p.x, p.y);
         try {
             layer.paint(g, r, true);
         } finally {
             if (old != null) {
                 g.setComposite(old);
             }
-            g.translate(-p.x, -p.y);
         }
     }
 
@@ -129,16 +124,13 @@ final class OneLayerWidget extends Widget {
             System.out.println("Prop change from layer " + evt.getPropertyName() + " " + evt.getNewValue());
             if (Layer.PROP_VISIBLE.equals(evt.getPropertyName())) {
                 setVisible(layer.isVisible());
+                getScene().validate();
             } else if (Layer.PROP_BOUNDS.equals(evt.getPropertyName())) {
                 revalidate();
-//                setPreferredLocation(((Rectangle) evt.getNewValue()).getLocation());
-//                setPreferredBounds((Rectangle) evt.getNewValue());
                 repaintHandle.repaint();
                 getScene().getView().paintImmediately(new Rectangle(0,0, 2000,2000)); //XXX
             } else if (!Layer.PROP_NAME.equals(evt.getPropertyName())) {
                 repaintHandle.repaintArea(layer.getBounds());
-//                ((PictureScene) getScene()).revalidate();
-//                ((PictureScene) getScene()).getView().paintImmediately(new Rectangle(0, 0, 1000, 1000)); //XXX
             }
         }
     }
@@ -170,7 +162,6 @@ final class OneLayerWidget extends Widget {
         @Override
         public void setCursor(Cursor cursor) {
             ((PictureScene) getScene()).setCursor(cursor);
-            //                OneLayerWidget.this.setCursor(cursor);
         }
     }
     
