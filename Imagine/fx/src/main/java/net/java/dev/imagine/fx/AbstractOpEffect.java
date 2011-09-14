@@ -5,13 +5,13 @@
 package net.java.dev.imagine.fx;
 
 import java.awt.Composite;
+import java.awt.Dimension;
 import java.awt.image.BufferedImageOp;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.spi.effects.Effect;
 import org.openide.util.NbBundle;
 import org.openide.util.Parameters;
-import org.openide.util.lookup.ServiceProvider;
 
 /**
  *
@@ -36,13 +36,19 @@ public abstract class AbstractOpEffect implements Effect {
         return new App();
     }
 
-    protected abstract BufferedImageOp getOp();
+    protected BufferedImageOp getOp() {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+    
+    protected BufferedImageOp getOp(Dimension d) {
+        return getOp();
+    }
 
     class App implements Effect.BufferedImageOpApplicator {
 
         @Override
-        public BufferedImageOp getOp() {
-            return AbstractOpEffect.this.getOp();
+        public BufferedImageOp getOp(Dimension size) {
+            return AbstractOpEffect.this.getOp(size);
         }
 
         @Override

@@ -95,8 +95,8 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
                 Point old = (Point) evt.getOldValue();
                 Point nue = (Point) evt.getNewValue();
                 surfaceLocationChanged(old, nue);
-            } else {
-                System.out.println("huh? " + evt);
+            } else if (RasterSurfaceImpl.PROP_BOUNDS.equals(evt.getPropertyName())) {
+                bounds.setBounds((Rectangle) evt.getNewValue());
             }
         }
     }

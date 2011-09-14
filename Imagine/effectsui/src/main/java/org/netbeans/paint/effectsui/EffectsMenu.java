@@ -122,7 +122,8 @@ public class EffectsMenu extends JMenu {
 	    }
 	    assert applicator.canApply();
             if (applicator instanceof Effect.BufferedImageOpApplicator) {
-                BufferedImageOp op = ((Effect.BufferedImageOpApplicator) applicator).getOp();
+                BufferedImage i = surface.getImage();
+                BufferedImageOp op = ((Effect.BufferedImageOpApplicator) applicator).getOp(new Dimension(i.getWidth(), i.getHeight()));
                 Selection sel = applyTo.getLookup().lookup(Selection.class);
                 Shape clip = null;
                 if (sel != null) {
@@ -290,7 +291,7 @@ public class EffectsMenu extends JMenu {
 
 	    imageGr = (Graphics2D) back.createGraphics();
             if (applicator instanceof Effect.BufferedImageOpApplicator) {
-                BufferedImageOp op = ((Effect.BufferedImageOpApplicator) applicator).getOp();
+                BufferedImageOp op = ((Effect.BufferedImageOpApplicator) applicator).getOp(new Dimension(temp.getWidth(), temp.getHeight()));
                 temp = op.filter(temp, null);
                 imageGr.drawRenderedImage(temp, 
                         AffineTransform.getTranslateInstance(0,0));

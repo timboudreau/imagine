@@ -9,6 +9,7 @@
 
 package net.dev.java.imagine.spi.effects;
 import java.awt.Composite;
+import java.awt.Dimension;
 import java.awt.image.BufferedImageOp;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
@@ -47,6 +48,6 @@ public interface Effect {
     }
     
     public interface BufferedImageOpApplicator extends Applicator { //XXX not nice
-        public BufferedImageOp getOp();
+        public BufferedImageOp getOp(Dimension size);
     }
 }

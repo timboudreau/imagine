@@ -298,7 +298,9 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     private void doApplyBufferedImageOp (BufferedImageOp op, Shape region) {
         BufferedImage old = img;
         if (region == null || region.getBounds().contains(0, 0, img.getWidth(), img.getHeight())) {
-            img = op.filter(old, null);
+            BufferedImage nue = op.filter(old, null);
+            img = nue;
+            boundsMayBeChanged(old, nue);
             repaintArea(0, 0, img.getWidth(), img.getHeight());
         } else {
             Rectangle regBounds = region.getBounds(); //XXX check that it fits within image!
@@ -564,7 +566,16 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         return selection.asShape();
     }
     
+    private void boundsMayBeChanged(BufferedImage old, BufferedImage nue) {
+        Rectangle a = new Rectangle(location, new Dimension(old.getWidth(), old.getHeight()));
+        Rectangle b = new Rectangle(location, new Dimension(nue.getWidth(), nue.getHeight()));
+        if (!a.equals(b)) {
+            firePropertyChange(PROP_BOUNDS, a, b);
+        }
+    }
+
     public static final String PROP_LOCATION = "Move";
+    public static final String PROP_BOUNDS = "Bounds";
     private Dimension grow = null;
     private Point imageReplacePosition = null;
     private Point actualImagePosition = null;

@@ -1,8 +1,8 @@
 package net.java.dev.imagine.fx;
 
 import com.jhlabs.image.GaussianFilter;
-import java.awt.BorderLayout;
 import java.awt.Composite;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.image.BufferedImageOp;
 import javax.swing.BorderFactory;
@@ -39,7 +39,7 @@ public final class GaussianBlur implements Effect {
         int amt = 6;
 
         @Override
-        public BufferedImageOp getOp() {
+        public BufferedImageOp getOp(Dimension ignored) {
             return new GaussianFilter(amt);
         }
 
