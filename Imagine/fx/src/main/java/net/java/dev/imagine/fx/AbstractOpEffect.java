@@ -44,6 +44,11 @@ public abstract class AbstractOpEffect implements Effect {
         return getOp();
     }
 
+    @Override
+    public Type type() {
+        return Type.BUFFERED_IMAGE_OP;
+    }
+
     class App implements Effect.BufferedImageOpApplicator {
 
         @Override

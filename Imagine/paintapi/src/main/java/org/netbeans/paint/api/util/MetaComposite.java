@@ -15,7 +15,7 @@ import java.awt.image.WritableRaster;
 public final class MetaComposite implements Composite {
     private final Composite[] composites;
     
-    MetaComposite(Composite... composites) {
+    public MetaComposite(Composite... composites) {
         this.composites = composites;
     }
 

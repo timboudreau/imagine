@@ -13,6 +13,7 @@ import java.awt.Dimension;
 import java.awt.image.BufferedImageOp;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
+import org.openide.util.Parameters;
 
 /**
  * Represents an effect that can be performed over a Layer.
@@ -25,6 +26,42 @@ public interface Effect {
     /** Get an object that can supply a customization panel to configure an
      * effect and supply a composite to apply to a layer */
     public Applicator getApplicator();
+    
+    public Type type();
+    
+    public enum Type {
+        BUFFERED_IMAGE_OP,
+        COMPOSITE
+    }
+    
+    public static abstract class AbstractEffect implements Effect {
+        protected final String name;
+        protected final Type type;
+
+        public AbstractEffect(String name, Type type) {
+            Parameters.notNull("type", type);
+            Parameters.notNull("name", name);
+            this.name = name;
+            this.type = type;
+        }
+        
+        public AbstractEffect(String name) {
+            this (name, Type.COMPOSITE);
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public abstract Applicator getApplicator();
+
+        @Override
+        public Type type() {
+            return type;
+        }
+    }
     
     public interface Applicator {
         /** Get a panel the user will interact with to configure settings */

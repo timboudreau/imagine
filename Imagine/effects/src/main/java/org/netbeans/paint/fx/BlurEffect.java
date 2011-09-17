@@ -74,6 +74,11 @@ public class BlurEffect implements Effect, Effect.Applicator {
 	return true;
     }
 
+    @Override
+    public Type type() {
+        return Type.COMPOSITE;
+    }
+
     private static class BlurComposite implements Composite {
 	public CompositeContext createContext(ColorModel srcColorModel,
 					      ColorModel dstColorModel,

@@ -22,6 +22,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -81,6 +82,7 @@ final class PictureScene extends Scene {
             new Rectangle(0, 0, 16, 16));
     private final Widget mainLayer = new LayerWidget(this);
     private final SelectionWidget selectionLayer = new SelectionWidget();
+    private final GridWidget gridWidget = new GridWidget(this);
 
     public PictureScene() {
         this(new Dimension(640, 480), BackgroundStyle.TRANSPARENT);
@@ -104,6 +106,7 @@ final class PictureScene extends Scene {
         mainLayer.setBorder(BorderFactory.createEmptyBorder());
         addChild(mainLayer);
         setBorder(BorderFactory.createEmptyBorder());
+        addChild(gridWidget);
         addChild(selectionLayer);
         selectionLayer.attachToSelection();
     }
@@ -261,6 +264,60 @@ final class PictureScene extends Scene {
         selectionLayer.repaint();
     }
 
+    private class GridWidget extends LayerWidget {
+
+        GridWidget(Scene scene) {
+            super(scene);
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintWidget() {
+            double z = getScene().getZoomFactor();
+            if (getScene().getZoomFactor() > 4) {
+                //XXX most modern graphics pipelines do drawline very
+                //inefficiently.  Believe it or not, long-term, it would
+                //be much more efficient to build an offscreen grid image
+                //of the right size and use it with a TexturePaint to tile
+
+                Graphics2D g = getGraphics();
+                AffineTransform old = g.getTransform();
+                int skipPx = (int) Math.round(z);
+                g.setColor(Color.BLACK);
+
+                AffineTransform invertScaling = (AffineTransform) old.clone();
+                invertScaling.concatenate(AffineTransform.getScaleInstance(1D / z, 1D / z));
+
+                g.setTransform(invertScaling);
+                try {
+
+                    Dimension sceneSize = getScene().getBounds().getSize();
+                    double endX = Math.ceil(sceneSize.getWidth() * z);
+                    double endY = Math.ceil(sceneSize.getHeight() * z);
+
+                    if (g.getClip() != null) {
+                        Rectangle r = g.getClip().getBounds();
+//                        endX = r.width + r.x;
+//                        endY = r.height + r.y;
+                        //XXX normalize start positions
+                        //Normalize so no matter what the bounds we're painting,
+                        //we always start on the same line relative to the upper left
+                    }
+                    g.setXORMode(Color.RED);
+
+                    for (int i = 0; i <= endX; i += skipPx) {
+                        g.drawLine(0, i, (int) endX, i);
+                    }
+                    for (int i = 0; i <= endY; i += skipPx) {
+                        g.drawLine(i, 0, i, (int) endY);
+                    }
+                } finally {
+                    g.setTransform(old);
+                }
+            }
+        }
+    }
+
     private class SelectionWidget extends Widget implements ChangeListener {
 
         private final Repainter rp = new RP();
@@ -269,7 +326,7 @@ final class PictureScene extends Scene {
             super(PictureScene.this);
             setOpaque(false);
         }
-        
+
         void attachToSelection() {
             picture.getSelection().addChangeListener(new ChangeListener() {
 
@@ -278,7 +335,6 @@ final class PictureScene extends Scene {
                     System.out.println("change from picture selection " + picture.getSelection());
                     repaint();
                 }
-                
             });
         }
 

@@ -48,6 +48,11 @@ public class HSVEffect implements Effect {
 	return new HSVApplicator();
     }
 
+    @Override
+    public Type type() {
+        return Type.COMPOSITE;
+    }
+
     static final class HSVApplicator implements Applicator, Composite {
 	private final List <ChangeListener> listeners = 
                 Collections.synchronizedList(new LinkedList <ChangeListener> ());

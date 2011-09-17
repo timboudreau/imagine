@@ -33,6 +33,11 @@ public final class GaussianBlur implements Effect {
     public Applicator getApplicator() {
         return new A();
     }
+
+    @Override
+    public Type type() {
+        return Type.BUFFERED_IMAGE_OP;
+    }
     
     static class A implements BufferedImageOpApplicator {
         private final ChangeSupport supp = new ChangeSupport(this);

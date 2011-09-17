@@ -74,6 +74,11 @@ public class MonochromeEffect implements Effect, Effect.Applicator, Composite {
         return NbBundle.getMessage (getClass(), "LBL_Monochrome");
     }
 
+    @Override
+    public Type type() {
+        return Type.COMPOSITE;
+    }
+
     static final class Ctx implements CompositeContext {
 	private ColorModel src;
 	private ColorModel dst;

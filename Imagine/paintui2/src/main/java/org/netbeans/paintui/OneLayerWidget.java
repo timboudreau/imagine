@@ -88,12 +88,16 @@ final class OneLayerWidget extends Widget {
         }
         return r;
         */
-        return layer.getBounds();
+        Rectangle result = layer.getBounds();
+        result.width += Math.max(0, result.x);
+        result.height += Math.max(0, result.y);
+        result.x = 0;
+        result.y = 0;
+        return result;
     }
 
     @Override
     protected void paintWidget() {
-        Rectangle r = getBounds();
         Graphics2D g = getGraphics();
         GraphicsUtils.setHighQualityRenderingHints(g);
         Composite old = null;
@@ -104,7 +108,7 @@ final class OneLayerWidget extends Widget {
             g.setComposite(comp);
         }
         try {
-            layer.paint(g, r, false);
+            layer.paint(g, layer.getBounds(), false);
         } finally {
             if (old != null) {
                 g.setComposite(old);

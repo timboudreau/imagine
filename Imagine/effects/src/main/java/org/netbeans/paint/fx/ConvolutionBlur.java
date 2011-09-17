@@ -81,4 +81,9 @@ public class ConvolutionBlur extends ConvolutionEffect {
     public boolean canApply() {
         return ke != null && ke.isValid();
     }
+
+    @Override
+    public Type type() {
+        return Type.COMPOSITE;
+    }
 }

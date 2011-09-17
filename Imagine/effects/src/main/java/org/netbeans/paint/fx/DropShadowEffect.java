@@ -69,6 +69,11 @@ public class DropShadowEffect implements Effect, Effect.Applicator {
 	return true;
     }
 
+    @Override
+    public Type type() {
+        return Type.COMPOSITE;
+    }
+
     private static class DropShadowComposite implements Composite {
 	public CompositeContext createContext(ColorModel srcColorModel,
 		ColorModel dstColorModel, RenderingHints hints) {

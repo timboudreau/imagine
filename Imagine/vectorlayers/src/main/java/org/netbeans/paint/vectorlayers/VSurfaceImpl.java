@@ -163,6 +163,11 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         composites.add (new AppliedComposite (composite, clip));
     }
 
+    @Override
+    public Dimension getSize() {
+        return stack.getSize();
+    }
+
     private static final class AppliedComposite {
         public final Composite composite;
         public final Shape clip;

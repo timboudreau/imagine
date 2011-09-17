@@ -270,8 +270,8 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
                 yfactor);
         xform.concatenate(AffineTransform.getTranslateInstance(r.x, r.y));
         g2d.drawRenderedImage(img, xform);
-        g2d.setColor(Color.BLACK);
-        g2d.drawRect(r.x, r.y, r.width-1, r.height-1);
+//        g2d.setColor(Color.BLACK);
+//        g2d.drawRect(r.x, r.y, r.width-1, r.height-1);
         return true;
     }
 
@@ -468,6 +468,11 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     }
     private static final RequestProcessor rp = new RequestProcessor("Image hibernate queue");
     private static final HibernateQueue q = new HibernateQueue();
+
+    @Override
+    public Dimension getSize() {
+        return new Dimension (img.getWidth(), img.getHeight());
+    }
     private static class HibernateQueue implements Runnable {
         private java.util.List <RasterSurfaceImpl> queue = Collections.<RasterSurfaceImpl>
                 synchronizedList(new ArrayList <RasterSurfaceImpl>());

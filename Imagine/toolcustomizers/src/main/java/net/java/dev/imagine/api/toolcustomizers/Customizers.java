@@ -127,7 +127,8 @@ public final class Customizers {
             m = new HashMap<String, Customizer>();
             created = true;
         }
-        Customizer<T> result = m.get(name);
+//        Customizer<T> result = m.get(name);
+        Customizer<T> result = null; //stealing componnents from other customizers
         if (result == null) {
             result = createCustomizer (type, name);
             if (result != null) {

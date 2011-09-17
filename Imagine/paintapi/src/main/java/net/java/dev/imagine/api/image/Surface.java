@@ -11,11 +11,13 @@ package net.java.dev.imagine.api.image;
 
 import java.awt.Composite;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Shape;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
+import net.dev.java.imagine.spi.effects.EffectRecipient;
 import net.dev.java.imagine.spi.tools.Tool;
 import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
@@ -25,7 +27,7 @@ import net.java.dev.imagine.spi.image.SurfaceImplementation;
  *
  * @author Timothy Boudreau
  */
-public final class Surface {
+public final class Surface implements EffectRecipient { //XXX should implement this directly?
     final SurfaceImplementation impl;
 
     static {
@@ -97,6 +99,21 @@ public final class Surface {
      */
     public BufferedImage getImage() {
         return impl.getImage();
+    }
+
+    @Override
+    public boolean canApplyComposite() {
+        return impl.canApplyComposite();
+    }
+
+    @Override
+    public boolean canApplyBufferedImageOp() {
+        return impl.canApplyBufferedImageOp();
+    }
+
+    @Override
+    public Dimension getSize() {
+        return impl.getSize();
     }
 
 }

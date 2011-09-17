@@ -132,13 +132,6 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
                     opacity));
         }
         boolean result;
-//        if (bounds.x != 0 || bounds.y != 0) {
-//            g.translate (bounds.x, bounds.y);
-//            result = surface.paint (g, null);
-//            g.translate (-bounds.x, -bounds.y);
-//        } else {
-//            surface.paint(g, null);
-//        }
         result = surface.paint(g, null);
         if (opacity != 1.0f) {
             (g).setComposite(comp);

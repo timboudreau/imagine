@@ -35,7 +35,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -309,7 +308,7 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
             }
             Selection sel = layerImpl.getLookup().lookup(Selection.class);
             if (sel != null) {
-                l.add (sel);
+                l.add (sel); 
             }
             Surface surf = 
                     layerImpl.getLookup().lookup(Surface.class);
@@ -318,8 +317,10 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
                 l.add (surf);
             }
         }
-        System.err.println("Lookup contents set to " + l);
+        l.addAll(layerImpl.getLookup().lookupAll(Object.class));
         UIContextLookupProvider.set(l);
+//        UIContextLookupProvider.setLayer(layerImpl.getLookup());
+        System.err.println("Lookup contents set to " + UIContextLookupProvider.theLookup().lookupAll(Object.class));
         updateActiveTool();
     }
     

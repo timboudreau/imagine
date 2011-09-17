@@ -11,6 +11,7 @@ package net.java.dev.imagine.spi.image;
 
 import java.awt.Composite;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -139,4 +140,14 @@ public abstract class SurfaceImplementation {
     public void applyBufferedImageOp(BufferedImageOp op, Shape clip) {
         throw new UnsupportedOperationException();
     }
+
+    public boolean canApplyBufferedImageOp() {
+        return true;
+    }
+
+    public boolean canApplyComposite() {
+        return true;
+    }
+
+    public abstract Dimension getSize();
 }

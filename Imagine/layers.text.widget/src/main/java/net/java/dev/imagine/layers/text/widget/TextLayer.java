@@ -1,5 +1,6 @@
 package net.java.dev.imagine.layers.text.widget;
 
+import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -9,6 +10,7 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImageOp;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.Collection;
@@ -28,6 +30,7 @@ import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.selection.ObjectSelection;
 import net.dev.java.imagine.api.selection.ShapeConverter;
 import net.dev.java.imagine.api.selection.Universe;
+import net.dev.java.imagine.spi.effects.EffectRecipient;
 import net.dev.java.imagine.spi.tools.Customizer;
 import net.dev.java.imagine.spi.tools.CustomizerProvider;
 import net.java.dev.imagine.api.image.Layer;
@@ -61,7 +64,7 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
 
     private Dimension size;
     private State state = new State();
-    TextItemsSupport.Editor editor = new Ed();
+    private final TextItemsSupport.Editor editor = new Ed();
     private final TextItems items = new TextItemsSupport(editor);
     private final Set<WF> factories = new WeakSet<WF>();
     private final ObjectSelection<Text> selection = new ObjectSelection<Text>(Text.class, new S(), new S());
@@ -88,6 +91,43 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
     
     public boolean isSelected(Text text) {
         return selection.contains(Collections.singleton(text));
+    }
+    
+    private Composite composite;
+    
+    Composite getComposite() {
+        return composite;
+    }
+
+    private class ER implements EffectRecipient {
+
+        @Override
+        public boolean canApplyComposite() {
+            return true;
+        }
+
+        @Override
+        public boolean canApplyBufferedImageOp() {
+            return false;
+        }
+
+        @Override
+        public void applyComposite(Composite composite, Shape clip) {
+            //XXX do what about selection?
+            TextLayer.this.composite = composite; //XXX should build a stack
+            getMasterRepaintHandle().repaintArea(0, 0, 1000, 1000); //XXX
+        }
+
+        @Override
+        public void applyBufferedImageOp(BufferedImageOp op, Shape clip) {
+            throw new UnsupportedOperationException("Not supported.");
+        }
+
+        @Override
+        public Dimension getSize() {
+            return new Dimension(0,0); //doesn't matter
+        }
+        
     }
     
     private class S implements ShapeConverter<Text>, Universe<Collection<Text>> {
@@ -154,7 +194,7 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
 
     @Override
     protected Lookup createLookup() {
-        return Lookups.fixed(this, wl, items, new CP(), selection);
+        return Lookups.fixed(this, wl, items, new CP(), selection, new ER());
     }
     private final WL wl = new WL();
 

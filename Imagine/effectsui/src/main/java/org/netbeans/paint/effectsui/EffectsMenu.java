@@ -26,6 +26,7 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
+import java.util.Collection;
 import java.util.Iterator;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -36,6 +37,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.selection.Selection;
 import net.dev.java.imagine.spi.effects.Effect;
+import net.dev.java.imagine.spi.effects.Effect.BufferedImageOpApplicator;
+import net.dev.java.imagine.spi.effects.EffectRecipient;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Surface;
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
@@ -85,21 +88,42 @@ public class EffectsMenu extends JMenu {
     }
     
     private static final String KEY_MENUITEM = "menuitem";
-    private class EffectAction extends GenericContextSensitiveAction <Surface> {
+    private class EffectAction extends GenericContextSensitiveAction <EffectRecipient> {
         private final Effect effect;
         public EffectAction (Effect effect) {
-            super (Surface.class);
+            super (EffectRecipient.class);
             this.effect = effect;
             setDisplayName (effect.getName());
         }
+
+        @Override
+        protected boolean checkEnabled(Collection<? extends EffectRecipient> coll, Class clazz) {
+            boolean result = false;
+            for (EffectRecipient r : coll) {
+                switch (effect.type()) {
+                    case COMPOSITE :
+                        result |= r.canApplyComposite();
+                        break;
+                    case BUFFERED_IMAGE_OP :
+                        result |= r.canApplyBufferedImageOp();
+                        break;
+                    default :
+                        throw new AssertionError(effect.type());
+                }
+            }
+            System.out.println("enabled result for " + coll + " is " + result);
+            return result;
+        }
         
-        protected void performAction(Surface surface) {
+        protected void performAction(EffectRecipient recipient) {
 	    Effect.Applicator applicator = effect.getApplicator();
+            assert ((applicator instanceof BufferedImageOpApplicator) == (effect.type() == Effect.Type.BUFFERED_IMAGE_OP)) : 
+                    "Mismatch: " + effect.type() + " " + applicator;
 	    Layer applyTo = 
                     Utilities.actionsGlobalContext().lookup (Layer.class);
             
             assert applyTo != null;
-	    JComponent customizer = applicator.canPreview() ? 
+	    JComponent customizer = applicator.canPreview() && recipient instanceof Surface ? 
 		new PreviewContainer (applyTo, applicator) : 
 		applicator.getCustomizer();
 	    
@@ -122,14 +146,13 @@ public class EffectsMenu extends JMenu {
 	    }
 	    assert applicator.canApply();
             if (applicator instanceof Effect.BufferedImageOpApplicator) {
-                BufferedImage i = surface.getImage();
-                BufferedImageOp op = ((Effect.BufferedImageOpApplicator) applicator).getOp(new Dimension(i.getWidth(), i.getHeight()));
                 Selection sel = applyTo.getLookup().lookup(Selection.class);
                 Shape clip = null;
                 if (sel != null) {
                     clip = sel.asShape();
                 }
-                surface.applyBufferedImageOp(op, clip);
+                BufferedImageOp op = ((Effect.BufferedImageOpApplicator) applicator).getOp(clip == null ? recipient.getSize() : clip.getBounds().getSize());
+                recipient.applyBufferedImageOp(op, clip);
             } else {
                 Composite composite = applicator.getComposite();
                 Selection sel = applyTo.getLookup().lookup(Selection.class);
@@ -137,7 +160,7 @@ public class EffectsMenu extends JMenu {
                 if (sel != null) {
                     clip = sel.asShape();
                 }
-                surface.applyComposite(composite, clip);
+                recipient.applyComposite(composite, clip);
             }
 	}
     }
@@ -237,18 +260,13 @@ public class EffectsMenu extends JMenu {
 	public void addNotify() {
 	    super.addNotify();
 	    applicator.addChangeListener (this);
-	    run();
+	    stateChanged(null);
 	}
 	
 	public void removeNotify() {
 	    super.removeNotify();
 	    applicator.removeChangeListener(this);
-	    synchronized (this) {
-		if (t != null) {
-		    t.cancel();
-		    t = null;
-		}
-	    }
+            t.cancel();
 	}
 	
 	

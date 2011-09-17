@@ -39,7 +39,7 @@ public final class PictureSelection {
                 storedSelection = (Selection) storedSelection.clone();
             }
         }
-        Selection ns = nue.getLookup().lookup(Selection.class);
+        Selection ns = nue == null ? null : nue.getLookup().lookup(Selection.class);
         setCurrentSelection(ns);
         currSelection = ns;
     }

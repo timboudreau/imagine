@@ -31,6 +31,7 @@ import org.openide.explorer.view.ChoiceView;
 import org.openide.explorer.view.NodeListModel;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileSystem;
+import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.Repository;
 import org.openide.loaders.DataFolder;
 import org.openide.nodes.FilterNode;
@@ -54,6 +55,7 @@ public final class SelectAndCustomizePanel extends JPanel implements ExplorerMan
     private JLabel lbl;
     private JPanel top;
     public SelectAndCustomizePanel(String folder, boolean useIconDropDown) {
+        useIconDropDown = true;
         customizerContainer.setLayout(new BorderLayout());
         mgr.addPropertyChangeListener(this);
         choice.setMinimumSize(new Dimension(80, 16));
@@ -75,8 +77,7 @@ public final class SelectAndCustomizePanel extends JPanel implements ExplorerMan
 
     public void initialize() {
         try {
-            FileSystem systemFileSystem = Repository.getDefault().getDefaultFileSystem();
-            FileObject fld = systemFileSystem.getRoot().getFileObject(folder);
+            FileObject fld = FileUtil.getConfigFile(folder);
             DataFolder dfldr = DataFolder.findFolder(fld);
             Node root = new FilterNode (dfldr.getNodeDelegate(), new NameFilterNodeChildren(dfldr.getNodeDelegate()));
 

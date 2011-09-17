@@ -11,6 +11,7 @@ package org.netbeans.paintui;
 
 import java.util.Arrays;
 import java.util.Collection;
+import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.spi.SelectionContextContributor;
 import org.openide.ErrorManager;
 import org.openide.util.Lookup;
@@ -27,7 +28,7 @@ import org.openide.util.lookup.ServiceProvider;
 public final class UIContextLookupProvider implements SelectionContextContributor {
     private InstanceContent content = new InstanceContent();
     private AbstractLookup custom = new AbstractLookup (content);
-    private ProxyLookup lkp = new ProxyLookup (new Lookup[] { custom });
+    private PL lkp = new PL (new Lookup[] { custom });
     
     private static UIContextLookupProvider INSTANCE = null;
     
@@ -69,6 +70,11 @@ public final class UIContextLookupProvider implements SelectionContextContributo
 	return INSTANCE.lkp.lookupResult (type);
     }
     
+    static void setLayer(Lookup layer) {
+        INSTANCE.lkp.setOtherLookup(layer == null ?
+                null : layer);
+    }
+    
     private static void ensureCreated() {
 	if (INSTANCE == null) {
 	    Lookup.getDefault().lookup(UIContextLookupProvider.class);
@@ -82,5 +88,21 @@ public final class UIContextLookupProvider implements SelectionContextContributo
 		INSTANCE = new UIContextLookupProvider();
 	    }
 	}
+    }
+    
+    static class PL extends ProxyLookup {
+
+        public PL(Lookup... lookups) {
+            super(lookups);
+        }
+        
+        void setOtherLookup(Lookup lkp) {
+            if (lkp == null) {
+                setLookups(INSTANCE.custom);
+            } else {
+                setLookups(INSTANCE.custom, lkp);
+            }
+        }
+        
     }
 }
