@@ -7,7 +7,7 @@ import java.awt.Point;
 import java.awt.geom.AffineTransform;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import org.netbeans.paint.api.util.Fonts;
+import org.netbeans.paint.api.components.Fonts;
 import org.openide.util.NbBundle;
 import org.openide.util.Parameters;
 

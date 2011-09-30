@@ -14,24 +14,31 @@
 package org.netbeans.paint.tools;
 
 import java.awt.Cursor;
+import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import net.dev.java.imagine.api.tool.aspects.Attachable;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import net.java.dev.imagine.api.image.Surface;
-import net.dev.java.imagine.spi.tools.NonPaintingTool;
-import net.java.dev.imagine.api.image.Layer;
+import net.dev.java.imagine.api.tool.aspects.NonPaintingTool;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import org.netbeans.paint.tools.spi.MouseDrivenTool;
-import org.openide.util.NbBundle;
 
 /**
  *
  * @author Timothy Boudreau
  */
-public class MoveTool extends MouseDrivenTool implements KeyListener, NonPaintingTool {
+@ToolDef(name="Move", iconPath="org/netbeans/paint/tools/resources/move.png")
+@Tool(Surface.class)
+public class MoveTool extends MouseDrivenTool implements KeyListener, NonPaintingTool, Attachable, PaintParticipant {
 
-    public MoveTool() {
-        super( "org/netbeans/paint/tools/resources/movetool.png", //NOI18N
-                NbBundle.getMessage(BrushTool.class, "NAME_MoveTool")); //NOI18N
+    //XXX make sensitive to Movable instead
+    public MoveTool(Surface surf) {
+        super(surf);
     }
 
     private Point startPoint = null;
@@ -43,17 +50,12 @@ public class MoveTool extends MouseDrivenTool implements KeyListener, NonPaintin
         int xdiff = startPoint.x - p.x;
         int ydiff = startPoint.y - p.y;
         if (xdiff != 0 || ydiff != 0) {
-            Surface surface = getLayer().getSurface();
             Point loc = surface.getLocation();
             loc.x -= xdiff;
             loc.y -= ydiff;
             surface.setLocation(loc);
             startPoint = p;
         }
-    }
-
-    public boolean canAttach(Layer layer) {
-        return layer.getLookup().lookup(Surface.class) != null;
     }
 
     protected void endOperation(Point p, int modifiers) {
@@ -93,9 +95,15 @@ public class MoveTool extends MouseDrivenTool implements KeyListener, NonPaintin
     public void keyReleased(KeyEvent e) {
     }
 
-    protected void activated(Layer layer) {
-        layer.getSurface().setCursor(
+    @Override
+    public void attachRepainter(Repainter repainter) {
+        super.attachRepainter(repainter);
+        surface.setCursor(
                 Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 
+    @Override
+    public void paint(Graphics2D g2d, Rectangle layerBounds, boolean commit) {
+        //do nothing
+    }
 }

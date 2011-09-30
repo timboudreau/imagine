@@ -17,12 +17,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Point2D;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import net.dev.java.imagine.api.selection.Selection;
 import net.dev.java.imagine.api.selection.Selection.Op;
-import net.dev.java.imagine.spi.tools.PaintParticipant;
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.api.tool.aspects.Attachable;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.java.dev.imagine.api.image.Layer;
 import org.netbeans.paint.api.splines.Close;
 import org.netbeans.paint.api.splines.CurveTo;
@@ -35,20 +35,24 @@ import org.netbeans.paint.api.splines.Node;
 import org.netbeans.paint.api.splines.PathModel;
 import org.netbeans.paint.api.splines.QuadTo;
 import org.openide.util.Lookup;
-import org.openide.util.NbBundle;
-import org.openide.util.Utilities;
-import org.openide.util.lookup.Lookups;
 
 /**
  * A tool for adjusting control points on a selection
  *
  * @author Tim Boudreau
  */
-public class LassoTool extends MouseAdapter implements Tool, PaintParticipant, KeyListener, MouseMotionListener {
+@ToolDef(name="Lasso", iconPath="org/netbeans/paint/tools/resources/lasso.png", category="selection")
+@Tool(Selection.class)
+public class LassoTool extends MouseAdapter implements /* Tool,*/ PaintParticipant, KeyListener, MouseMotionListener, Attachable {
     private Repainter repainter;
     private Layer layer;
     private PathModel<Entry> mdl;
     private static final int hitZone = 10;
+    private final Selection sel;
+    
+    public LassoTool(Selection sel) {
+        this.sel = sel;
+    }
 
     @Override
     public void mouseMoved(MouseEvent e) {
@@ -139,18 +143,8 @@ public class LassoTool extends MouseAdapter implements Tool, PaintParticipant, K
         repainter.requestRepaint();
     }
 
-    public Icon getIcon() {
-        return new ImageIcon (Utilities.loadImage(
-                "org/netbeans/paint/tools/resources/lasso.png"));
-    }
-
-    public String getName() {
-        return NbBundle.getMessage (LassoTool.class, "Lasso");
-    }
-
-    public void activate(Layer layer) {
-        this.layer = layer;
-        Selection s = layer.getLookup().lookup(Selection.class);
+    public void attach(Lookup.Provider layer) {
+        Selection s = sel;
         if (s != null) {
             Shape shape = s.asShape();
             if (shape != null) {
@@ -159,20 +153,12 @@ public class LassoTool extends MouseAdapter implements Tool, PaintParticipant, K
         }
     }
 
-    public void deactivate() {
+    public void detach() {
        repainter.setCursor(Cursor.getDefaultCursor());
              this.layer = null;
         repainter = null;
         commit(0);
         mdl = null;
-    }
-
-    public Lookup getLookup() {
-        return Lookups.fixed(this);
-    }
-
-    public boolean canAttach(Layer layer) {
-        return layer.getLookup().lookup(Selection.class) != null;
     }
 
     public void attachRepainter(Repainter repainter) {

@@ -11,9 +11,10 @@ package org.netbeans.paint.tools;
 
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import net.dev.java.imagine.spi.tools.Customizer;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Constants;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
@@ -22,8 +23,11 @@ import org.openide.util.NbBundle;
  *
  * @author Tim Boudreau
  */
+@ToolDef(name="Rounded_Rectangle", iconPath="org/netbeans/paint/tools/resources/roundrect.png")
+@Tool(Surface.class)
 public class RoundRectTool extends RectangleTool {
-    public RoundRectTool () {
+    public RoundRectTool (Surface surface) {
+        super(surface);
     }
 
     @Override
@@ -77,10 +81,5 @@ public class RoundRectTool extends RectangleTool {
     
     private final Customizer<Integer> arcWc = Customizers.getCustomizer(Integer.class, Constants.ARC_WIDTH, 0, 50);
     private final Customizer<Integer> arcHc = Customizers.getCustomizer(Integer.class, Constants.ARC_HEIGHT, 0, 50);
-    
 
-    @Override
-    public Icon getIcon() {
-        return new ImageIcon (DrawTool.load(DrawTool.class, "roundrect.png"));
-    }
 }

@@ -22,7 +22,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,12 +37,12 @@ import javax.swing.event.UndoableEditEvent;
 import javax.swing.undo.UndoManager;
 import net.dev.java.imagine.api.selection.PictureSelection;
 import net.dev.java.imagine.api.selection.Selection;
-import net.dev.java.imagine.spi.tools.NonPaintingTool;
-import net.dev.java.imagine.spi.tools.PaintParticipant;
-import net.dev.java.imagine.spi.tools.PaintParticipant.Repainter;
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.api.tool.Tool;
+import net.dev.java.imagine.api.tool.aspects.NonPaintingTool;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import net.java.dev.imagine.api.image.Hibernator;
-import net.java.dev.imagine.api.image.Layer;
+import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
@@ -191,23 +190,29 @@ final class PictureScene extends Scene {
         }
         validate();
     }
-
+    
     public void setActiveTool(Tool tool) {
         if (this.activeTool == tool) {
+            if (tool != null) {
+                System.err.println("Active tool is already " + activeTool + " - do nothing");
+            }
             return;
         }
         if (this.activeTool != null) {
-            this.activeTool.deactivate();
+            this.activeTool.detach();
         }
         this.activeTool = tool;
         if (tool != null && picture.getActiveLayer() != null) {
             LayerImplementation l = picture.getActiveLayer();
+            //With new API, we must attach first, or the tool's lookup contents
+            //are not initialized yet
+            tool.attach(l.getLayer());
             PaintParticipant participant = get(tool, PaintParticipant.class);
+            System.err.println("Paint participant for " + tool + " is " + participant + " - " + tool.getLookup().lookupAll(Object.class));
             if (participant != null) {
+                System.err.println("attaching repainter");
                 participant.attachRepainter(selectionLayer.rp);
-
             }
-            tool.activate(l.getLookup().lookup(Layer.class));
             SurfaceImplementation surf = l.getSurface();
             if (surf != null) {
                 l.getSurface().setTool(tool);
@@ -215,9 +220,8 @@ final class PictureScene extends Scene {
         }
     }
 
-    private <T extends Object> T get(Tool tool, Class<T> clazz) {
-        return tool == null ? null : clazz.isInstance(tool)
-                ? clazz.cast(tool) : tool.getLookup().lookup(clazz);
+    private <T> T get(Tool tool, Class<T> clazz) {
+        return tool == null ? null : tool.getLookup().lookup(clazz);
     }
 
     Zoom getZoom() {
@@ -294,15 +298,6 @@ final class PictureScene extends Scene {
                     Dimension sceneSize = getScene().getBounds().getSize();
                     double endX = Math.ceil(sceneSize.getWidth() * z);
                     double endY = Math.ceil(sceneSize.getHeight() * z);
-
-                    if (g.getClip() != null) {
-                        Rectangle r = g.getClip().getBounds();
-//                        endX = r.width + r.x;
-//                        endY = r.height + r.y;
-                        //XXX normalize start positions
-                        //Normalize so no matter what the bounds we're painting,
-                        //we always start on the same line relative to the upper left
-                    }
                     g.setXORMode(Color.RED);
 
                     for (int i = 0; i <= endX; i += skipPx) {
@@ -368,6 +363,10 @@ final class PictureScene extends Scene {
         public void stateChanged(ChangeEvent e) {
             repaint();
         }
+        
+        private boolean isNonPainting(Tool tool) {
+            return tool == null || tool.getLookup().lookup(NonPaintingTool.class) != null;
+        }
 
         class RP implements Repainter {
 
@@ -377,7 +376,7 @@ final class PictureScene extends Scene {
                     Widget w = findWidget(picture.getActiveLayer());
                     PictureScene.this.repaint(w, w.getBounds());
                 }
-                if (activeTool instanceof NonPaintingTool) {
+                if (activeTool != null && isNonPainting(activeTool)) {
                     validate();
                     repaint();
                 }
@@ -389,8 +388,13 @@ final class PictureScene extends Scene {
                     mainLayer.repaint();
                     return;
                 }
-                if (picture.getActiveLayer() != null) {
-                    Widget w = findWidget(picture.getActiveLayer());
+                LayerImplementation layer = picture.getActiveLayer();
+                if (layer != null) {
+                    Widget w = findWidget(layer);
+                    SurfaceImplementation s = layer.getSurface();
+                    if (s != null) {
+                        bounds.translate(s.getLocation().x, s.getLocation().y);
+                    }
                     PictureScene.this.repaint(w, bounds);
                 } else {
                     getScene().repaint();
@@ -420,9 +424,6 @@ final class PictureScene extends Scene {
                                 RenderingHints.VALUE_STROKE_PURE);
                         PaintParticipant painter = activeTool == null ? null
                                 : activeTool.getLookup().lookup(PaintParticipant.class);
-                        if (painter == null && activeTool instanceof PaintParticipant) {
-                            painter = (PaintParticipant) activeTool;
-                        }
                         if (painter != null) {
                             //XXX maybe not l.getBounds()?
                             painter.paint(g, null, true);
@@ -487,7 +488,8 @@ final class PictureScene extends Scene {
         }
 
         private State dispatchToTool(MouseEvent event, MouseListener ml) {
-            MouseMotionListener mml = get(activeTool, MouseMotionListener.class);
+//            System.out.println("dispatch " + event.getX() + " " + event.getY() + " to " + ml);
+            MouseMotionListener mml = toolAs(MouseMotionListener.class);
             switch (event.getID()) {
                 case MouseEvent.MOUSE_PRESSED:
                     if (ml != null) {
@@ -652,6 +654,21 @@ final class PictureScene extends Scene {
             if (newW != null) {
                 newW.getActions().addAction(toolAction);
             }
+            
+            Tool tool = activeTool;
+            if (activeTool != null) {
+                activeTool.detach();
+                if (nue != null) {
+                    if (activeTool.canAttach(nue.getLayer())) {
+                        activeTool.attach(nue.getLayer());
+                        SurfaceImplementation surf = nue.getSurface();
+                        if (surf != null) {
+                            surf.getSurface().setTool(tool);
+                        }
+                    }
+                }
+            }
+            
             if (picture != null && picture.psel != null) {
                 picture.psel.activeLayerChanged(old, nue);
             }

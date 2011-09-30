@@ -85,8 +85,6 @@ public abstract class LayerFactory {
      */
     public abstract LayerImplementation convert (Layer other);
     
-    public abstract String getToolRegistryPath();
-
     /**
      * Get the display name for converting another layer to this type -
      * e.g. "Rasterize Layer".  The default implementation returns, in

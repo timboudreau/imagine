@@ -40,20 +40,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.filechooser.FileFilter;
-import net.java.dev.imagine.api.image.Layer;
-import net.dev.java.imagine.spi.tools.Customizer;
-import net.dev.java.imagine.spi.tools.CustomizerProvider;
-import net.dev.java.imagine.spi.tools.PaintParticipant;
-import net.dev.java.imagine.spi.tools.PaintParticipant.Repainter;
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.api.tool.aspects.Attachable;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import net.java.dev.imagine.api.image.Surface;
 import org.netbeans.paint.api.components.FileChooserUtils;
 import org.openide.util.Lookup;
@@ -64,41 +63,48 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Tim Boudreau
  */
-public class ImageTool implements Tool, MouseListener, MouseMotionListener, KeyListener, PaintParticipant, CustomizerProvider, Customizer {
+@Tool(Surface.class)
+@ToolDef(name="Image", iconPath="org/netbeans/paint/tools/resources/image.png")
+public class ImageTool implements MouseListener, MouseMotionListener, KeyListener, PaintParticipant, CustomizerProvider, Customizer, Attachable {
     private BufferedImage image = null;
     private Repainter repainter;
+    private final Surface surface;
+    /*
+    public String getInstructions() {
+        return NbBundle.getMessage (getClass(), "Position_image_and_double-click_or_press_enter"); //NOI18N
+    }
+    */
 
-    /** Creates a new instance of ImageTool */
-    public ImageTool() {
+    public ImageTool(Surface surface) {
+        this.surface = surface;
     }
     
-    public boolean canAttach (Layer layer) {
-        return layer.getLookup().lookup (Surface.class) != null;
+    public String getName() {
+        return NbBundle.getMessage(ImageTool.class, "Image");
     }
-
+    
+    public String toString() {
+        return getName();
+    }
+    
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() == 2) {
             commit();
         }
     }
 
-    private boolean armed;
     public void mousePressed(MouseEvent e) {
-        armed = true;
     }
 
     public void mouseReleased(MouseEvent e) {
-        armed = false;
         commit();
         image = null;
     }
 
     public void mouseEntered(MouseEvent e) {
-        armed = true;
     }
 
     public void mouseExited(MouseEvent e) {
-        armed = false;
     }
 
     public void mouseDragged(MouseEvent e) {
@@ -106,7 +112,6 @@ public class ImageTool implements Tool, MouseListener, MouseMotionListener, KeyL
     }
 
     public void mouseMoved(MouseEvent e) {
-        armed = true;
         imgLocation = e.getPoint();
         repainter.requestRepaint(null); //XXX why repaint everything?
     }
@@ -176,11 +181,11 @@ public class ImageTool implements Tool, MouseListener, MouseMotionListener, KeyL
             g.drawRenderedImage(img, at);
             g.setComposite(c);
         } else {
-            layer.getSurface().beginUndoableOperation(toString());
+            surface.beginUndoableOperation(toString());
             try {
                 g.drawRenderedImage(img, at);
             } finally {
-                layer.getSurface().endUndoableOperation();
+                surface.endUndoableOperation();
             }
         }
     }
@@ -203,18 +208,13 @@ public class ImageTool implements Tool, MouseListener, MouseMotionListener, KeyL
         this.repainter = repainter;
     }
 
-    @Override
-    public String toString() {
-        return NbBundle.getMessage (getClass(), "Image");
-    }
-
     private BufferedImage loadImage() {
         JFileChooser jfc = FileChooserUtils.getFileChooser("image"); //NOI18N
-        jfc.setDialogTitle(NbBundle.getMessage (getClass(), "Load_Image")); //NOI18N
+        jfc.setDialogTitle(NbBundle.getMessage (ImageTool.class, "Load_Image")); //NOI18N
         jfc.setDialogType(JFileChooser.OPEN_DIALOG);
         jfc.setFileHidingEnabled(false);
         jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        jfc.setApproveButtonText(NbBundle.getMessage (getClass(), "Open_Image")); //NOI18N
+        jfc.setApproveButtonText(NbBundle.getMessage (ImageTool.class, "Open_Image")); //NOI18N
         jfc.setMultiSelectionEnabled(false);
         jfc.setAccessory(new ImagePanel(jfc));
         jfc.setFileFilter(new FF());
@@ -250,7 +250,7 @@ public class ImageTool implements Tool, MouseListener, MouseMotionListener, KeyL
         }
 
         public String getDescription() {
-            return NbBundle.getMessage (getClass(), "Image_File_Formats"); //NOI18N
+            return NbBundle.getMessage (ImageTool.class, "Image_File_Formats"); //NOI18N
         }
 
         private String getFileExt (File f) {
@@ -362,29 +362,16 @@ public class ImageTool implements Tool, MouseListener, MouseMotionListener, KeyL
         }
     }
 
-    public String getInstructions() {
-        return NbBundle.getMessage (getClass(), "Position_image_and_double-click_or_press_enter"); //NOI18N
-    }
-
-    public Icon getIcon() {
-        return new ImageIcon (DrawTool.load(DrawTool.class, "image.png")); //NOI18N
-    }
-
     public Customizer getCustomizer() {
         return this;
-    }
-
-    public String getName() {
-        return NbBundle.getMessage (getClass(), "Image");
     }
 
     public Object get() {
         return image;
     }
 
-    public void deactivate() {
+    public void detach() {
         repainter = null;
-        layer = null;
         image = null;
     }
 
@@ -392,13 +379,11 @@ public class ImageTool implements Tool, MouseListener, MouseMotionListener, KeyL
         return Lookups.singleton (this);
     }
 
-    private Layer layer;
-    public void activate(Layer layer) {
-        this.layer = layer;
+    public void attach(Lookup.Provider layer) {
     }
 
     public JComponent getComponent() {
-        JButton jb = new JButton (NbBundle.getMessage (getClass(), "Load_Image")); //NOI18N
+        JButton jb = new JButton (NbBundle.getMessage (ImageTool.class, "Load_Image")); //NOI18N
         jb.addActionListener(new ActionListener() {
             public void actionPerformed (ActionEvent e) {
                 loadImage();

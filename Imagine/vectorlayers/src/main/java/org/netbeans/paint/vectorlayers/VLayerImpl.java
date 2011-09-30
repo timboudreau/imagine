@@ -139,7 +139,7 @@ class VLayerImpl extends LayerImplementation {
     protected Lookup createLookup() {
         return Lookups.fixed (layer, surface, 
                 surface.getSurface(), 
-                surface.stack, new MoveShapeTool());
+                surface.stack, surface.getGraphics());
     }
 
     @Override

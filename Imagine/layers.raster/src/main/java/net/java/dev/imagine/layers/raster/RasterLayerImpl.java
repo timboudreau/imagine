@@ -37,6 +37,8 @@ import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import org.netbeans.paint.api.editing.LayerFactory;
+import org.netbeans.paint.api.util.LazyGraphics;
+import org.netbeans.paint.api.util.LazyGraphics.GraphicsProvider;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
@@ -272,7 +274,20 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
 
     @Override
     protected Lookup createLookup() {
-        return Lookups.fixed(this, surface.getSurface(), layer, RasterMarker.INSTANCE, selection);
+        Graphics2D lazyGraphics = LazyGraphics.create(new GraphicsProvider(){
+
+            @Override
+            public Graphics2D getGraphics() {
+                return surface.getGraphics();
+            }
+
+            @Override
+            public void onDispose(Graphics2D graphics) {
+                //do nothing
+            }
+        }, true);
+        
+        return Lookups.fixed(this, surface.getSurface(), layer, selection, lazyGraphics);
     }
 
     public void setCursor(Cursor cursor) {

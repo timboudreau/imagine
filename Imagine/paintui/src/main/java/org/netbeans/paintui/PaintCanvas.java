@@ -46,15 +46,15 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import net.dev.java.imagine.api.tool.Tool;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.netbeans.paint.api.editor.Zoom;
-import net.dev.java.imagine.spi.tools.PaintParticipant;
-import net.dev.java.imagine.spi.tools.PaintParticipant.Repainter;
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import org.netbeans.paint.api.util.GraphicsUtils;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
@@ -282,16 +282,16 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
             return;
         }
         if (this.tool != null) {
-            this.tool.deactivate();
+            this.tool.detach();
         }
         this.tool = tool;
         if (tool != null && picture.getActiveLayer() != null) {
             LayerImplementation l = picture.getActiveLayer();
+            tool.attach(l.getLayer());
             PaintParticipant participant = get(tool, PaintParticipant.class);
             if (participant != null) {
                 participant.attachRepainter(this);
             }
-            tool.activate(l.getLookup().lookup(Layer.class));
             SurfaceImplementation surf = l.getSurface();
             if (surf != null) {
                 l.getSurface().setTool(tool);
@@ -506,10 +506,10 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
         if (e.getSource() instanceof PictureImplementation) {
             PictureImplementation pictureImpl = (PictureImplementation) e.getSource();
             if (tool != null) {
-                tool.deactivate();
+                tool.detach();
                 LayerImplementation layer = pictureImpl.getActiveLayer();
                 if (layer != null) {
-                    tool.activate(layerFor(layer));
+                    tool.attach(layer.getLayer());
                 }
             }
             for (Iterator i = pictureImpl.getLayers().iterator(); i.hasNext();) {

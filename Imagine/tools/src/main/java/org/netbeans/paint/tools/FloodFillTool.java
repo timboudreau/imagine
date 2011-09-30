@@ -11,26 +11,23 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import net.dev.java.imagine.api.selection.Selection;
-import net.dev.java.imagine.spi.tools.Customizer;
-import net.dev.java.imagine.spi.tools.CustomizerProvider;
-import net.dev.java.imagine.spi.tools.PaintParticipant;
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.api.tool.aspects.Attachable;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Constants;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
-import org.netbeans.paint.api.util.RasterConverter;
 import org.netbeans.paint.api.util.TrackingGraphics;
 import org.openide.util.Lookup;
-import org.openide.util.NbBundle;
-import org.openide.util.Utilities;
+import org.openide.util.Lookup.Provider;
 import org.openide.util.lookup.Lookups;
 
 /**
@@ -38,35 +35,29 @@ import org.openide.util.lookup.Lookups;
  * @author Tim Boudreau
  */
 
-public class FloodFillTool extends MouseAdapter implements Tool, MouseListener, CustomizerProvider, PaintParticipant {
+@ToolDef(name="FLOOD_FILL", iconPath="org/netbeans/paint/tools/resources/floodfill.png")
+@Tool(Surface.class)
+public class FloodFillTool extends MouseAdapter implements /* Tool, MouseListener, */ CustomizerProvider, PaintParticipant, Attachable {
 
     //Flood fill algorithm from http://www.codecodex.com/wiki/index.php?title=Implementing_the_flood_fill_algorithm
-    private Layer layer;
-    private final Icon icon = new ImageIcon(
-            Utilities.loadImage(
-            "org/netbeans/paint/tools/resources/floodfill.png")); //NOI18N
     private Repainter repainter;
-    public FloodFillTool() {
+    private Surface surface;
+    private Lookup.Provider layer;
+    public FloodFillTool(Surface surface) {
+        this.surface = surface;
     }
     
-    public Icon getIcon() {
-        return icon;
+    @Override
+    public void attach(Provider on) {
+        this.layer = on;
+        getCustomizer(); //xxx initialization?
     }
 
-    public String getName() {
-        return NbBundle.getMessage(FloodFillTool.class, "FLOOD_FILL");
-    }
-
-    public void activate(Layer layer) {
-        this.layer = layer;
-        getCustomizer();
-    }
-
-    public void deactivate() {
+    @Override
+    public void detach() {
         this.layer = null;
-        this.repainter = null;
     }
-
+    
     public Lookup getLookup() {
         return Lookups.singleton(this);
     }
@@ -85,16 +76,13 @@ public class FloodFillTool extends MouseAdapter implements Tool, MouseListener, 
     private int threshold = 0;
     @Override
     public void mouseClicked(MouseEvent e) {
-        if (layer != null) {
-            Surface surface = layer.getSurface();
             BufferedImage img = surface.getImage();
+            /*
             if (img == null) {
                 RasterConverter conv = RasterConverter.getDefault();
                 if (conv != null) {
                     Layer newLayer = RasterConverter.askUserToConvert(layer, null, this);
                     if (newLayer != null) {
-                        deactivate();
-                        activate(newLayer);
                         surface = newLayer.getSurface();
                         img = surface.getImage();
                         if (img == null) {
@@ -104,12 +92,13 @@ public class FloodFillTool extends MouseAdapter implements Tool, MouseListener, 
                     }
                 }
             }
+            */
             if (img == null) {
                 return;
             }
             threshold = threshC.get();
             Color color = colorC.get();
-            surface.beginUndoableOperation(getName());
+            surface.beginUndoableOperation(toString()); //XXX
             try {
                 WritableRaster raster = img.getRaster();
                 int red = color.getRed();
@@ -132,7 +121,6 @@ public class FloodFillTool extends MouseAdapter implements Tool, MouseListener, 
             } finally {
                 surface.endUndoableOperation();
             }
-        }
     }
     private Shape selection;
 

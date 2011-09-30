@@ -25,8 +25,11 @@ import javax.swing.JRadioButton;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import net.dev.java.imagine.spi.tools.Customizer;
-import net.dev.java.imagine.spi.tools.CustomizerProvider;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
+import net.java.dev.imagine.api.image.Surface;
 import org.netbeans.paint.api.components.explorer.FolderPanel;
 import org.netbeans.paint.tools.spi.Fill;
 import org.netbeans.paint.tools.spi.MouseDrivenTool;
@@ -35,17 +38,22 @@ import org.openide.util.NbBundle;
  *
  * @author Timothy Boudreau
  */
+@ToolDef(iconPath="org/netbeans/paint/tools/resources/pencil.png", name="NAME_PencilTool")
+@Tool(Surface.class)
 public class PencilTool extends MouseDrivenTool implements ChangeListener, ActionListener, CustomizerProvider, Customizer {
-    public PencilTool() {
-        super ("org/netbeans/paint/tools/resources/pencil.png", //NOI18N
-                NbBundle.getMessage (PencilTool.class, "NAME_PencilTool")); //NOI18N
+    public PencilTool(Surface surface) {
+        super(surface);
+    }
+    
+    public String getName() {
+        return NbBundle.getMessage (PencilTool.class, "NAME_PencilTool");
     }
 
     protected void dragged (Point p, int modifiers) {
         if (!isActive()) {
             return;
         }
-        Graphics2D g2d = getLayer().getSurface().getGraphics();
+        Graphics2D g2d = surface.getGraphics();
         g2d.setPaint(getPaint());
         int half = diam / 2;
         g2d.fillRect(p.x - half, p.y - half, diam, diam);
@@ -141,6 +149,11 @@ public class PencilTool extends MouseDrivenTool implements ChangeListener, Actio
 
     public void actionPerformed(ActionEvent e) {
         setRound (roundButton.isSelected());
+    }
+
+    @Override
+    public Object get() {
+        return null;
     }
 
     private class PencilSizeView extends JComponent {

@@ -21,13 +21,13 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
+import net.dev.java.imagine.api.tool.aspects.Attachable;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Layer;
-import net.dev.java.imagine.spi.tools.Customizer;
-import net.dev.java.imagine.spi.tools.CustomizerProvider;
-import net.dev.java.imagine.spi.tools.PaintParticipant;
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Constants;
@@ -36,6 +36,7 @@ import net.java.dev.imagine.api.toolcustomizers.FontStyle;
 import org.netbeans.paint.tools.fills.FillCustomizer;
 import org.netbeans.paint.tools.spi.Fill;
 import org.openide.util.Lookup;
+import org.openide.util.Lookup.Provider;
 import org.openide.util.NbBundle;
 import org.openide.util.lookup.Lookups;
 
@@ -43,7 +44,25 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Tim Boudreau
  */
-public class TextTool implements Tool, KeyListener, MouseListener, MouseMotionListener, PaintParticipant, CustomizerProvider {
+
+@ToolDef(name="Text", iconPath="org/netbeans/paint/tools/resources/text.png")
+@Tool(Surface.class)
+public class TextTool implements KeyListener, MouseListener, MouseMotionListener, PaintParticipant, CustomizerProvider, Attachable {
+    private final Surface surface;
+    
+    public TextTool(Surface surface) {
+        this.surface = surface;
+    }
+    
+    @Override
+    public String toString() {
+        return NbBundle.getMessage (TextTool.class, "Text"); //NOI18N
+    }
+
+    public String getInstructions() {
+        return NbBundle.getMessage (TextTool.class, "Click_to_position_text"); //NOI18N
+    }
+
     public boolean canAttach (Layer layer) {
         return layer.getLookup().lookup (Surface.class) != null;
     }
@@ -149,30 +168,14 @@ public class TextTool implements Tool, KeyListener, MouseListener, MouseMotionLi
         repainter.requestRepaint (null);
     }
 
-    @Override
-    public String toString() {
-        return NbBundle.getMessage (TextTool.class, "Text"); //NOI18N
-    }
-
-    public String getInstructions() {
-        return NbBundle.getMessage (TextTool.class, "Click_to_position_text"); //NOI18N
-    }
-
-    public Icon getIcon() {
-        return new ImageIcon (DrawTool.load(DrawTool.class, NbBundle.getMessage (TextTool.class, "text.png")));
-    }
-
     public String getName() {
         return toString();
     }
 
-    private Layer layer;
-    public void activate(Layer layer) {
-        this.layer = layer;
-    }
-
-    public void deactivate() {
-        repainter.requestRepaint(null);
+    public void detach() {
+        if (repainter != null) {
+            repainter.requestRepaint(null);
+        }
         armed = false;
         loc = null;
     }
@@ -201,5 +204,10 @@ public class TextTool implements Tool, KeyListener, MouseListener, MouseMotionLi
         float fontSize = sizeC.get();
         int style = styleC.get().toFontConstant();
         return f.deriveFont(style, fontSize);
+    }
+
+    @Override
+    public void attach(Provider on) {
+        //do nothing
     }
 }

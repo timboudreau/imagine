@@ -41,10 +41,10 @@ import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoableEdit;
 import net.dev.java.imagine.api.selection.Selection;
 import net.dev.java.imagine.api.selection.Selection.Op;
+import net.dev.java.imagine.api.tool.Tool;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.netbeans.paint.api.editing.UndoManager;
 import org.netbeans.paint.api.editor.IO;
-import net.dev.java.imagine.spi.tools.Tool;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Picture;
 import net.java.dev.imagine.api.image.Surface;
@@ -473,7 +473,6 @@ public class PaintTopComponent extends TopComponent implements ChangeListener, L
         }
         return false;
     }
-    
     boolean isActive() {
         return TopComponent.getRegistry().getActivated() == this;
     }

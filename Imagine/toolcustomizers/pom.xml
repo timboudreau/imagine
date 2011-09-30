@@ -43,14 +43,14 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>paintapi</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util-lookup</artifactId>
             <version>RELEASE701</version>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.imagine</groupId>
+            <artifactId>toolsapi</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

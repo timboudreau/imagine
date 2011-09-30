@@ -17,8 +17,8 @@ import java.awt.Point;
 import java.awt.Shape;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
+import net.dev.java.imagine.api.tool.Tool;
 import net.dev.java.imagine.spi.effects.EffectRecipient;
-import net.dev.java.imagine.spi.tools.Tool;
 import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 

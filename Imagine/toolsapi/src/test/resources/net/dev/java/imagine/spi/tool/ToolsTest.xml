@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.0//EN" "http://www.netbeans.org/dtds/filesystem-1_0.dtd">
+<filesystem>
+    <folder name="tools">
+        <folder name="someTool">
+            <attr name="SystemFileSystem.icon" stringvalue="net/dev/java/imagine/spi/tool/icon.png"/>
+            <attr name="SystemFileSystem.localizingBundle" stringvalue="net.dev.java.imagine.spi.tool.Bundle"/>
+            <attr name="SystemFileSystem.icon" urlvalue="nbresloc:/org/netbeans/paint/tools/resources/standardbrush.png"/>
+            
+            <attr name="position" intvalue="100"/>
+            <attr name="category" stringvalue="stuff"/>
+            <file name="a">
+                <attr name="instanceClass" stringvalue="net.dev.java.imagine.spi.tool.ToolDriver"/>
+                <attr name="instanceCreate" methodvalue="net.dev.java.imagine.spi.tool.ToolDriver.create"/>
+                <attr name="sensitiveTo" stringvalue="net.dev.java.imagine.spi.tool.A"/>
+                <attr name="type" stringvalue="net.dev.java.imagine.spi.tool.ToolImplA"/>
+                <attr name="position" intvalue="100"/>
+            </file>
+            <file name="b">
+                <attr name="instanceClass" stringvalue="net.dev.java.imagine.spi.tool.ToolDriver"/>
+                <attr name="instanceCreate" methodvalue="net.dev.java.imagine.spi.tool.ToolDriver.create"/>
+                <attr name="sensitiveTo" stringvalue="net.dev.java.imagine.spi.tool.B"/>
+                <attr name="type" stringvalue="net.dev.java.imagine.spi.tool.ToolImplB"/>
+                <attr name="position" intvalue="200"/>
+        </file>
+        </folder>
+        <folder name="anotherTool">
+            <attr name="SystemFileSystem.icon" stringvalue="net/dev/java/imagine/spi/tool/icon.png"/>
+            <attr name="position" intvalue="200"/>
+            <attr name="category" stringvalue="otherStuff"/>
+            <file name="a1">
+                <attr name="instanceClass" stringvalue="net.dev.java.imagine.spi.tool.ToolDriver"/>
+                <attr name="instanceCreate" methodvalue="net.dev.java.imagine.spi.tool.ToolDriver.create"/>
+                <attr name="sensitiveTo" stringvalue="net.dev.java.imagine.spi.tool.B"/>
+                <attr name="type" stringvalue="net.dev.java.imagine.spi.tool.ToolImplC"/>
+                <attr name="position" intvalue="100"/>
+            </file>
+        </folder>
+    </folder>
+</filesystem>

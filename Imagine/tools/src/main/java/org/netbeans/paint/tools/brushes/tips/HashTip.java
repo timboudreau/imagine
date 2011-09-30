@@ -11,7 +11,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import javax.swing.JComponent;
-import net.dev.java.imagine.spi.tools.Customizer;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Constants;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;

@@ -5,7 +5,7 @@
 
 package org.netbeans.paint.api.util;
 
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.api.tool.Tool;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Picture;
 import org.netbeans.paint.api.editing.LayerFactory;

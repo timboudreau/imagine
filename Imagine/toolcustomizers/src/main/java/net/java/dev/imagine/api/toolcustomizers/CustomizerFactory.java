@@ -5,7 +5,7 @@
 
 package net.java.dev.imagine.api.toolcustomizers;
 
-import net.dev.java.imagine.spi.tools.Customizer;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
 
 /**
  * Factory for customizers which can be registered in the default lookup, to

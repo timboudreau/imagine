@@ -21,23 +21,25 @@ import java.awt.geom.Ellipse2D;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.selection.Selection;
 import net.dev.java.imagine.api.selection.Selection.Op;
-import net.dev.java.imagine.spi.tools.PaintParticipant;
-import net.java.dev.imagine.api.image.Layer;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import org.netbeans.paint.tools.spi.MouseDrivenTool;
 import org.openide.util.ChangeSupport;
-import org.openide.util.NbBundle;
 
 /**
  *
  * @author Timothy Boudreau
  */
+@Tool(Selection.class)
+@ToolDef(name="NAME_OvalSelectionTool", iconPath="org/netbeans/paint/tools/resources/ovalselection.png", category="selection")
 public class OvalSelectionTool extends MouseDrivenTool implements PaintParticipant {
+    private final Selection selection;
 
     /** Creates a new instance of OvalSelectionTool */
-    public OvalSelectionTool() {
-        super("org/netbeans/paint/tools/resources/roundselection.png",
-                NbBundle.getMessage(OvalSelectionTool.class,
-                "NAME_OvalSelectionTool"));   //XXX
+    public OvalSelectionTool(Selection selection) {
+        super(null);
+        this.selection = selection;
     }
     private Ellipse2D.Double shape = null;
 
@@ -100,8 +102,7 @@ public class OvalSelectionTool extends MouseDrivenTool implements PaintParticipa
         } else {
             op = Op.ADD;
         }
-        Layer layer = this.getLayer();
-        Selection sel = layer.getLookup().lookup(Selection.class);
+        Selection sel = selection;
         if (sel != null) {
             if (shape != null) {
                 sel.addShape(shape, op);
@@ -120,9 +121,5 @@ public class OvalSelectionTool extends MouseDrivenTool implements PaintParticipa
         if (shape != null && startPoint != null && !commit) {
             Selection.paintSelectionAsShape(g2d, shape, layerBounds);
         }
-    }
-
-    public boolean canAttach(Layer layer) {
-        return layer.getLookup().lookup(Selection.class) != null;
     }
 }

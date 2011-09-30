@@ -39,13 +39,6 @@ import javax.swing.plaf.SliderUI;
  */
 public class SimpleSliderUI extends SliderUI implements ChangeListener {
 
-    /**
-     * Creates a new instance of SimpleSliderUI
-     */
-
-    public SimpleSliderUI() {
-    }
-
     public static ComponentUI createUI(JComponent b) {
         return new SimpleSliderUI();
     }

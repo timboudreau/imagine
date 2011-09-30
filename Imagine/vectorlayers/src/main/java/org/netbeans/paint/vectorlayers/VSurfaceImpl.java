@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.api.tool.Tool;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import net.java.dev.imagine.api.vector.painting.VectorWrapperGraphics;

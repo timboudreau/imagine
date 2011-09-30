@@ -28,8 +28,10 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.SliderUI;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
 import org.netbeans.paint.api.components.PopupSliderUI;
-import net.dev.java.imagine.spi.tools.CustomizerProvider;
+import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Surface;
 import org.netbeans.paint.tools.spi.MouseDrivenTool;
@@ -38,11 +40,12 @@ import org.openide.util.NbBundle;
  *
  * @author Timothy Boudreau
  */
+@ToolDef(iconPath="org/netbeans/paint/tools/resources/eraser.png", name="Eraser")
+@Tool(Surface.class)
 public class EraserTool extends MouseDrivenTool implements ChangeListener, ActionListener, CustomizerProvider {
 
-    public EraserTool() {
-        super ("org/netbeans/paint/tools/resources/eraser.png",
-                NbBundle.getMessage (EraserTool.class, "NAME_EraserTool"));
+    public EraserTool(Surface surface) {
+        super (surface);
     }
 
     @Override
@@ -54,7 +57,7 @@ public class EraserTool extends MouseDrivenTool implements ChangeListener, Actio
         if (!isActive()) {
             return;
         }
-        Graphics2D g2d = getLayer().getSurface().getGraphics();
+        Graphics2D g2d = surface.getGraphics();
         if (round) {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         }
@@ -70,9 +73,6 @@ public class EraserTool extends MouseDrivenTool implements ChangeListener, Actio
     }
 
     private int diam = 24;
-    private int getDiam() {
-        return diam;
-    }
 
     private void setDiam(int diam) {
         if (this.diam != diam) {

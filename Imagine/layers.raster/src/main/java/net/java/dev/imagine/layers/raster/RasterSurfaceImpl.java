@@ -37,10 +37,10 @@ import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoableEdit;
 import net.dev.java.imagine.api.selection.Selection;
+import net.dev.java.imagine.api.tool.Tool;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
-import net.dev.java.imagine.spi.tools.NonPaintingTool;
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.api.tool.aspects.NonPaintingTool;
 import org.netbeans.paint.api.util.GraphicsUtils;
 import org.netbeans.paint.misc.image.ByteNIOBufferedImage;
 import org.netbeans.paint.misc.image.ImageHolder;
@@ -145,7 +145,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     }
     
    private void takeSnapshot() {
-       if (snapshot == null && (currentTool == null || !(currentTool instanceof NonPaintingTool))) {
+       if (snapshot == null && (currentTool == null || !isNonPainting(currentTool))) {
            Point loc = getLocation();
            int width = img.getWidth();
            int height = img.getHeight();
@@ -174,12 +174,17 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
                    width, height));
        }
    }
+   
+   boolean isNonPainting(Tool tool) {
+       NonPaintingTool oldNP = tool == null ? null : tool.getLookup().lookup(NonPaintingTool.class);
+       return tool == null ? true : oldNP != null;
+   }
     
     public void setTool(Tool tool) {
         Tool old = currentTool;
         if (old != tool) {
-            boolean wasNonPainting = old instanceof NonPaintingTool || old == null;
-            boolean isNonPainting = tool instanceof NonPaintingTool || tool == null;
+            boolean wasNonPainting = isNonPainting(old);
+            boolean isNonPainting = isNonPainting(tool);
 
             currentTool = tool;
             if (currentTool != null && !isNonPainting) {
@@ -652,7 +657,8 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         inUndoableOperation = true;
         takeSnapshot();
 
-        if (!(currentTool instanceof NonPaintingTool)) {
+//        if (!(currentTool instanceof NonPaintingTool)) {
+        if (currentTool != null && !isNonPainting(currentTool)) {
             growImageIfNeeded();
         }
         
@@ -684,7 +690,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             if (undo != null) {
                 undo.undoableEditHappened(new UndoableEditEvent(this, edit));
             }
-            if (currentTool != null && !(currentTool instanceof NonPaintingTool)) {
+            if (currentTool != null && !isNonPainting(currentTool)) {
                 takeSnapshot();
             }
         }

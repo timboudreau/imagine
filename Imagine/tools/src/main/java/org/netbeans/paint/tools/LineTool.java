@@ -9,6 +9,8 @@
 
 package org.netbeans.paint.tools;
 
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
 import java.awt.BasicStroke;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
@@ -23,31 +25,39 @@ import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import net.java.dev.imagine.api.image.Layer;
-import net.dev.java.imagine.spi.tools.Customizer;
-import net.dev.java.imagine.spi.tools.CustomizerProvider;
-import net.dev.java.imagine.spi.tools.PaintParticipant;
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import org.netbeans.paint.tools.fills.FillCustomizer;
 import org.openide.util.Lookup;
-import org.openide.util.NbBundle;
 import org.openide.util.lookup.Lookups;
 import static net.java.dev.imagine.api.toolcustomizers.Constants.*;
 /**
  *
  * @author Tim Boudreau
  */
-public class LineTool implements Tool, PaintParticipant, MouseMotionListener, MouseListener, KeyListener, CustomizerProvider {
+@ToolDef(name="Line", iconPath="org/netbeans/paint/tools/resources/line.png")
+@Tool(Surface.class)
+public class LineTool implements /* Tool, */ PaintParticipant, MouseMotionListener, MouseListener, KeyListener, CustomizerProvider {
     private PaintParticipant.Repainter repainter;
-    public boolean canAttach (Layer layer) {
-        return layer.getLookup().lookup (Surface.class) != null;
+    private final Surface surface;
+    
+    public LineTool(Surface surface) {
+        this.surface = surface;
     }
-
+    
+    /*
+    
+    public String getInstructions() {
+        return NbBundle.getMessage (LineTool.class, 
+                "Click_to_create_anchor_points,_Enter_or_dbl-click_to_finish"); //NOI18N
+    }
+    * 
+    */
+    
     private BasicStroke stroke = new BasicStroke (2.5F);
     public void setStroke (float val) {
         stroke = new BasicStroke (val, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
@@ -59,12 +69,12 @@ public class LineTool implements Tool, PaintParticipant, MouseMotionListener, Mo
 
     public void paint(Graphics2D g2d, Rectangle layerBounds, boolean commit) {
         if (commit) {
-            layer.getSurface().beginUndoableOperation(toString());
+            surface.beginUndoableOperation(toString());
         }
         paint (g2d);
         if (commit) {
             try {
-                layer.getSurface().endUndoableOperation();
+                surface.endUndoableOperation();
             } finally {
                 clear();
             }
@@ -188,33 +198,12 @@ public class LineTool implements Tool, PaintParticipant, MouseMotionListener, Mo
     public void keyReleased(KeyEvent e) {
     }
 
-    @Override
-    public String toString() {
-        return NbBundle.getMessage (LineTool.class, "Line"); //NOI18N
+    public void attach(Lookup.Provider layer) {
     }
 
-    public String getInstructions() {
-        return NbBundle.getMessage (LineTool.class, 
-                "Click_to_create_anchor_points,_Enter_or_dbl-click_to_finish"); //NOI18N
-    }
-
-    public Icon getIcon() {
-        return new ImageIcon (DrawTool.load(DrawTool.class, "line.png"));
-    }
-
-    public String getName() {
-        return toString();
-    }
-
-    private Layer layer;
-    public void activate(Layer layer) {
-        this.layer = layer;
-    }
-
-    public void deactivate() {
+    public void detach() {
         points.clear();
         lastLoc = null;
-        layer = null;
         repainter = null;
     }
 
@@ -227,6 +216,7 @@ public class LineTool implements Tool, PaintParticipant, MouseMotionListener, Mo
     }
 
     public void attachRepainter(PaintParticipant.Repainter repainter) {
+        System.out.println("Attach repainter to " + this + " - " + repainter);
         this.repainter = repainter;
     }
 

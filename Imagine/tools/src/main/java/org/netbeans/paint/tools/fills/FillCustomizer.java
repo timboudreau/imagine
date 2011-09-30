@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
-import net.dev.java.imagine.spi.tools.Customizer;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import org.netbeans.paint.api.components.explorer.FolderPanel;
 import org.netbeans.paint.tools.spi.Fill;

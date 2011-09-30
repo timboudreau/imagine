@@ -19,7 +19,7 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.SliderUI;
-import net.dev.java.imagine.spi.tools.Customizer;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.java.dev.imagine.toolcustomizers.BooleanCustomizer;
 import net.java.dev.imagine.toolcustomizers.ColorCustomizer;
 import net.java.dev.imagine.toolcustomizers.FontCustomizer;

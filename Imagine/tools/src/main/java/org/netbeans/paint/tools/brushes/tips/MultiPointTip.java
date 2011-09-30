@@ -13,7 +13,7 @@ import java.awt.Rectangle;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import net.dev.java.imagine.spi.tools.Customizer;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import org.netbeans.paint.tools.fills.FillCustomizer;
 import org.netbeans.paint.tools.spi.BrushTip;

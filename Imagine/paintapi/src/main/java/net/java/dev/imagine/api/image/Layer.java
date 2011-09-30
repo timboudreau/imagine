@@ -30,7 +30,7 @@ import org.openide.util.Mutex;
  *
  * @author Timothy Boudreau
  */
-public final class Layer {
+public final class Layer implements Lookup.Provider {
     public static final String PROP_BOUNDS = "bounds"; //NOI18N
     public static final String PROP_NAME = "name"; //NOI18N
     public static final String PROP_VISIBLE = "visible"; //NOI18N

@@ -14,39 +14,38 @@ import java.awt.image.BufferedImageOp;
 import java.awt.image.ConvolveOp;
 import java.awt.image.Kernel;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Surface;
 import org.netbeans.paint.api.util.RasterConverter;
 import org.netbeans.paint.tools.spi.MouseDrivenTool;
-import org.openide.util.NbBundle;
-import org.openide.util.Utilities;
 
 /**
  *
  * @author Tim Boudreau
  */
+@ToolDef(name="TOOL_SMUDGE", iconPath="org/netbeans/paint/tools/resources/smudge.png")
+@Tool(Surface.class)
 public class SmudgeTool extends MouseDrivenTool {
     private int radius = 20;
-    public SmudgeTool() {
-        super (new ImageIcon(Utilities.loadImage("org/netbeans/paint/tools/" + //NOI18N
-                "resources/smudge.png")), NbBundle.getMessage(SmudgeTool.class,  //NOI18N
-                "TOOL_SMUDGE")); //NOI18N
+    public SmudgeTool(Surface surface) {
+        super(surface);
     }
 
     @Override
     protected void dragged(Point p, int modifiers) {
-        Layer layer = this.getLayer();
-        Surface surface = layer.getSurface();
+        assert layer != null;
         BufferedImage img = surface.getImage();
+        /*
         if (img == null) {
             RasterConverter conv = RasterConverter.getDefault();
             if (conv != null) {
                 Layer newLayer = RasterConverter.askUserToConvert(layer, null, this);
                 if (newLayer != null) {
-                    super.deactivate();
-                    super.activate(newLayer);
+//                    super.deactivate();
+                    super.attach(newLayer);
                     surface = newLayer.getSurface();
                     img = surface.getImage();
                     if (img == null) {
@@ -56,6 +55,7 @@ public class SmudgeTool extends MouseDrivenTool {
                 }
             }
         }
+        */
         if (img == null) {
             return;
         }

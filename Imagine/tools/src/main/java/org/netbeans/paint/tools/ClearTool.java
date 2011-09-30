@@ -16,11 +16,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JComponent;
-import net.java.dev.imagine.api.image.Layer;
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Surface;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
@@ -30,39 +28,24 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Tim Boudreau
  */
-public class ClearTool extends MouseAdapter implements Tool, KeyListener {
+@Tool(name="Clear", value=Surface.class)
+@ToolDef(iconPath="org/netbeans/paint/tools/resources/clear.png")
+public class ClearTool extends MouseAdapter implements /* Tool, */ KeyListener {
+    private final Surface surface;
 
-    public ClearTool() {
-    }
-
-    public String getName() {
-        return NbBundle.getMessage (getClass(), "Clear");
-    }
-
-    public boolean canAttach (Layer layer) {
-        return layer.getLookup().lookup (Surface.class) != null;
-    }
-
-    private Layer layer;
-    public void activate(Layer layer) {
-        this.layer = layer;
-    }
-
-    public void deactivate() {
-        this.layer = null;
+    public ClearTool(Surface surface) {
+        this.surface = surface;
     }
 
     public JComponent getCustomizer(boolean create) {
         return null;
     }
 
+    /*
     public String getInstructions() {
         return NbBundle.getMessage (getClass(), "Click_or_press_Enter_to_clear_the_canvas");
     }
-
-    public Icon getIcon() {
-        return new ImageIcon (DrawTool.load(ClearTool.class, "clear.png"));
-    }
+    */
 
     public void mouseReleased (MouseEvent e) {
         go();
@@ -87,9 +70,9 @@ public class ClearTool extends MouseAdapter implements Tool, KeyListener {
     }
 
     private void go() {
-        Graphics g = layer.getSurface().getGraphics();
+        Graphics g = surface.getGraphics();
         g.setColor(new Color (255, 255, 255, 0));
-        Rectangle r = layer.getBounds();
+        Rectangle r = new Rectangle (surface.getLocation(), surface.getSize());
         g.fillRect(r.x, r.y, r.width, r.height);
         g.dispose();
     }

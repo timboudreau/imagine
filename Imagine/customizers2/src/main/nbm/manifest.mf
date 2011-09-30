@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+OpenIDE-Module-Localizing-Bundle: net/java/dev/imagine/customizers2/Bundle.properties
+OpenIDE-Module-Layer: net/java/dev/imagine/customizers2/layer.xml

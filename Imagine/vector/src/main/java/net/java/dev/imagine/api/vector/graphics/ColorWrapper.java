@@ -15,7 +15,6 @@ import java.awt.Paint;
 import java.awt.geom.AffineTransform;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
-import net.java.dev.imagine.api.vector.elements.*;
 
 /**
  *
@@ -31,8 +30,8 @@ public class ColorWrapper implements Primitive, PaintWrapper, Attribute <Color> 
     }
 
     public ColorWrapper (Color color) {
-        this (color.getRed(), color.getGreen(),
-                 color.getBlue(), color.getAlpha());
+        this (color == null ? 0 : color.getRed(), color == null ? 0 : color.getGreen(),
+                 color == null ? 0 : color.getBlue(), color == null ? 0 : color.getAlpha());
     }
 
     public Color toColor() {

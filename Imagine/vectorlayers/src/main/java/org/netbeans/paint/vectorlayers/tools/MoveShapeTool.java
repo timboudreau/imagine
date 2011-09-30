@@ -10,9 +10,6 @@
 package org.netbeans.paint.vectorlayers.tools;
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.Graphics;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -28,10 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
-import javax.swing.Icon;
 import javax.swing.JPopupMenu;
-import net.dev.java.imagine.spi.tools.PaintParticipant;
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.api.tool.aspects.Attachable;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Attribute;
@@ -42,38 +39,28 @@ import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.aggregate.PaintedPrimitive;
 import net.java.dev.imagine.api.vector.design.ControlPoint;
-import net.java.dev.imagine.api.vector.design.ControlPoint;
 import net.java.dev.imagine.api.vector.design.ControlPointFactory;
-import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
 import net.java.dev.imagine.api.vector.util.Pt;
 import net.java.dev.imagine.api.vector.util.Size;
 import org.netbeans.paint.vectorlayers.ShapeStack;
 import org.openide.util.Lookup;
-import org.openide.util.NbBundle;
-import org.openide.util.lookup.Lookups;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class MoveShapeTool extends MouseMotionAdapter implements Tool, Icon, PaintParticipant, MouseListener, ControlPoint.Controller {
+@Tool(name="Move", value=ShapeStack.class)
+public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, */ PaintParticipant, MouseListener, ControlPoint.Controller, Attachable {
 
-    public MoveShapeTool() {
+    public MoveShapeTool(ShapeStack stack) {
+        this.stack = stack;
     }
 
-    public Icon getIcon() {
-        return this;
-    }
-
-    public String getName() {
-        return NbBundle.getMessage(MoveShapeTool.class, "LBL_MoveShapeTool"); //NOI18N
-    }
-
-    private Layer layer;
     private ShapeStack stack;
-    public void activate(Layer layer) {
-        this.layer = layer;
+    private Layer layer;
+    public void attach(Lookup.Provider p) {
+        this.layer = p.getLookup().lookup(Layer.class);
         ShapeStack stack = (ShapeStack) layer.getLookup().lookup (ShapeStack.class);
         assert stack != null;
         this.stack = stack;
@@ -82,38 +69,13 @@ public class MoveShapeTool extends MouseMotionAdapter implements Tool, Icon, Pai
         }
     }
 
-    public void deactivate() {
-        layer = null;
+    public void detach() {
+        this.layer = null;
         stack = null;
         shape = null;
         mousePressPoint = null;
         cpoint = null;
         repainter = null;
-    }
-
-    public Lookup getLookup() {
-        return Lookups.fixed(this);
-    }
-
-    public boolean canAttach(Layer layer) {
-//        Lookup lkp = layer.getLookup();
-//        ShapeStack stack = lkp.lookup(ShapeStack.class);
-//        boolean result = stack != null;
-//        return result;
-        return true;
-    }
-
-    public void paintIcon(Component arg0, Graphics arg1, int arg2, int arg3) {
-        arg1.setColor(Color.BLUE);
-        arg1.fillRect (arg2, arg3, arg0.getWidth(), arg0.getHeight());
-    }
-
-    public int getIconWidth() {
-        return 16;
-    }
-
-    public int getIconHeight() {
-        return 16;
     }
 
     private Point mousePressPoint;

@@ -55,7 +55,6 @@ public final class SelectAndCustomizePanel extends JPanel implements ExplorerMan
     private JLabel lbl;
     private JPanel top;
     public SelectAndCustomizePanel(String folder, boolean useIconDropDown) {
-        useIconDropDown = true;
         customizerContainer.setLayout(new BorderLayout());
         mgr.addPropertyChangeListener(this);
         choice.setMinimumSize(new Dimension(80, 16));

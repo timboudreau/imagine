@@ -9,12 +9,11 @@
 
 package org.netbeans.paint.tools;
 
-import static org.netbeans.paint.tools.MutableRectangle.ANY;
-import static org.netbeans.paint.tools.MutableRectangle.NE;
-import static org.netbeans.paint.tools.MutableRectangle.NW;
-import static org.netbeans.paint.tools.MutableRectangle.SE;
-import static org.netbeans.paint.tools.MutableRectangle.SW;
-
+import net.dev.java.imagine.api.tool.aspects.Attachable;
+import net.dev.java.imagine.spi.tool.Tool;
+import java.lang.Float;
+import net.dev.java.imagine.spi.tool.ToolDef;
+import static org.netbeans.paint.tools.MutableRectangle.*;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -28,14 +27,11 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import net.java.dev.imagine.api.image.Layer;
 
-import net.dev.java.imagine.spi.tools.Customizer;
-import net.dev.java.imagine.spi.tools.CustomizerProvider;
-import net.dev.java.imagine.spi.tools.PaintParticipant;
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
@@ -50,15 +46,16 @@ import static net.java.dev.imagine.api.toolcustomizers.Constants.*;
  *
  * @author Tim Boudreau
  */
-public class RectangleTool implements Tool, PaintParticipant, MouseMotionListener, MouseListener, KeyListener, CustomizerProvider {
+@ToolDef(name="Rectangle", iconPath="org/netbeans/paint/tools/resources/rect.png")
+@Tool(Surface.class)
+public class RectangleTool implements PaintParticipant, MouseMotionListener, MouseListener, KeyListener, CustomizerProvider, Attachable {
     MutableRectangle rect;
     private int draggingCorner;
+    protected final Surface surface;
 
-    public RectangleTool () {
-    }
-
-    public boolean canAttach (Layer layer) {
-        return layer.getLookup().lookup (Surface.class) != null;
+    public RectangleTool (Surface surface) {
+        this.surface = surface;
+//        new Exception("Create "  + System.identityHashCode(this) ).printStackTrace(); //XXX
     }
 
     public Rectangle getRectangle() {
@@ -84,17 +81,13 @@ public class RectangleTool implements Tool, PaintParticipant, MouseMotionListene
         }
     }
 
-    @Override
-    public String toString() {
-        return NbBundle.getMessage (getClass(), "Rectangle");
-    }
-
     public void paint(Graphics2D g2d) {
         Rectangle toPaint = rect == null ? TEMPLATE_RECTANGLE : rect;
         lastPaintedRectangle.setBounds (toPaint);
         if (armed || committing) {
             g2d.setStroke(new BasicStroke (this.strokeC.get()));
-            boolean fill = fillC.get();
+            Boolean xfill = fillC.get();
+            boolean fill = xfill == null ? false : xfill.booleanValue();
             draw (toPaint, g2d, fill);
         }
     }
@@ -152,13 +145,17 @@ public class RectangleTool implements Tool, PaintParticipant, MouseMotionListene
 //        TEMPLATE_RECTANGLE.setLocation(p);
 //        Rectangle repaintRect = old.union(TEMPLATE_RECTANGLE);
 //        c.repaint (repaintRect.x, repaintRect.y,  repaintRect.width, repaintRect.height);
-        repainter.requestRepaint(null);
+        if (repainter != null) {
+            repainter.requestRepaint(null);
+        }
     }
 
     private void repaintWithRect() {
 //        Rectangle repaintRect = lastPaintedRectangle.union(rect);
 //        c.repaint (repaintRect.x, repaintRect.y,  repaintRect.width, repaintRect.height);
-        repainter.requestRepaint(null);
+        if (repainter != null) {
+            repainter.requestRepaint(null);
+        }
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -202,14 +199,11 @@ public class RectangleTool implements Tool, PaintParticipant, MouseMotionListene
 
     public void paint(Graphics2D g2d, Rectangle layerBounds, boolean commit) {
         committing = commit;
-        assert layer != null;
-        assert layer.getSurface() != null;
-        assert toString() != null;
-        layer.getSurface().beginUndoableOperation(toString());
+        surface.beginUndoableOperation(null);
         try {
             paint (g2d);
         } finally {
-            layer.getSurface().endUndoableOperation();
+            surface.endUndoableOperation();
             committing = false;
         }
     }
@@ -254,25 +248,16 @@ public class RectangleTool implements Tool, PaintParticipant, MouseMotionListene
         return NbBundle.getMessage (getClass(), "Click_and_move_mouse_or_click-and-drag_to_draw");
     }
 
-    public Icon getIcon() {
-        return new ImageIcon (DrawTool.load(DrawTool.class, "rect.png"));
+    public void attach(Lookup.Provider layer) {
+//        new Exception("Detach "  + System.identityHashCode(this) ).printStackTrace(); //XXX
     }
 
-    public String getName() {
-        return toString();
-    }
-
-    private Layer layer;
-    public void activate(Layer layer) {
-        this.layer = layer;
-    }
-
-    public void deactivate() {
+    public void detach() {
         rect = null;
         TEMPLATE_RECTANGLE.setBounds (0, 0, NO_ANCHOR_SIZE, NO_ANCHOR_SIZE);
-        this.layer = null;
         committing = false;
         armed = false;
+//        new Exception("Detach "  + System.identityHashCode(this) ).printStackTrace(); //XXX
     }
 
     public Cursor getCursor() {
@@ -286,12 +271,15 @@ public class RectangleTool implements Tool, PaintParticipant, MouseMotionListene
     private Repainter repainter;
     public void attachRepainter(PaintParticipant.Repainter repainter) {
         this.repainter = repainter;
+//        new Exception("Attach repainter to "  + System.identityHashCode(this) + " " + repainter).printStackTrace(); //XXX
     }
     
-    protected final FillCustomizer paintC = FillCustomizer.getDefault();
-    protected final Customizer<Color> outlineC = Customizers.getCustomizer(Color.class, FOREGROUND);
-    protected final Customizer<Boolean> fillC = Customizers.getCustomizer(Boolean.class, FILL);
-    protected final Customizer<Float> strokeC = Customizers.getCustomizer(Float.class, STROKE);
+    //XXX these should not be static, but the old code assumes we keep a tool
+    //instance for the life of the application
+    protected static final FillCustomizer paintC = FillCustomizer.getDefault();
+    protected static final Customizer<Color> outlineC = Customizers.getCustomizer(Color.class, FOREGROUND);
+    protected static final Customizer<Boolean> fillC = Customizers.getCustomizer(Boolean.class, FILL);
+    protected static final Customizer<Float> strokeC = Customizers.getCustomizer(Float.class, STROKE);
 
     public Customizer getCustomizer() {
         return new AggregateCustomizer ("foo", fillC, outlineC, strokeC, paintC);

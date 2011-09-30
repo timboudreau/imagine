@@ -60,7 +60,8 @@
 	    <attr name="position" intvalue="150"/>
         </file>
     </folder>
-    
+
+    <!--
     <folder name="tools">
         <folder name="raster">
             <file name="org-netbeans-paint-tools-BrushTool.instance"/>
@@ -74,7 +75,6 @@
             <file name="org-netbeans-paint-tools-RectangleTool.instance"/>
             <file name="org-netbeans-paint-tools-RoundRectTool.instance"/>
             <file name="org-netbeans-paint-tools-TextTool.instance"/>
-<!--            <file name="org-netbeans-paint-tools-MagicWandSelectionTool.instance"/> -->
             <file name="org-netbeans-paint-tools-RectangularSelectionTool.instance"/>
             <file name="org-netbeans-paint-tools-OvalSelectionTool.instance"/>
         </folder>
@@ -93,4 +93,5 @@
             <file name="org-netbeans-paint-tools-OvalSelectionTool.instance"/>
         </folder>
     </folder>
+    -->
 </filesystem>

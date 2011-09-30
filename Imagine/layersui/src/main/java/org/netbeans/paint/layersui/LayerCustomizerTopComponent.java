@@ -1,8 +1,8 @@
 package org.netbeans.paint.layersui;
 
 import java.awt.BorderLayout;
-import net.dev.java.imagine.spi.tools.Customizer;
-import net.dev.java.imagine.spi.tools.CustomizerProvider;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import net.java.dev.imagine.api.image.Layer;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;

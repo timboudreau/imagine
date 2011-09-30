@@ -68,8 +68,4 @@ public final class RasterLayerFactory extends LayerFactory {
         return NbBundle.getMessage(RasterLayerFactory.class,
                 "LBL_ConvertToRaster"); //NOI18N
     }
-
-    public String getToolRegistryPath() {
-        return "layers/raster/";
-    }
 }

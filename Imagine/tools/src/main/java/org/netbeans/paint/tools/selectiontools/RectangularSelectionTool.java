@@ -12,6 +12,8 @@
  * Microsystems, Inc. All Rights Reserved.
  */
 package org.netbeans.paint.tools.selectiontools;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
 import org.openide.util.ChangeSupport;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -21,10 +23,9 @@ import java.awt.event.KeyEvent;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.selection.Selection;
 import net.dev.java.imagine.api.selection.Selection.Op;
-import net.dev.java.imagine.spi.tools.PaintParticipant;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.java.dev.imagine.api.image.Layer;
 import org.netbeans.paint.tools.spi.MouseDrivenTool;
-import org.openide.util.NbBundle;
 import static org.netbeans.paint.tools.selectiontools.MutableRectangle.*;
 
 /**
@@ -35,16 +36,18 @@ import static org.netbeans.paint.tools.selectiontools.MutableRectangle.*;
  *
  * @author Timothy Boudreau
  */
+@Tool(Selection.class)
+@ToolDef(name="NAME_RectangularSelectionTool", iconPath="org/netbeans/paint/tools/resources/rectangularselection.png", category="selection")
 public class RectangularSelectionTool extends MouseDrivenTool implements PaintParticipant {
+    private final Selection sel;
 
     /**
      * Creates a new instance of RectangularSelectionTool
      */
 
-    public RectangularSelectionTool() {
-        super("org/netbeans/paint/tools/resources/rectselection.png",
-              NbBundle.getMessage(RectangularSelectionTool.class,
-                                                   "NAME_RectangularSelectionTool"));
+    public RectangularSelectionTool(Selection selection) {
+        super(null);
+        this.sel = selection;
     }
 
     public Shape getSelection() {
@@ -80,7 +83,6 @@ public class RectangularSelectionTool extends MouseDrivenTool implements PaintPa
         startingPoint = p;
         if (selection != null) {
             int corner = selection.nearestCorner(p);
-
             setDraggingCorner(corner);
         }
         else {
@@ -112,8 +114,6 @@ public class RectangularSelectionTool extends MouseDrivenTool implements PaintPa
         } else {
             op = Op.REPLACE;
         }
-        Layer layer = this.getLayer();
-        Selection<?> sel = layer.getLookup().lookup(Selection.class);
         if (sel != null) {
             if (selection != null) {
                 sel.addShape(selection, op);

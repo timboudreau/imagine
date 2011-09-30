@@ -14,8 +14,6 @@ import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.geom.AffineTransform;
-import java.util.prefs.Preferences;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComboBox;
@@ -25,10 +23,9 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import net.java.dev.imagine.api.toolcustomizers.AbstractCustomizer;
 import org.netbeans.paint.api.components.FontComboBoxModel;
+import org.netbeans.paint.api.components.Fonts;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
-import org.netbeans.paint.api.util.Fonts;
 import org.openide.util.NbBundle;
-import org.openide.util.NbPreferences;
 
 /**
  *

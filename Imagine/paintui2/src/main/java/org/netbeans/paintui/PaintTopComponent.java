@@ -43,10 +43,10 @@ import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoableEdit;
 import net.dev.java.imagine.api.selection.Selection;
 import net.dev.java.imagine.api.selection.Selection.Op;
+import net.dev.java.imagine.api.tool.Tool;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.netbeans.paint.api.editing.UndoManager;
 import org.netbeans.paint.api.editor.IO;
-import net.dev.java.imagine.spi.tools.Tool;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Picture;
 import net.java.dev.imagine.api.image.Surface;
@@ -311,13 +311,15 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
                 l.add (sel); 
             }
             Surface surf = 
-                    layerImpl.getLookup().lookup(Surface.class);
+                    layerImpl.getLookup().lookup(Surface.class); //XXX what is this?
             
             if (surf != null) {
                 l.add (surf);
             }
         }
-        l.addAll(layerImpl.getLookup().lookupAll(Object.class));
+        if (layerImpl != null) {
+            l.addAll(layerImpl.getLookup().lookupAll(Object.class)); //XXX use PRoxyLookup properly
+        }
         UIContextLookupProvider.set(l);
 //        UIContextLookupProvider.setLayer(layerImpl.getLookup());
         System.err.println("Lookup contents set to " + UIContextLookupProvider.theLookup().lookupAll(Object.class));
@@ -455,11 +457,10 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
         }
     }
     
-    private Lookup.Result tools = null;
+    private Lookup.Result<Tool> tools = null;
     
     private void startListening() {
-        tools = Utilities.actionsGlobalContext().lookup(
-                new Lookup.Template(Tool.class));
+        tools = Utilities.actionsGlobalContext().lookupResult(Tool.class);
         tools.addLookupListener(this);
     }
     
@@ -470,8 +471,8 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
     
     private void updateActiveTool() {
         if (TopComponent.getRegistry().getActivated() == this) {
-            Collection c = tools.allInstances();
-            setActiveTool(c.size() == 0 ? null : (Tool) c.iterator().next());
+            Collection<? extends Tool> oneOrNone = tools.allInstances();
+            setActiveTool(oneOrNone.isEmpty() ? null : (Tool) oneOrNone.iterator().next());
         }
     }
     

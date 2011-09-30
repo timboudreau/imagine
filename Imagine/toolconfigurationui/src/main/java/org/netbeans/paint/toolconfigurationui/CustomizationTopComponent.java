@@ -7,9 +7,9 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
-import net.dev.java.imagine.spi.tools.Customizer;
-import net.dev.java.imagine.spi.tools.CustomizerProvider;
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.api.tool.Tool;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import org.netbeans.paint.api.components.DefaultSharedLayoutData;
 import org.netbeans.paint.api.components.LayoutDataProvider;
 import org.netbeans.paint.api.components.SharedLayoutData;
@@ -50,11 +50,11 @@ public final class CustomizationTopComponent extends TopComponent implements Loo
         setBorder(BorderFactory.createEmptyBorder(val, val, val, val));
     }
 
-    private Lookup.Result res = null;
+    private Lookup.Result<Tool> res = null;
     @Override
     public void addNotify() {
         super.addNotify();
-        res = Utilities.actionsGlobalContext().lookup(new Lookup.Template(Tool.class));
+        res = Utilities.actionsGlobalContext().lookupResult(Tool.class);
         res.addLookupListener(this);
         resultChanged (null);
     }

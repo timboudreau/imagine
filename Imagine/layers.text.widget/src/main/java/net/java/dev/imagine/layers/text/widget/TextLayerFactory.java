@@ -33,9 +33,4 @@ public class TextLayerFactory extends LayerFactory {
     public LayerImplementation convert(Layer other) {
         throw new UnsupportedOperationException("No.");
     }
-
-    @Override
-    public String getToolRegistryPath() {
-        return "textTools"; //XXX
-    }
 }

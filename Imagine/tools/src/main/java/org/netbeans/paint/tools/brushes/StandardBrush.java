@@ -18,7 +18,7 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import net.dev.java.imagine.spi.tools.Customizer;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.java.dev.imagine.api.toolcustomizers.Constants;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import org.netbeans.paint.api.components.explorer.Customizable;

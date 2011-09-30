@@ -15,6 +15,7 @@ import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.openide.util.NbBundle;
+import org.openide.util.NbBundle.Messages;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -22,7 +23,8 @@ import org.openide.util.lookup.ServiceProvider;
  *
  * @author Tim Boudreau
  */
-@ServiceProvider(service=VectorLayerFactory.class)
+@ServiceProvider(service=LayerFactory.class)
+@Messages("LBL_VectorLayerFactory=Vector")
 public final class VectorLayerFactory extends LayerFactory {
 
     public VectorLayerFactory () {
@@ -43,9 +45,5 @@ public final class VectorLayerFactory extends LayerFactory {
 
     public LayerImplementation convert(Layer other) {
         throw new UnsupportedOperationException();
-    }
-
-    public String getToolRegistryPath() {
-        return "layers/vector/";
     }
 }

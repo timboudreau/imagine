@@ -13,7 +13,7 @@ import java.awt.EventQueue;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
-import net.dev.java.imagine.spi.tools.Customizer;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.openide.util.ChangeSupport;
 

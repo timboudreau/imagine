@@ -18,9 +18,10 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
-import net.dev.java.imagine.spi.tools.Tool;
+import net.dev.java.imagine.api.tool.Tool;
 import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.api.image.Surface;
+import org.netbeans.paint.api.util.Movable;
 
 /**
  * A writable drawing surface belonging to a Layer.  Layers contain operations
@@ -29,7 +30,7 @@ import net.java.dev.imagine.api.image.Surface;
  *
  * @author Timothy Boudreau
  */
-public abstract class SurfaceImplementation {
+public abstract class SurfaceImplementation implements Movable {
     protected final Surface surface;
 
     protected SurfaceImplementation() {
