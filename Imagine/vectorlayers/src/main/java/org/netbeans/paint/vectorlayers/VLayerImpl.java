@@ -14,12 +14,16 @@ import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeListener;
 import javax.swing.event.SwingPropertyChangeSupport;
+import net.java.dev.imagine.effects.api.EffectReceiver;
+import net.java.dev.imagine.effects.spi.ImageSource;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import org.netbeans.paint.api.editing.LayerFactory;
-import org.netbeans.paint.vectorlayers.tools.MoveShapeTool;
+import org.netbeans.paint.api.util.GraphicsUtils;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 
@@ -139,7 +143,53 @@ class VLayerImpl extends LayerImplementation {
     protected Lookup createLookup() {
         return Lookups.fixed (layer, surface, 
                 surface.getSurface(), 
-                surface.stack, surface.getGraphics());
+                surface.stack, surface.getGraphics(),
+                new IS());
+    }
+    
+    class CompositeReceiver extends EffectReceiver<Composite> {
+
+        public CompositeReceiver() {
+            super(Composite.class);
+        }
+
+        @Override
+        protected <ParamType> boolean onApply(Composite effect) {
+            surface.applyComposite(effect);
+            return true;
+        }
+
+        @Override
+        public Dimension getSize() {
+            return surface.getSize();
+        }
+        
+    }
+    
+    class IS implements ImageSource {
+
+        @Override
+        public BufferedImage getRawImage() {
+            Dimension d = surface.getSize();
+            BufferedImage result = new BufferedImage(d.width, d.height, GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
+            Graphics2D g = result.createGraphics();
+            surface.paint(g, null);
+            g.dispose();
+            return result;
+        }
+
+        @Override
+        public BufferedImage createImageCopy(Dimension size) {
+            Dimension d = surface.getSize();
+            BufferedImage result = new BufferedImage(size.width, size.height, GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
+            AffineTransform xform = AffineTransform.getScaleInstance(size.getWidth() / d.getWidth(), size.getHeight() / d.getHeight());
+            Graphics2D g = result.createGraphics();
+            g.setTransform(xform);
+            surface.paint(g, null);
+            g.dispose();
+            return result;
+        }
+        
     }
 
     @Override

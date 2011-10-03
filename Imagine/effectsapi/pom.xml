@@ -80,6 +80,12 @@
                 <artifactId>nbm-maven-plugin</artifactId>
                 <version>3.5</version>
                 <extensions>true</extensions>
+                <configuration>
+                    <publicPackages>
+                        <publicPackage>net.java.dev.imagine.effects.api</publicPackage>
+                        <publicPackage>net.java.dev.imagine.effects.spi</publicPackage>
+                    </publicPackages>
+                </configuration>
             </plugin>
 
             <plugin>

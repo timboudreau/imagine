@@ -15,7 +15,7 @@ public class EffectAnnotationProcessorTest {
     public void test() {
         Collection<? extends Effect> all = Effect.allEffects(); //Lookups.forPath("effects").lookupAll(Effect.class);
         System.err.println("ALL EFFECTS : " + all);
-        assertEquals(1, all.size());
+        assertEquals(2, all.size());
         Effect e = all.iterator().next();
         assertEquals("SomeEffect", e.getName());
         assertTrue(e.createInitialParam() instanceof Data);

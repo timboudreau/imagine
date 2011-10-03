@@ -36,7 +36,7 @@ public abstract class ToolProperty<T, R extends Enum> implements Value<T>, Mutab
     public ToolProperty<?, ?>[] getSubProperties() {
         return new ToolProperty<?, ?>[0];
     }
-    
+
     public static <R extends Enum> ToolProperty<BasicStroke, R> createStrokeProperty(R name) {
         return new StrokeToolProperty<R>(name);
     }
@@ -67,7 +67,7 @@ public abstract class ToolProperty<T, R extends Enum> implements Value<T>, Mutab
 
     public static <R extends Enum> ToolProperty<Integer, R> createIntegerProperty(R name, int min, int max, int defaultValue) {
         SimpleBounds<Integer> b = new SimpleBounds<Integer>(min, max);
-        return new BoundedWrapper(new IntegerToolProperty<R>(name, defaultValue),b);
+        return new BoundedWrapper(new IntegerToolProperty<R>(name, defaultValue), b);
     }
 
     public static <R extends Enum> ToolProperty<Boolean, R> createBooleanProperty(R name, boolean defaultValue) {
@@ -93,17 +93,18 @@ public abstract class ToolProperty<T, R extends Enum> implements Value<T>, Mutab
         SimpleBounds<Double> b = new SimpleBounds<Double>(min, max);
         return new BoundedWrapper(new DoubleToolProperty<R>(name, defaultValue), b);
     }
-    
+
     public final ToolProperty<Integer, R> scaled(R name) {
         ToolProperty<Double, R> prop = createDoubleProperty(name, 0, 1, 1);
         return new Scaled<R, Double>(prop);
     }
-    
+
     public static final <R extends Enum, T extends Number> ToolProperty<Integer, R> scale(ToolProperty<T, R> prop) {
         return new Scaled<R, T>(prop);
     }
-    
+
     public static interface Provider<T, R extends Enum> {
+
         public ToolProperty<T, R> create();
     }
 
@@ -196,15 +197,15 @@ public abstract class ToolProperty<T, R extends Enum> implements Value<T>, Mutab
             return max;
         }
     }
-    
+
     static class Scaled<R extends Enum, T extends Number> extends ToolProperty<Integer, R> implements ChangeListener, Bounded<Integer> {
+
         private final ToolProperty<T, R> prop;
 
         public Scaled(ToolProperty<T, R> prop) {
             this.prop = prop;
             assert prop.type() == Float.TYPE || prop.type() == Double.TYPE;
         }
-
         private final ChangeSupport supp = new ChangeSupport(this);
 
         @Override
@@ -246,7 +247,7 @@ public abstract class ToolProperty<T, R extends Enum> implements Value<T>, Mutab
             double val = value;
             val /= 100;
             if (prop.type() == Float.TYPE) {
-                prop.set((T)Float.valueOf((float) val));
+                prop.set((T) Float.valueOf((float) val));
             } else {
                 prop.set((T) Double.valueOf(val));
             }

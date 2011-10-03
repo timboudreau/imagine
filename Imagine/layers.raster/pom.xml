@@ -56,7 +56,13 @@
         <dependency>
             <groupId>net.java.dev.imagine</groupId>
             <artifactId>toolsapi</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.imagine</groupId>
+            <artifactId>effectsapi</artifactId>
+            <version>${project.version}</version>
+            <type>nbm</type>
         </dependency>
     </dependencies>
 
@@ -65,7 +71,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <version>3.5</version>
                 <extensions>true</extensions>
             </plugin>
 

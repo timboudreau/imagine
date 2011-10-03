@@ -1,5 +1,6 @@
 package net.java.dev.imagine.effects.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -35,7 +36,7 @@ import org.openide.util.lookup.ServiceProvider;
  * @author Tim Boudreau
  */
 @ServiceProvider(service = Processor.class)
-@SupportedAnnotationTypes("org.demo.action.annotation.Action")
+@SupportedAnnotationTypes("net.java.dev.imagine.effects.spi.Effect")
 @SupportedSourceVersion(SourceVersion.RELEASE_5)
 @Messages("effects=Effects")
 public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
@@ -78,7 +79,6 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
         for (Element e : elements) {
             System.err.println("PROCESS " + e);
             TypeElement type = (TypeElement) e;
-            boolean isStubSubclass = false;
 
             if (e.getModifiers().contains(Modifier.ABSTRACT)) {
                 throw new LayerGenerationException("Cannot instantiate an abstract class", e);
@@ -87,14 +87,9 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
                 throw new LayerGenerationException("Must be a public class", e);
             }
 
-            for (TypeMirror m : processingEnv.getTypeUtils().directSupertypes(type.asType())) {
-                if (processingEnv.getTypeUtils().erasure(m).equals(stubType)) {
-                    isStubSubclass = true;
-                    break;
-                }
-            }
+            boolean isStubSubclass = processingEnv.getTypeUtils().isSubtype(type.asType(), stubType);
             if (!isStubSubclass) {
-                throw new LayerGenerationException("Not a stubclass of " + stubType, e);
+                throw new LayerGenerationException("Not a subclass of " + stubType, e);
             }
             Effect effect = e.getAnnotation(Effect.class);
             DeclaredType outType = findClassValue(e, "value");
@@ -108,15 +103,16 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
                     }
                 }
             }
-            
+
 //            ADD CHECK THAT TYPE PARAMETERS MATCH ANNOTATION PARAMETERS
-            
-            List<? extends TypeMirror> params = getTypeParameters(type);
-            if (params.isEmpty()) {
-                throw new LayerGenerationException("Type parameters not specified", e);
-            } else if (params.size() != 2) {
-                throw new LayerGenerationException("Incorrect number of type parameters", e);
-            }
+
+//            List<? extends TypeMirror> params = getTypeParameters(type);
+//            System.err.println("Type params " + params);
+//            if (params == null || params.isEmpty()) {
+//                throw new LayerGenerationException("Type parameters not specified", e);
+//            } else if (params.size() != 2) {
+//                throw new LayerGenerationException("Incorrect number of type parameters", e);
+//            }
             if (!type.getTypeParameters().isEmpty()) {
                 throw new LayerGenerationException("Class will be instantiated by reflection; type parameters are not visible at runtime and so, are illegal.");
             }
@@ -134,6 +130,7 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
             LayerBuilder.File effectsDir = b.folder(net.java.dev.imagine.effects.api.Effect.EFFECT_FOLDER);
             effectsDir.bundlevalue("displayName", "net/java/dev/imagine/effects/api/Bundle", "effects");
             b = effectsDir.write();
+            System.err.println("OUT TYPE IS " + outType);
             LayerBuilder.File effectFile = b.file(net.java.dev.imagine.effects.api.Effect.EFFECT_FOLDER + '/' + name + ".instance");
             effectFile.bundlevalue("displayName", bundleName, name);
             effectFile.boolvalue(EffectDriver.CAN_PREVIEW_ATTRIBUTE, effect.canPreview());
@@ -166,7 +163,7 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
             LayerBuilder.File fxMenu = b.folder("Menu/Effects");
             fxMenu.bundlevalue("displayName", "net/java/dev/imagine/effectsapi", "effects");
             b = fxMenu.write();
-            
+
             b.shadowFile(action.getPath(), "Menu/Effects", name);
 
         }
@@ -178,13 +175,37 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
         //Annotations will explode if we call methods which return a Class object,
         //so rattle through them and look up the class type in a javac-friendly way
         DeclaredType result = null;
+        AnnotationMirror found = null;
         outer:
         for (AnnotationMirror a : item.getAnnotationMirrors()) {
+            System.err.println("check AM " + a + " - " + a.getAnnotationType().asElement().getEnclosedElements());
             for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e : a.getElementValues().entrySet()) {
+                System.err.println("KEY " + e.getKey() + " TYPES " + types(e.getKey()));
+                AnnotationValue av = e.getValue();
+                System.err.println("AV " + av + " val " + av.getValue());
                 if (e.getKey().getSimpleName().contentEquals(annotationMemberName) && e.getValue().getValue() instanceof DeclaredType) {
+                    found = a;
                     DeclaredType dt = (DeclaredType) e.getValue().getValue();
-                    result = dt;
-                    break outer;
+                    if (dt != null) {
+                        result = dt;
+                        break outer;
+                    }
+                }
+            }
+        }
+        if (result == null && found == null) {
+            System.err.println("Huh? " + item + " - " + annotationMemberName);
+            for (AnnotationMirror a : item.getAnnotationMirrors()) {
+                for (Element el : a.getAnnotationType().asElement().getEnclosedElements()) {
+                    if (el instanceof ExecutableElement) {
+                        ExecutableElement eel = (ExecutableElement) el;
+                        if (eel.getSimpleName().contentEquals(annotationMemberName)) {
+                            if (eel.getDefaultValue() != null && eel.getDefaultValue().getValue() instanceof DeclaredType) {
+                                result = (DeclaredType) eel.getDefaultValue().getValue();
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -207,11 +228,32 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
             c = c.getSuperclass();
         }
         StringBuilder sb = new StringBuilder();
-        for (Iterator<Class<?>> it=result.iterator(); it.hasNext();) {
-            sb.append (it.next().getName());
+        for (Iterator<Class<?>> it = result.iterator(); it.hasNext();) {
+            sb.append(it.next().getName());
             if (it.hasNext()) {
                 sb.append(',');
             }
+        }
+        return sb.toString();
+    }
+
+    private static String types(Object o) { //debug stuff
+        if (o == null) {
+            return "null";
+        }
+        List<String> s = new ArrayList<String>();
+        Class<?> x = o.getClass();
+        while (x != Object.class) {
+            s.add(x.getName());
+            for (Class<?> c : x.getInterfaces()) {
+                s.add(c.getName());
+            }
+            x = x.getSuperclass();
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String ss : s) {
+            sb.append(ss);
+            sb.append(", ");
         }
         return sb.toString();
     }

@@ -18,7 +18,8 @@ import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 
 /**
  * Object which represents a cached, non-heap storage image.  It is passed a
@@ -36,7 +37,7 @@ import java.lang.ref.WeakReference;
  * @author Timothy Boudreau
  */
 public class ImageHolder {
-    private WeakReference realImage = null;
+    private Reference<BufferedImage> realImage = null;
     private BufferedImage cached;
     /** Creates a new instance of NIOImageHolder */
     public ImageHolder(BufferedImage img, Rectangle r) {
@@ -75,14 +76,13 @@ public class ImageHolder {
     public BufferedImage getImage ( boolean acceleratable) {
 	BufferedImage result = null;
         if (!acceleratable) {
-            result = (BufferedImage) (realImage != null ? realImage.get()
-                                   : null);
+            result = realImage != null ? realImage.get() : null;
             if (result == null) {
                 result = cached;
             }
         } else {
             if (realImage != null) {
-                result = (BufferedImage) realImage.get();
+                result = realImage.get();
             }
             if (result == null) {
                 int type;
@@ -97,7 +97,7 @@ public class ImageHolder {
                 g.drawRenderedImage(cached, AffineTransform.getTranslateInstance(
                         0,0));
                 g.dispose();
-                realImage = new WeakReference (result);
+                realImage = new SoftReference<BufferedImage> (result);
             }
         }
         return result;

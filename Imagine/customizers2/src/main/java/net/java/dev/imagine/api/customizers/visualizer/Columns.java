@@ -62,7 +62,7 @@ public class Columns {
         public Columns getColumns();
     }
 
-    Layout createLayout() {
+    public Layout createLayout() {
         return new L();
     }
 

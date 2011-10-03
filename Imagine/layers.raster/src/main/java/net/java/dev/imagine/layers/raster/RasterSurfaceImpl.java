@@ -41,6 +41,7 @@ import net.dev.java.imagine.api.tool.Tool;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import net.dev.java.imagine.api.tool.aspects.NonPaintingTool;
+import net.java.dev.imagine.effects.api.EffectReceiver;
 import org.netbeans.paint.api.util.GraphicsUtils;
 import org.netbeans.paint.misc.image.ByteNIOBufferedImage;
 import org.netbeans.paint.misc.image.ImageHolder;
@@ -124,6 +125,50 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     
     public void setCursor (Cursor cursor) {
         handle.setCursor(cursor);
+    }
+    
+    
+    final EffectReceiver<Composite> compositeReceiver = new CompositeReceiver();
+    final EffectReceiver<BufferedImageOp> bufferedImageOpReceiver = new BufferedImageOpReceiver();
+    
+    class BufferedImageOpReceiver extends EffectReceiver<BufferedImageOp> {
+
+        public BufferedImageOpReceiver() {
+            super(BufferedImageOp.class);
+        }
+
+        @Override
+        protected <ParamType> boolean onApply(BufferedImageOp effect) {
+            Shape sel = selection.get();
+            applyBufferedImageOp(effect, sel);
+            return true;
+        }
+
+        @Override
+        public Dimension getSize() {
+            return RasterSurfaceImpl.this.getSize();
+        }
+    }
+    
+    class CompositeReceiver extends EffectReceiver<Composite> {
+        CompositeReceiver() {
+            super(Composite.class);
+        }
+
+        @Override
+        protected <ParamType> boolean onApply(Composite effect) {
+            Shape sel = selection.get();
+            if (sel != null) {
+                applyComposite(effect, sel);
+            } else {
+                applyComposite(effect);
+            }
+            return true;
+        }
+        @Override
+        public Dimension getSize() {
+            return RasterSurfaceImpl.this.getSize();
+        }
     }
 
    private Snapshot snapshot = null;

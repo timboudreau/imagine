@@ -14,5 +14,5 @@ package net.dev.java.imagine.api.tool.aspects;
  * @author Tim Boudreau
  */
 public interface CustomizerProvider {
-    public Customizer getCustomizer();
+    public Customizer<?> getCustomizer();
 }

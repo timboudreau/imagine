@@ -32,9 +32,9 @@ public class ExpandableWidgetTest {
 
     @Test
     public void testSomeMethod() throws InterruptedException {
-//        if (true) {
-//            return;
-//        }
+        if (true) {
+            return;
+        }
         X x = new X();
         JFrame jf = new JFrame();
         jf.setDefaultCloseOperation(3);

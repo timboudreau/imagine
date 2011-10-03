@@ -1,5 +1,6 @@
 package net.java.dev.imagine.effects.api;
 
+import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 
 /**
@@ -22,7 +23,7 @@ public final class Preview<ImageSourceType, ParamType, OutputType> {
         return new Preview(factory, src, effect);
     }
 
-    public BufferedImage createPreview(ParamType param) {
-        return factory.createPreview(src, effect);
+    public BufferedImage createPreview(Dimension size, ParamType param) {
+        return factory.createPreview(src, effect, param, size);
     }
 }

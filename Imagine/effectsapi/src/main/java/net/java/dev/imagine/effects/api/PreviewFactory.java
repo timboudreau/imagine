@@ -1,5 +1,6 @@
 package net.java.dev.imagine.effects.api;
 
+import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 
 /**
@@ -20,5 +21,5 @@ public abstract class PreviewFactory<ImageSourceType> {
 
     public abstract <T, R> boolean canCreatePreview(Effect<T, R> effect);
 
-    public abstract <T, R> BufferedImage createPreview(ImageSourceType imageSource, Effect<T, R> effect);
+    public abstract <T, R> BufferedImage createPreview(ImageSourceType imageSource, Effect<T, R> effect, T param, Dimension size);
 }

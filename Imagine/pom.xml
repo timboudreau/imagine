@@ -87,9 +87,9 @@
         <module>vectorlayers</module>
         <module>layers.text.widget</module>
         <module>fx</module>
+	<module>effectsapi</module>
     <module>toolsapi</module>
     <module>customizers2</module>
-    <module>effectsapi</module>
   </modules>
 
     <properties>

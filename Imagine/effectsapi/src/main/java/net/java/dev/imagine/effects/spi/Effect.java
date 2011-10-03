@@ -1,5 +1,6 @@
 package net.java.dev.imagine.effects.spi;
 
+import java.awt.Composite;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -20,7 +21,7 @@ public @interface Effect {
      * image-based effects.
      * @return 
      */
-    Class<?> value();
+    Class<?> value() default Composite.class;
 
     /**
      * The type of parameter the effect takes, such 

@@ -25,12 +25,10 @@ import java.awt.image.ColorModel;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.util.Hashtable;
-import javax.swing.JPanel;
-import javax.swing.event.ChangeListener;
-import net.dev.java.imagine.spi.effects.Effect;
+import net.java.dev.imagine.effects.spi.CompositeEffectStub;
+import net.java.dev.imagine.effects.spi.Effect;
 import org.netbeans.paint.api.util.GraphicsUtils;
 import org.openide.util.NbBundle;
-import org.openide.util.lookup.ServiceProvider;
 
 /**
  * Composite which implements a poor-man's blur effect (rubber stamp the
@@ -38,6 +36,7 @@ import org.openide.util.lookup.ServiceProvider;
  *
  * @author Timothy Boudreau
  */
+/*
 @ServiceProvider(service=Effect.class)
 public class BlurEffect implements Effect, Effect.Applicator {
 
@@ -78,7 +77,15 @@ public class BlurEffect implements Effect, Effect.Applicator {
     public Type type() {
         return Type.COMPOSITE;
     }
+    */
+@Effect(position=100)
+public class BlurEffect extends CompositeEffectStub<Void> {
 
+    @Override
+    public Composite create(Void r) {
+        return new BlurComposite();
+    }
+    
     private static class BlurComposite implements Composite {
 	public CompositeContext createContext(ColorModel srcColorModel,
 					      ColorModel dstColorModel,

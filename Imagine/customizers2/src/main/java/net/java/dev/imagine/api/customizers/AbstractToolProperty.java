@@ -17,17 +17,18 @@ import org.openide.util.WeakListeners;
  */
 public abstract class AbstractToolProperty<T, R extends Enum> extends ToolProperty<T, R> {
 
-    private final R name;
-    private final Class<T> type;
+    private final PropertyID<T, R> id;
     private T value;
     private final ChangeSupport supp = new ChangeSupport(this);
     private static final Map<Class<?>, Preferences> prefsCache = new HashMap<Class<?>, Preferences>();
 
-    protected AbstractToolProperty(R name, Class<T> type) {
-        this.name = name;
-        this.type = type;
+    protected AbstractToolProperty(PropertyID<T,R> id) {
+        this.id = id;
         PreferenceChangeListener weakListener = WeakListeners.create(PreferenceChangeListener.class, pcl, getPreferences());
         getPreferences().addPreferenceChangeListener(weakListener);
+    }
+    protected AbstractToolProperty(R name, Class<T> type) {
+        this(new PropertyID<T,R>(name, type));
     }
     private final PCL pcl = new PCL();
 
@@ -50,26 +51,26 @@ public abstract class AbstractToolProperty<T, R extends Enum> extends ToolProper
     }
 
     protected final Preferences getPreferences() {
-        Preferences result = prefsCache.get(name.getClass());
+        Preferences result = prefsCache.get(id.constant().getClass());
         if (result == null) {
-            result = NbPreferences.forModule(name.getClass());
-            prefsCache.put(name.getClass(), result);
+            result = NbPreferences.forModule(id.constant().getClass());
+            prefsCache.put(id.constant().getClass(), result);
         }
         return result;
     }
 
     @Override
     public final Class<T> type() {
-        return type;
+        return id.type();
     }
 
     @Override
     public final R name() {
-        return name;
+        return id.constant();
     }
 
     public final String getName() {
-        return name.name();
+        return id.name();
     }
 
     protected abstract T load();
@@ -125,7 +126,7 @@ public abstract class AbstractToolProperty<T, R extends Enum> extends ToolProper
     }
 
     public String toString() {
-        return name().name() + " (" + type.getSimpleName() + ")=" + get();
+        return name().name() + " (" + id.type().getSimpleName() + ")=" + get();
     }
 
     @Override

@@ -51,6 +51,15 @@ public final class Effect<ParamType, OutputType> {
     public Class<ParamType> parameterType() {
         return impl.parameterType();
     }
+    
+    public boolean canApply(Lookup.Provider layer) {
+        for (EffectReceiver e : layer.getLookup().lookupAll(EffectReceiver.class)) {
+            if (canApply(e)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public <T> boolean canApply(EffectReceiver<T> receiver) {
         return receiver.type() == impl.outputType();
@@ -76,6 +85,10 @@ public final class Effect<ParamType, OutputType> {
 
     public OutputType create(ParamType r) {
         return impl.create(r);
+    }
+    
+    public Class<OutputType> outputType() {
+        return impl.outputType();
     }
 
     public Preview<?, ParamType, ?> createPreview(Lookup.Provider layer) {
@@ -109,7 +122,7 @@ public final class Effect<ParamType, OutputType> {
 
     private <T> Preview<T, ParamType, OutputType> check(PreviewFactory<T> preview, Lookup lookup) {
         T arg = lookup.lookup(preview.sourceType());
-        if (arg != null) {
+        if (arg != null && preview.canCreatePreview(this)) {
             return Preview.create(preview, arg, this);
         }
         return null;

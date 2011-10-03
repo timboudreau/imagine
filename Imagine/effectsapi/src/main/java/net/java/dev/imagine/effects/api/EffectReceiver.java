@@ -1,5 +1,6 @@
 package net.java.dev.imagine.effects.api;
 
+import java.awt.Dimension;
 import org.openide.util.Parameters;
 
 /**
@@ -28,4 +29,6 @@ public abstract class EffectReceiver<EffectType> {
     }
 
     protected abstract <ParamType> boolean onApply(EffectType effect);
+    
+    public abstract Dimension getSize();
 }

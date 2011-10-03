@@ -19,6 +19,7 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -34,15 +35,20 @@ import javax.swing.undo.UndoableEdit;
 import net.dev.java.imagine.api.selection.ShapeSelection;
 import net.dev.java.imagine.api.selection.Universe;
 import net.java.dev.imagine.api.image.Hibernator;
+import net.java.dev.imagine.effects.spi.ImageSource;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import org.netbeans.paint.api.editing.LayerFactory;
+import org.netbeans.paint.api.util.GraphicsUtils;
 import org.netbeans.paint.api.util.LazyGraphics;
 import org.netbeans.paint.api.util.LazyGraphics.GraphicsProvider;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
+import org.openide.util.lookup.AbstractLookup;
+import org.openide.util.lookup.InstanceContent;
 import org.openide.util.lookup.Lookups;
+import org.openide.util.lookup.ProxyLookup;
 
 public class RasterLayerImpl extends LayerImplementation implements Hibernator {
     //XXX class public only temporarily
@@ -114,10 +120,6 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
     public LayerImplementation clone(boolean userCopy, boolean deepCopy) {
         return new RasterLayerImpl(getLookup().lookup(LayerFactory.class),
                 this, userCopy);
-    }
-
-    void paintThumbnail(Graphics2D g, Rectangle bounds) {
-        surface.paint(g, bounds);
     }
 
     public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection) {
@@ -287,7 +289,62 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
             }
         }, true);
         
-        return Lookups.fixed(this, surface.getSurface(), layer, selection, lazyGraphics);
+
+        Lookup a = Lookups.fixed(this, surface.getSurface(), layer, selection, lazyGraphics,
+                surface.bufferedImageOpReceiver, surface.compositeReceiver,
+                new ImgSrc());
+        InstanceContent c = new InstanceContent();
+        ImgConverter conv = new ImgConverter();
+        c.add(conv, conv);
+        return new ProxyLookup(a, new AbstractLookup(c));
+    }
+
+    class ImgSrc implements ImageSource {
+
+        @Override
+        public BufferedImage getRawImage() {
+            return surface.image();
+        }
+
+        @Override
+        public BufferedImage createImageCopy(Dimension size) {
+            BufferedImage img = surface.getImage();
+            BufferedImage nue = new BufferedImage(size.width, size.height, GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
+            double w = size.width;
+            double h = size.height;
+            double xfactor = w / (double) img.getWidth();
+            double yfactor = h / (double) img.getHeight();
+            AffineTransform xform = AffineTransform.getScaleInstance(xfactor, yfactor);
+            Graphics2D g = nue.createGraphics();
+            g.drawRenderedImage(img, xform);
+            g.dispose();
+            return nue;
+        }
+        
+    }
+    
+    class ImgConverter implements InstanceContent.Convertor<ImgConverter, BufferedImage> {
+
+        @Override
+        public BufferedImage convert(ImgConverter t) {
+            return surface.image();
+        }
+
+        @Override
+        public Class<? extends BufferedImage> type(ImgConverter t) {
+            return BufferedImage.class;
+        }
+
+        @Override
+        public String id(ImgConverter t) {
+            return getName();
+        }
+
+        @Override
+        public String displayName(ImgConverter t) {
+            return getName();
+        }
+        
     }
 
     public void setCursor(Cursor cursor) {

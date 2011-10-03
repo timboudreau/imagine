@@ -54,7 +54,7 @@ import org.openide.util.lookup.ServiceProvider;
  * @author Tim Boudreau
  */
 @ServiceProvider(service = Processor.class)
-@SupportedAnnotationTypes("org.demo.action.annotation.Action")
+//@SupportedAnnotationTypes("org.demo.action.annotation.Action")
 @SupportedSourceVersion(SourceVersion.RELEASE_5)
 public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
 

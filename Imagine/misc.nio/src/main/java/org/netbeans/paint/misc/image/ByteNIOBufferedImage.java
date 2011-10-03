@@ -29,7 +29,6 @@ import java.awt.image.WritableRaster;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import org.netbeans.paint.misc.nio.CacheManager;
-import org.netbeans.paint.misc.nio.CacheManager;
 
 /**
  *
