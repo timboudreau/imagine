@@ -1,5 +1,6 @@
 package net.java.dev.imagine.api.customizers;
 
+import net.java.dev.imagine.api.properties.Explicit;
 import java.util.Arrays;
 import java.util.Collection;
 

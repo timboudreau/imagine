@@ -84,8 +84,9 @@ final class ColorToolProperty<R extends Enum> extends AbstractToolProperty<Color
         }
 
         @Override
-        public void set(Integer value) {
-            comp.convert(ColorToolProperty.this.get(), value);
+        public boolean set(Integer value) {
+            Color nue = comp.convert(ColorToolProperty.this.get(), value);
+            return ColorToolProperty.this.set(nue);
         }
 
         @Override

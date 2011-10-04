@@ -1,11 +1,13 @@
 package net.java.dev.imagine.api.customizers;
 
+import net.java.dev.imagine.api.properties.EnumPropertyID;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
 import javax.swing.event.ChangeListener;
+import net.java.dev.imagine.api.properties.persistence.Persistent;
 import org.openide.util.ChangeSupport;
 import org.openide.util.NbPreferences;
 import org.openide.util.WeakListeners;
@@ -17,18 +19,18 @@ import org.openide.util.WeakListeners;
  */
 public abstract class AbstractToolProperty<T, R extends Enum> extends ToolProperty<T, R> {
 
-    private final PropertyID<T, R> id;
+    private final EnumPropertyID<T, R> id;
     private T value;
     private final ChangeSupport supp = new ChangeSupport(this);
     private static final Map<Class<?>, Preferences> prefsCache = new HashMap<Class<?>, Preferences>();
 
-    protected AbstractToolProperty(PropertyID<T,R> id) {
+    protected AbstractToolProperty(EnumPropertyID<T,R> id) {
         this.id = id;
         PreferenceChangeListener weakListener = WeakListeners.create(PreferenceChangeListener.class, pcl, getPreferences());
         getPreferences().addPreferenceChangeListener(weakListener);
     }
     protected AbstractToolProperty(R name, Class<T> type) {
-        this(new PropertyID<T,R>(name, type));
+        this(new EnumPropertyID<T,R>(name, type));
     }
     private final PCL pcl = new PCL();
 
@@ -88,13 +90,15 @@ public abstract class AbstractToolProperty<T, R extends Enum> extends ToolProper
     }
 
     @Override
-    public final void set(T value) {
+    public final boolean set(T value) {
         if (!equals(this.value, value)) {
             System.out.println("Set " + name() + " to " + value);
             this.value = value;
             supp.fireChange();
             doSave(value);
+            return true;
         }
+        return false;
     }
     boolean saving = false;
 

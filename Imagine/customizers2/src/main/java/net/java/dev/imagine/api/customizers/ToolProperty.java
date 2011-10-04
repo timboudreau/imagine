@@ -1,11 +1,14 @@
 package net.java.dev.imagine.api.customizers;
 
+import net.java.dev.imagine.api.properties.Bounded;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.geom.AffineTransform;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import net.java.dev.imagine.api.properties.EnumPropertyID;
+import net.java.dev.imagine.api.properties.Property;
 import org.openide.util.ChangeSupport;
 
 /**
@@ -19,7 +22,7 @@ import org.openide.util.ChangeSupport;
  *
  * @author Tim Boudreau
  */
-public abstract class ToolProperty<T, R extends Enum> implements Value<T>, Mutable<T> {
+public abstract class ToolProperty<T, R extends Enum> implements Property <T, EnumPropertyID<T, R>> {
 
     public abstract void addChangeListener(ChangeListener listener);
 
@@ -29,7 +32,7 @@ public abstract class ToolProperty<T, R extends Enum> implements Value<T>, Mutab
 
     public abstract void removeChangeListener(ChangeListener listener);
 
-    public abstract void set(T value);
+    public abstract boolean set(T value);
 
     public abstract Class<T> type();
 
@@ -147,8 +150,8 @@ public abstract class ToolProperty<T, R extends Enum> implements Value<T>, Mutab
         }
 
         @Override
-        public void set(T value) {
-            property.set(value);
+        public boolean set(T value) {
+            return property.set(value);
         }
 
         @Override
@@ -243,13 +246,13 @@ public abstract class ToolProperty<T, R extends Enum> implements Value<T>, Mutab
         }
 
         @Override
-        public void set(Integer value) {
+        public boolean set(Integer value) {
             double val = value;
             val /= 100;
             if (prop.type() == Float.TYPE) {
-                prop.set((T) Float.valueOf((float) val));
+                return prop.set((T) Float.valueOf((float) val));
             } else {
-                prop.set((T) Double.valueOf(val));
+                return prop.set((T) Double.valueOf(val));
             }
         }
 

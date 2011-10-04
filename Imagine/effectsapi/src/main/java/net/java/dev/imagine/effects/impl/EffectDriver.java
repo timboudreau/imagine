@@ -59,9 +59,11 @@ public class EffectDriver<StubClass extends EffectStub<ParamType, OutputType>, P
         return new EI<StubClass, ParamType, OutputType>(stub, paramClass, outputClass).toEffect(descriptor);
     }
 
-    private static <StubClass extends EffectStub<ParamType, OutputType>, ParamType, OutputType> EffectDriver<StubClass, ParamType, OutputType> create(Class<?> stubClass, Class<ParamType> paramClass, Class<OutputType> outputClass) throws InstantiationException, IllegalAccessException {
-        Class<StubClass> c = (Class<StubClass>) stubClass;
-        return new EffectDriver<StubClass, ParamType, OutputType>(c, paramClass, outputClass);
+    //private static <StubClass extends EffectStub<ParamType, OutputType>, ParamType, OutputType> EffectDriver<StubClass, ParamType, OutputType> create(Class<?> stubClass, Class<ParamType> paramClass, Class<OutputType> outputClass) throws InstantiationException, IllegalAccessException {
+    private static EffectDriver create(Class<?> stubClass, Class<?> paramClass, Class<?> outputClass) throws InstantiationException, IllegalAccessException {
+//        Class<StubClass> c = (Class<StubClass>) stubClass;
+//        return new EffectDriver<StubClass, ParamType, OutputType>(stubClass, paramClass, outputClass);
+        return new EffectDriver (stubClass, paramClass, outputClass);
     }
 
     static class EI<StubClass extends EffectStub<ParamType, OutputType>, ParamType, OutputType> extends EffectImplementation<ParamType, OutputType> {

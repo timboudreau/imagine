@@ -10,7 +10,7 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.util.Collection;
-import net.java.dev.imagine.api.customizers.Explicit;
+import net.java.dev.imagine.api.properties.Explicit;
 import org.netbeans.api.visual.widget.Scene;
 import java.awt.Color;
 import java.awt.GraphicsEnvironment;

@@ -12,7 +12,7 @@ import java.util.Collection;
 import java.util.List;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import net.java.dev.imagine.api.customizers.Explicit;
+import net.java.dev.imagine.api.properties.Explicit;
 import net.java.dev.imagine.api.customizers.ToolProperty;
 import net.java.dev.imagine.api.customizers.visualizer.popup.PopupScene;
 import org.netbeans.api.visual.widget.LabelWidget;

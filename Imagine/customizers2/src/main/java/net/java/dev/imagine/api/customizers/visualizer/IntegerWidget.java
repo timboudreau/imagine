@@ -12,7 +12,7 @@ import javax.swing.Popup;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import net.java.dev.imagine.api.customizers.Bounded;
+import net.java.dev.imagine.api.properties.Bounded;
 import net.java.dev.imagine.api.customizers.ToolProperty;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.action.WidgetAction.State;

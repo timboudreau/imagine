@@ -1,5 +1,7 @@
 package net.java.dev.imagine.api.customizers;
 
+import net.java.dev.imagine.api.properties.Bounded;
+import net.java.dev.imagine.api.properties.Explicit;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.util.ArrayList;
@@ -62,12 +64,12 @@ final class FontToolProperty<R extends Enum> extends AbstractToolProperty<Font, 
         }
 
         @Override
-        public void set(String value) {
+        public boolean set(String value) {
             Font f = FontToolProperty.this.get();
             int size = f.getSize();
             int style = f.getStyle();
             f = new Font(value, style, size);
-            FontToolProperty.this.set(f);
+            return FontToolProperty.this.set(f);
         }
 
         @Override
@@ -142,14 +144,15 @@ final class FontToolProperty<R extends Enum> extends AbstractToolProperty<Font, 
         }
 
         @Override
-        public void set(FontStyles value) {
+        public boolean set(FontStyles value) {
             Font f = FontToolProperty.this.get();
             int style = f.getStyle();
             int nue = value.getConstant();
             if (style != nue) {
                 f = f.deriveFont(nue);
-                FontToolProperty.this.set(f);
+                return FontToolProperty.this.set(f);
             }
+            return false;
         }
 
         @Override
@@ -195,13 +198,14 @@ final class FontToolProperty<R extends Enum> extends AbstractToolProperty<Font, 
         }
 
         @Override
-        public void set(Integer value) {
+        public boolean set(Integer value) {
             Font f = FontToolProperty.this.get();
             int sz = f.getSize();
             if (sz != value) {
                 f = f.deriveFont(value.floatValue());
-                FontToolProperty.this.set(f);
+                return FontToolProperty.this.set(f);
             }
+            return false;
         }
 
         @Override

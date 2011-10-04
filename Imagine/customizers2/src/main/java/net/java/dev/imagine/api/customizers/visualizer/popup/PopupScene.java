@@ -3,7 +3,7 @@ package net.java.dev.imagine.api.customizers.visualizer.popup;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.List;
-import net.java.dev.imagine.api.customizers.Explicit;
+import net.java.dev.imagine.api.properties.Explicit;
 import net.java.dev.imagine.api.customizers.visualizer.CellWidget;
 import net.java.dev.imagine.api.customizers.visualizer.Renderer;
 import net.java.dev.imagine.api.customizers.visualizer.SelectionHandler;

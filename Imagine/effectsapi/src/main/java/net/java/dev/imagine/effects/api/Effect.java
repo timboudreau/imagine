@@ -1,9 +1,7 @@
 package net.java.dev.imagine.effects.api;
 
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import net.java.dev.imagine.effects.impl.EffectBridge;
 import net.java.dev.imagine.effects.spi.EffectDescriptor;
 import net.java.dev.imagine.effects.spi.EffectImplementation;
@@ -138,14 +136,17 @@ public final class Effect<ParamType, OutputType> {
         };
     }
 
+    @Override
     public boolean equals(Object o) {
         return o instanceof Effect && ((Effect) o).getName().equals(getName());
     }
 
+    @Override
     public int hashCode() {
         return getName().hashCode();
     }
 
+    @Override
     public String toString() {
         return super.toString() + " [" + descriptor + "][" + impl + ']';
     }
@@ -154,7 +155,9 @@ public final class Effect<ParamType, OutputType> {
 //        return (Collection<? extends Effect<?, ?>>) Lookups.forPath("effects").lookupAll(Effect.class);
         FileObject fld = FileUtil.getConfigFile("effects");
         List<Effect<?, ?>> result = new ArrayList<Effect<?, ?>>();
-        for (FileObject child : fld.getChildren()) {
+        FileObject[] kids = fld.getChildren();
+        Arrays.sort(kids, new PosComparator());
+        for (FileObject child : kids) {
             System.err.println("TRY " + child.getPath());
             Object o = child.getAttribute("instanceCreate");
             if (o instanceof Effect) {
@@ -174,5 +177,20 @@ public final class Effect<ParamType, OutputType> {
             return o instanceof Effect ? (Effect<?, ?>) o : null;
         }
         return null;
+    }
+    
+    private static final class PosComparator implements Comparator<FileObject> {
+
+        @Override
+        public int compare(FileObject t, FileObject t1) {
+            Object a = t.getAttribute("position");
+            Object b = t1.getAttribute("position");
+            return toInt(a).compareTo(toInt(b));
+        }
+        
+        private Integer toInt(Object o) {
+            return o instanceof Number ? ((Number) o).intValue() : 0;
+        }
+        
     }
 }

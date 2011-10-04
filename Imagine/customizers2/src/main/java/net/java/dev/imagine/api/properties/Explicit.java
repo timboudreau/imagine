@@ -1,4 +1,4 @@
-package net.java.dev.imagine.api.customizers;
+package net.java.dev.imagine.api.properties;
 
 import java.util.Collection;
 
