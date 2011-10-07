@@ -1,226 +1,98 @@
 package net.java.dev.imagine.api.customizers;
 
-import net.java.dev.imagine.api.properties.Bounded;
-import net.java.dev.imagine.api.properties.Explicit;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
-import javax.swing.event.ChangeEvent;
+import java.util.Collections;
 import javax.swing.event.ChangeListener;
-import net.java.dev.imagine.api.customizers.ToolProperties.FontProps;
 import net.java.dev.imagine.api.customizers.ToolProperties.FontStyles;
-import org.netbeans.paint.api.components.Fonts;
+import net.java.dev.imagine.api.properties.ComposedProperty;
+import net.java.dev.imagine.api.properties.EnumPropertyID;
+import net.java.dev.imagine.api.properties.Explicit;
+import net.java.dev.imagine.api.properties.Property;
+import net.java.dev.imagine.api.properties.preferences.PreferencesFactory;
 import org.openide.util.ChangeSupport;
 
 /**
  *
  * @author Tim Boudreau
  */
-final class FontToolProperty<R extends Enum> extends AbstractToolProperty<Font, R> implements Explicit<Font> {
+final class FontToolProperty<R extends Enum<R>> implements Property<Font, EnumPropertyID<Font, R>>, Explicit<Font> {
+    
+    private final EnumPropertyID<Font, R> id;
+    private final Property<String, ?> faceProp;
+    private final Property<ToolProperties.FontStyles, ?> styleProp;
+    private final Property<Integer, ?> sizeProp;
 
     public FontToolProperty(R name) {
-        super(name, Font.class);
+        this.id = new EnumPropertyID(name, Font.class);
+        faceProp = PreferencesFactory.createPreferencesFactory(id.subId(ToolProperties.FontProps.FONT_FACE, String.class)).createProperty("Times New Roman");
+        styleProp = PreferencesFactory.createPreferencesFactory(id.subId(ToolProperties.FontProps.FONT_STYLE, FontStyles.class)).createProperty(FontStyles.PLAIN);
+        sizeProp = ComposedProperty.createBounded(PreferencesFactory.createPreferencesFactory(id.subId(ToolProperties.FontProps.FONT_SIZE, Integer.TYPE)).createProperty(12), 4, 156);
     }
 
     @Override
-    protected Font load() {
-        return Fonts.getDefault().get(name().name());
+    public EnumPropertyID<Font, R> id() {
+        return id;
     }
 
     @Override
-    protected void save(Font f) {
-        Fonts.getDefault().set(name().name(), f);
+    public Class<Font> type() {
+        return id.type();
     }
 
     @Override
-    public ToolProperty<?, ?>[] getSubProperties() {
-        return new ToolProperty<?, ?>[]{
-                    new FaceProp(), new StyleProp(), new SizeProp()
-                };
+    public String getDisplayName() {
+        return id.getDisplayName();
+    }
+
+    @Override
+    public Font get() {
+        FontStyles style = styleProp.get();
+        int size = sizeProp.get();
+        String face = faceProp.get();
+        return new Font(face, style.getConstant(), size);
+    }
+
+    @Override
+    public boolean set(Font value) {
+        FontStyles style = FontStyles.forConstant(value.getStyle());
+        String face = value.getName();
+        int size = value.getSize();
+        boolean result = styleProp.set(style);
+        result |= sizeProp.set(size);
+        result |= faceProp.set(face);
+        return result;
+    }
+    
+    private final ChangeSupport supp = new ChangeSupport(this);
+    
+    @Override
+    public void addChangeListener(ChangeListener cl) {
+        supp.addChangeListener(cl);
+    }
+
+    @Override
+    public void removeChangeListener(ChangeListener cl) {
+        supp.removeChangeListener(cl);
+    }
+
+    @Override
+    public <R> R get(Class<R> type) {
+        return null;
+    }
+
+    @Override
+    public <R> Collection<? extends R> getAll(Class<R> type) {
+        if (Property.class == type) {
+            return (Collection<? extends R>) Arrays.asList(faceProp, sizeProp, styleProp);
+        }
+        return Collections.<R>emptySet();
     }
 
     @Override
     public Collection<Font> getValues() {
-        List<Font> result = new ArrayList<Font>();
-        for (String s : GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()) {
-            Font f = new Font(s, Font.PLAIN, 14);
-            result.add(f);
-        }
-        return result;
-    }
-
-    class FaceProp extends ToolProperty<String, ToolProperties.FontProps> implements ChangeListener, Explicit<String> {
-
-        @Override
-        public String get() {
-            return FontToolProperty.this.getName();
-        }
-
-        public FontProps name() {
-            return ToolProperties.FontProps.FONT_FACE;
-        }
-
-        @Override
-        public boolean set(String value) {
-            Font f = FontToolProperty.this.get();
-            int size = f.getSize();
-            int style = f.getStyle();
-            f = new Font(value, style, size);
-            return FontToolProperty.this.set(f);
-        }
-
-        @Override
-        public Class<String> type() {
-            return String.class;
-        }
-
-        @Override
-        public Collection<String> getValues() {
-            return Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
-        }
-        private final ChangeSupport supp = new ChangeSupport(this);
-
-        @Override
-        public void addChangeListener(ChangeListener listener) {
-            boolean hadListeners = supp.hasListeners();
-            supp.addChangeListener(listener);
-            if (!hadListeners) {
-                FontToolProperty.this.addChangeListener(this);
-            }
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener) {
-            supp.removeChangeListener(listener);
-            if (!supp.hasListeners()) {
-                FontToolProperty.this.removeChangeListener(this);
-            }
-        }
-
-        @Override
-        public void stateChanged(ChangeEvent e) {
-            supp.fireChange();
-        }
-    }
-
-    class StyleProp extends ToolProperty<ToolProperties.FontStyles, ToolProperties.FontProps> implements ChangeListener {
-
-        private final ChangeSupport supp = new ChangeSupport(this);
-
-        @Override
-        public void addChangeListener(ChangeListener listener) {
-            boolean hadListeners = supp.hasListeners();
-            supp.addChangeListener(listener);
-            if (!hadListeners) {
-                FontToolProperty.this.addChangeListener(this);
-            }
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener) {
-            supp.removeChangeListener(listener);
-            if (!supp.hasListeners()) {
-                FontToolProperty.this.removeChangeListener(this);
-            }
-        }
-
-        @Override
-        public void stateChanged(ChangeEvent e) {
-            supp.fireChange();
-        }
-
-        @Override
-        public FontStyles get() {
-            int constant = FontToolProperty.this.get().getStyle();
-            return FontStyles.forConstant(constant);
-        }
-
-        @Override
-        public FontProps name() {
-            return FontProps.FONT_STYLE;
-        }
-
-        @Override
-        public boolean set(FontStyles value) {
-            Font f = FontToolProperty.this.get();
-            int style = f.getStyle();
-            int nue = value.getConstant();
-            if (style != nue) {
-                f = f.deriveFont(nue);
-                return FontToolProperty.this.set(f);
-            }
-            return false;
-        }
-
-        @Override
-        public Class<FontStyles> type() {
-            return FontStyles.class;
-        }
-    }
-
-    class SizeProp extends ToolProperty<Integer, ToolProperties.FontProps> implements Bounded<Integer>, ChangeListener {
-
-        private final ChangeSupport supp = new ChangeSupport(this);
-
-        @Override
-        public void addChangeListener(ChangeListener listener) {
-            boolean hadListeners = supp.hasListeners();
-            supp.addChangeListener(listener);
-            if (!hadListeners) {
-                FontToolProperty.this.addChangeListener(this);
-            }
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener) {
-            supp.removeChangeListener(listener);
-            if (!supp.hasListeners()) {
-                FontToolProperty.this.removeChangeListener(this);
-            }
-        }
-
-        @Override
-        public void stateChanged(ChangeEvent e) {
-            supp.fireChange();
-        }
-
-        @Override
-        public Integer get() {
-            return FontToolProperty.this.get().getSize();
-        }
-
-        @Override
-        public FontProps name() {
-            return ToolProperties.FontProps.FONT_SIZE;
-        }
-
-        @Override
-        public boolean set(Integer value) {
-            Font f = FontToolProperty.this.get();
-            int sz = f.getSize();
-            if (sz != value) {
-                f = f.deriveFont(value.floatValue());
-                return FontToolProperty.this.set(f);
-            }
-            return false;
-        }
-
-        @Override
-        public Class<Integer> type() {
-            return Integer.TYPE;
-        }
-
-        @Override
-        public Integer getMinimum() {
-            return 4;
-        }
-
-        @Override
-        public Integer getMaximum() {
-            return 120;
-        }
+        return Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts());
     }
 }

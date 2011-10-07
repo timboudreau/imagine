@@ -2,7 +2,8 @@ package net.java.dev.imagine.customizers.impl;
 
 import java.awt.Component;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,12 +23,12 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
-import javax.swing.JPanel;
 import net.java.dev.imagine.api.customizers.visualizer.ColumnDataScene;
+import net.java.dev.imagine.api.properties.Property;
 import net.java.dev.imagine.spi.customizers.Customizes;
-import org.netbeans.api.visual.widget.Scene;
-import org.netbeans.api.visual.widget.Widget;
+import net.java.dev.imagine.spi.customizers.CustomizesProperty;
 import org.openide.filesystems.annotations.LayerBuilder;
 import org.openide.filesystems.annotations.LayerGeneratingProcessor;
 import org.openide.filesystems.annotations.LayerGenerationException;
@@ -38,14 +39,16 @@ import org.openide.util.lookup.ServiceProvider;
  * @author Tim Boudreau
  */
 @ServiceProvider(service = Processor.class)
-@SupportedAnnotationTypes("net.java.dev.imagine.spi.customizers.Customizes")
+@SupportedAnnotationTypes({"net.java.dev.imagine.spi.customizers.Customizes",
+    "net.java.dev.imagine.spi.customizers.CustomizesProperty"
+})
 @SupportedSourceVersion(SourceVersion.RELEASE_5)
 public class CustomizerAnnotationProcessor extends LayerGeneratingProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        System.err.println("get supp ann " + Customizes.class.getCanonicalName());
-        return Collections.singleton(Customizes.class.getCanonicalName());
+        return new HashSet<String>(Arrays.asList(Customizes.class.getCanonicalName(),
+                CustomizesProperty.class.getCanonicalName()));
     }
 
     @Override
@@ -53,6 +56,7 @@ public class CustomizerAnnotationProcessor extends LayerGeneratingProcessor {
         Types types = processingEnv.getTypeUtils();
         Elements elements = processingEnv.getElementUtils();
 
+        TypeElement propertyType = elements.getTypeElement(Property.class.getName());
         TypeElement componentType = elements.getTypeElement(Component.class.getName());
         TypeElement widgetType = elements.getTypeElement("org.netbeans.api.visual.widget.Widget");
         TypeElement sceneType = elements.getTypeElement("org.netbeans.api.visual.widget.Scene");
@@ -61,8 +65,21 @@ public class CustomizerAnnotationProcessor extends LayerGeneratingProcessor {
 
         System.err.println("Handle process " + set + " - " + env.getElementsAnnotatedWith(Customizes.class));
 
-        for (Element el : env.getElementsAnnotatedWith(Customizes.class)) {
+        Set<Element> all = new HashSet<Element>();
+        all.addAll(env.getElementsAnnotatedWith(Customizes.class));
+        all.addAll(env.getElementsAnnotatedWith(CustomizesProperty.class));
+
+        for (Element el : all) {
             System.err.println("Process " + el);
+
+            Customizes customizesAnn = el.getAnnotation(Customizes.class);
+            CustomizesProperty customizesPropAnn = el.getAnnotation(CustomizesProperty.class);
+
+            if (customizesPropAnn != null && customizesAnn != null) {
+                throw new LayerGenerationException("Cannot have both Customizes and CustomizesProperty annotations on one class");
+            }
+
+            boolean isProp = customizesPropAnn != null;
 
             DeclaredType customizes = findClassValue(el, "value");
             if (customizes == null) {
@@ -97,42 +114,65 @@ public class CustomizerAnnotationProcessor extends LayerGeneratingProcessor {
             }
             boolean hasUsableConstructor = false;
             for (ExecutableElement con : constructors) {
-                if (isWidget) {
-                    List<? extends VariableElement> params = con.getParameters();
-                    if (params.size() == 2) {
-                        VariableElement param1 = params.get(0);
-                        VariableElement param2 = params.get(1);
-                        System.err.println("Param 1 " + param1 + " tp " + param1.asType());
-                        System.err.println("Param 2 " + param1 + " tp " + param2.asType());
-                        if (customizes.asElement().asType().equals(param2.asType())) {
-                            if (types.isSubtype(param1.asType(), sceneType.asType())) {
-                                hasUsableConstructor = true;
-                                break;
-                            } else if (types.isSubtype(param1.asType(), columnSceneType.asType())) {
-                                hasUsableConstructor = true;
+                List<? extends VariableElement> params = con.getParameters();
+                if (!isProp) {
+                    if (isWidget) {
+                        if (params.size() == 2) {
+                            VariableElement param1 = params.get(0);
+                            VariableElement param2 = params.get(1);
+                            System.err.println("Param 1 " + param1 + " tp " + param1.asType());
+                            System.err.println("Param 2 " + param1 + " tp " + param2.asType());
+                            hasUsableConstructor |= isSceneSubtype(param1) &&
+                                    customizes.equals(param2.asType());
+                        }
+                    } else {
+                        if (params.size() == 1) {
+                            if (customizes.equals(params.get(0).asType())) {
+                                hasUsableConstructor |= true;
                                 break;
                             }
                         }
                     }
-                } else {
-                    List<? extends VariableElement> params = con.getParameters();
-                    if (params.size() == 1) {
-                        if (customizes.equals(params.get(0).asType())) {
-                            hasUsableConstructor = true;
-                            break;
+                } else { //isProp
+                    if (isWidget) {
+                        if (params.size() == 2) {
+                            VariableElement param1 = params.get(0);
+                            VariableElement param2 = params.get(1);
+                            System.err.println("Param 1 " + param1 + " tp " + param1.asType());
+                            System.err.println("Param 2 " + param1 + " tp " + param2.asType());
+                            hasUsableConstructor |= isSceneSubtype(param1) &&
+                                    isPropertySubtype(param2, customizes);
+                        }
+                    } else {
+                        System.err.println("Not a widget: " + con + " on " + el);
+                        if (params.size() == 1) {
+                            VariableElement param = params.get(0);
+                            System.err.println("Param is " + param);
+                            hasUsableConstructor |= isPropertySubtype(param, customizes);
                         }
                     }
                 }
+                if (hasUsableConstructor) {
+                    break;
+                }
             }
             if (!hasUsableConstructor) {
-                if (isWidget) {
-                    throw new LayerGenerationException("Must have a 2-argument public constructor which takes " + sceneType + ", " + customizes, el);
+                if (!isProp) {
+                    if (isWidget) {
+                        throw new LayerGenerationException("Must have a 2-argument public constructor which takes " + sceneType + ", " + customizes, el);
+                    } else {
+                        throw new LayerGenerationException("Must have a public constructor which takes a single argument of " + customizes, el);
+                    }
                 } else {
-                    throw new LayerGenerationException("Must have a public constructor which takes a single argument of " + customizes, el);
+                    if (isWidget) {
+                        throw new LayerGenerationException("Must have a 2-argument public constructor which takes " + sceneType + ", Property<" + customizes + ", ?>", el);
+                    } else {
+                        throw new LayerGenerationException("Must have a public constructor which takes a single argument of Property<" + customizes + ", ?>", el);
+                    }
                 }
             }
             LayerBuilder b = layer(el);
-            LayerBuilder.File customizersDir = b.folder("customizers2");
+            LayerBuilder.File customizersDir = b.folder(isProp ? "propertyCustomizers" : "customizers2");
             b = customizersDir.write();
             LayerBuilder.File typeFolder = b.folder(customizersDir.getPath() + "/" + customizes.toString());
             b = typeFolder.write();
@@ -141,7 +181,49 @@ public class CustomizerAnnotationProcessor extends LayerGeneratingProcessor {
             b = customizerFile.write();
             System.err.println("Wrote " + customizerFile.getPath());
         }
+
         return true;
+    }
+
+    private boolean isSceneSubtype(VariableElement e) {
+        boolean result = false;
+        Types types = processingEnv.getTypeUtils();
+        Elements elements = processingEnv.getElementUtils();
+        TypeElement sceneType = elements.getTypeElement("org.netbeans.api.visual.widget.Scene");
+        TypeElement columnSceneType = elements.getTypeElement(ColumnDataScene.class.getName());
+        if (types.isSubtype(e.asType(), sceneType.asType())) {
+            result = true;
+        } else if (types.isSubtype(e.asType(), columnSceneType.asType())) {
+            result = true;
+        }
+        return result;
+    }
+
+    private boolean isPropertySubtype(VariableElement e, DeclaredType customizes) {
+        boolean result = false;
+        Types types = processingEnv.getTypeUtils();
+        Elements elements = processingEnv.getElementUtils();
+
+        TypeElement propertyType = elements.getTypeElement(Property.class.getName());
+        VariableElement param = e;
+        TypeMirror type = param.asType();
+        System.err.println("As type " + types.erasure(type) + " equals  " + types.erasure(propertyType.asType()) + " " + types.erasure(type).equals(types.erasure(propertyType.asType())));
+        if (types.erasure(type).equals(types.erasure(propertyType.asType()))) {
+            List<? extends TypeMirror> gtypes = type.accept(new TV(), type);
+            System.err.println("  gtypes " + gtypes);
+            if (gtypes != null) {
+                if (gtypes.size() == 2) {
+                    TypeMirror firstParam = gtypes.get(0);
+                    if (types.erasure(customizes).equals(types.erasure(firstParam))) {
+                        result = true;
+                        result = true;
+                    } else {
+                        System.err.println("Type mismatch " + firstParam + " is not " + customizes);
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     private DeclaredType findClassValue(Element item, String annotationMemberName) {
@@ -201,5 +283,13 @@ public class CustomizerAnnotationProcessor extends LayerGeneratingProcessor {
             sb.append(", ");
         }
         return sb.toString();
+    }
+
+    private class TV extends SimpleTypeVisitor6<List<? extends TypeMirror>, TypeMirror> {
+
+        @Override
+        public List<? extends TypeMirror> visitDeclared(DeclaredType t, TypeMirror p) {
+            return t.getTypeArguments();
+        }
     }
 }

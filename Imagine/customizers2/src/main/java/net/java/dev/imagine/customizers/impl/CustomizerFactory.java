@@ -3,8 +3,12 @@ package net.java.dev.imagine.customizers.impl;
 import java.awt.Component;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JComponent;
 import net.java.dev.imagine.api.customizers.visualizer.ColumnDataScene;
+import net.java.dev.imagine.api.properties.Properties;
+import net.java.dev.imagine.api.properties.Property;
 import org.netbeans.api.visual.widget.ComponentWidget;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
@@ -16,17 +20,20 @@ import org.openide.util.Lookup;
  *
  * @author Tim Boudreau
  */
-public class CustomizerFactory<T, R> {
+public abstract class CustomizerFactory<T, R> {
 
-    private final Class<T> type;
-    private final Class<R> customizes;
-    private final boolean widget;
+    public abstract Component createCustomizer(R toCustomize) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException;
 
-    CustomizerFactory(Class<T> type, Class<R> customizes, boolean widget) {
-        this.type = type;
-        this.customizes = customizes;
-        this.widget = widget;
-        assert Component.class.isAssignableFrom(type) == !widget;
+    public abstract Widget createCustomizerWidget(Scene scene, R toCustomize) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException;
+
+    public static <T> CustomizerFactory fromFilePropertyObject(FileObject fo, Property<T,?> p) throws ClassNotFoundException {
+        String className = fo.getNameExt();
+        String customizesName = fo.getParent().getNameExt();
+        ClassLoader cl = Lookup.getDefault().lookup(ClassLoader.class);
+        Class<?> compType = cl.loadClass(className);
+        Class<?> customizes = cl.loadClass(customizesName);
+        boolean widget = Boolean.TRUE.equals(fo.getAttribute("widget"));
+        return new ForProperty(compType, customizes, widget, p);
     }
 
     public static CustomizerFactory fromFileObject(FileObject fo) throws ClassNotFoundException {
@@ -36,17 +43,49 @@ public class CustomizerFactory<T, R> {
         Class<?> compType = cl.loadClass(className);
         Class<?> customizes = cl.loadClass(customizesName);
         boolean widget = Boolean.TRUE.equals(fo.getAttribute("widget"));
-        return new CustomizerFactory(compType, customizes, widget);
+        return new ByType(compType, customizes, widget);
     }
 
-    public static CustomizerFactory find(Object o, boolean preferWidget) throws ClassNotFoundException {
+    public static CustomizerFactory<?, ?> find(Object o, boolean preferWidget) throws ClassNotFoundException {
         if (o == null) {
             return null;
+        }
+        if (o instanceof Properties) {
+            Properties p = (Properties) o;
+            List<CustomizerFactory<?, ?>> all = new ArrayList<CustomizerFactory<?, ?>>();
+            for (Property prop : p) {
+                CustomizerFactory<?, ?> cf = find(prop, true);
+                if (cf != null) {
+                    all.add(cf);
+                }
+            }
+            if (!all.isEmpty()) {
+                ByList result = new ByList(all);
+                return result;
+            }
+        }
+        if (o instanceof Property) {
+            Property<?, ?> p = (Property<?, ?>) o;
+            FileObject fo = FileUtil.getConfigFile("propertyCustomizers/" + p.type().getName());
+            if (fo != null) {
+                FileObject first = null;
+                for (FileObject ch : fo.getChildren()) {
+                    if (first == null) {
+                        first = ch;
+                    }
+                    if (Boolean.TRUE.equals(fo.getAttribute("widget")) == preferWidget) {
+                        return fromFileObject(fo);
+                    }
+                }
+                if (first != null) {
+                    return fromPropertyFileObject(first, p);
+                }
+            }
         }
         return find(o.getClass(), preferWidget);
     }
 
-    public static CustomizerFactory find(Class<?> clazz, boolean preferWidget) throws ClassNotFoundException {
+    public static CustomizerFactory<?, ?> find(Class<?> clazz, boolean preferWidget) throws ClassNotFoundException {
         Class<?> type = clazz;
         while (type != Object.class) {
             FileObject fo = FileUtil.getConfigFile("customizers2/" + type.getName());
@@ -86,42 +125,127 @@ public class CustomizerFactory<T, R> {
         return null;
     }
 
-    public Component createCustomizer(R toCustomize) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-        if (Component.class.isAssignableFrom(type)) {
-            Constructor<T> c = type.getConstructor(customizes);
-            return (Component) c.newInstance(toCustomize);
-        } else {
-            if (!Widget.class.isAssignableFrom(type)) {
-                throw new AssertionError("Cant make a widget or component from " + type);
+    static final class ForProperty<T, R extends Property<Q,?>, Q> extends CustomizerFactory<T, R> {
+
+        private final Class<T> type;
+        private final Class<R> customizes;
+        private final boolean widget;
+        private final Property<R, ?> property;
+
+        ForProperty(Class<T> type, Class<R> customizes, boolean widget, Property<R, ?> p) {
+            this.type = type;
+            this.customizes = customizes;
+            this.widget = widget;
+            assert Component.class.isAssignableFrom(type) == !widget;
+            this.property = p;
+        }
+
+        @Override
+        public Component createCustomizer(R toCustomize) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            Class<Q> type = toCustomize.type();
+            FileObject fo = FileUtil.getConfigFile("propertyCustomizers/" + type.getName());
+            if (fo != null) {
+                FileObject first = null;
+                for (FileObject ch : fo.getChildren()) {
+                    if (first == null) {
+                        first = ch;
+                    }
+                    if (Boolean.TRUE.equals(fo.getAttribute("widget")) == preferWidget) {
+                        return fromFileObject(fo);
+                    }
+                }
+                if (first != null) {
+                    return fromPropertyFileObject(first, p);
+                }
             }
-            Widget w = createCustomizerWidget(null, toCustomize);
-            Scene s = w.getScene();
-            JComponent view = s.getView();
-            if (view == null) {
-                view = s.createView();
-            }
-            return view;
+            
+        }
+
+        @Override
+        public Widget createCustomizerWidget(Scene scene, R toCustomize) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
-    public Widget createCustomizerWidget(Scene scene, R toCustomize) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-        if (scene == null) {
-            scene = new ColumnDataScene();
+    static final class ByType<T, R> extends CustomizerFactory<T, R> {
+
+        private final Class<T> type;
+        private final Class<R> customizes;
+        private final boolean widget;
+
+        ByType(Class<T> type, Class<R> customizes, boolean widget) {
+            this.type = type;
+            this.customizes = customizes;
+            this.widget = widget;
+            assert Component.class.isAssignableFrom(type) == !widget;
         }
-        if (!widget) {
-            Component result = createCustomizer(toCustomize);
-            return new ComponentWidget(scene, result);
+
+        public Component createCustomizer(R toCustomize) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            if (Component.class.isAssignableFrom(type)) {
+                Constructor<T> c = type.getConstructor(customizes);
+                return (Component) c.newInstance(toCustomize);
+            } else {
+                if (!Widget.class.isAssignableFrom(type)) {
+                    throw new AssertionError("Cant make a widget or component from " + type);
+                }
+                Widget w = createCustomizerWidget(null, toCustomize);
+                Scene s = w.getScene();
+                JComponent view = s.getView();
+                if (view == null) {
+                    view = s.createView();
+                }
+                return view;
+            }
         }
-        Constructor<T> c;
-        try {
-            c = type.getConstructor(Scene.class, customizes);
-        } catch (NoSuchMethodException e) {
-            c = type.getConstructor(ColumnDataScene.class, customizes);
+
+        public Widget createCustomizerWidget(Scene scene, R toCustomize) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            if (scene == null) {
+                scene = new ColumnDataScene();
+            }
+            if (!widget) {
+                Component result = createCustomizer(toCustomize);
+                return new ComponentWidget(scene, result);
+            }
+            Constructor<T> c;
+            try {
+                c = type.getConstructor(Scene.class, customizes);
+            } catch (NoSuchMethodException e) {
+                c = type.getConstructor(ColumnDataScene.class, customizes);
+            }
+            Widget result = (Widget) c.newInstance(scene, toCustomize);
+            if (scene instanceof ColumnDataScene) {
+                result.setLayout(((ColumnDataScene) scene).getColumns().createLayout());
+            }
+            return result;
         }
-        Widget result = (Widget) c.newInstance(scene, toCustomize);
-        if (scene instanceof ColumnDataScene) {
-            result.setLayout(((ColumnDataScene) scene).getColumns().createLayout());
+    }
+
+    static class ByList<T, R> extends CustomizerFactory<T, R> {
+
+        private final List<CustomizerFactory<?, ?>> all;
+
+        public ByList(List<CustomizerFactory<?, ?>> all) {
+            this.all = all;
         }
-        return result;
+
+        @Override
+        public Component createCustomizer(R toCustomize) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            ColumnDataScene scene = new ColumnDataScene();
+            Widget w = createCustomizerWidget(scene, toCustomize);
+            return scene.createView();
+        }
+
+        @Override
+        public Widget createCustomizerWidget(Scene scene, R toCustomize) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            if (scene == null) {
+                scene = new ColumnDataScene();
+            }
+            for (CustomizerFactory<?, ?> cf : all) {
+                Widget w = cf.createCustomizerWidget(scene, null);
+                w.setLayout(((ColumnDataScene) scene).getColumns().createLayout());
+                scene.addChild(w);
+            }
+            return scene;
+        }
     }
 }

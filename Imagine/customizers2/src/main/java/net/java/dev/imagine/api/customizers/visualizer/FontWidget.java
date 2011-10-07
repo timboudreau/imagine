@@ -13,8 +13,8 @@ import java.util.List;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.api.properties.Explicit;
-import net.java.dev.imagine.api.customizers.ToolProperty;
 import net.java.dev.imagine.api.customizers.visualizer.popup.PopupScene;
+import net.java.dev.imagine.api.properties.Property;
 import org.netbeans.api.visual.widget.LabelWidget;
 import org.netbeans.api.visual.widget.Widget;
 import org.openide.util.WeakListeners;
@@ -25,7 +25,7 @@ import org.openide.util.WeakListeners;
  */
 public class FontWidget extends Widget {
 
-    private final ToolProperty<Font, ?> prop;
+    private final Property<Font, ?> prop;
     private final LabelWidget name;
     
     /*
@@ -52,10 +52,10 @@ public class FontWidget extends Widget {
     Fs fs = new Fs();
     private final FW fw;
 
-    public FontWidget(ColumnDataScene scene, ToolProperty<Font, ?> prop) {
+    public FontWidget(ColumnDataScene scene, Property<Font, ?> prop) {
         super(scene);
         this.prop = prop;
-        name = new LabelWidget(scene, prop.name().toString());
+        name = new LabelWidget(scene, prop.getDisplayName());
         addChild(name);
         addChild(fw = new FW());
         PopupScene s = new PopupScene(fs, fs, fs, 2);

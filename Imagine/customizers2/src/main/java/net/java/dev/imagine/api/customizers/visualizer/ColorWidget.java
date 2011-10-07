@@ -6,7 +6,7 @@ import java.awt.event.ActionListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.java.dev.colorchooser.ColorChooser;
-import net.java.dev.imagine.api.customizers.ToolProperty;
+import net.java.dev.imagine.api.properties.Property;
 import org.netbeans.api.visual.widget.ComponentWidget;
 import org.netbeans.api.visual.widget.LabelWidget;
 import org.netbeans.api.visual.widget.Widget;
@@ -19,13 +19,13 @@ import org.openide.util.WeakListeners;
 public class ColorWidget extends Widget {
 
     private final ColorChooser cc = new ColorChooser();
-    private final ToolProperty<Color, ?> prop;
+    private final Property<Color, ?> prop;
 
-    ColorWidget(ColumnDataScene scene, final ToolProperty<Color, ?> prop) {
+    ColorWidget(ColumnDataScene scene, final Property<Color, ?> prop) {
         super(scene);
         this.prop = prop;
         setLayout(scene.getColumns().createLayout());
-        LabelWidget lbl = new LabelWidget(scene, prop.name().name());
+        LabelWidget lbl = new LabelWidget(scene, prop.getDisplayName());
         lbl.setAlignment(LabelWidget.Alignment.LEFT);
         lbl.setVerticalAlignment(LabelWidget.VerticalAlignment.CENTER);
         addChild(lbl);

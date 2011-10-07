@@ -3,6 +3,7 @@ package net.java.dev.imagine.api.customizers;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
+import net.java.dev.imagine.api.properties.Property;
 import org.openide.util.NbBundle;
 
 /**
@@ -19,7 +20,7 @@ public enum ToolProperties {
     DEFAULT_STROKE,
     DEFAULT_SHOULD_FILL;
 
-    public ToolProperty<?, ?> getProperty() {
+    public Property<?, ?> getProperty() {
         switch (this) {
             case DEFAULT_BACKGROUND:
                 return ColorProps.BACKGROUND.create();
@@ -40,12 +41,12 @@ public enum ToolProperties {
         }
     }
 
-    public static enum ShouldFill implements ToolProperty.Provider<Boolean, ShouldFill> {
+    public static enum ShouldFill implements ToolProperty.Provider<Boolean> {
 
         SHOULD_FILL;
 
         @Override
-        public ToolProperty<Boolean, ShouldFill> create() {
+        public Property<Boolean, ?> create() {
             return ToolProperty.createBooleanProperty(this, true);
         }
 
@@ -54,12 +55,12 @@ public enum ToolProperties {
         }
     }
 
-    public static enum Strokes implements ToolProperty.Provider<BasicStroke, Strokes> {
+    public static enum Strokes implements ToolProperty.Provider<BasicStroke> {
 
         STROKE;
 
         @Override
-        public ToolProperty<BasicStroke, Strokes> create() {
+        public Property<BasicStroke, ?> create() {
             return ToolProperty.createStrokeProperty(this);
         }
 
@@ -68,17 +69,17 @@ public enum ToolProperties {
         }
     }
 
-    public static enum Fonts implements ToolProperty.Provider<Font, Fonts> {
+    public static enum Fonts implements ToolProperty.Provider<Font> {
 
         FONT;
 
         @Override
-        public ToolProperty<Font, Fonts> create() {
+        public Property<Font, ?> create() {
             return ToolProperty.createFontProperty(this);
         }
     }
 
-    public static enum ColorProps implements ToolProperty.Provider<Color, ColorProps> {
+    public static enum ColorProps implements ToolProperty.Provider<Color> {
 
         FOREGROUND,
         BACKGROUND,
@@ -89,7 +90,7 @@ public enum ToolProperties {
             return NbBundle.getMessage(ToolProperties.class, name());
         }
 
-        public ToolProperty<Color, ColorProps> create() {
+        public Property<Color, ?> create() {
             return ToolProperty.createColorProperty(this);
         }
     }

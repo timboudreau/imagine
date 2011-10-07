@@ -14,6 +14,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.api.properties.Bounded;
 import net.java.dev.imagine.api.customizers.ToolProperty;
+import net.java.dev.imagine.api.properties.Property;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.action.WidgetAction.State;
 import org.netbeans.api.visual.action.WidgetAction.WidgetMouseEvent;
@@ -32,17 +33,17 @@ public final class IntegerWidget extends Widget {
     private final LabelWidget value;
 
     @SuppressWarnings("LeakingThisInConstructor")
-    <T extends Number> IntegerWidget(final ToolProperty<T, ?> prop, ColumnDataScene scene) {
+    <T extends Number> IntegerWidget(final Property<T, ?> prop, ColumnDataScene scene) {
         this(scene, ToolProperty.scale(prop));
     }
     
     @SuppressWarnings("LeakingThisInConstructor")
-    IntegerWidget(ColumnDataScene scene, final ToolProperty<Integer, ?> prop) {
+    IntegerWidget(ColumnDataScene scene, final Property<Integer, ?> prop) {
         super(scene);
         label = new LabelWidget(scene);
         value = new LabelWidget(scene);
         label.setFont(new Font("Monospaced", Font.BOLD, 20)); //XXX
-        label.setLabel(prop.name().toString());
+        label.setLabel(prop.getDisplayName());
         addChild(label);
         addChild(value);
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -113,7 +114,7 @@ public final class IntegerWidget extends Widget {
 
         @Override
         public void stateChanged(ChangeEvent e) {
-            ToolProperty<Integer, ?> p = (ToolProperty<Integer, ?>) e.getSource();
+            Property<Integer, ?> p = (Property<Integer, ?>) e.getSource();
             value.setLabel("" + p.get());
         }
     }

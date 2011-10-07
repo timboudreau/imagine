@@ -1,15 +1,20 @@
 package net.java.dev.imagine.api.customizers;
 
-import net.java.dev.imagine.api.properties.Bounded;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.geom.AffineTransform;
+import java.util.Collection;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import net.java.dev.imagine.api.properties.Bounded;
+import net.java.dev.imagine.api.properties.ComposedProperty;
 import net.java.dev.imagine.api.properties.EnumPropertyID;
 import net.java.dev.imagine.api.properties.Property;
+import net.java.dev.imagine.api.properties.PropertyID;
+import net.java.dev.imagine.api.properties.preferences.PreferencesFactory;
 import org.openide.util.ChangeSupport;
+import org.openide.util.WeakListeners;
 
 /**
  * A property which can be persisted and shared between tools, such as 
@@ -22,243 +27,186 @@ import org.openide.util.ChangeSupport;
  *
  * @author Tim Boudreau
  */
-public abstract class ToolProperty<T, R extends Enum> implements Property <T, EnumPropertyID<T, R>> {
+public abstract class ToolProperty {
+    
+    private ToolProperty() {}
 
-    public abstract void addChangeListener(ChangeListener listener);
-
-    public abstract T get();
-
-    public abstract R name();
-
-    public abstract void removeChangeListener(ChangeListener listener);
-
-    public abstract boolean set(T value);
-
-    public abstract Class<T> type();
-
-    public ToolProperty<?, ?>[] getSubProperties() {
-        return new ToolProperty<?, ?>[0];
-    }
-
-    public static <R extends Enum> ToolProperty<BasicStroke, R> createStrokeProperty(R name) {
+    public static <R extends Enum<R>> Property<BasicStroke, ?> createStrokeProperty(R name) {
         return new StrokeToolProperty<R>(name);
     }
 
-    public static <R extends Enum> ToolProperty<AffineTransform, R> createTransformProperty(R name) {
+    public static <R extends Enum<R>> Property<AffineTransform, ?> createTransformProperty(R name) {
         return new AffineTransformToolProperty<R>(name);
     }
 
-    public static <R extends Enum> ToolProperty<Color, R> createColorProperty(R name) {
-        return createColorProperty(name, Color.BLUE);
+    public static <R extends Enum<R>> Property<Color, ?> createColorProperty(R name) {
+        return createColorProperty(name, null);
     }
 
-    public static <R extends Enum> ToolProperty<Color, R> createColorProperty(R name, Color defaultValue) {
+    public static <R extends Enum<R>> Property<Color, ?> createColorProperty(R name, Color defaultValue) {
         return new ColorToolProperty<R>(name, defaultValue);
     }
 
-    public static <R extends Enum> ToolProperty<Font, R> createFontProperty(R name) {
+    public static <R extends Enum<R>> Property<Font, ?> createFontProperty(R name) {
         return new FontToolProperty<R>(name);
     }
 
-    public static <R extends Enum, T extends Enum> ToolProperty<T, R> createEnumProperty(R name, T defaultValue) {
-        return new EnumToolProperty<T, R>(name, defaultValue);
+    public static <R extends Enum<R>, T extends Enum> Property<T, ?> createEnumProperty(R name, T defaultValue) {
+        return PreferencesFactory.createPreferencesFactory(new EnumPropertyID<T, R>(name, defaultValue.getDeclaringClass())).createProperty(defaultValue);
     }
 
-    public static <R extends Enum> ToolProperty<Integer, R> createIntegerProperty(R name, int defaultValue) {
-        return new IntegerToolProperty<R>(name, defaultValue);
+    public static <R extends Enum<R>> Property<Integer, ?> createIntegerProperty(R name, int defaultValue) {
+        return PreferencesFactory.createPreferencesFactory(new EnumPropertyID<Integer, R>(name, Integer.TYPE)).createProperty((Integer) defaultValue);
     }
 
-    public static <R extends Enum> ToolProperty<Integer, R> createIntegerProperty(R name, int min, int max, int defaultValue) {
-        SimpleBounds<Integer> b = new SimpleBounds<Integer>(min, max);
-        return new BoundedWrapper(new IntegerToolProperty<R>(name, defaultValue), b);
+    public static <R extends Enum<R>> Property<Integer, ?> createIntegerProperty(R name, int min, int max, int defaultValue) {
+        return ComposedProperty.createBounded(createIntegerProperty(name, defaultValue), min, max);
     }
 
-    public static <R extends Enum> ToolProperty<Boolean, R> createBooleanProperty(R name, boolean defaultValue) {
-        return new BooleanToolProperty<R>(name, defaultValue);
+    public static <R extends Enum<R>> Property<Boolean, ?> createBooleanProperty(R name, boolean defaultValue) {
+        return PreferencesFactory.createPreferencesFactory(new EnumPropertyID<Boolean, R>(name, Boolean.TYPE)).createProperty((Boolean) defaultValue);
     }
 
-    public static <R extends Enum> ToolProperty<Float, R> createFloatProperty(R name, float defaultValue) {
-        return new FloatToolProperty<R>(name, defaultValue);
+    public static <R extends Enum<R>> Property<Float, ?> createFloatProperty(R name, float defaultValue) {
+        return PreferencesFactory.createPreferencesFactory(new EnumPropertyID<Float, R>(name, Float.TYPE)).createProperty((Float) defaultValue);
     }
 
-    public static <R extends Enum> ToolProperty<Float, R> createFloatProperty(R name, float min, float max, float defaultValue) {
+    public static <R extends Enum<R>> Property<Float, ?> createFloatProperty(R name, float min, float max, float defaultValue) {
         assert min < max;
-        SimpleBounds<Float> b = new SimpleBounds<Float>(min, max);
-        return new BoundedWrapper(new FloatToolProperty<R>(name, defaultValue), b);
+        return ComposedProperty.createBounded(createFloatProperty(name, defaultValue), min, max);
     }
 
-    public static <R extends Enum> ToolProperty<Double, R> createDoubleProperty(R name, double defaultValue) {
-        return new DoubleToolProperty<R>(name, defaultValue);
+    public static <R extends Enum<R>> Property<Double, ?> createDoubleProperty(R name, double defaultValue) {
+        return PreferencesFactory.createPreferencesFactory(new EnumPropertyID<Double, R>(name, Double.TYPE)).createProperty((Double) defaultValue);
     }
 
-    public static <R extends Enum> ToolProperty<Double, R> createDoubleProperty(R name, double min, double max, double defaultValue) {
+    public static <R extends Enum<R>> Property<Double, ?> createDoubleProperty(R name, double min, double max, double defaultValue) {
         assert min < max;
-        SimpleBounds<Double> b = new SimpleBounds<Double>(min, max);
-        return new BoundedWrapper(new DoubleToolProperty<R>(name, defaultValue), b);
+        return ComposedProperty.createBounded(createDoubleProperty(name, defaultValue), min, max);
     }
 
-    public final ToolProperty<Integer, R> scaled(R name) {
-        ToolProperty<Double, R> prop = createDoubleProperty(name, 0, 1, 1);
-        return new Scaled<R, Double>(prop);
+    public final <R extends Enum<R>> Property<Integer, ?> scaled(R name) {
+        Property<Double, ?> prop = createDoubleProperty(name, 0, 1, 1);
+        return scale(prop);
+    }
+    
+    public interface Provider<T> {
+        public Property<T, ?> create();
     }
 
-    public static final <R extends Enum, T extends Number> ToolProperty<Integer, R> scale(ToolProperty<T, R> prop) {
-        return new Scaled<R, T>(prop);
+    public static final <R extends PropertyID<T>, T extends Number> Property<Integer, ?> scale(Property<T, R> prop) {
+        return new Scaled<T>(prop);
     }
 
-    public static interface Provider<T, R extends Enum> {
-
-        public ToolProperty<T, R> create();
-    }
-
-    static final class BoundedWrapper<T extends Number, R extends Enum> extends ToolProperty<T, R> implements Bounded<T>, ChangeListener {
-
-        private final ToolProperty<T, R> property;
-        private final Bounded<T> bounds;
+    static final class Scaled<T extends Number> implements Property<Integer, Scaled<T>>, PropertyID<Integer>, Bounded<Integer> {
+        private final Property<T, ?> delegate;
+        private ChangeListener proxy;
         private final ChangeSupport supp = new ChangeSupport(this);
 
-        public BoundedWrapper(ToolProperty<T, R> property, Bounded<T> bounds) {
-            this.property = property;
-            this.bounds = bounds;
-        }
-
-        @Override
-        public void addChangeListener(ChangeListener listener) {
-            boolean hadListeners = supp.hasListeners();
-            supp.addChangeListener(listener);
-            if (!hadListeners) {
-                property.addChangeListener(this);
-            }
-        }
-
-        @Override
-        public T get() {
-            return property.get();
-        }
-
-        @Override
-        public R name() {
-            return property.name();
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener) {
-            supp.removeChangeListener(listener);
-            if (!supp.hasListeners()) {
-                property.removeChangeListener(this);
-            }
-        }
-
-        @Override
-        public boolean set(T value) {
-            return property.set(value);
-        }
-
-        @Override
-        public Class<T> type() {
-            return property.type();
-        }
-
-        @Override
-        public T getMinimum() {
-            return bounds.getMinimum();
-        }
-
-        @Override
-        public T getMaximum() {
-            return bounds.getMaximum();
-        }
-
-        @Override
-        public void stateChanged(ChangeEvent e) {
-            supp.fireChange();
-        }
-
-        @Override
-        public ToolProperty<?, ?>[] getSubProperties() {
-            return property.getSubProperties();
-        }
-    }
-
-    static class SimpleBounds<T extends Number> implements Bounded<T> {
-
-        private final T min;
-        private final T max;
-
-        SimpleBounds(T min, T max) {
-            this.min = min;
-            this.max = max;
-        }
-
-        @Override
-        public T getMinimum() {
-            return min;
-        }
-
-        @Override
-        public T getMaximum() {
-            return max;
-        }
-    }
-
-    static class Scaled<R extends Enum, T extends Number> extends ToolProperty<Integer, R> implements ChangeListener, Bounded<Integer> {
-
-        private final ToolProperty<T, R> prop;
-
-        public Scaled(ToolProperty<T, R> prop) {
-            this.prop = prop;
-            assert prop.type() == Float.TYPE || prop.type() == Double.TYPE;
-        }
-        private final ChangeSupport supp = new ChangeSupport(this);
-
-        @Override
-        public void addChangeListener(ChangeListener listener) {
-            boolean hadListeners = supp.hasListeners();
-            supp.addChangeListener(listener);
-            if (!hadListeners) {
-                prop.addChangeListener(this);
-            }
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener listener) {
-            supp.removeChangeListener(listener);
-            if (!supp.hasListeners()) {
-                prop.removeChangeListener(this);
-            }
-        }
-
-        @Override
-        public void stateChanged(ChangeEvent e) {
-            supp.fireChange();
-        }
-
-        @Override
-        public Integer get() {
-            double val = prop.get().doubleValue();
-            int actual = (int) Math.round(val * 100D);
-            return actual;
-        }
-
-        @Override
-        public R name() {
-            return prop.name();
-        }
-
-        @Override
-        public boolean set(Integer value) {
-            double val = value;
-            val /= 100;
-            if (prop.type() == Float.TYPE) {
-                return prop.set((T) Float.valueOf((float) val));
-            } else {
-                return prop.set((T) Double.valueOf(val));
+        public Scaled(Property<T, ?> delegate) {
+            this.delegate = delegate;
+            if (delegate.type() != Double.class && delegate.type() != Double.TYPE && 
+                    delegate.type() != Float.class && delegate.type() != Float.TYPE) {
+                throw new ClassCastException("Not a double or float property: " + delegate);
             }
         }
 
         @Override
         public Class<Integer> type() {
             return Integer.TYPE;
+        }
+
+        @Override
+        public String getDisplayName() {
+            return delegate.getDisplayName();
+        }
+
+        @Override
+        public Integer get() {
+            double res = delegate.get().doubleValue() * 100D;
+            return (int) res;
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener cl) {
+            boolean had = supp.hasListeners();
+            supp.addChangeListener(cl);
+            if (!had) {
+                addNotify();
+            }
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener cl) {
+            supp.removeChangeListener(cl);
+            if (!supp.hasListeners()) {
+                removeNotify();
+            }
+        }
+        
+        private void addNotify() {
+            proxy = WeakListeners.create(ChangeListener.class, listener, delegate);
+            delegate.addChangeListener(proxy);
+        }
+        
+        private void removeNotify() {
+            if (proxy != null) {
+                delegate.removeChangeListener(proxy);
+            }
+        }
+        
+        private ChangeListener listener = new ChangeListener() {
+
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                supp.fireChange();
+            }
+            
+        };
+
+        @Override
+        public boolean set(Integer value) {
+            double val = value.doubleValue();
+            val = val / 100;
+            if (delegate.type() == Double.class || delegate.type() == Double.TYPE) {
+                Double d = Double.valueOf(val);
+                return delegate.set((T)d);
+            } else if (delegate.type() == Float.class || delegate.type() == Float.TYPE) {
+                Float f = Float.valueOf((float) val);
+                return delegate.set((T) f);
+            } else {
+                throw new AssertionError(delegate.type());
+            }
+        }
+
+        @Override
+        public <R> R get(Class<R> type) {
+            return delegate.get(type);
+        }
+
+        @Override
+        public <R> Collection<? extends R> getAll(Class<R> type) {
+            return delegate.getAll(type);
+        }
+
+        @Override
+        public Scaled id() {
+            return this;
+        }
+
+        @Override
+        public String name() {
+            return delegate.id().name();
+        }
+
+        @Override
+        public Class<?> keyType() {
+            return delegate.id().keyType();
+        }
+
+        @Override
+        public <T, M extends Enum<M>> PropertyID<T> subId(M name, Class<T> type) {
+            return delegate.id().subId(name, type);
         }
 
         @Override

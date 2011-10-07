@@ -15,7 +15,6 @@ import org.netbeans.api.visual.widget.Scene;
 import java.awt.Color;
 import java.awt.GraphicsEnvironment;
 import java.awt.geom.Ellipse2D;
-import javax.swing.JFrame;
 import org.junit.Test;
 import static org.junit.Assert.*;
 

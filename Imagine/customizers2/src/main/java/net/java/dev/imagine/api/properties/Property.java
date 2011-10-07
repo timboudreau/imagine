@@ -18,6 +18,8 @@ public interface Property<T, IdType extends PropertyID<T>> extends Value<T>, Mut
     public IdType id();
 
     public Class<T> type();
+    
+    public String getDisplayName();
 
     public static abstract class Abstract<T, R extends Listenable, IdType extends PropertyID<T>> implements Property<T, IdType> {
 
@@ -50,6 +52,10 @@ public interface Property<T, IdType extends PropertyID<T>> extends Value<T>, Mut
         private <Q> void add(Adapter<Q> a, InstanceContent c) {
             c.add(a, a.toConvertor());
         }
+        
+        public final String getDisplayName() {
+            return id.getDisplayName();
+        }
 
         protected final void fire() {
             supp.fireChange();
@@ -72,12 +78,21 @@ public interface Property<T, IdType extends PropertyID<T>> extends Value<T>, Mut
         public final <R> Collection<? extends R> getAll(Class<R> type) {
             return lookup.lookupAll(type);
         }
+        
+        protected void addNotify() {
+            //do nothing
+        }
+        
+        protected void removeNotify() {
+            //do nothing;
+        }
 
         @Override
         public final void addChangeListener(ChangeListener l) {
             boolean had = supp.hasListeners();
             supp.addChangeListener(l);
             if (!had) {
+                addNotify();
                 getter.addChangeListener(proxy = WeakListeners.change(cl, getter));
             }
         }
@@ -92,6 +107,7 @@ public interface Property<T, IdType extends PropertyID<T>> extends Value<T>, Mut
             if (!supp.hasListeners() && proxy != null) {
                 getter.removeChangeListener(proxy);
                 proxy = null;
+                removeNotify();
             }
         }
 
