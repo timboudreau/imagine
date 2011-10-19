@@ -25,11 +25,11 @@ import org.openide.util.WeakListeners;
  */
 public class FontWidget extends Widget {
 
-    private final Property<Font, ?> prop;
+    private final Property<Font> prop;
     private final LabelWidget name;
     
     /*
-    public FontWidget(ColumnDataScene scene, final ToolProperty<Font, ?> prop) {
+    public FontWidget(ColumnDataScene scene, final ToolProperty<Font> prop) {
         super (scene);
         this.prop = prop;
         name = new LabelWidget(scene, prop.name().name());
@@ -52,7 +52,7 @@ public class FontWidget extends Widget {
     Fs fs = new Fs();
     private final FW fw;
 
-    public FontWidget(ColumnDataScene scene, Property<Font, ?> prop) {
+    public FontWidget(ColumnDataScene scene, Property<Font> prop) {
         super(scene);
         this.prop = prop;
         name = new LabelWidget(scene, prop.getDisplayName());

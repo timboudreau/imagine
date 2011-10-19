@@ -11,12 +11,12 @@ import javax.swing.JFrame;
 import net.java.dev.imagine.api.customizers.ToolProperty;
 import net.java.dev.imagine.api.customizers.visualizer.ExpandableWidget.Expandable;
 import net.java.dev.imagine.api.properties.Property;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.netbeans.api.visual.border.BorderFactory;
 import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.layout.LayoutFactory.SerialAlignment;
 import org.netbeans.api.visual.widget.ComponentWidget;
-import static org.junit.Assert.*;
 import org.netbeans.api.visual.widget.LabelWidget;
 import org.netbeans.api.visual.widget.Widget;
 
@@ -109,9 +109,9 @@ public class ExpandableWidgetTest {
                 results.add(c3);
                 results.add(new LabelWidget(scene, "hmm hey hey"));
                 results.add(new LabelWidget(scene, "this is more stuff here"));
-                Property<Integer, ?> ip = ToolProperty.createIntegerProperty(E.Width, 0, 100, 50);
-                Property<Color, ?> cp = ToolProperty.createColorProperty(E.Color, Color.RED);
-                Property<Font, ?> fp = ToolProperty.createFontProperty(E.Font);
+                Property<Integer> ip = ToolProperty.createIntegerProperty(E.Width, 0, 100, 50);
+                Property<Color> cp = ToolProperty.createColorProperty(E.Color, Color.RED);
+                Property<Font> fp = ToolProperty.createFontProperty(E.Font);
                 results.add(new IntegerWidget(scene, ip));
                 results.add(new ColorWidget(scene, cp));
                 results.add(new FontWidget(scene, fp));

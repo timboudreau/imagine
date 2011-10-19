@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.java.dev.imagine.customizers.impl;
 
 import java.awt.BasicStroke;
@@ -18,13 +14,13 @@ import org.netbeans.api.visual.widget.Widget;
 @CustomizesProperty(BasicStroke.class)
 public class Z extends JPanel {
 
-    public Z(Property<BasicStroke, ?> prop) {
+    public Z(Property<BasicStroke> prop) {
     }
 
     @CustomizesProperty(BasicStroke.class)
     public static class M extends Widget {
 
-        public M(ColumnDataScene scene, Property<BasicStroke, ?> prop) {
+        public M(ColumnDataScene scene, Property<BasicStroke> prop) {
             super(scene);
         }
     }

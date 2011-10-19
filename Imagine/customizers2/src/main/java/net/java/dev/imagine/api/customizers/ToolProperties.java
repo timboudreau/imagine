@@ -20,7 +20,7 @@ public enum ToolProperties {
     DEFAULT_STROKE,
     DEFAULT_SHOULD_FILL;
 
-    public Property<?, ?> getProperty() {
+    public Property<?> getProperty() {
         switch (this) {
             case DEFAULT_BACKGROUND:
                 return ColorProps.BACKGROUND.create();
@@ -46,7 +46,7 @@ public enum ToolProperties {
         SHOULD_FILL;
 
         @Override
-        public Property<Boolean, ?> create() {
+        public Property<Boolean> create() {
             return ToolProperty.createBooleanProperty(this, true);
         }
 
@@ -60,7 +60,7 @@ public enum ToolProperties {
         STROKE;
 
         @Override
-        public Property<BasicStroke, ?> create() {
+        public Property<BasicStroke> create() {
             return ToolProperty.createStrokeProperty(this);
         }
 
@@ -74,7 +74,7 @@ public enum ToolProperties {
         FONT;
 
         @Override
-        public Property<Font, ?> create() {
+        public Property<Font> create() {
             return ToolProperty.createFontProperty(this);
         }
     }
@@ -90,7 +90,7 @@ public enum ToolProperties {
             return NbBundle.getMessage(ToolProperties.class, name());
         }
 
-        public Property<Color, ?> create() {
+        public Property<Color> create() {
             return ToolProperty.createColorProperty(this);
         }
     }

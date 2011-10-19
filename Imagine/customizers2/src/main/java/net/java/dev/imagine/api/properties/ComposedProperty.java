@@ -8,24 +8,24 @@ import org.openide.util.Parameters;
  *
  * @author Tim Boudreau
  */
-public class ComposedProperty<T, IdType extends PropertyID<T>> extends Property.Abstract<T, Value<T>, IdType> {
+public class ComposedProperty<T> extends Property.Abstract<T, Value<T>> {
 
     private final Mutable<T> setter;
 
-    private ComposedProperty(Value<T> getter, Mutable<T> setter, IdType id, Object... contents) {
+    private ComposedProperty(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Object... contents) {
         super(id, getter, contents);
         this.setter = setter;
     }
 
-    public static <T extends Number, IdType extends PropertyID<T>> Property<T, IdType> createExplicit(Value<T> getter, Mutable<T> setter, IdType id, Explicit<T> values, Object... contents) {
-        return new ExplicitComposedProperty<T, IdType>(getter, setter, id, values, contents);
+    public static <T extends Number> Property<T> createExplicit(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Explicit<T> values, Object... contents) {
+        return new ExplicitComposedProperty<T>(getter, setter, id, values, contents);
     }
 
-    public static <T extends Number, IdType extends PropertyID<T>> Property<T, IdType> createBounded(Value<T> getter, Mutable<T> setter, IdType id, T min, T max, Object... contents) {
+    public static <T extends Number> Property<T> createBounded(Value<T> getter, Mutable<T> setter, PropertyID<T> id, T min, T max, Object... contents) {
         return createBounded(getter, setter, id, new B<T>(min, max), contents);
     }
     
-    private static final class B<T extends Number> implements Bounded<T> {
+    private static final class B<T extends Number> implements Constrained<T> {
         private final T min;
         private final T max;
 
@@ -47,22 +47,22 @@ public class ComposedProperty<T, IdType extends PropertyID<T>> extends Property.
         
     }
     
-    public static <T extends Number, R extends PropertyID<T>> Property<T, R> createBounded(Property<T, R> prop, T min, T max) {
+    public static <T extends Number> Property<T> createBounded(Property<T> prop, T min, T max) {
         B<T> b = new B<T>(min, max);
-        return new BR<T, R>(prop, b);
+        return new BR<T>(prop, b);
     }
     
-    public static <T extends Number, IdType extends PropertyID<T>> Property<T, IdType> createBounded(Value<T> getter, Mutable<T> setter, IdType id, Bounded<T> bounded, Object... contents) {
-        return new BoundComposedProperty<T, IdType>(getter, setter, id, bounded, contents);
+    public static <T extends Number> Property<T> createBounded(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Constrained<T> bounded, Object... contents) {
+        return new BoundComposedProperty<T>(getter, setter, id, bounded, contents);
     }
 
-    public static <T, IdType extends PropertyID<T>> Property<T, IdType> create(Value<T> getter, Mutable<T> setter, IdType id, Object... contents) {
-        return new ComposedProperty<T, IdType>(getter, setter, id, contents);
+    public static <T> Property<T> create(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Object... contents) {
+        return new ComposedProperty<T>(getter, setter, id, contents);
     }
 
     @Override
     public T get() {
-        return getter.get();
+        return listenTo.get();
     }
 
     @Override
@@ -78,7 +78,7 @@ public class ComposedProperty<T, IdType extends PropertyID<T>> extends Property.
         if (!(obj instanceof Property)) {
             return false;
         }
-        final Property<?, ?> other = (Property<?, ?>) obj;
+        final Property<?> other = (Property<?>) obj;
         if (this.id != other.id() && (this.id == null || !this.id.equals(other.id()))) {
             return false;
         }
@@ -92,11 +92,11 @@ public class ComposedProperty<T, IdType extends PropertyID<T>> extends Property.
         return hash;
     }
 
-    private static class BoundComposedProperty<T extends Number, IdType extends PropertyID<T>> extends ComposedProperty<T, IdType> implements Bounded<T> {
+    private static class BoundComposedProperty<T extends Number> extends ComposedProperty<T> implements Constrained<T> {
 
-        private final Bounded<T> bounds;
+        private final Constrained<T> bounds;
 
-        public BoundComposedProperty(Value<T> getter, Mutable<T> setter, IdType id, Bounded<T> bounds, Object... contents) {
+        public BoundComposedProperty(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Constrained<T> bounds, Object... contents) {
             super(getter, setter, id, contents);
             this.bounds = bounds;
         }
@@ -112,11 +112,11 @@ public class ComposedProperty<T, IdType extends PropertyID<T>> extends Property.
         }
     }
 
-    private static class ExplicitComposedProperty<T, IdType extends PropertyID<T>> extends ComposedProperty<T, IdType> implements Explicit<T> {
+    private static class ExplicitComposedProperty<T> extends ComposedProperty<T> implements Explicit<T> {
 
         private final Explicit<T> values;
 
-        public ExplicitComposedProperty(Value<T> getter, Mutable<T> setter, IdType id, Explicit<T> values, Object... contents) {
+        public ExplicitComposedProperty(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Explicit<T> values, Object... contents) {
             super(getter, setter, id, contents);
             this.values = values;
         }
@@ -127,11 +127,11 @@ public class ComposedProperty<T, IdType extends PropertyID<T>> extends Property.
         }
     }
     
-    static class BR<T extends Number, R extends PropertyID<T>> implements Property<T, R>, Bounded<T> {
-        private final Property<T, R> delegate;
-        private final Bounded<T> bounds;
+    static class BR<T extends Number> implements Property<T>, Constrained<T> {
+        private final Property<T> delegate;
+        private final Constrained<T> bounds;
 
-        public BR(Property<T, R> delegate, Bounded<T> bounds) {
+        public BR(Property<T> delegate, Constrained<T> bounds) {
             Parameters.notNull("delegate", delegate);
             Parameters.notNull("bounds", bounds);
             this.delegate = delegate;
@@ -139,7 +139,7 @@ public class ComposedProperty<T, IdType extends PropertyID<T>> extends Property.
         }
 
         @Override
-        public R id() {
+        public PropertyID<T> id() {
             return delegate.id();
         }
 

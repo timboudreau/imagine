@@ -16,14 +16,14 @@ import org.openide.util.ChangeSupport;
  *
  * @author Tim Boudreau
  */
-final class ColorToolProperty<R extends Enum<R>> implements Property<Color, EnumPropertyID<Color, R>> {
+final class ColorToolProperty<R extends Enum<R>> implements Property<Color> {
 
     private final ChangeSupport supp = new ChangeSupport(this);
     private final EnumPropertyID<Color, R> id;
-    private final Property<Integer, ?> red;
-    private final Property<Integer, ?> green;
-    private final Property<Integer, ?> blue;
-    private final Property<Integer, ?> alpha;
+    private final Property<Integer> red;
+    private final Property<Integer> green;
+    private final Property<Integer> blue;
+    private final Property<Integer> alpha;
 
     public ColorToolProperty(R name) {
         this(name, null);

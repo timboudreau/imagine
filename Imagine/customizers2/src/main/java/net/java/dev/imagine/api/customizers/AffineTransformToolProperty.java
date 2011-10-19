@@ -18,9 +18,9 @@ import net.java.dev.imagine.api.properties.preferences.PreferencesFactory;
  *
  * @author Tim Boudreau
  */
-final class AffineTransformToolProperty<R extends Enum<R>> implements Property<AffineTransform, EnumPropertyID<AffineTransform, R>> {
+final class AffineTransformToolProperty<R extends Enum<R>> implements Property<AffineTransform> {
     private final EnumPropertyID<AffineTransform, R> id;
-    private final Map<Matrix, Property<Double, ?>> map = new EnumMap<Matrix, Property<Double,?>>(Matrix.class);
+    private final Map<Matrix, Property<Double>> map = new EnumMap<Matrix, Property<Double>>(Matrix.class);
 
     public AffineTransformToolProperty(R name) {
         id = new EnumPropertyID<AffineTransform, R>(name, AffineTransform.class);
@@ -29,7 +29,7 @@ final class AffineTransformToolProperty<R extends Enum<R>> implements Property<A
             PreferencesFactory<Double> f = PreferencesFactory.createPreferencesFactory(p);
             Value<Double> v = f.createGetter(0D);
             Mutable<Double> s = f.createSetter();
-            Property<Double, ?> prop = ComposedProperty.create(v, s, p);
+            Property<Double> prop = ComposedProperty.create(v, s, p);
             map.put (m, prop);
         }
     }
@@ -54,7 +54,7 @@ final class AffineTransformToolProperty<R extends Enum<R>> implements Property<A
         double[] d = new double[Matrix.values().length];
         for (int i = 0; i < d.length; i++) {
             Matrix m = Matrix.values()[i];
-            Property<Double,?> p = map.get(m);
+            Property<Double> p = map.get(m);
             d[i] = p.get();
         }
         return new AffineTransform(d);
@@ -77,7 +77,7 @@ final class AffineTransformToolProperty<R extends Enum<R>> implements Property<A
         value.getMatrix(d);
         for (int i = 0; i < d.length; i++) {
             Matrix m = Matrix.values()[i];
-            Property<Double,?> p = map.get(m);
+            Property<Double> p = map.get(m);
             p.set(d[i]);
         }
         return true;

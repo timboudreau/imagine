@@ -4,8 +4,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.api.customizers.ToolProperty;
 import net.java.dev.imagine.api.properties.Property;
-import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  *
@@ -15,7 +15,7 @@ public class PropertiesTest {
 
     @Test
     public void test() throws Exception {
-        Property<Boolean, ?> bp = ToolProperty.createBooleanProperty(Stuff.STUFF, false);
+        Property<Boolean> bp = ToolProperty.createBooleanProperty(Stuff.STUFF, false);
         boolean val = bp.get();
         if (val) {
             bp.set(false);
@@ -40,10 +40,10 @@ public class PropertiesTest {
         changed = bp.set(false);
         assertFalse(changed);
 
-        Property<Double, ?> dp = ToolProperty.createDoubleProperty(Stuff.MORE_STUFF, 0.7D);
+        Property<Double> dp = ToolProperty.createDoubleProperty(Stuff.MORE_STUFF, 0.7D);
         dp.set(0.7D);
         
-        Property<Integer, ?> ip = ToolProperty.scale(dp);
+        Property<Integer> ip = ToolProperty.scale(dp);
         cl = new CL();
         
         int scaled = ip.get();

@@ -12,8 +12,8 @@ import javax.swing.Popup;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import net.java.dev.imagine.api.properties.Bounded;
 import net.java.dev.imagine.api.customizers.ToolProperty;
+import net.java.dev.imagine.api.properties.Constrained;
 import net.java.dev.imagine.api.properties.Property;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.action.WidgetAction.State;
@@ -33,13 +33,14 @@ public final class IntegerWidget extends Widget {
     private final LabelWidget value;
 
     @SuppressWarnings("LeakingThisInConstructor")
-    <T extends Number> IntegerWidget(final Property<T, ?> prop, ColumnDataScene scene) {
+    <T extends Number> IntegerWidget(final Property<T> prop, ColumnDataScene scene) {
         this(scene, ToolProperty.scale(prop));
     }
     
     @SuppressWarnings("LeakingThisInConstructor")
-    IntegerWidget(ColumnDataScene scene, final Property<Integer, ?> prop) {
+    IntegerWidget(ColumnDataScene scene, final Property<Integer> prop) {
         super(scene);
+        assert prop.type() == Integer.class || prop.type() == Integer.TYPE;
         label = new LabelWidget(scene);
         value = new LabelWidget(scene);
         label.setFont(new Font("Monospaced", Font.BOLD, 20)); //XXX
@@ -64,17 +65,18 @@ public final class IntegerWidget extends Widget {
                 SwingUtilities.convertPointToScreen(p, c);
                 int min = 0;
                 int max = 100;
-                if (prop instanceof Bounded) {
-                    Bounded<?> b = (Bounded<?>) prop;
+                if (prop instanceof Constrained) {
+                    Constrained<?> b = (Constrained<?>) prop;
                     min = b.getMinimum().intValue();
                     max = b.getMaximum().intValue();
                 }
-                final DefaultBoundedRangeModel mdl = new DefaultBoundedRangeModel(prop.get(), 1, min, max);
+                final DefaultBoundedRangeModel mdl = new DefaultBoundedRangeModel(prop.get().intValue(), 1, min, max);
                 mdl.addChangeListener(new ChangeListener() {
 
                     @Override
                     public void stateChanged(ChangeEvent e) {
-                        prop.set(mdl.getValue());
+                        Integer i = mdl.getValue();
+                        prop.set(i);
                     }
                 });
                 widget.getScene().getView().addMouseListener(new MouseAdapter() {
@@ -114,7 +116,7 @@ public final class IntegerWidget extends Widget {
 
         @Override
         public void stateChanged(ChangeEvent e) {
-            Property<Integer, ?> p = (Property<Integer, ?>) e.getSource();
+            Property<Integer> p = (Property<Integer>) e.getSource();
             value.setLabel("" + p.get());
         }
     }

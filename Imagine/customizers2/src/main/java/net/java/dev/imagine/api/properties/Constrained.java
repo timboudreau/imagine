@@ -6,7 +6,7 @@ package net.java.dev.imagine.api.properties;
  *
  * @author Tim Boudreau
  */
-public interface Bounded<T extends Number> {
+public interface Constrained<T extends Number> {
     public T getMinimum();
     public T getMaximum();
 }

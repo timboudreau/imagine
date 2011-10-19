@@ -6,11 +6,7 @@ import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
 import javax.swing.event.ChangeListener;
-import net.java.dev.imagine.api.properties.ComposedProperty;
-import net.java.dev.imagine.api.properties.Mutable;
-import net.java.dev.imagine.api.properties.Property;
-import net.java.dev.imagine.api.properties.PropertyID;
-import net.java.dev.imagine.api.properties.Value;
+import net.java.dev.imagine.api.properties.*;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Exceptions;
 import org.openide.util.NbPreferences;
@@ -32,7 +28,7 @@ public abstract class PreferencesFactory<T> {
 
     public abstract Mutable<T> createSetter();
 
-    public abstract Property<T, ?> createProperty(T defaultVal, Object... contents);
+    public abstract Property<T> createProperty(T defaultVal, Object... contents);
 
     private static class EnumPreferencesFactory<T> extends PreferencesFactory<T> {
 
@@ -54,7 +50,7 @@ public abstract class PreferencesFactory<T> {
             }
         }
 
-        public Property<T, ?> createProperty(T defaultVal, Object... contents) {
+        public Property<T> createProperty(T defaultVal, Object... contents) {
             V v = new V(defaultVal);
             M m = new M();
             m.toNotify = v;

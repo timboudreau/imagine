@@ -122,8 +122,8 @@ public class CustomizerAnnotationProcessor extends LayerGeneratingProcessor {
                             VariableElement param2 = params.get(1);
                             System.err.println("Param 1 " + param1 + " tp " + param1.asType());
                             System.err.println("Param 2 " + param1 + " tp " + param2.asType());
-                            hasUsableConstructor |= isSceneSubtype(param1) &&
-                                    customizes.equals(param2.asType());
+                            hasUsableConstructor |= isSceneSubtype(param1)
+                                    && customizes.equals(param2.asType());
                         }
                     } else {
                         if (params.size() == 1) {
@@ -140,8 +140,8 @@ public class CustomizerAnnotationProcessor extends LayerGeneratingProcessor {
                             VariableElement param2 = params.get(1);
                             System.err.println("Param 1 " + param1 + " tp " + param1.asType());
                             System.err.println("Param 2 " + param1 + " tp " + param2.asType());
-                            hasUsableConstructor |= isSceneSubtype(param1) &&
-                                    isPropertySubtype(param2, customizes);
+                            hasUsableConstructor |= isSceneSubtype(param1)
+                                    && isPropertySubtype(param2, customizes);
                         }
                     } else {
                         System.err.println("Not a widget: " + con + " on " + el);
@@ -165,9 +165,9 @@ public class CustomizerAnnotationProcessor extends LayerGeneratingProcessor {
                     }
                 } else {
                     if (isWidget) {
-                        throw new LayerGenerationException("Must have a 2-argument public constructor which takes " + sceneType + ", Property<" + customizes + ", ?>", el);
+                        throw new LayerGenerationException("Must have a 2-argument public constructor which takes " + sceneType + ", Property<" + customizes + ">", el);
                     } else {
-                        throw new LayerGenerationException("Must have a public constructor which takes a single argument of Property<" + customizes + ", ?>", el);
+                        throw new LayerGenerationException("Must have a public constructor which takes a single argument of Property<" + customizes + ">", el);
                     }
                 }
             }
@@ -176,13 +176,27 @@ public class CustomizerAnnotationProcessor extends LayerGeneratingProcessor {
             b = customizersDir.write();
             LayerBuilder.File typeFolder = b.folder(customizersDir.getPath() + "/" + customizes.toString());
             b = typeFolder.write();
-            LayerBuilder.File customizerFile = b.file(typeFolder.getPath() + "/" + asType);
+            LayerBuilder.File customizerFile = b.file(typeFolder.getPath() + "/" + canonicalize(asType, types));
             customizerFile.boolvalue("widget", isWidget);
             b = customizerFile.write();
             System.err.println("Wrote " + customizerFile.getPath());
         }
 
         return true;
+    }
+
+    private String canonicalize(TypeMirror tm, Types types) {
+        TypeElement e = (TypeElement) types.asElement(tm);
+        StringBuilder nm = new StringBuilder(e.getQualifiedName().toString());
+        Element enc = e.getEnclosingElement();
+        while (enc != null && enc.getKind() != ElementKind.PACKAGE) {
+            int ix = nm.lastIndexOf(".");
+            if (ix > 0) {
+                nm.setCharAt(ix, '$');
+            }
+            enc = enc.getEnclosingElement();
+        }
+        return nm.toString();
     }
 
     private boolean isSceneSubtype(VariableElement e) {
@@ -212,10 +226,9 @@ public class CustomizerAnnotationProcessor extends LayerGeneratingProcessor {
             List<? extends TypeMirror> gtypes = type.accept(new TV(), type);
             System.err.println("  gtypes " + gtypes);
             if (gtypes != null) {
-                if (gtypes.size() == 2) {
+                if (gtypes.size() == 1) {
                     TypeMirror firstParam = gtypes.get(0);
                     if (types.erasure(customizes).equals(types.erasure(firstParam))) {
-                        result = true;
                         result = true;
                     } else {
                         System.err.println("Type mismatch " + firstParam + " is not " + customizes);

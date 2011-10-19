@@ -22,10 +22,6 @@ public class EnumPropertyID<T, R extends Enum<R>> implements PropertyID<T> {
         return new EnumPropertyID(r, type);
     }
 
-    public Class<R> getConstantType() {
-        return r.getDeclaringClass();
-    }
-
     @Override
     public Class<T> type() {
         return type;

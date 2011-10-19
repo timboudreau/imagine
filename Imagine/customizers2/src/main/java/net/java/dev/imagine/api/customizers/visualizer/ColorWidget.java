@@ -5,12 +5,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import net.java.dev.colorchooser.ColorChooser;
 import net.java.dev.imagine.api.properties.Property;
 import org.netbeans.api.visual.widget.ComponentWidget;
 import org.netbeans.api.visual.widget.LabelWidget;
 import org.netbeans.api.visual.widget.Widget;
 import org.openide.util.WeakListeners;
+import net.java.dev.colorchooser.ColorChooser;
 
 /**
  *
@@ -19,9 +19,9 @@ import org.openide.util.WeakListeners;
 public class ColorWidget extends Widget {
 
     private final ColorChooser cc = new ColorChooser();
-    private final Property<Color, ?> prop;
+    private final Property<Color> prop;
 
-    ColorWidget(ColumnDataScene scene, final Property<Color, ?> prop) {
+    ColorWidget(ColumnDataScene scene, final Property<Color> prop) {
         super(scene);
         this.prop = prop;
         setLayout(scene.getColumns().createLayout());
@@ -48,7 +48,6 @@ public class ColorWidget extends Widget {
         @Override
         public void stateChanged(ChangeEvent e) {
             Color c = prop.get();
-            System.out.println(prop + " changed now " + c);
             if (c != null) {
                 cc.setColor(c);
             }

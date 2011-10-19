@@ -14,9 +14,9 @@ import net.java.dev.imagine.api.properties.preferences.PreferencesFactory;
  * @author Tim Boudreau
  */
 
-final class StrokeToolProperty<R extends Enum<R>> implements Property<BasicStroke, EnumPropertyID<BasicStroke, R>> {
+final class StrokeToolProperty<R extends Enum<R>> implements Property<BasicStroke> {
     private final EnumPropertyID<BasicStroke, R> id;
-    private final Property<Float, ?> widthProp;
+    private final Property<Float> widthProp;
     public StrokeToolProperty(R name) {
         id = new EnumPropertyID<BasicStroke, R>(name, BasicStroke.class);
         PropertyID<Float> subId = id.subId(StrokeValues.WIDTH, Float.TYPE);

@@ -18,12 +18,12 @@ import org.openide.util.ChangeSupport;
  *
  * @author Tim Boudreau
  */
-final class FontToolProperty<R extends Enum<R>> implements Property<Font, EnumPropertyID<Font, R>>, Explicit<Font> {
+final class FontToolProperty<R extends Enum<R>> implements Property<Font>, Explicit<Font> {
     
     private final EnumPropertyID<Font, R> id;
-    private final Property<String, ?> faceProp;
-    private final Property<ToolProperties.FontStyles, ?> styleProp;
-    private final Property<Integer, ?> sizeProp;
+    private final Property<String> faceProp;
+    private final Property<ToolProperties.FontStyles> styleProp;
+    private final Property<Integer> sizeProp;
 
     public FontToolProperty(R name) {
         this.id = new EnumPropertyID(name, Font.class);
