@@ -50,6 +50,9 @@ final class FontToolProperty<R extends Enum<R>> implements Property<Font>, Expli
     @Override
     public Font get() {
         FontStyles style = styleProp.get();
+        if (style == null) {
+            style = FontStyles.PLAIN;
+        }
         int size = sizeProp.get();
         String face = faceProp.get();
         return new Font(face, style.getConstant(), size);
@@ -58,6 +61,9 @@ final class FontToolProperty<R extends Enum<R>> implements Property<Font>, Expli
     @Override
     public boolean set(Font value) {
         FontStyles style = FontStyles.forConstant(value.getStyle());
+        if (style == null) {
+            style = FontStyles.PLAIN;
+        }
         String face = value.getName();
         int size = value.getSize();
         boolean result = styleProp.set(style);

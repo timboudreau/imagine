@@ -4,14 +4,9 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.geom.AffineTransform;
-import java.util.Collection;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import net.java.dev.imagine.api.properties.Constrained;
-import net.java.dev.imagine.api.properties.ComposedProperty;
-import net.java.dev.imagine.api.properties.EnumPropertyID;
-import net.java.dev.imagine.api.properties.Property;
-import net.java.dev.imagine.api.properties.PropertyID;
+import net.java.dev.imagine.api.properties.*;
 import net.java.dev.imagine.api.properties.preferences.PreferencesFactory;
 import org.openide.util.ChangeSupport;
 import org.openide.util.WeakListeners;
@@ -177,16 +172,16 @@ public abstract class ToolProperty {
                 throw new AssertionError(delegate.type());
             }
         }
-
-        @Override
-        public <R> R get(Class<R> type) {
-            return delegate.get(type);
-        }
-
-        @Override
-        public <R> Collection<? extends R> getAll(Class<R> type) {
-            return delegate.getAll(type);
-        }
+//
+//        @Override
+//        public <R> R get(Class<R> type) {
+//            return delegate.get(type);
+//        }
+//
+//        @Override
+//        public <R> Collection<? extends R> getAll(Class<R> type) {
+//            return delegate.getAll(type);
+//        }
 
         @Override
         public Scaled id() {
@@ -216,6 +211,11 @@ public abstract class ToolProperty {
         @Override
         public Integer getMaximum() {
             return 100;
+        }
+
+        @Override
+        public Properties getSubProperties() {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 }

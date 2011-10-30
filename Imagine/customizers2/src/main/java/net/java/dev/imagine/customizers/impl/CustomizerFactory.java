@@ -125,11 +125,8 @@ public abstract class CustomizerFactory<T, R> {
                             first = ch;
                         }
                         if (Boolean.TRUE.equals(fo.getAttribute("widget")) == preferWidget) {
-                            try {
-                                return fromFileObject(fo);
-                            } catch (ClassNotFoundException ex) {
-                                Exceptions.printStackTrace(ex);
-                            }
+                            first = ch;
+                            break;
                         }
                     }
                     if (first != null) {
@@ -163,12 +160,14 @@ public abstract class CustomizerFactory<T, R> {
 
         @Override
         public Component createCustomizer(R toCustomize) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-            assert customizes.isInstance(toCustomize);
+//            assert customizes.isInstance(toCustomize);
             if (widget) {
                 ColumnDataScene s = new ColumnDataScene();
                 Widget w = createCustomizerWidget(s, toCustomize);
-                s.addChild(w);
-                w.setLayout(s.getColumns().createLayout());
+                if (w.getParentWidget() == null) {
+                    s.addChild(w);
+                    w.setLayout(s.getColumns().createLayout());
+                }
                 return s.createView();
             } else {
                 Constructor<T> c;
@@ -193,7 +192,7 @@ public abstract class CustomizerFactory<T, R> {
                 } catch (NoSuchMethodException e) {
                     c = type.getConstructor(ColumnDataScene.class, Property.class);
                 }
-                Widget result = (Widget) c.newInstance(toCustomize);
+                Widget result = (Widget) c.newInstance(scene, toCustomize);
                 if (scene instanceof ColumnDataScene) {
                     result.setLayout(((ColumnDataScene) scene).getColumns().createLayout());
                 }
@@ -265,8 +264,12 @@ public abstract class CustomizerFactory<T, R> {
          <T extends Property<R>, R> void add(T prop) {
             try {
                 CustomizerFactory<?, T> cf = (CustomizerFactory<?, T>) find(prop, true);
-                Entry<T, R> e = new Entry<T, R>(prop, cf);
-                all.add(e);
+                if (cf != null) {
+                    Entry<T, R> e = new Entry<T, R>(prop, cf);
+                    all.add(e);
+                } else {
+                    System.err.println("Cannot find a factory for " + prop);
+                }
             } catch (ClassNotFoundException ex) {
                 Exceptions.printStackTrace(ex);
             }
@@ -288,7 +291,6 @@ public abstract class CustomizerFactory<T, R> {
                 Widget w = e.get(scene);
                 if (w != null) {
                     w.setLayout(((ColumnDataScene) scene).getColumns().createLayout());
-                    scene.addChild(w);
                 } else {
                     System.err.println("no customizer for " + e.property + " though factory " + e.factory + " found");
                 }

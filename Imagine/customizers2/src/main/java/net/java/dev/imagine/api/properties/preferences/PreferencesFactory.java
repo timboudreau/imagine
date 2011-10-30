@@ -50,11 +50,11 @@ public abstract class PreferencesFactory<T> {
             }
         }
 
-        public Property<T> createProperty(T defaultVal, Object... contents) {
+        public Property<T> createProperty(T defaultVal) {
             V v = new V(defaultVal);
             M m = new M();
             m.toNotify = v;
-            return ComposedProperty.create(v, m, id, contents);
+            return ComposedProperty.create(v, m, id);
         }
 
         @Override

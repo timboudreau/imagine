@@ -11,21 +11,28 @@ import org.openide.util.Parameters;
 public class ComposedProperty<T> extends Property.Abstract<T, Value<T>> {
 
     private final Mutable<T> setter;
+    private final Properties subs;
 
-    private ComposedProperty(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Object... contents) {
-        super(id, getter, contents);
+    private ComposedProperty(Value<T> getter, Mutable<T> setter, PropertyID<T> id) {
+        this(getter, setter, id, null);
+    }
+
+    private ComposedProperty(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Properties subs) {
+        super(id, getter);
         this.setter = setter;
+        this.subs = subs == null ? new Properties.Simple() : subs;
     }
 
-    public static <T extends Number> Property<T> createExplicit(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Explicit<T> values, Object... contents) {
-        return new ExplicitComposedProperty<T>(getter, setter, id, values, contents);
+    public static <T extends Number> Property<T> createExplicit(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Explicit<T> values) {
+        return new ExplicitComposedProperty<T>(getter, setter, id, values);
     }
 
-    public static <T extends Number> Property<T> createBounded(Value<T> getter, Mutable<T> setter, PropertyID<T> id, T min, T max, Object... contents) {
-        return createBounded(getter, setter, id, new B<T>(min, max), contents);
+    public static <T extends Number> Property<T> createBounded(Value<T> getter, Mutable<T> setter, PropertyID<T> id, T min, T max) {
+        return createBounded(getter, setter, id, new B<T>(min, max));
     }
-    
+
     private static final class B<T extends Number> implements Constrained<T> {
+
         private final T min;
         private final T max;
 
@@ -44,20 +51,19 @@ public class ComposedProperty<T> extends Property.Abstract<T, Value<T>> {
         public T getMaximum() {
             return max;
         }
-        
     }
-    
+
     public static <T extends Number> Property<T> createBounded(Property<T> prop, T min, T max) {
         B<T> b = new B<T>(min, max);
         return new BR<T>(prop, b);
     }
-    
-    public static <T extends Number> Property<T> createBounded(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Constrained<T> bounded, Object... contents) {
-        return new BoundComposedProperty<T>(getter, setter, id, bounded, contents);
+
+    public static <T extends Number> Property<T> createBounded(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Constrained<T> bounded) {
+        return new BoundComposedProperty<T>(getter, setter, id, bounded);
     }
 
-    public static <T> Property<T> create(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Object... contents) {
-        return new ComposedProperty<T>(getter, setter, id, contents);
+    public static <T> Property<T> create(Value<T> getter, Mutable<T> setter, PropertyID<T> id) {
+        return new ComposedProperty<T>(getter, setter, id);
     }
 
     @Override
@@ -96,8 +102,8 @@ public class ComposedProperty<T> extends Property.Abstract<T, Value<T>> {
 
         private final Constrained<T> bounds;
 
-        public BoundComposedProperty(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Constrained<T> bounds, Object... contents) {
-            super(getter, setter, id, contents);
+        public BoundComposedProperty(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Constrained<T> bounds) {
+            super(getter, setter, id);
             this.bounds = bounds;
         }
 
@@ -116,8 +122,8 @@ public class ComposedProperty<T> extends Property.Abstract<T, Value<T>> {
 
         private final Explicit<T> values;
 
-        public ExplicitComposedProperty(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Explicit<T> values, Object... contents) {
-            super(getter, setter, id, contents);
+        public ExplicitComposedProperty(Value<T> getter, Mutable<T> setter, PropertyID<T> id, Explicit<T> values) {
+            super(getter, setter, id);
             this.values = values;
         }
 
@@ -126,8 +132,9 @@ public class ComposedProperty<T> extends Property.Abstract<T, Value<T>> {
             return values.getValues();
         }
     }
-    
+
     static class BR<T extends Number> implements Property<T>, Constrained<T> {
+
         private final Property<T> delegate;
         private final Constrained<T> bounds;
 
@@ -174,16 +181,6 @@ public class ComposedProperty<T> extends Property.Abstract<T, Value<T>> {
         }
 
         @Override
-        public <R> R get(Class<R> type) {
-            return delegate.get(type);
-        }
-
-        @Override
-        public <R> Collection<? extends R> getAll(Class<R> type) {
-            return delegate.getAll(type);
-        }
-
-        @Override
         public T getMinimum() {
             return bounds.getMinimum();
         }
@@ -191,6 +188,11 @@ public class ComposedProperty<T> extends Property.Abstract<T, Value<T>> {
         @Override
         public T getMaximum() {
             return bounds.getMaximum();
+        }
+
+        @Override
+        public Properties getSubProperties() {
+            return delegate.getSubProperties();
         }
     }
 }
