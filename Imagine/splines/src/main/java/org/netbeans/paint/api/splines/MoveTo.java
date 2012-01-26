@@ -7,6 +7,7 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 
 public class MoveTo extends LocationEntry {
+    private final ControlPoint cp = new ControlPointImpl(this, 0);
     public MoveTo(double x, double y) {
         super (x, y);
     }
@@ -19,6 +20,11 @@ public class MoveTo extends LocationEntry {
         this (p.x, p.y);
     }
 
+    @Override
+    public MoveTo clone() {
+        return new MoveTo(getX(), getY());
+    }
+
     public void perform(GeneralPath path) {
         path.moveTo (getX(), getY());
     }
@@ -28,8 +34,8 @@ public class MoveTo extends LocationEntry {
         g.fillRect (r.x, r.y, r.width, r.height);
     }
     
-    public Node[] getPoints() {
-        return new Node[]{ new Node (this, 0, this) };
+    public ControlPoint[] getControlPoints() {
+        return new ControlPoint[]{ cp };
     }
     
     @Override
@@ -37,7 +43,7 @@ public class MoveTo extends LocationEntry {
         return "gp.moveTo (" + getX() + "D, " + getY() +"D);\n";
     }
 
-    public boolean setPoint(int index, Point2D loc) {
+    public boolean setControlPoint(int index, Point2D loc) {
         if (index != 0) {
             throw new IndexOutOfBoundsException(index + "");
         }
@@ -49,12 +55,21 @@ public class MoveTo extends LocationEntry {
     public int size() {
         return 3;
     }
-    
-    public int hashCode() {
-        return new Point2D.Double(x, y).hashCode() * 68023;
+
+    @Override
+    public Kind kind() {
+        return Kind.MoveTo;
     }
-    
-    public boolean equals(Object o) {
-        return o instanceof MoveTo && ((MoveTo) o).x == x && ((MoveTo)o).y == y;
+
+    @Override
+    protected double getControlPointX(int index) {
+        assert index == 0;
+        return getX();
+    }
+
+    @Override
+    protected double getControlPointY(int index) {
+        assert index == 0;
+        return getY();
     }
 }

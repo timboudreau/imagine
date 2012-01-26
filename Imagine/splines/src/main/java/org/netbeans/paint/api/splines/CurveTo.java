@@ -3,7 +3,6 @@ package org.netbeans.paint.api.splines;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 
@@ -17,6 +16,12 @@ public final class CurveTo extends LocationEntry {
         b = new Double(x2, y2);
     }
     
+    @Override
+    public CurveTo clone() {
+        return new CurveTo (a.getX(), a.getY(), b.getX(), b.getY(), getX(), getY());
+    }
+    
+    @Override
     public int size() {
         return 3;
     }
@@ -29,16 +34,19 @@ public final class CurveTo extends LocationEntry {
         this (one.x, one.y, two.x, two.y, dest.x, dest.y);
     }
     
+    @Override
     public void perform(GeneralPath path) {
         path.curveTo(a.getX(), a.getY(), b.getX(), b.getY(), getX(), getY());
     }
 
+    @Override
     public void draw(Graphics2D g) {
         new MoveTo(a.getX(), a.getY()).draw (g);
         new MoveTo(b.getX(), b.getY()).draw (g);
         new MoveTo(getX(), getY()).draw (g);
     }
 
+    @Override
     protected void findDrawBounds(Rectangle r, int areaSize) {
         Rectangle x = new Rectangle();
         Rectangle y = new Rectangle();
@@ -49,22 +57,25 @@ public final class CurveTo extends LocationEntry {
         r.setBounds(x.union(y).union(z));
     }
 
-    Node[] nodes;
-    public Node[] getPoints() {
+    ControlPoint[] nodes;
+    @Override
+    public ControlPoint[] getControlPoints() {
         if (nodes == null) {
-            nodes = new Node[]{ new Node(this, 0, this), new Node(this, 1, a), 
-                new Node (this, 2, b) };
+            nodes = new ControlPointImpl[]{ new ControlPointImpl(this, 0), new ControlPointImpl(this, 1), 
+                new ControlPointImpl (this, 2) };
         }
         return nodes;
     }
     
+    @Override
     public String toString() {
         return "gp.curveTo (" + a.getX() + "D, " + a.getY() + "D, " +
                 b.getX() + "D, " + b.getY() + "D, " + getX() +"D, " +
                 getY() +"D);\n";
     }
 
-    public boolean setPoint(int index, Point2D loc) {
+    @Override
+    protected boolean setControlPoint(int index, Point2D loc) {
         Point2D.Double toSet;
         switch (index) {
             case 0:
@@ -80,10 +91,9 @@ public final class CurveTo extends LocationEntry {
                 throw new IndexOutOfBoundsException ("" + index);
         }
         
-        boolean result = toSet.getX() == getX() && toSet.getY() ==
-                getY();
+        boolean result = toSet.getX() == loc.getX() && toSet.getY() ==
+                loc.getY();
         toSet.setLocation (loc);
-        nodes = null;
         return result;
     }
 
@@ -111,5 +121,38 @@ public final class CurveTo extends LocationEntry {
         hash = 13063 * hash + (this.a != null ? this.a.hashCode() : 0);
         hash = 13 * hash + (this.b != null ? this.b.hashCode() : 0);
         return hash;
+    }
+
+    @Override
+    public Kind kind() {
+        return Kind.CurveTo;
+    }
+    
+    private Point2D pointFor(int index) {
+        Point2D result;
+        switch (index) {
+            case 0:
+                result = this;
+                break;
+            case 1:
+                result = a;
+                break;
+            case 2 :
+                result = b;
+                break;
+            default :
+                throw new IndexOutOfBoundsException ("" + index);
+        }
+        return result;
+    }
+
+    @Override
+    protected double getControlPointX(int index) {
+        return pointFor(index).getX();
+    }
+
+    @Override
+    protected double getControlPointY(int index) {
+        return pointFor(index).getY();
     }
 }

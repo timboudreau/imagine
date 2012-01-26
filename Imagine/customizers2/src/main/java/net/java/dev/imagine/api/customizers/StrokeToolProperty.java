@@ -60,15 +60,7 @@ final class StrokeToolProperty<R extends Enum<R>> implements Property<BasicStrok
         return widthProp.set(w);
     }
 
-    @Override
-    public <R> R get(Class<R> type) {
-        return null;
-    }
 
-    @Override
-    public <R> Collection<? extends R> getAll(Class<R> type) {
-        return Collections.<R>emptySet();
-    }
 
 //    @Override
 //    public BasicStroke get() {

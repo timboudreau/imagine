@@ -1,97 +1,78 @@
 package org.netbeans.paint.api.splines;
 
 import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 
+public final class QuadTo extends LocationEntry {
 
-public final class QuadTo extends LocationEntry{
-    private final Point2D.Double p;
+    private Point2D.Double cp = new Point2D.Double();
+    private ControlPoint locPoint = new ControlPointImpl(this, 0);
+    private ControlPoint conPoint = new ControlPointImpl(this, 1);
 
-    public QuadTo(double x1, double y1, double x2, double y2) {
-        super (x1, y1);
-        this.p = new Double(x2, y2);
-    }
-
-    public QuadTo(Point a, Point b) {
-        this (a.x, a.y, b.x, b.y);
-    }
-    
-    public QuadTo(Point2D a, Point2D b) {
-        this (a.getX(), a.getY(), b.getX(), b.getY());
+    public QuadTo(double cx, double cy, double x, double y) {
+        super(x, y);
+        cp.setLocation(cx, cy);
     }
 
-    public void perform(GeneralPath path) {
-        path.quadTo(getX(), getY(), p.getX(), p.getY());
-    }
-    
-    public Rectangle getBounds(Rectangle r) {
-        if (true) throw new UnsupportedOperationException ("Not Implemented");
-        return cr(r);
-    }
-
-    public void draw(Graphics2D g) {
-        new MoveTo(p.getX(), p.getY()).draw (g);
-        new MoveTo(getX(), getY()).draw (g);
-    }
-
-    protected void findDrawBounds(Rectangle r, int areaSize) {
-        Rectangle a = new Rectangle();
-        new MoveTo (p).findDrawBounds(a, areaSize);
-        Rectangle b = new Rectangle();
-        new MoveTo (this).findDrawBounds(b, areaSize);
-        r.setBounds(a.union(b));
-    }
-
-    public Node[] getPoints() {
-        return new Node [] { 
-            new Node(this, 0, this), 
-            new Node(this, 1, p)
-        };
-    }
-    
-    public String toString() {
-        return "gp.quadTo (" + getX() + "D, " + getY() +"D, " +
-                p.getX() + "D, " + p.getY() + ");\n";
-    }
-    
-    public boolean setPoint(int index, Point2D loc) {
-        Point2D toSet;
+    private Point2D point(int index) {
         switch (index) {
             case 0:
-                toSet = this;
-                break;
+                return this;
             case 1:
-                toSet = p;
-                break;
-            default :
-                throw new IndexOutOfBoundsException ("" + index);
+                return cp;
+            default:
+                throw new IndexOutOfBoundsException(index + "");
         }
-        
-        boolean result = toSet.getX() == getX() && toSet.getY() ==
-                getY();
-        toSet.setLocation (loc);
+    }
+
+    @Override
+    protected double getControlPointX(int index) {
+        return point(index).getX();
+    }
+
+    @Override
+    protected double getControlPointY(int index) {
+        return point(index).getY();
+    }
+
+    @Override
+    protected boolean setControlPoint(int index, Point2D loc) {
+        Point2D p = point(index);
+        boolean result = p.getX() != loc.getX() || p.getY() != loc.getY();
+        if (result) {
+            p.setLocation(loc);
+        }
         return result;
     }
-    
+
+    @Override
+    public void perform(GeneralPath path) {
+        path.quadTo(cp.getX(), cp.getY(), getX(), getY());
+    }
+
+    @Override
+    public void draw(Graphics2D g) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public ControlPoint[] getControlPoints() {
+        return new ControlPoint[]{locPoint, conPoint};
+    }
+
+    @Override
     public int size() {
         return 2;
     }
-    
-    public boolean equals(Object o) {
-        if (o == this) return true;
-        if (!(o instanceof QuadTo)) return false;
-        QuadTo q = (QuadTo) o;
-        return q.p.equals(p) && this.x == p.x && this.y == p.y;
-    }
+
     @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 101833 * hash + this.p.hashCode();
-        hash = 78511 * hash + java.lang.Double.valueOf(this.x).hashCode();
-        hash = 13063 * hash + java.lang.Double.valueOf(this.y).hashCode();
-        return hash;
-    }    
+    public Kind kind() {
+        return Kind.QuadTo;
+    }
+
+    @Override
+    public String toString() {
+        return "gp.quadTo (" + getX() + "D," + getY() + "D, " + cp.getX() + "D, " + cp.getY() + ");\n";
+    }
 }
