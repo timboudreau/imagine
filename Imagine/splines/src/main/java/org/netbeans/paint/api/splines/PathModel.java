@@ -34,4 +34,6 @@ public interface PathModel <T extends Entry> extends List <T>, Shape, Serializab
     Set<ControlPoint> allControlPoints();
     Set<Edge> allEdges();
     Edge[] getPathEdges();
+    void addShape(Shape shape);
+    void setToShape(Shape shape);
 }

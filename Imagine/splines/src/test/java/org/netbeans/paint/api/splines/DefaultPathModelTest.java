@@ -5,6 +5,9 @@
 package org.netbeans.paint.api.splines;
 
 import java.awt.geom.GeneralPath;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -88,5 +91,31 @@ public class DefaultPathModelTest {
 
         assertEquals(m, DefaultPathModel.create(path));
         assertEquals(m, DefaultPathModel.copy(m));
+    }
+
+    @Test
+    public void x() throws Throwable{
+        GeneralPath gp = new GeneralPath();
+        gp.moveTo(0.0D, 0.0D);
+        gp.lineTo(91.0D, 0.0D);
+        gp.quadTo(141.0D, 16.0D, 175.0D, 72.0);
+        gp.lineTo(175.0D, 98.0D);
+        gp.quadTo(159.0D, 128.0D, 117.0D, 143.0);
+        gp.lineTo(52.0D, 143.0D);
+        gp.quadTo(8.0D, 122.0D, 0.0D, 86.0);
+        gp.lineTo(0.0D, 57.0D);
+        gp.curveTo(15.0D, 22.0D, 114.0D, 35.0D, 118.0D, 70.0D);
+        gp.curveTo(130.0D, 138.0D, 17.0D, 104.0D, 50.0D, 60.0D);
+        gp.curveTo(27.0D, 60.0D, 19.0D, 61.0D, 20.0D, 77.0D);
+        gp.curveTo(45.0D, 159.0D, 142.0D, 123.0D, 156.0D, 86.0D);
+        gp.curveTo(117.0D, 11.0D, 38.0D, 6.0D, 0.0D, 11.0D);
+        gp.closePath();
+        
+        PathModel mdl = DefaultPathModel.create(gp);
+        File f = new File ("/tmp/PathsTemplate.paths");
+        ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(f));
+        out.writeObject(mdl);
+        out.close();
+        System.err.println("Wrote " + f.getPath());
     }
 }

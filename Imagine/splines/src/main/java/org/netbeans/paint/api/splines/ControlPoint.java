@@ -3,13 +3,14 @@ package org.netbeans.paint.api.splines;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.geom.Point2D;
+import java.io.Serializable;
 
 /**
  * A control point
  *
  * @author Tim Boudreau
  */
-public abstract class ControlPoint extends Point2D {
+public abstract class ControlPoint extends Point2D implements Serializable {
 
     public abstract Edge[] getEdges();
 

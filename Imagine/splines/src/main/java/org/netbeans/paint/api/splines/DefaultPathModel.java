@@ -21,7 +21,7 @@ public final class DefaultPathModel<T extends Entry> implements PathModel<T> {
         data.addAll(l);
         check();
     }
-    
+
     @Override
     public Set<ControlPoint> mainControlPoints() {
         Set<ControlPoint> result = new HashSet<ControlPoint>();
@@ -41,7 +41,7 @@ public final class DefaultPathModel<T extends Entry> implements PathModel<T> {
         data.addAll(nue.data);
         check();
     }
-    
+
     @Override
     public void translate(double offsetX, double offsetY) {
         for (T t : data) {
@@ -112,6 +112,44 @@ public final class DefaultPathModel<T extends Entry> implements PathModel<T> {
 
     public static PathModel<Entry> copy(PathModel<Entry> mdl) {
         return new DefaultPathModel<Entry>(mdl);
+    }
+
+    @Override
+    public void addShape(Shape shape) {
+        double[] d = new double[6];
+        List<Entry> entries = (List<Entry>) this.data;
+        PathIterator iter = shape.getPathIterator(AffineTransform.getTranslateInstance(0, 0));
+        while (!iter.isDone()) {
+            int op = iter.currentSegment(d);
+            switch (op) {
+                case PathIterator.SEG_MOVETO:
+                    entries.add(new MoveTo(d[0], d[1]));
+                    break;
+                case PathIterator.SEG_CUBICTO:
+                    entries.add(new CurveTo(d[0], d[1], d[2], d[3], d[4], d[5]));
+                    break;
+                case PathIterator.SEG_LINETO:
+                    entries.add(new LineTo(d[0], d[1]));
+                    break;
+                case PathIterator.SEG_QUADTO:
+                    entries.add(new QuadTo(d[0], d[1], d[2], d[3]));
+                    break;
+                case PathIterator.SEG_CLOSE:
+                    entries.add(new Close());
+                    break;
+                default:
+                    throw new AssertionError("Not a PathIterator segment type: " + op);
+            }
+            iter.next();
+        }
+        check();
+        fire();
+    }
+
+    @Override
+    public void setToShape(Shape shape) {
+        data.clear();
+        addShape(shape);
     }
 
     public static PathModel<Entry> create(Shape shape) {
@@ -499,7 +537,7 @@ public final class DefaultPathModel<T extends Entry> implements PathModel<T> {
         }
         return result;
     }
-    
+
     public boolean equals(Object o) {
         if (o == this) {
             return true;

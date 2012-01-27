@@ -62,11 +62,18 @@ final class EdgeImpl implements Edge {
 
     @Override
     public void translate(double xOff, double yOff) {
+        Set<ControlPoint> s = new HashSet<ControlPoint>();
         for (ControlPoint n : a.getEntry().getControlPoints()) {
-            n.setLocation(n.getX() + xOff, n.getY() + yOff);
+            if (!s.contains(n)) {
+                n.setLocation(n.getX() + xOff, n.getY() + yOff);
+            }
+            s.add(n);
         }
         for (ControlPoint n : b.getEntry().getControlPoints()) {
-            n.setLocation(n.getX() + xOff, n.getY() + yOff);
+            if (!s.contains(n)) {
+                n.setLocation(n.getX() + xOff, n.getY() + yOff);
+            }
+            s.add(n);
         }
     }
 
@@ -79,19 +86,19 @@ final class EdgeImpl implements Edge {
             return false;
         }
         final EdgeImpl other = (EdgeImpl) obj;
-        boolean result = other.getSourcePoint().getIndex() == getSourcePoint().getIndex() &&
-                other.getTargetPoint().getIndex() == getTargetPoint().getIndex() && 
-                other.getSourcePoint().getEntry().kind() == 
-                getSourcePoint().getEntry().kind() && other.getTargetPoint().getEntry().kind() == 
-                getTargetPoint().getEntry().kind();
-        
+        boolean result = other.getSourcePoint().getIndex() == getSourcePoint().getIndex()
+                && other.getTargetPoint().getIndex() == getTargetPoint().getIndex()
+                && other.getSourcePoint().getEntry().kind()
+                == getSourcePoint().getEntry().kind() && other.getTargetPoint().getEntry().kind()
+                == getTargetPoint().getEntry().kind();
+
         if (result) {
             if (other.getSourcePoint().getEntry() instanceof LocationEntry) {
                 DefaultPathModel ee = ((LocationEntry) other.getSourcePoint().getEntry()).model();
                 if (ee != null && getSourcePoint().getEntry() instanceof LocationEntry) {
                     DefaultPathModel bb = ((LocationEntry) getSourcePoint().getEntry()).model();
-                    result = ee == null && bb == null || 
-                            (ee != null && ee.equals(bb));
+                    result = ee == null && bb == null
+                            || (ee != null && ee.equals(bb));
                     if (result) {
                         result = ee.indexOf(other.getSourcePoint().getEntry()) == bb.indexOf(getSourcePoint().getEntry());
                         if (result) {
@@ -139,7 +146,7 @@ final class EdgeImpl implements Edge {
     public boolean contains(double x, double y, double width) {
         return toStrokedShape(width).contains(x, y);
     }
-    
+
     @Override
     public boolean contains(double x, double y) {
         return stroked().contains(x, y);
@@ -205,10 +212,10 @@ final class EdgeImpl implements Edge {
         if (x != old.getX() || y != old.getY()) {
             double offX = x - old.getX();
             double offY = y - old.getY();
-            translate (offX, offY);
+            translate(offX, offY);
         }
     }
-    
+
     public void setLocation(Point2D point) {
         setLocation(point.getX(), point.getY());
     }
