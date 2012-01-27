@@ -9,7 +9,7 @@ import java.util.Iterator;
 
 abstract class LocationEntry extends Point2D.Double implements Entry {
     
-    DefaultPathModel model;
+    transient DefaultPathModel model;
     
     public LocationEntry(double x, double y) {
         super (x, y);

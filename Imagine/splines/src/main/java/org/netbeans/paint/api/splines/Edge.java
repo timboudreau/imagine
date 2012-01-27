@@ -3,13 +3,14 @@ package org.netbeans.paint.api.splines;
 import java.awt.Shape;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
+import java.io.Serializable;
 
 /**
  * An edge between two nodes
  *
  * @author Tim Boudreau
  */
-public interface Edge extends Shape, Iterable<ControlPoint> {
+public interface Edge extends Shape, Iterable<ControlPoint>, Serializable {
 
     ControlPoint getSourcePoint();
 

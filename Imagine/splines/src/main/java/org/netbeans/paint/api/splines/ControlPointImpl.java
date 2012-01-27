@@ -17,7 +17,7 @@ final class ControlPointImpl extends ControlPoint {
 
     public final int index;
     public final LocationEntry entry;
-    private List<Edge> edges;
+    private transient List<Edge> edges;
     
     public ControlPointImpl(LocationEntry entry, int ix) {
         this.index = ix;
