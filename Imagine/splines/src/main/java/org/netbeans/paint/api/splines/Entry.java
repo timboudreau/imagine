@@ -2,12 +2,10 @@ package org.netbeans.paint.api.splines;
 
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.Shape;
 import java.awt.geom.GeneralPath;
-import java.awt.geom.Point2D;
 import org.openide.util.NbBundle;
 
-public interface Entry extends Iterable<ControlPoint> {
+public interface Entry extends Iterable<ControlPoint>, Cloneable {
 
     public void perform(GeneralPath path);
 
@@ -18,8 +16,6 @@ public interface Entry extends Iterable<ControlPoint> {
     public ControlPoint[] getControlPoints();
 
     public int size();
-
-    public int hit(Point2D pt, double areaSize);
 
     public Object clone();
 

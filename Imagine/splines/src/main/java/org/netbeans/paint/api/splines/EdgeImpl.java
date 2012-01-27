@@ -79,13 +79,29 @@ final class EdgeImpl implements Edge {
             return false;
         }
         final EdgeImpl other = (EdgeImpl) obj;
-        if (this.a != other.a && (this.a == null || !this.a.equals(other.a))) {
-            return false;
+        boolean result = other.getSourcePoint().getIndex() == getSourcePoint().getIndex() &&
+                other.getTargetPoint().getIndex() == getTargetPoint().getIndex() && 
+                other.getSourcePoint().getEntry().kind() == 
+                getSourcePoint().getEntry().kind() && other.getTargetPoint().getEntry().kind() == 
+                getTargetPoint().getEntry().kind();
+        
+        if (result) {
+            if (other.getSourcePoint().getEntry() instanceof LocationEntry) {
+                DefaultPathModel ee = ((LocationEntry) other.getSourcePoint().getEntry()).model();
+                if (ee != null && getSourcePoint().getEntry() instanceof LocationEntry) {
+                    DefaultPathModel bb = ((LocationEntry) getSourcePoint().getEntry()).model();
+                    result = ee == null && bb == null || 
+                            (ee != null && ee.equals(bb));
+                    if (result) {
+                        result = ee.indexOf(other.getSourcePoint().getEntry()) == bb.indexOf(getSourcePoint().getEntry());
+                        if (result) {
+                            result = ee.indexOf(other.getTargetPoint().getEntry()) == bb.indexOf(getTargetPoint().getEntry());
+                        }
+                    }
+                }
+            }
         }
-        if (this.b != other.b && (this.b == null || !this.b.equals(other.b))) {
-            return false;
-        }
-        return true;
+        return result;
     }
 
     @Override

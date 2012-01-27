@@ -21,7 +21,20 @@ public final class DefaultPathModel<T extends Entry> implements PathModel<T> {
         data.addAll(l);
         check();
     }
+    
+    @Override
+    public Set<ControlPoint> mainControlPoints() {
+        Set<ControlPoint> result = new HashSet<ControlPoint>();
+        for (Entry e : this) {
+            ControlPoint[] cp = e.getControlPoints();
+            if (cp.length > 0) {
+                result.add(cp[0]);
+            }
+        }
+        return result;
+    }
 
+    @Override
     public void transform(AffineTransform xform) {
         DefaultPathModel nue = (DefaultPathModel) DefaultPathModel.create(xform.createTransformedShape(this));
         data.clear();
@@ -29,6 +42,7 @@ public final class DefaultPathModel<T extends Entry> implements PathModel<T> {
         check();
     }
     
+    @Override
     public void translate(double offsetX, double offsetY) {
         for (T t : data) {
             for (ControlPoint p : t.getControlPoints()) {
@@ -57,7 +71,6 @@ public final class DefaultPathModel<T extends Entry> implements PathModel<T> {
         }
         return new DefaultPathModel(l);
     }
-    private transient GeneralPath path;
 
     public GeneralPath getPath() {
         GeneralPath path = null;
@@ -327,7 +340,6 @@ public final class DefaultPathModel<T extends Entry> implements PathModel<T> {
     }
 
     private void fire() {
-        path = null;
         check();
         java.util.ArrayList list;
         javax.swing.event.ChangeEvent e = new ChangeEvent(this);
@@ -468,7 +480,7 @@ public final class DefaultPathModel<T extends Entry> implements PathModel<T> {
     }
 
     @Override
-    public Set<ControlPoint> allNodes() {
+    public Set<ControlPoint> allControlPoints() {
         Set<ControlPoint> s = new HashSet<ControlPoint>();
         for (Entry e : this) {
             s.addAll(Arrays.asList(e.getControlPoints()));

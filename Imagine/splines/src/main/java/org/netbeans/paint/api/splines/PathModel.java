@@ -30,7 +30,8 @@ public interface PathModel <T extends Entry> extends List <T>, Shape, Serializab
     T add(int index, Kind kind, double x, double y);
     void translate (double offX, double offY);
     void transform(AffineTransform xform);
-    Set<ControlPoint> allNodes();
+    Set<ControlPoint> mainControlPoints();
+    Set<ControlPoint> allControlPoints();
     Set<Edge> allEdges();
     Edge[] getPathEdges();
 }

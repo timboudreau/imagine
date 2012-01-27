@@ -3,7 +3,6 @@ package org.netbeans.paint.api.splines;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.GeneralPath;
-import java.awt.geom.Point2D;
 import java.util.Collections;
 import java.util.Iterator;
 
@@ -30,26 +29,22 @@ public class Close implements Entry {
         return new ControlPointImpl[0];
     }
 
+    @Override
     public int size() {
         return 1;
     }
+    
+    @Override
+    public String toString() {
+        return "    gp.closePath();\n";
+    }
 
-    public int hit(Point2D pt, double areaSize) {
-        return 0;
-    }
-    
-//    public boolean equals(Object o) {
-//        return o instanceof Close;
-//    }
-//    
-//    public int hashCode() {
-//        return 17;
-//    }
-    
+    @Override
     public boolean equals(Object o) {
-        return o == this ? true : o instanceof Close && ((Close) o).model == model && (model == null || ((Close) o).model.indexOf(o) == model.indexOf(o));
+        return o == this ? true : o instanceof Close && ((Close) o).model == model && (model == null || ((Close) o).model.indexOf(o) == model.indexOf(this));
     }
     
+    @Override
     public int hashCode() {
         return model == null ? -2 : model.indexOf(this);
     }

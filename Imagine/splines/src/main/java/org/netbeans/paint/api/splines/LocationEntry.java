@@ -72,7 +72,8 @@ abstract class LocationEntry extends Point2D.Double implements Entry {
         return r == null ? new Rectangle() : r;
     }
     
-    public boolean equals(Object o) {
+    @Override
+    public final boolean equals(Object o) {
         if (o == null || o.getClass() != getClass()) {
             return false;
         } else if (o == this) {
@@ -82,13 +83,14 @@ abstract class LocationEntry extends Point2D.Double implements Entry {
         if (other.model == model) {
             int mine = index();
             int others = other.index();
-            return mine == others;
+            return mine == others && kind() == other.kind();
         }
         return false;
     }
     
-    public int hashCode() {
-        return (getClass().toString().hashCode() * 83) + index();
+    @Override
+    public final int hashCode() {
+        return 99317 * index() + (5821 * kind().ordinal());
     }
     
     private int index() {

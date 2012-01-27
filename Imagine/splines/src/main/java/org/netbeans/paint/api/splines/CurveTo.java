@@ -10,6 +10,10 @@ import java.awt.geom.Point2D;
 public final class CurveTo extends LocationEntry {
     private final Point2D.Double a;
     private final Point2D.Double b;
+    private final ControlPointImpl mainPoint = new ControlPointImpl(this, 0);
+    private final ControlPointImpl aPoint = new ControlPointImpl(this, 1);
+    private final ControlPointImpl bPoint = new ControlPointImpl(this, 2);
+    
     public CurveTo(double x1, double y1, double x2, double y2, double x, double y) {
         super (x, y);
         a = new Double(x1, y1);
@@ -60,11 +64,7 @@ public final class CurveTo extends LocationEntry {
     ControlPoint[] nodes;
     @Override
     public ControlPoint[] getControlPoints() {
-        if (nodes == null) {
-            nodes = new ControlPointImpl[]{ new ControlPointImpl(this, 0), new ControlPointImpl(this, 1), 
-                new ControlPointImpl (this, 2) };
-        }
-        return nodes;
+        return new ControlPoint[] { mainPoint, aPoint, bPoint };
     }
     
     @Override
@@ -91,36 +91,12 @@ public final class CurveTo extends LocationEntry {
                 throw new IndexOutOfBoundsException ("" + index);
         }
         
-        boolean result = toSet.getX() == loc.getX() && toSet.getY() ==
+        boolean result = toSet.getX() != loc.getX() && toSet.getY() !=
                 loc.getY();
-        toSet.setLocation (loc);
+        if (result) {
+            toSet.setLocation (loc);
+        }
         return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final CurveTo other = (CurveTo) obj;
-        if (this.a != other.a && (this.a == null || !this.a.equals(other.a))) {
-            return false;
-        }
-        if (this.b != other.b && (this.b == null || !this.b.equals(other.b))) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 13063 * hash + (this.a != null ? this.a.hashCode() : 0);
-        hash = 13 * hash + (this.b != null ? this.b.hashCode() : 0);
-        return hash;
     }
 
     @Override

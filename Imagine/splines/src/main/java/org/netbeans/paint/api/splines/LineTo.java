@@ -63,16 +63,16 @@ public class LineTo extends LocationEntry {
         return 1;
     }
     
-    @Override
-    public int hashCode() {
-        return new Point2D.Double(x, y).hashCode() * 13063;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj instanceof LineTo && ((LineTo) obj).x == x && 
-                ((LineTo) obj).y == y;
-    }
+//    @Override
+//    public int hashCode() {
+//        return new Point2D.Double(x, y).hashCode() * 13063;
+//    }
+//
+//    @Override
+//    public boolean equals(Object obj) {
+//        return obj instanceof LineTo && ((LineTo) obj).x == x && 
+//                ((LineTo) obj).y == y;
+//    }
 
     @Override
     public Kind kind() {

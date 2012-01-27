@@ -55,10 +55,13 @@ final class ControlPointImpl extends ControlPoint {
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof ControlPointImpl) {
-            ControlPointImpl other = (ControlPointImpl) o;
-            return match(other) && other.entry == entry && other.index
-                    == index;
+        if (o == this) {
+            return true;
+        }
+        if (o instanceof ControlPoint) {
+            ControlPoint other = (ControlPoint) o;
+            return other.getEntry().equals(getEntry()) && 
+                    other.getIndex() == getIndex();
         } else {
             return false;
         }
@@ -66,9 +69,10 @@ final class ControlPointImpl extends ControlPoint {
 
     @Override
     public int hashCode() {
-        int xx = (int) getX() * 1000;
-        int yy = (int) getY() * 1000;
-        return (xx * yy * (index + 1)) ^ entry.hashCode();
+        return entry.hashCode() + (103591 * getIndex());
+//        int xx = (int) getX() * 1000;
+//        int yy = (int) getY() * 1000;
+//        return (xx * yy * (index + 1)) ^ entry.hashCode();
     }
 
     @Override
