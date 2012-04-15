@@ -51,24 +51,35 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
         System.out.println("Get supported types " + result);
         return result;
     }
-
+    
     public List<? extends TypeMirror> getTypeParameters(TypeElement type) {
         //Get the non-generics type name of ToolImplementation
         TypeMirror effectStubType = processingEnv.getTypeUtils().erasure(processingEnv.getElementUtils().getTypeElement(EffectStub.class.getName()).asType());
+        final TypeMirror objectType = processingEnv.getTypeUtils().erasure(processingEnv.getElementUtils().getTypeElement("java.lang.Object").asType());
 
+        final Set<TypeMirror> seen = new HashSet<TypeMirror>();
         //Iterate all the superclasses/interfaces of our class
-        for (TypeMirror sup : processingEnv.getTypeUtils().directSupertypes(type.asType())) {
-            //If it subclasses ToolImplementation
-            if (processingEnv.getTypeUtils().erasure(sup).equals(effectStubType)) {
-                //Go look for the type parameters
-                TV tv = new TV();
-                List<? extends TypeMirror> v = sup.accept(tv, sup);
-                return v;
+        while (!type.asType().equals(objectType)) {
+            for (TypeMirror sup : processingEnv.getTypeUtils().directSupertypes(type.asType())) {
+                if (seen.contains(sup)) {
+                    continue;
+                }
+                seen.add(sup);
+                System.err.println("TRY SUPERTYPE " + sup);
+                //If it subclasses ToolImplementation
+                if (processingEnv.getTypeUtils().erasure(sup).equals(effectStubType)) {
+                    //Go look for the type parameters
+                    TV tv = new TV();
+                    List<? extends TypeMirror> v = sup.accept(tv, sup);
+                    return v;
+                }
             }
+            type = processingEnv.getElementUtils().getTypeElement(type.getSuperclass().toString());
         }
         //Was not a subclass of ToolImplementation, just a plain old mouse listener or similar
         return null;
     }
+    
 
     @Override
     protected boolean handleProcess(Set<? extends TypeElement> set, RoundEnvironment env) throws LayerGenerationException {
