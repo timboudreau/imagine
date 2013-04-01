@@ -10,9 +10,6 @@
     <artifactId>layers.text.widget</artifactId>
     <packaging>nbm</packaging>
     <name>Text Layers</name>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
     <repositories>
         <!--
         Repository hosting NetBeans modules, especially APIs.

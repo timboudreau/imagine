@@ -10,9 +10,6 @@
     <artifactId>toolsapi</artifactId>
     <packaging>nbm</packaging>
     <name>Tools API</name>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
     <repositories>
         <!--
         Repository hosting NetBeans modules, especially APIs.

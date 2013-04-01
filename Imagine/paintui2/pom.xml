@@ -10,9 +10,6 @@
     <artifactId>paintui2</artifactId>
     <packaging>nbm</packaging>
     <name>Image Editor UI (Visual Library Fork)</name>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>org.netbeans.api</groupId>

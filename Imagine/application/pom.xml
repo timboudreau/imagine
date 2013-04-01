@@ -12,7 +12,6 @@
     <name>Imagine - NB App</name>
     <description>An Extensible Image Editor</description>
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <netbeans.run.params.ide/>
         <netbeans.run.params>${netbeans.run.params.ide}</netbeans.run.params>
     </properties>

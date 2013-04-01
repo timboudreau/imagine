@@ -10,9 +10,6 @@
     <artifactId>branding</artifactId>
     <packaging>nbm</packaging>
     <name>Imagine - NB App Branding</name>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>org.netbeans.api</groupId>
