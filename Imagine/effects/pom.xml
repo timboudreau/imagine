@@ -48,7 +48,7 @@
             <version>RELEASE701</version>
         </dependency>
         <dependency>
-            <groupId>net.java.dev.imagine</groupId>
+            <groupId>net.dev.java.imagine</groupId>
             <artifactId>effectsapi</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>

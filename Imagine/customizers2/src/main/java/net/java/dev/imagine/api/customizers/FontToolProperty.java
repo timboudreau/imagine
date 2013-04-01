@@ -10,6 +10,7 @@ import net.java.dev.imagine.api.customizers.ToolProperties.FontStyles;
 import net.java.dev.imagine.api.properties.ComposedProperty;
 import net.java.dev.imagine.api.properties.EnumPropertyID;
 import net.java.dev.imagine.api.properties.Explicit;
+import net.java.dev.imagine.api.properties.Properties;
 import net.java.dev.imagine.api.properties.Property;
 import net.java.dev.imagine.api.properties.preferences.PreferencesFactory;
 import org.openide.util.ChangeSupport;
@@ -84,12 +85,10 @@ final class FontToolProperty<R extends Enum<R>> implements Property<Font>, Expli
         supp.removeChangeListener(cl);
     }
 
-    @Override
     public <R> R get(Class<R> type) {
         return null;
     }
 
-    @Override
     public <R> Collection<? extends R> getAll(Class<R> type) {
         if (Property.class == type) {
             return (Collection<? extends R>) Arrays.asList(faceProp, sizeProp, styleProp);
@@ -100,5 +99,10 @@ final class FontToolProperty<R extends Enum<R>> implements Property<Font>, Expli
     @Override
     public Collection<Font> getValues() {
         return Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts());
+    }
+
+    @Override
+    public Properties getSubProperties() {
+        return null;
     }
 }

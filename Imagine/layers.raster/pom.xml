@@ -59,7 +59,7 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>net.java.dev.imagine</groupId>
+            <groupId>net.dev.java.imagine</groupId>
             <artifactId>effectsapi</artifactId>
             <version>${project.version}</version>
             <type>nbm</type>

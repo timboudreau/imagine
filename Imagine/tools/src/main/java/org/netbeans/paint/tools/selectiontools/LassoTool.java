@@ -1,49 +1,14 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.netbeans.paint.tools.selectiontools;
-
-import java.awt.Cursor;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Shape;
-import java.awt.Toolkit;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
-import java.awt.geom.Point2D;
-import net.dev.java.imagine.api.selection.Selection;
-import net.dev.java.imagine.api.selection.Selection.Op;
-import net.dev.java.imagine.api.tool.aspects.Attachable;
-import net.dev.java.imagine.spi.tool.Tool;
-import net.dev.java.imagine.spi.tool.ToolDef;
-import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
-import net.java.dev.imagine.api.image.Layer;
-import org.netbeans.paint.api.splines.Close;
-import org.netbeans.paint.api.splines.CurveTo;
-import org.netbeans.paint.api.splines.DefaultPathModel;
-import org.netbeans.paint.api.splines.Entry;
-import org.netbeans.paint.api.splines.Hit;
-import org.netbeans.paint.api.splines.LineTo;
-import org.netbeans.paint.api.splines.MoveTo;
-import org.netbeans.paint.api.splines.Node;
-import org.netbeans.paint.api.splines.PathModel;
-import org.netbeans.paint.api.splines.QuadTo;
-import org.openide.util.Lookup;
 
 /**
  * A tool for adjusting control points on a selection
  *
  * @author Tim Boudreau
  */
-@ToolDef(name="Lasso", iconPath="org/netbeans/paint/tools/resources/lasso.png", category="selection")
-@Tool(Selection.class)
-public class LassoTool extends MouseAdapter implements /* Tool,*/ PaintParticipant, KeyListener, MouseMotionListener, Attachable {
+//@ToolDef(name="Lasso", iconPath="org/netbeans/paint/tools/resources/lasso.png", category="selection")
+//@Tool(Selection.class)
+
+public class LassoTool { /*extends MouseAdapter implements Tool, PaintParticipant, KeyListener, MouseMotionListener, Attachable {
     private Repainter repainter;
     private Layer layer;
     private PathModel<Entry> mdl;
@@ -237,4 +202,5 @@ public class LassoTool extends MouseAdapter implements /* Tool,*/ PaintParticipa
             }
         }
     }
+    */
 }

@@ -2,14 +2,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-    <artifactId>Imagine</artifactId>
-    <groupId>net.dev.java.imagine</groupId>
-    <version>1.0-SNAPSHOT</version>
-  </parent>
+        <artifactId>Imagine</artifactId>
+        <groupId>net.dev.java.imagine</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
 
     <groupId>net.dev.java.imagine</groupId>
     <artifactId>paintapi</artifactId>
-    <version>1.0-SNAPSHOT</version>
     <packaging>nbm</packaging>
 
     <name>Imagine API</name>
@@ -50,7 +49,7 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>net.java.dev.imagine</groupId>
+            <groupId>net.dev.java.imagine</groupId>
             <artifactId>effectsapi</artifactId>
             <version>${project.version}</version>
         </dependency>
