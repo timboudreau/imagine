@@ -1,32 +1,27 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-      <groupId>org.imagine</groupId>
-      <artifactId>Imagine</artifactId>
-      <version>1.1-SNAPSHOT</version>
-  </parent>
-
-  <groupId>org.imagine</groupId><artifactId>branding</artifactId>
-  <packaging>nbm</packaging>
-
-  <name>Imagine - NB App Branding</name>
-
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
-
-  <dependencies>
-    <dependency>
-      <groupId>org.netbeans.api</groupId>
-      <artifactId>org-netbeans-api-annotations-common</artifactId>
-      <version>${netbeans.version}</version>
-    </dependency>
-  </dependencies>
-
-  <build>
-      <plugins>
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.imagine</groupId>
+        <artifactId>Imagine</artifactId>
+        <version>1.1-SNAPSHOT</version>
+    </parent>
+    <artifactId>branding</artifactId>
+    <packaging>nbm</packaging>
+    <name>Imagine - NB App Branding</name>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-api-annotations-common</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
@@ -39,6 +34,6 @@
                     <useDefaultManifestFile>true</useDefaultManifestFile>
                 </configuration>
             </plugin>
-      </plugins>
-  </build>
+        </plugins>
+    </build>
 </project>

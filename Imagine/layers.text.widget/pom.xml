@@ -7,18 +7,12 @@
         <groupId>org.imagine</groupId>
         <version>1.1-SNAPSHOT</version>
     </parent>
-
-    <groupId>org.imagine</groupId>
     <artifactId>layers.text.widget</artifactId>
-    <version>1.1-SNAPSHOT</version>
     <packaging>nbm</packaging>
-
     <name>Text Layers</name>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-
     <repositories>
         <!--
         Repository hosting NetBeans modules, especially APIs.
@@ -34,7 +28,6 @@
             </snapshots>
         </repository>
     </repositories>
-
     <dependencies>
         <dependency>
             <groupId>org.netbeans.api</groupId>
@@ -94,7 +87,6 @@
             <artifactId>toolsapi</artifactId>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -112,7 +104,6 @@
                     <target>1.6</target>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
