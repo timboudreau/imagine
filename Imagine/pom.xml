@@ -7,6 +7,11 @@
     <version>1.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Imagine - NB App Parent</name>
+    <properties>
+        <netbeans.version>RELEASE73</netbeans.version>
+        <brandingToken>imagine</brandingToken>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>    
     <build>
         <pluginManagement>
             <plugins>
@@ -68,11 +73,6 @@
         <module>toolsapi</module>
         <!--<module>customizers2</module>-->
     </modules>
-    <properties>
-        <netbeans.version>RELEASE701</netbeans.version>
-        <brandingToken>imagine</brandingToken>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
     <repositories>
         <repository>
             <id>netbeans</id>
