@@ -15,32 +15,26 @@
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-api-annotations-common</artifactId>
             <scope>compile</scope>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util</artifactId>
             <type>jar</type>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-dialogs</artifactId>
             <type>jar</type>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util-lookup</artifactId>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
-            <version>${project.version}</version>
             <groupId>${project.groupId}</groupId>
             <artifactId>toolsapi</artifactId>
         </dependency>
         <dependency>
-            <version>${project.version}</version>
             <groupId>${project.groupId}</groupId>
             <artifactId>effectsapi</artifactId>
         </dependency>

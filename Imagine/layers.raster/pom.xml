@@ -14,45 +14,38 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-api-annotations-common</artifactId>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>paintapi</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>misc-swing</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>misc.nio</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <artifactId>org-openide-util</artifactId>
             <groupId>org.netbeans.api</groupId>
             <type>jar</type>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
             <artifactId>org-openide-util-lookup</artifactId>
             <groupId>org.netbeans.api</groupId>
             <type>jar</type>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
-            <version>${project.version}</version>
             <groupId>${project.groupId}</groupId>
             <artifactId>toolsapi</artifactId>
         </dependency>
         <dependency>
-            <version>${project.version}</version>
             <type>nbm</type>
             <groupId>${project.groupId}</groupId>
             <artifactId>effectsapi</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
     <build>

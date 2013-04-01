@@ -30,27 +30,22 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-api-annotations-common</artifactId>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util</artifactId>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util-lookup</artifactId>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-filesystems</artifactId>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-api-visual</artifactId>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -58,12 +53,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <version>${project.version}</version>
             <groupId>${project.groupId}</groupId>
             <artifactId>misc-swing</artifactId>
         </dependency>
         <dependency>
-            <version>${project.version}</version>
             <type>jar</type>
             <groupId>${project.groupId}</groupId>
             <artifactId>colorchooser</artifactId>

@@ -29,27 +29,22 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-api-annotations-common</artifactId>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
             <groupId>com.jhlabs</groupId>
             <artifactId>filters</artifactId>
-            <version>2.0.235</version>
         </dependency>
         <dependency>
-            <version>${project.version}</version>
             <groupId>${project.groupId}</groupId>
             <artifactId>effects</artifactId>
         </dependency>
         <dependency>
-            <version>${project.version}</version>
             <groupId>${project.groupId}</groupId>
             <artifactId>paintapi</artifactId>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util</artifactId>
-            <version>${netbeans.version}</version>
         </dependency>
     </dependencies>
     <build>
