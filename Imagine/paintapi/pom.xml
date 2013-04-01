@@ -4,11 +4,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>Imagine</artifactId>
-        <groupId>net.dev.java.imagine</groupId>
+        <groupId>org.imagine</groupId>
         <version>1.1-SNAPSHOT</version>
     </parent>
 
-    <groupId>net.dev.java.imagine</groupId>
+    <groupId>org.imagine</groupId>
     <artifactId>paintapi</artifactId>
     <packaging>nbm</packaging>
 
@@ -45,15 +45,23 @@
             <version>RELEASE701</version>
         </dependency>
         <dependency>
-            <groupId>net.java.dev.imagine</groupId>
-            <artifactId>toolsapi</artifactId>
+            
+            
             <version>${project.version}</version>
-        </dependency>
+        
+
+<groupId>${project.groupId}</groupId>
+<artifactId>toolsapi</artifactId>
+</dependency>
         <dependency>
-            <groupId>net.dev.java.imagine</groupId>
-            <artifactId>effectsapi</artifactId>
+            
+            
             <version>${project.version}</version>
-        </dependency>
+        
+
+<groupId>${project.groupId}</groupId>
+<artifactId>effectsapi</artifactId>
+</dependency>
     </dependencies>
 
     <build>

@@ -1,20 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-    <artifactId>Imagine</artifactId>
-    <groupId>net.dev.java.imagine</groupId>
-    <version>1.1-SNAPSHOT</version>
-  </parent>
-
-    <groupId>net.java.dev.imagine</groupId>
+        <artifactId>Imagine</artifactId>
+        <groupId>org.imagine</groupId>
+        <version>1.1-SNAPSHOT</version>
+    </parent>
+    <groupId>org.imagine</groupId>
     <artifactId>customizers2</artifactId>
     <version>1.1-SNAPSHOT</version>
     <packaging>nbm</packaging>
-
     <name>customizers2 NetBeans Module</name>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <netbeans.run.params.ide/>
@@ -22,11 +19,6 @@
     </properties>
 
     <repositories>
-        <!--
-        Repository hosting NetBeans modules, especially APIs.
-        Versions are based on IDE releases, e.g.: RELEASE691
-        To create your own repository, use: nbm:populate-repository
-        -->
         <repository>
             <id>netbeans</id>
             <name>NetBeans</name>
@@ -48,14 +40,6 @@
             <artifactId>org-openide-util</artifactId>
             <version>RELEASE701</version>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>net.dev.java.imagine</groupId>
-            <artifactId>paintapi</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <type>nbm</type>
-        </dependency>
-        -->
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util-lookup</artifactId>
@@ -74,28 +58,25 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.8.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>net.dev.java.imagine</groupId>
+            <version>${project.version}</version>
+            <groupId>${project.groupId}</groupId>
             <artifactId>misc-swing</artifactId>
-            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>net.dev.java.imagine</groupId>
-            <artifactId>colorchooser</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <type>jar</type>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>colorchooser</artifactId>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <version>3.5</version>
                 <extensions>true</extensions>
             </plugin>
 

@@ -1,28 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <groupId>net.dev.java.imagine</groupId>
+    <groupId>org.imagine</groupId>
     <artifactId>Imagine</artifactId>
     <version>1.1-SNAPSHOT</version>
     <packaging>pom</packaging>
-
     <name>Imagine - NB App Parent</name>
-
-    <repositories>
-        <!--
-        Repository hosting NetBeans modules, especially APIs.
-        Versions are based on IDE releases, e.g.: RELEASE691
-        To create your own repository, use: nbm:populate-repository
-        -->
-        <repository>
-            <id>netbeans</id>
-            <name>NetBeans</name>
-            <url>http://bits.netbeans.org/maven2/</url>
-        </repository>
-    </repositories>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -33,7 +17,6 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
     <build>
         <pluginManagement>
             <plugins>
@@ -65,7 +48,6 @@
             </plugins>
         </pluginManagement>
     </build>
-
     <modules>
         <module>branding</module>
         <module>application</module>
@@ -88,13 +70,44 @@
         <module>vectorlayers</module>
         <module>layers.text.widget</module>
         <module>fx</module>
-	<module>effectsapi</module>
-    <module>toolsapi</module>
-    <!--<module>customizers2</module>-->
-  </modules>
-
+        <module>effectsapi</module>
+        <module>toolsapi</module>
+        <!--<module>customizers2</module>-->
+    </modules>
     <properties>
         <netbeans.version>RELEASE701</netbeans.version>
         <brandingToken>imagine</brandingToken>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+    
+    <repositories>
+        <repository>
+            <id>netbeans</id>
+            <name>NetBeans</name>
+            <url>http://bits.netbeans.org/maven2/</url>
+        </repository>
+        <repository>
+            <id>java.net-Public</id>
+            <name>Maven Java Net Snapshots and Releases</name>
+            <url>https://maven.java.net/content/groups/public/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+        </repository>
+        <repository>
+            <id>timboudreau-builds</id>
+            <name>timboudreau.com builds</name>
+            <url>http://timboudreau.com/builds/plugin/repository/everything/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
+    
 </project>

@@ -4,11 +4,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
     <artifactId>Imagine</artifactId>
-    <groupId>net.dev.java.imagine</groupId>
+    <groupId>org.imagine</groupId>
     <version>1.1-SNAPSHOT</version>
   </parent>
 
-    <groupId>net.dev.java.imagine</groupId>
+    <groupId>org.imagine</groupId>
     <artifactId>toolconfigurationui</artifactId>
     <version>1.1-SNAPSHOT</version>
     <packaging>nbm</packaging>
@@ -62,10 +62,14 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>net.java.dev.imagine</groupId>
-            <artifactId>toolsapi</artifactId>
+            
+            
             <version>${project.version}</version>
-        </dependency>
+        
+
+<groupId>${project.groupId}</groupId>
+<artifactId>toolsapi</artifactId>
+</dependency>
     </dependencies>
 
     <build>
