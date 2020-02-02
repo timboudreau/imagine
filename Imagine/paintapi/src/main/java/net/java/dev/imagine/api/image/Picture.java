@@ -14,7 +14,6 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.Transferable;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import javax.swing.event.ChangeEvent;
@@ -25,7 +24,6 @@ import net.java.dev.imagine.spi.image.PictureImplementation;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import org.netbeans.paint.api.util.ConvertList;
 import org.openide.util.ChangeSupport;
-import org.openide.util.NbCollections;
 
 /**
  * An ordered stack of one or more images which compose an overall image.

@@ -30,16 +30,18 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util</artifactId>
-            <type>jar</type>
         </dependency>
         <dependency>
             <artifactId>org-openide-util-lookup</artifactId>
             <groupId>org.netbeans.api</groupId>
-            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>misc-swing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>ui-common</artifactId>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -96,13 +98,13 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
+                <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <extensions>true</extensions>
                 <configuration>
                     <publicPackages>
                         <publicPackage>org.netbeans.paintui.widgetlayers</publicPackage>
                     </publicPackages>
+                    <moduleType>normal</moduleType>
                 </configuration>
             </plugin>
         </plugins>

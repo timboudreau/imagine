@@ -21,7 +21,6 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
-import org.openide.util.Utilities;
 
 /**
  *

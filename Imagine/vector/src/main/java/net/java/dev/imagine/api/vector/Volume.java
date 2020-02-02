@@ -6,10 +6,8 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.vector;
 
-import java.awt.Rectangle;
 import java.awt.geom.Rectangle2D;
 
 /**
@@ -18,5 +16,6 @@ import java.awt.geom.Rectangle2D;
  * @author Tim Boudreau
  */
 public interface Volume extends Primitive {
-    public void getBounds (Rectangle2D.Double dest);
+
+    void getBounds(Rectangle2D.Double dest);
 }

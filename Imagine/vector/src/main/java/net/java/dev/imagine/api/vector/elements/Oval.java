@@ -9,7 +9,6 @@
 
 package net.java.dev.imagine.api.vector.elements;
 
-import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
@@ -137,6 +136,7 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
         return EMPTY_INT;
     }
 
+    @Override
     public boolean equals (Object o) {
         boolean result = o instanceof Oval;
         if (result) {

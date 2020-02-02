@@ -81,5 +81,4 @@ class LayersUndoableOperation implements UndoableEdit {
     public String getRedoPresentationName() {
         return opName;
     }
-    
 }

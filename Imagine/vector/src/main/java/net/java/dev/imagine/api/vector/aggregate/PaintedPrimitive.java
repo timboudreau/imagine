@@ -6,7 +6,6 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.vector.aggregate;
 
 import java.awt.Graphics2D;
@@ -14,10 +13,10 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Aggregate;
 import net.java.dev.imagine.api.vector.Attribute;
@@ -28,17 +27,16 @@ import net.java.dev.imagine.api.vector.Proxy;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
-import net.java.dev.imagine.api.vector.elements.*;
 import net.java.dev.imagine.api.vector.graphics.BasicStrokeWrapper;
 import net.java.dev.imagine.api.vector.graphics.FontWrapper;
 import net.java.dev.imagine.api.vector.util.Pt;
 
 /**
  * Wrapper for a primitive that can be painted multiple times with different
- * painting attributes.  I.e. if you stroke a rectangle with blue and fill it
+ * painting attributes. I.e. if you stroke a rectangle with blue and fill it
  * with red, then you have a PaintedPrimitive for the rectangle with two
- * AttributeSets (which represent 0 or more settings that may be performed on
- * a Graphics2D, such as setting the color).
+ * AttributeSets (which represent 0 or more settings that may be performed on a
+ * Graphics2D, such as setting the color).
  * <p>
  * In other words, this represents multiple series of drawing instructions, each
  * of which culminates in stroking or filling the same geometric primitive.
@@ -47,6 +45,7 @@ import net.java.dev.imagine.api.vector.util.Pt;
  * @author Tim Boudreau
  */
 public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
+
     protected Primitive p;
 
     //Note - this class intentionally implements nothing but Primitive, though
@@ -54,28 +53,28 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
     //subclasses add the necessary interfaces to the class signature;  the
     //static create() method selects the correct one for the primitive it has
     //been passed
+    List<AttributeSet> attributeSets = new LinkedList<AttributeSet>();
 
-    List <AttributeSet> attributeSets = new LinkedList <AttributeSet> ();
-    PaintedPrimitive (List <Attribute> attributes, Primitive p) {
+    PaintedPrimitive(List<Attribute> attributes, Primitive p) {
         this.p = p;
         assert p instanceof Fillable || p instanceof Strokable || p instanceof Vector;
         boolean fill = p instanceof Fillable ? ((Fillable) p).isFill() : false;
-        add (attributes, fill);
+        add(attributes, fill);
         assertClass();
     }
 
-    PaintedPrimitive (Primitive p, List <AttributeSet> attributeSets) {
+    PaintedPrimitive(Primitive p, List<AttributeSet> attributeSets) {
         this.p = p;
-        this.attributeSets.addAll (attributeSets);
+        this.attributeSets.addAll(attributeSets);
         assert p instanceof Fillable || p instanceof Strokable || p instanceof Vector;
         assertClass();
     }
 
     private void assertClass() {
         Class c = getClass();
-        assert c == SAV.class || c == SAVF.class || c == SAVFV.class ||
-                c == SAVFVM.class || c == SAVVM.class || c == Ve.class ||
-                c == Vo.class : "Not to be implemented outside of package"; //NOI18N
+        assert c == SAV.class || c == SAVF.class || c == SAVFV.class
+                || c == SAVFVM.class || c == SAVVM.class || c == Ve.class
+                || c == Vo.class : "Not to be implemented outside of package"; //NOI18N
     }
 
     public Shape toShape() {
@@ -93,8 +92,8 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
     }
 
     public Pt getLocation() {
-        return p instanceof Vector ? ((Vector) p).getLocation() :
-            Pt.ORIGIN;
+        return p instanceof Vector ? ((Vector) p).getLocation()
+                : Pt.ORIGIN;
     }
 
     public void setLocation(double x, double y) {
@@ -116,11 +115,17 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
     }
 
     public void fill(Graphics2D g) {
-        throw new UnsupportedOperationException();
+        paint(g);
+        p.paint(g);
     }
 
     public void draw(Graphics2D g) {
-        throw new UnsupportedOperationException();
+        paint(g);
+        if (p instanceof Strokable) {
+            ((Strokable) p).draw(g);
+        } else {
+            p.paint(g);
+        }
     }
 
     public boolean isFill() {
@@ -135,10 +140,10 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         double strokeWidth = 0D;
         for (AttributeSet a : attributeSets) {
             int max = a.size();
-            for (int i=0; i < max; i++) {
+            for (int i = 0; i < max; i++) {
                 Attribute at = a.get(i);
                 if (at instanceof BasicStrokeWrapper) {
-                    strokeWidth = Math.max (strokeWidth, 
+                    strokeWidth = Math.max(strokeWidth,
                             ((BasicStrokeWrapper) at).lineWidth);
                 }
             }
@@ -153,8 +158,8 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
     }
 
     public int getControlPointCount() {
-        return p instanceof Adjustable ?
-            ((Adjustable) p).getControlPointCount() : 0;
+        return p instanceof Adjustable
+                ? ((Adjustable) p).getControlPointCount() : 0;
     }
 
     public void getControlPoints(double[] xy) {
@@ -169,14 +174,14 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         if (!(p instanceof Mutable)) {
             return false;
         }
-        return ((Mutable) p).delete (pointIndex);
+        return ((Mutable) p).delete(pointIndex);
     }
 
     public boolean insert(double x, double y, int index, int kind) {
         if (!(p instanceof Mutable)) {
             return false;
         }
-        return ((Mutable) p).insert (x, y, index, kind);
+        return ((Mutable) p).insert(x, y, index, kind);
     }
 
     public int getPointIndexNearest(double x, double y) {
@@ -187,29 +192,29 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
     }
 
     public Vector copy(AffineTransform transform) {
-        Vector v = ((Vector) p).copy (transform);
-        List <AttributeSet> attrs = copyAttrs();
+        Vector v = ((Vector) p).copy(transform);
+        List<AttributeSet> attrs = copyAttrs();
         if (this instanceof Ve) {
-            return new Ve (v, attrs);
+            return new Ve(v, attrs);
         } else if (this instanceof SAV) {
-            return new SAV (v, attrs);
+            return new SAV(v, attrs);
         } else if (this instanceof SAVF) {
-            return new SAVF (v, attrs);
+            return new SAVF(v, attrs);
         } else if (this instanceof SAVFV) {
-            return new SAVFV (v, attrs);
+            return new SAVFV(v, attrs);
         } else if (this instanceof SAVFVM) {
-            return new SAVFVM (v, attrs);
+            return new SAVFVM(v, attrs);
         } else if (this instanceof SAVVM) {
-            return new SAVVM (v, attrs);
+            return new SAVVM(v, attrs);
         } else {
-            throw new IllegalArgumentException ("What is this? " + this); //NOI18N
+            throw new IllegalArgumentException("What is this? " + this); //NOI18N
         }
     }
 
-    private List <AttributeSet> copyAttrs() {
-        List <AttributeSet> result = new ArrayList <AttributeSet> (attributeSets.size());
+    private List<AttributeSet> copyAttrs() {
+        List<AttributeSet> result = new ArrayList<AttributeSet>(attributeSets.size());
         for (AttributeSet set : attributeSets) {
-            result.add (set.clone());
+            result.add(set.clone());
         }
         return result;
     }
@@ -218,12 +223,12 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         return p;
     }
 
-    public boolean matchesDrawnObject (Primitive p) {
+    public boolean matchesDrawnObject(Primitive p) {
         return p.equals(this.p);
     }
 
-    public void add (List <Attribute> attributes, boolean fill) {
-        attributeSets.add (new AttributeSet (p, fill, attributes));
+    public void add(List<Attribute> attributes, boolean fill) {
+        attributeSets.add(new AttributeSet(p, fill, attributes));
     }
 
     public int getPrimitiveCount() {
@@ -234,7 +239,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         return result + 1; //one for the only visual primitive we represent
     }
 
-    public Primitive getPrimitive (int i) {
+    public Primitive getPrimitive(int i) {
         int ct = 0;
         for (AttributeSet a : attributeSets) {
             int sz = a.size();
@@ -246,7 +251,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         if (i == ct) {
             return p;
         }
-        throw new IndexOutOfBoundsException ("Tried to fetch " + i + " out of " //NOI18N
+        throw new IndexOutOfBoundsException("Tried to fetch " + i + " out of " //NOI18N
                 + getPrimitiveCount());
     }
 
@@ -254,12 +259,12 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         return 1;
     }
 
-    public Primitive getVisualPrimitive (int i) {
+    public Primitive getVisualPrimitive(int i) {
         if (i == 0) {
             return getProxiedPrimitive();
         } else {
-            throw new IndexOutOfBoundsException ("Tried to fetch primitive " + i //NOI18N
-                    + ".  There is only one." ); //NOI18N
+            throw new IndexOutOfBoundsException("Tried to fetch primitive " + i //NOI18N
+                    + ".  There is only one."); //NOI18N
         }
     }
 
@@ -272,33 +277,35 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
     }
 
     private static final class AttributeSet {
-        private final List <Attribute> attributes = new LinkedList <Attribute> ();
+
+        private final List<Attribute> attributes = new LinkedList<Attribute>();
         private final boolean fill;
         private final Primitive shape;
-        public AttributeSet (Primitive shape, boolean fill, List <Attribute> attributes) {
-            this.attributes.addAll (attributes);
+
+        public AttributeSet(Primitive shape, boolean fill, List<Attribute> attributes) {
+            this.attributes.addAll(attributes);
             this.fill = fill;
             this.shape = shape;
         }
-        
-        public List <Attribute> getAttributes() {
-            return Collections.unmodifiableList (attributes);
+
+        public List<Attribute> getAttributes() {
+            return Collections.unmodifiableList(attributes);
         }
 
         public int size() {
             return attributes.size();
         }
 
-        public Attribute get (int i) {
-            return attributes.get (i);
+        public Attribute get(int i) {
+            return attributes.get(i);
         }
 
         public AttributeSet clone() {
-            List <Attribute> nue = new ArrayList <Attribute> (attributes.size());
+            List<Attribute> nue = new ArrayList<Attribute>(attributes.size());
             for (Attribute a : attributes) {
-                nue.add ((Attribute) a.copy());
+                nue.add((Attribute) a.copy());
             }
-            return new AttributeSet (shape.copy(), fill, nue);
+            return new AttributeSet(shape.copy(), fill, nue);
         }
 
         public void paint(Graphics2D g) {
@@ -320,6 +327,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
     }
 
     private FontWrapper font;
+
     public void setFont(FontWrapper f) {
         this.font = font;
     }
@@ -327,11 +335,11 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
     public String toString() {
         return "PaintedPrimitive " + p + " : " + attributeSets; //NOI18N
     }
-    
-    public List <Attribute> allAttributes() {
-        List <Attribute> result = new ArrayList <Attribute> ();
+
+    public List<Attribute> allAttributes() {
+        List<Attribute> result = new ArrayList<Attribute>();
         for (AttributeSet set : attributeSets) {
-            result.addAll (set.getAttributes());
+            result.addAll(set.getAttributes());
         }
         return result;
     }
@@ -342,60 +350,64 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
     //so the subclass simply marks which interfaces it provides so
     //that it will be equivalent to the object it wraps.
     private static final class Vo extends PaintedPrimitive implements Volume {
-        public Vo (Primitive p, List <AttributeSet> attrs) {
-            super (p, attrs);
+
+        public Vo(Primitive p, List<AttributeSet> attrs) {
+            super(p, attrs);
             assert p instanceof Volume;
         }
 
-        public Vo (List <Attribute> attrs, Primitive p) {
-            super (attrs, p);
+        public Vo(List<Attribute> attrs, Primitive p) {
+            super(attrs, p);
             assert p instanceof Volume;
         }
 
         public Primitive copy() {
-            return new Vo (p, super.copyAttrs());
+            return new Vo(p, super.copyAttrs());
         }
     }
 
     private static final class Ve extends PaintedPrimitive implements Vector {
-        public Ve (Primitive p, List <AttributeSet> attrs) {
-            super (p, attrs);
+
+        public Ve(Primitive p, List<AttributeSet> attrs) {
+            super(p, attrs);
             assert p instanceof Vector;
         }
 
-        public Ve (List <Attribute> attrs, Primitive p) {
-            super (attrs, p);
+        public Ve(List<Attribute> attrs, Primitive p) {
+            super(attrs, p);
             assert p instanceof Vector;
         }
 
         public Primitive copy() {
-            return new Ve (p, super.copyAttrs());
+            return new Ve(p, super.copyAttrs());
         }
     }
 
     private static final class SAV extends PaintedPrimitive implements Strokable, Adjustable, Vector {
-        public SAV (Primitive p, List <AttributeSet> attrs) {
-            super (p, attrs);
+
+        public SAV(Primitive p, List<AttributeSet> attrs) {
+            super(p, attrs);
             assert p instanceof Strokable;
             assert p instanceof Adjustable;
             assert p instanceof Vector;
         }
 
-        public SAV (List <Attribute> attrs, Primitive p) {
-            super (attrs, p);
+        public SAV(List<Attribute> attrs, Primitive p) {
+            super(attrs, p);
             assert p instanceof Strokable;
             assert p instanceof Adjustable;
             assert p instanceof Vector;
         }
 
         public Primitive copy() {
-            return new SAV (p, super.copyAttrs());
+            return new SAV(p, super.copyAttrs());
         }
     }
 
     private static final class SAVVM extends PaintedPrimitive implements Strokable, Adjustable, Vector, Volume, Mutable {
-        public SAVVM (Primitive p, List <AttributeSet> attrs) {
-            super (p, attrs);
+
+        public SAVVM(Primitive p, List<AttributeSet> attrs) {
+            super(p, attrs);
             assert p instanceof Strokable;
             assert p instanceof Adjustable;
             assert p instanceof Vector;
@@ -403,8 +415,8 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
             assert p instanceof Mutable;
         }
 
-        public SAVVM (List <Attribute> attrs, Primitive p) {
-            super (attrs, p);
+        public SAVVM(List<Attribute> attrs, Primitive p) {
+            super(attrs, p);
             assert p instanceof Strokable;
             assert p instanceof Adjustable;
             assert p instanceof Vector;
@@ -413,21 +425,22 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         }
 
         public Primitive copy() {
-            return new SAVVM (p, super.copyAttrs());
+            return new SAVVM(p, super.copyAttrs());
         }
     }
 
     private static final class SAVF extends PaintedPrimitive implements Strokable, Adjustable, Volume, Fillable {
-        public SAVF (Primitive p, List <AttributeSet> attrs) {
-            super (p, attrs);
+
+        public SAVF(Primitive p, List<AttributeSet> attrs) {
+            super(p, attrs);
             assert p instanceof Strokable;
             assert p instanceof Adjustable;
             assert p instanceof Volume;
             assert p instanceof Fillable;
         }
 
-        public SAVF (List <Attribute> attrs, Primitive p) {
-            super (attrs, p);
+        public SAVF(List<Attribute> attrs, Primitive p) {
+            super(attrs, p);
             assert p instanceof Strokable;
             assert p instanceof Adjustable;
             assert p instanceof Volume;
@@ -435,13 +448,14 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         }
 
         public Primitive copy() {
-            return new SAVF (p, super.copyAttrs());
+            return new SAVF(p, super.copyAttrs());
         }
     }
 
     private static final class SAVFV extends PaintedPrimitive implements Strokable, Adjustable, Volume, Fillable, Vector {
-        public SAVFV (Primitive p, List <AttributeSet> attrs) {
-            super (p, attrs);
+
+        public SAVFV(Primitive p, List<AttributeSet> attrs) {
+            super(p, attrs);
             assert p instanceof Strokable;
             assert p instanceof Adjustable;
             assert p instanceof Volume;
@@ -449,8 +463,8 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
             assert p instanceof Vector;
         }
 
-        public SAVFV (List <Attribute> attrs, Primitive p) {
-            super (attrs, p);
+        public SAVFV(List<Attribute> attrs, Primitive p) {
+            super(attrs, p);
             assert p instanceof Strokable;
             assert p instanceof Adjustable;
             assert p instanceof Volume;
@@ -459,13 +473,14 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         }
 
         public Primitive copy() {
-            return new SAVFV (p, super.copyAttrs());
+            return new SAVFV(p, super.copyAttrs());
         }
     }
 
     private static final class SAVFVM extends PaintedPrimitive implements Strokable, Adjustable, Volume, Fillable, Vector, Mutable {
-        public SAVFVM (Primitive p, List <AttributeSet> attrs) {
-            super (p, attrs);
+
+        public SAVFVM(Primitive p, List<AttributeSet> attrs) {
+            super(p, attrs);
             assert p instanceof Strokable;
             assert p instanceof Adjustable;
             assert p instanceof Volume;
@@ -474,8 +489,8 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
             assert p instanceof Mutable;
         }
 
-        public SAVFVM (List <Attribute> attrs, Primitive p) {
-            super (attrs, p);
+        public SAVFVM(List<Attribute> attrs, Primitive p) {
+            super(attrs, p);
             assert p instanceof Strokable;
             assert p instanceof Adjustable;
             assert p instanceof Volume;
@@ -485,27 +500,31 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         }
 
         public Primitive copy() {
-            return new SAVFVM (p, super.copyAttrs());
+            return new SAVFVM(p, super.copyAttrs());
         }
     }
 
-    public static PaintedPrimitive create(Primitive p, List <Attribute> attributes) {
+    public static PaintedPrimitive create(Primitive p, Attribute... attrs) {
+        return create(p, Arrays.asList(attrs));
+    }
+
+    public static PaintedPrimitive create(Primitive p, List<Attribute> attributes) {
         if (p instanceof Strokable && p instanceof Fillable && p instanceof Volume && p instanceof Adjustable && p instanceof Vector && p instanceof Mutable) {
-            return new SAVFVM (attributes, p);
+            return new SAVFVM(attributes, p);
         } else if (p instanceof Strokable && p instanceof Fillable && p instanceof Volume && p instanceof Adjustable && p instanceof Vector) {
-            return new SAVFV (attributes, p);
+            return new SAVFV(attributes, p);
         } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Volume && p instanceof Fillable) {
-            return new SAVF (attributes, p);
+            return new SAVF(attributes, p);
         } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Volume && p instanceof Vector) {
-            return new SAVVM (attributes, p);
+            return new SAVVM(attributes, p);
         } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Vector) {
-            return new SAV (attributes, p);
+            return new SAV(attributes, p);
         } else if (p instanceof Volume) {
             return new Vo(attributes, p);
         } else if (p instanceof Vector) {
             return new Ve(attributes, p);
         } else {
-            throw new IllegalArgumentException ("Unknown type combination:" + p); //NOI18N
+            throw new IllegalArgumentException("Unknown type combination:" + p); //NOI18N
         }
     }
 }

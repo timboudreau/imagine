@@ -6,7 +6,6 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.vector.elements;
 
 import java.awt.Graphics2D;
@@ -27,6 +26,7 @@ import net.java.dev.imagine.api.vector.util.Pt;
  * @author Tim Boudreau
  */
 public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokable {
+
     public long serialVersionUID = 39201L;
     public double aw;
     public double ah;
@@ -46,20 +46,37 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
         this.fill = fill;
     }
 
+    public double getArcHeight() {
+        return ah;
+    }
+
+    public double getArcWidth() {
+        return aw;
+    }
+
+    public void setArcHeight(double arcHeight) {
+        this.ah = Math.abs(arcHeight);
+    }
+
+    public void setArcWidth(double val) {
+        this.aw = Math.abs(val);
+    }
+
+    @Override
     public String toString() {
-        return "RoundRect " + x  + ", " + y + ", " + w
+        return "RoundRect " + x + ", " + y + ", " + w
                 + ", " + h + " fill: " + fill;
     }
 
     public Shape toShape() {
-        return new RoundRectangle2D.Double (x, y, w, h, aw, ah);
+        return new RoundRectangle2D.Double(x, y, w, h, aw, ah);
     }
 
     public void paint(Graphics2D g) {
         if (fill) {
-            fill (g);
+            fill(g);
         } else {
-            draw (g);
+            draw(g);
         }
     }
 
@@ -80,7 +97,7 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    public void getBounds (Rectangle2D.Double r) {
+    public void getBounds(Rectangle2D.Double r) {
         double wid = w;
         double hi = h;
         double xx, yy, ww, hh;
@@ -106,7 +123,7 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
     }
 
     public void fill(Graphics2D g) {
-        g.fill (toShape());
+        g.fill(toShape());
     }
 
     public boolean isFill() {
@@ -114,11 +131,11 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
     }
 
     public void draw(Graphics2D g) {
-        g.draw (toShape());
+        g.draw(toShape());
     }
 
     public Pt getLocation() {
-        return new Pt (x, y);
+        return new Pt(x, y);
     }
 
     public void setLocation(double x, double y) {
@@ -127,15 +144,14 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
     }
 
     public void clearLocation() {
-        setLocation (0D, 0D);
+        setLocation(0D, 0D);
     }
 
     public Vector copy(AffineTransform transform) {
-        double[] pts = new double[] {
-            x, y, x + w, y + h,
-        };
+        double[] pts = new double[]{
+            x, y, x + w, y + h,};
         transform.transform(pts, 0, pts, 0, 2);
-        return new RoundRect (pts[0], pts[1], pts[2] - pts[0],
+        return new RoundRect(pts[0], pts[1], pts[2] - pts[0],
                 pts[3] - pts[1], aw, ah, fill);
     }
 
@@ -143,7 +159,7 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
         return EMPTY_INT;
     }
 
-    public boolean equals (Object o) {
+    public boolean equals(Object o) {
         boolean result = o instanceof RoundRect;
         if (result) {
             RoundRect r = (RoundRect) o;
@@ -159,45 +175,45 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
     public void getControlPoints(double[] xy) {
         xy[0] = x;
         xy[1] = y;
-        
+
         xy[2] = x;
         xy[3] = y + h;
-        
+
         xy[4] = x + w;
         xy[5] = y + h;
-        
+
         xy[6] = x + w;
         xy[7] = y;
-    }    
+    }
 
     public void setControlPointLocation(int pointIndex, Pt pt) {
         switch (pointIndex) {
-            case 0 :
+            case 0:
                 h += x - pt.x;
                 w += y - pt.y;
                 x = pt.x;
                 y = pt.y;
                 break;
-            case 1 :
+            case 1:
                 w += x - pt.x;
                 x = pt.x;
                 h = pt.y - y;
                 break;
-            case 2 :
+            case 2:
                 w = pt.x - x;
                 h = pt.y - y;
                 break;
-            case 3 :
+            case 3:
                 w = pt.x - x;
                 h += y - pt.y;
                 y = pt.y;
                 break;
-            default :
-                throw new IllegalArgumentException (Integer.toString(pointIndex));
+            default:
+                throw new IllegalArgumentException(Integer.toString(pointIndex));
         }
         renormalize();
     }
-    
+
     private void renormalize() {
         if (w < 0) {
             double ww = w;
@@ -209,5 +225,5 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
             h *= -1;
         }
     }
-    
+
 }

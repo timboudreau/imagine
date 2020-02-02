@@ -131,6 +131,7 @@ public final class Customizers {
         Customizer<T> result = null; //stealing componnents from other customizers
         if (result == null) {
             result = createCustomizer (type, name);
+            created = true;
             if (result != null) {
                 m.put (name, result);
             }

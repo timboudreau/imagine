@@ -50,6 +50,13 @@ public abstract class LayerFactory {
         if (result == null) {
             result = Lookup.getDefault().lookup (LayerFactory.class);
         }
+        // If null, NO modules are installed which provide a layer
+        // factory - the application will be useless, but should
+        // not explode, so provide a fake layer that tells the user
+        // that
+        if (result == null) {
+            result = new NoOpLayer("none", "No Layer Factories Installed");
+        }
         return result;
     }
 

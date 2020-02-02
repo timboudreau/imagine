@@ -40,10 +40,11 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
+                <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <extensions>true</extensions>
+                <version>4.3</version>
                 <configuration>
+                    <moduleType>regular</moduleType>
                     <publicPackages>
                         <publicPackage>net.java.dev.imagine.api.toolcustomizers</publicPackage>
                     </publicPackages>

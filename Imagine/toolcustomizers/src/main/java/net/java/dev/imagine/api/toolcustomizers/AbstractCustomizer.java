@@ -41,10 +41,10 @@ public abstract class AbstractCustomizer <T extends Object> implements Customize
     }
 
     public T get() {
-        if (c != null) {
+//        if (c != null) {
             return getValue();
-        }
-        return null;
+//        }
+//        return null;
     }
 
     protected abstract T getValue();

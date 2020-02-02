@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
+<filesystem>
+    <folder name="Actions">
+        <folder name="File">
+            <file name="net-java-dev-imagine-ui-actions-NewCanvasAction.instance"/>
+            <file name="net-java-dev-imagine-ui-actions-OpenFileAction.instance"/>
+            <file name="net-java-dev-imagine-ui-actions-ExitAction.instance"/>
+            <file name="net-java-dev-imagine-ui-actions-SaveCanvasAction.instance"/>
+            <file name="net-java-dev-imagine-ui-actions-SaveAsAction.instance"/>
+        </folder>
+        <folder name="Image">
+            <file name="net-java-dev-imagine-ui-actions-ZoomOutAction.instance"/>
+            <file name="net-java-dev-imagine-ui-actions-ZoomFullAction.instance"/>
+            <file name="net-java-dev-imagine-ui-actions-ZoomInAction.instance"/>
+            <file name="net-java-dev-imagine-ui-actions-ResizeAction.instance"/>
+        </folder>
+        <folder name="Edit">
+            <file name="net-java-dev-imagine-ui-actions-UndoAction.instance"/>
+            <file name="net-java-dev-imagine-ui-actions-RedoAction.instance"/>
+
+            <file name="Copy.instance">
+                <attr name="instanceCreate" methodvalue="net.java.dev.imagine.ui.actions.ImCopyAction.createCopyAction"/>
+            </file>
+            
+            <file name="CopyAll.instance">
+                <attr name="instanceCreate" methodvalue="net.java.dev.imagine.ui.actions.ImCopyAction.createCopyAllAction"/>
+            </file>
+
+            <file name="Cut.instance">
+                <attr name="instanceCreate" methodvalue="net.java.dev.imagine.ui.actions.ImCopyAction.createCutAction"/>
+            </file>
+
+            <file name="CutAll.instance">
+                <attr name="instanceCreate" methodvalue="net.java.dev.imagine.ui.actions.ImCopyAction.createCutAllAction"/>
+            </file>
+
+            <file name="Delete.instance">
+                <attr name="instanceClass" stringvalue="net.java.dev.imagine.ui.actions.ImDeleteAction"/>
+            </file>
+            
+            <file name="net-java-dev-imagine-ui-actions-ImPasteAction.instance"/>
+
+            <file name="net-java-dev-imagine-ui-actions-SelectAllAction.instance"/>
+            <file name="net-java-dev-imagine-ui-actions-InvertSelectionAction.instance"/>
+            <file name="net-java-dev-imagine-ui-actions-ClearSelectionAction.instance"/>
+        </folder>
+    </folder>
+    <folder name="Menu">
+        <file name="GoTo_hidden"/>
+        <file name="Tools_hidden"/>
+        <file name="View_hidden"/>
+        <folder name="File">
+            <file name="org-netbeans-core-actions-SystemExit.instance_hidden"/>
+            <file name="net-java-dev-imagine-ui-actions-ExitAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-ExitAction.instance"/>
+                <attr name="position" intvalue="10000"/>
+            </file>
+            <file name="net-java-dev-imagine-ui-actions-NewCanvasAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-NewCanvasAction.instance"/>
+                <attr name="position" intvalue="0"/>
+            </file>
+
+            <file name="org-netbeans-paintui-separatorAfter.instance">
+                <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
+                <attr name="position" intvalue="200"/>
+            </file>
+
+            <file name="net-java-dev-imagine-ui-actions-OpenFileAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-OpenFileAction.instance"/>
+                <attr name="position" intvalue="100"/>
+            </file>
+
+            <file name="org-netbeans-paintui-separatorAfter2.instance">
+                <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
+                <attr name="position" intvalue="300"/>
+            </file>
+            
+            <file name="net-java-dev-imagine-ui-actions-SaveCanvasAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-SaveCanvasAction.instance"/>
+                <attr name="position" intvalue="400"/>
+            </file>
+            <file name="net-java-dev-imagine-ui-actions-SaveAsAction.instance">
+                <attr name="position" intvalue="500"/>
+            </file>
+            <file name="org-netbeans-paintui-separatorBefore.instance">
+                <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
+                <attr name="position" intvalue="600"/>
+            </file>
+        </folder>
+        <attr name="File/Edit" boolvalue="true"/>
+        <attr name="Effects/Help" boolvalue="true"/>
+
+        <folder name="Edit">
+            <file name="org-netbeans-core-actions-JumpNextAction.shadow_hidden"/>
+            <file name="org-netbeans-core-actions-JumpPrevAction.shadow_hidden"/>
+            <file name="org-openide-actions-CopyAction.instance_hidden"/>
+            <file name="org-openide-actions-CutAction.instance_hidden"/>
+            <file name="org-openide-actions-DeleteAction.instance_hidden"/>
+            <file name="org-openide-actions-FindAction.instance_hidden"/>
+            <file name="org-openide-actions-PasteAction.instance_hidden"/>
+            <file name="org-openide-actions-RedoAction.instance_hidden"/>
+            <file name="org-openide-actions-ReplaceAction.instance_hidden"/>
+            <file name="org-openide-actions-UndoAction.instance_hidden"/>
+
+            <file name="net-java-dev-imagine-ui-actions-UndoAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/net-java-dev-imagine-ui-actions-UndoAction.instance"/>
+                <attr name="position" intvalue="0"/>
+            </file>
+
+            <attr name="net-java-dev-imagine-ui-actions-UndoAction.shadow/net-java-dev-imagine-ui-actions-RedoAction.shadow" boolvalue="true"/>
+
+            <file name="net-java-dev-imagine-ui-actions-RedoAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/net-java-dev-imagine-ui-actions-RedoAction.instance"/>
+                <attr name="position" intvalue="100"/>
+            </file>
+
+            <file name="sep1.instance">
+                <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
+                <attr name="position" intvalue="200"/>
+            </file>
+            <file name="CutAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/Cut.instance"/>
+                <attr name="position" intvalue="300"/>
+            </file>
+            <file name="CutAllAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/CutAll.instance"/>
+                <attr name="position" intvalue="400"/>
+            </file>
+            <file name="CopyAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/Copy.instance"/>
+                <attr name="position" intvalue="500"/>
+            </file>
+            <file name="CopyAllAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/CopyAll.instance"/>
+                <attr name="position" intvalue="600"/>
+            </file>
+            <file name="PasteAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/net-java-dev-imagine-ui-actions-ImPasteAction.instance"/>
+                <attr name="position" intvalue="700"/>
+            </file>
+            <file name="sep2.instance">
+                <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
+                <attr name="position" intvalue="800"/>
+            </file>
+            <file name="DeleteAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/Delete.instance"/>
+                <attr name="position" intvalue="900"/>
+            </file>
+            <file name="sep3.instance">
+                <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
+                <attr name="position" intvalue="1000"/>
+            </file>
+            <file name="net-java-dev-imagine-ui-actions-SelectAllAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/net-java-dev-imagine-ui-actions-SelectAllAction.instance"/>
+                <attr name="position" intvalue="1100"/>
+            </file>
+
+            <file name="net-java-dev-imagine-ui-actions-InvertSelectionAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/net-java-dev-imagine-ui-actions-InvertSelectionAction.instance"/>
+                <attr name="position" intvalue="1200"/>
+            </file>
+
+            <file name="net-java-dev-imagine-ui-actions-ClearSelectionAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/net-java-dev-imagine-ui-actions-ClearSelectionAction.instance"/>
+                <attr name="position" intvalue="1300"/>
+            </file>
+
+        </folder>
+
+        <folder name="Image">
+            <file name="net-java-dev-imagine-ui-actions-ResizeAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ResizeAction.instance"/>
+                <attr name="position" intvalue="0"/>
+            </file>
+
+            <file name="sep1.instance">
+                <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
+                <attr name="position" intvalue="100"/>
+            </file>
+
+
+            <file name="net-java-dev-imagine-ui-actions-ZoomInAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomInAction.instance"/>
+                <attr name="position" intvalue="200"/>
+            </file>
+
+            <file name="net-java-dev-imagine-ui-actions-ZoomOutAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomOutAction.instance"/>
+                <attr name="position" intvalue="300"/>
+            </file>
+
+        </folder>
+
+        <folder name="Window">
+            <!-- XXX -->
+            <file name="Output_hidden"/>
+            <file name="ProgressListAction.shadow_hidden"/>
+            <file name="ViewFavoritesTabAction.shadow_hidden"/>
+            <file name="ViewRuntimeTabAction.shadow_hidden"/>
+          
+        </folder>
+
+    </folder>
+    <folder name="Toolbars">
+        <folder name="Memory_hidden"/>
+        <folder name="Debug_hidden"/>        
+        <folder name="File">
+            <file name="net-java-dev-imagine-ui-actions-NewCanvasAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-NewCanvasAction.instance"/>
+            </file>
+            <attr name="net-java-dev-imagine-ui-actions-NewCanvasAction.shadow/net-java-dev-imagine-ui-actions-OpenFileAction.shadow" boolvalue="true"/>
+
+            <file name="net-java-dev-imagine-ui-actions-OpenFileAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-OpenFileAction.instance"/>
+            </file>
+            <attr name="net-java-dev-imagine-ui-actions-OpenFileAction.shadow/net-java-dev-imagine-ui-actions-SaveCanvasAction.shadow" boolvalue="true"/>
+
+            <file name="net-java-dev-imagine-ui-actions-SaveCanvasAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-SaveCanvasAction.instance"/>
+            </file>
+            <attr name="net-java-dev-imagine-ui-actions-SaveCanvasAction.shadow/net-java-dev-imagine-ui-actions-NewCanvasAction.shadow" boolvalue="false"/>
+        </folder>
+        <folder name="Zoom">
+            <file name="org-netbeans-paintui-ZoomPanel.instance"/>
+            <attr name="net-java-dev-imagine-ui-actions-ZoomInAction.shadow/net-java-dev-imagine-ui-actions-ZoomOutAction.shadow" boolvalue="true"/>
+
+            <file name="net-java-dev-imagine-ui-actions-ZoomOutAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomOutAction.instance"/>
+            </file>
+            <file name="net-java-dev-imagine-ui-actions-ZoomInAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomInAction.instance"/>
+            </file>
+            <!--   <file name="net-java-dev-imagine-ui-actions-ZoomFullAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomFullAction.instance"/>
+            </file>-->
+        </folder>
+        <!--        <folder name="Memory">
+            <attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.core.Bundle"/>
+            <file name="org-openide-actions-GarbageCollectAction.instance"/>
+        </folder>-->
+
+    </folder>
+
+    
+    <folder name="Shortcuts">
+        <file name="D-N.shadow">
+            <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-NewCanvasAction.instance"/>
+        </file>
+        <file name="D-V.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/net-java-dev-imagine-ui-actions-ImPasteAction.instance"/>
+        </file>
+        <file name="D-O.shadow">
+            <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-OpenFileAction.instance"/>
+        </file>
+        <file name="D-S.shadow">
+            <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-SaveCanvasAction.instance"/>
+        </file>
+        <file name="D-EQUALS.shadow">
+            <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomInAction.instance"/>
+        </file>
+        <file name="PLUS.shadow">
+            <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomInAction.instance"/>
+        </file>
+        <file name="D-MINUS.shadow">
+            <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomOutAction.instance"/>
+        </file>
+        <file name="MINUS.shadow">
+            <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomOutAction.instance"/>
+        </file>
+        <file name="D-A.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/net-java-dev-imagine-ui-actions-SelectAllAction.instance"/>
+        </file>
+        <file name="D-D.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/net-java-dev-imagine-ui-actions-ClearSelectionAction.instance"/>
+        </file>
+        <file name="D-Z.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/net-java-dev-imagine-ui-actions-UndoAction.instance"/>
+        </file>
+        <file name="D-Y.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/net-java-dev-imagine-ui-actions-RedoAction.instance"/>
+        </file>
+        <file name="D-I.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/net-java-dev-imagine-ui-actions-InvertSelectionAction.instance"/>
+        </file>
+        <file name="D-X.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/Cut.instance"/>
+        </file>
+        <file name="D-C.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/Copy.instance"/>
+        </file>
+        <file name="DS-X.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/CutAll.instance"/>
+        </file>
+        <file name="DS-C.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/CopyAll.instance"/>
+        </file>
+        <file name="D-S.shadow">
+            <attr name="originalFile" stringvalue="Menu/File/net-java-dev-imagine-ui-actions-SaveAsAction.instance"/>
+        </file>
+        <file name="D-R.shadow">
+            <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ResizeAction.instance"/>
+        </file>
+        <file name="DELETE.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/Delete.instance"/>
+        </file>
+    </folder>
+</filesystem>

@@ -55,6 +55,7 @@ import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.netbeans.paint.api.editor.Zoom;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
+import net.java.dev.imagine.ui.common.PositionStatusLineElementProvider;
 import org.netbeans.paint.api.util.GraphicsUtils;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;

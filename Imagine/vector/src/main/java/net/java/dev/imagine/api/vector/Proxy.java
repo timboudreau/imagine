@@ -16,5 +16,19 @@ package net.java.dev.imagine.api.vector;
  * @author Tim Boudreau
  */
 public interface Proxy {
-    public Primitive getProxiedPrimitive();
+    Primitive getProxiedPrimitive();
+
+    default Primitive unwind() {
+        Proxy p = this;
+        Primitive result = null;
+        while (p instanceof Proxy) {
+            result = p.getProxiedPrimitive();
+            if (result instanceof Proxy) {
+                p = (Proxy) result;
+            } else {
+                break;
+            }
+        }
+        return result;
+    }
 }

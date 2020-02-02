@@ -6,7 +6,6 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.vector.elements;
 
 import java.awt.Graphics2D;
@@ -27,6 +26,7 @@ import net.java.dev.imagine.api.vector.util.Pt;
  * @author Tim Boudreau
  */
 public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vector {
+
     private static long serialVersionUID = 2394L;
     public double x;
     public double y;
@@ -35,8 +35,11 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
     public double startAngle;
     public double arcAngle;
     public boolean fill;
-    /** Creates a new instance of Arc */
-    public Arc(double  x, double y, double width, double height, double startAngle, double arcAngle, boolean fill) {
+
+    /**
+     * Creates a new instance of Arc
+     */
+    public Arc(double x, double y, double width, double height, double startAngle, double arcAngle, boolean fill) {
         this.x = x;
         this.y = y;
         this.width = width;
@@ -46,11 +49,27 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
         this.fill = fill;
     }
 
+    public double getStartAngle() {
+        return startAngle;
+    }
+
+    public double getArcAngle() {
+        return arcAngle;
+    }
+
+    public void setArcAngle(double arcAngle) {
+        this.arcAngle = arcAngle;
+    }
+
+    public void setStartAngle(double startAngle) {
+        this.startAngle = startAngle;
+    }
+
     public String toString() {
-        return "Arc: " + x + ", " + y + ", " +
-                width + ", " + height + ": " +
-                startAngle  + ", " + arcAngle  +
-                " fill:" + fill;
+        return "Arc: " + x + ", " + y + ", "
+                + width + ", " + height + ": "
+                + startAngle + ", " + arcAngle
+                + " fill:" + fill;
     }
 
     public Shape toShape() {
@@ -62,27 +81,27 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
         return fill;
     }
 
-    public boolean equals (Object o) {
+    public boolean equals(Object o) {
         boolean result = o instanceof Arc;
         if (result) {
             Arc a = (Arc) o;
-            result = a.arcAngle == arcAngle && a.startAngle ==
-                    startAngle && width == a.width && height == a.height &&
-                    x == a.x && y == a.y && width == a.width;
+            result = a.arcAngle == arcAngle && a.startAngle
+                    == startAngle && width == a.width && height == a.height
+                    && x == a.x && y == a.y && width == a.width;
         }
         return result;
     }
 
     public int hashCode() {
-        return (int) arcAngle + (int) x + (int) y + 
-                (int) height + (int) startAngle + (int) width;
+        return (int) arcAngle + (int) x + (int) y
+                + (int) height + (int) startAngle + (int) width;
     }
 
     public void paint(Graphics2D g) {
         if (fill) {
-            fill (g);
+            fill(g);
         } else {
-            draw (g);
+            draw(g);
         }
     }
 
@@ -98,19 +117,19 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
     }
 
     public void draw(Graphics2D g) {
-        g.draw (toShape());
+        g.draw(toShape());
     }
 
     public void fill(Graphics2D g) {
-        g.fill (toShape());
+        g.fill(toShape());
     }
 
     public Primitive copy() {
-        return new Arc (x, y, width, height, startAngle, arcAngle, fill);
+        return new Arc(x, y, width, height, startAngle, arcAngle, fill);
     }
 
     public Pt getLocation() {
-        return new Pt (x, y);
+        return new Pt(x, y);
     }
 
     public void setLocation(double x, double y) {
@@ -124,11 +143,10 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
     }
 
     public Vector copy(AffineTransform transform) {
-        double[] pts = new double[] {
-            x, y, x + width, y + height,
-        };
-        transform.transform (pts, 0, pts, 0, 2);
-        return new Arc (pts[0], pts[1], pts[2] - pts[0], pts[3] - pts[1], 
+        double[] pts = new double[]{
+            x, y, x + width, y + height,};
+        transform.transform(pts, 0, pts, 0, 2);
+        return new Arc(pts[0], pts[1], pts[2] - pts[0], pts[3] - pts[1],
                 startAngle, arcAngle, fill);
     }
 
@@ -144,6 +162,31 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
     }
 
     public void setControlPointLocation(int pointIndex, Pt location) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        switch (pointIndex) {
+            case 0:
+                double nx = width + x;
+                double ny = height + y;
+                x = location.x;
+                y = location.y;
+                width = nx - x;
+                height = ny - y;
+                break;
+            case 1:
+                double w = location.x - x;
+                double h = location.y - y;
+                if (w < 0) {
+                    x = location.x;
+                    w = -w;
+                }
+                if (h < 0) {
+                    y = location.y;
+                    h = -h;
+                }
+                width = w;
+                height = h;
+                break;
+            default:
+                throw new IllegalArgumentException("Illegal point index");
+        }
     }
 }

@@ -166,7 +166,10 @@ public class ImageWrapper implements Primitive, Vector {
         int nw = (int)(pts[2] - pts[0]);
         int nh = (int)(pts[3] - pts[1]);
         BufferedImage nue = 
-                GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(nw, nh);
+                GraphicsEnvironment.getLocalGraphicsEnvironment()
+                        .getDefaultScreenDevice()
+                        .getDefaultConfiguration()
+                        .createCompatibleImage(nw, nh);
         Graphics2D g = nue.createGraphics();
         g.drawRenderedImage(img, xform);
         g.dispose();

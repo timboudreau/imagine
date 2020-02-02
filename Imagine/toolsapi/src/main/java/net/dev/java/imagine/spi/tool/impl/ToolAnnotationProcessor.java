@@ -143,7 +143,7 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
             return sb.toString();
         }
     }
-    
+
     @Override
     protected boolean handleProcess(Set<? extends TypeElement> set, RoundEnvironment env) throws LayerGenerationException {
         boolean result = true;
@@ -225,8 +225,8 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
 
         //Now we're ready to build the layer contents
         if (result) {
-            String defaultBundle = Category.class.getPackage().getName().replace('.', '/') + "/Bundle";
-            
+            String defaultBundle = Category.class.getPackage().getName()/*.replace('.', '/')  + "/Bundle" */ + ".Bundle";
+
             LayerBuilder b = layer(allElements.toArray(new Element[allElements.size()]));
             LayerBuilder.File actionsFolder = b.folder("Actions");
             b = actionsFolder.write(); //make sure it exists
@@ -263,7 +263,14 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
                 //If we have a localized display name, use it
                 String bundle = td.displayNameBundle();
                 if (bundle != null) {
-                    oneToolFolder.bundlevalue("displayName", bundle, td.name());
+                    if (bundle.indexOf('/') >= 0) {
+                        bundle = bundle.replace('/', '.');
+                    }
+                    if (bundle != null) {
+                        oneToolFolder.bundlevalue("displayName", bundle, td.name());
+                    }
+                } else {
+                    oneToolFolder.stringvalue("displayName", td.name()); // XXX ???
                 }
                 //There will always be an icon value, it just may be our dummy icon
                 oneToolFolder.urlvalue("SystemFileSystem.icon", "nbresloc:/" + td.iconPath());
@@ -280,7 +287,8 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
                 //If no implementations, warn the user.  They could exist in some
                 //other module, so it is not fatal
                 if (impls == null || impls.isEmpty()) {
-                    processingEnv.getMessager().printMessage(Kind.NOTE, td.name() + " defined, but no @Tool implementations found using this name.", td.appearsOn());
+                    processingEnv.getMessager().printMessage(Kind.MANDATORY_WARNING, td.name() + " defined, but no @Tool implementations found using this name.", td.appearsOn());
+                    continue;
                 }
                 b = oneToolFolder.write();
                 //Write out .instance files for every implementation
@@ -303,7 +311,7 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
                 LayerBuilder.File actionFile = b.file(imageActions.getPath() + "/" + td.name() + ".instance");
                 actionFile.stringvalue("instanceClass", ToolAction.class.getName());
                 StringBuilder types = new StringBuilder();
-                for (Iterator<Class<?>> it=toolActionTypes().iterator(); it.hasNext();) {
+                for (Iterator<Class<?>> it = toolActionTypes().iterator(); it.hasNext();) {
                     types.append(it.next().getName());
                     if (it.hasNext()) {
                         types.append(',');
@@ -320,19 +328,19 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
                 }
                 b = actionFile.write();
                 //create links in toolbar and menu folders
-                LayerBuilder.File menuShadow =
-                        b.shadowFile(actionFile.getPath(), toolsMenu.getPath(), td.name());
+                LayerBuilder.File menuShadow
+                        = b.shadowFile(actionFile.getPath(), toolsMenu.getPath(), td.name());
                 b = menuShadow.write();
 
-                LayerBuilder.File toolbarShadow =
-                        b.shadowFile(actionFile.getPath(), toolsToolbar.getPath(), td.name());
+                LayerBuilder.File toolbarShadow
+                        = b.shadowFile(actionFile.getPath(), toolsToolbar.getPath(), td.name());
                 b = toolbarShadow.write();
             }
         }
 
         return result;
     }
-    
+
     private static Set<Class<?>> toolActionTypes() {
         Set<Class<?>> result = new HashSet<Class<?>>(Arrays.asList(ToolAction.class.getInterfaces()));
         Class<?> c = ToolAction.class;
@@ -375,7 +383,8 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
         }
 
         /**
-         * TypeElement uses . as the delimiter for inner classes;  we need $
+         * TypeElement uses . as the delimiter for inner classes; we need $
+         *
          * @param e A type element
          * @return The name in a form suitable for Class.forName()
          */
@@ -675,7 +684,8 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
                 if (pkg == null || pkg.isUnnamed()) {
                     processingEnv.getMessager().printMessage(Kind.ERROR, "Tools may not be in the default package");
                 }
-                result = pkg.getQualifiedName().toString().replace('.', '/') + "/Bundle";
+//                result = pkg.getQualifiedName().toString().replace('.', '/') + "/Bundle";
+                result = pkg.getQualifiedName().toString() + ".Bundle";
                 if (!bundleWarned) {
                     bundleWarned = true;
                     verifyBundleKey(result, name(), true);
@@ -689,7 +699,7 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
             return result;
         }
         private boolean categoryWarned;
-        
+
         private void verifyBundleKey(String bundle, String key, boolean samePackage) {
             if (processingEnv == null) {
                 return;
@@ -730,7 +740,7 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
             } catch (IOException x) {
                 processingEnv.getMessager().printMessage(Kind.WARNING, "Could not open " + resource + ": " + x, appearsOn());
             }
-        }        
+        }
 
         public String category() {
             if (!categoryWarned) {

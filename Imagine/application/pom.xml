@@ -84,26 +84,31 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>vectorlayers</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>ui-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>misc.nio</artifactId>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>paintui2</artifactId>
-            <!--            <artifactId>paintui</artifactId> -->
+            <!--<artifactId>paintui2</artifactId>-->
+            <artifactId>paintui</artifactId>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>toolconfigurationui</artifactId>
         </dependency>
         <!-- remove this dependency when using paintui not paintui2 -->
-        <dependency>
+<!--        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>layers.text.widget</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>vectorlayers</artifactId>
-        </dependency>
+        </dependency>-->
+
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>vector</artifactId>
@@ -120,8 +125,9 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
+                <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
+                <version>4.3</version>
             </plugin>
             <!-- To run NbModuleSuite in integration-test phase:
             <plugin>

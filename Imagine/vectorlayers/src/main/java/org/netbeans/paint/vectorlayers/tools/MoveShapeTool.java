@@ -29,6 +29,7 @@ import javax.swing.JPopupMenu;
 import net.dev.java.imagine.api.tool.aspects.Attachable;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
+import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Attribute;
@@ -50,7 +51,8 @@ import org.openide.util.Lookup;
  *
  * @author Tim Boudreau
  */
-@Tool(name="Move", value=ShapeStack.class)
+@ToolDef(name="Move Shape", iconPath="net/java/dev/imagine/api/tool/unknown.png")
+@Tool(name="Move Shape", value=ShapeStack.class)
 public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, */ PaintParticipant, MouseListener, ControlPoint.Controller, Attachable {
 
     public MoveShapeTool(ShapeStack stack) {

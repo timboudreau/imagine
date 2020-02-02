@@ -917,6 +917,9 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         }
         
         private void fitToImage (Rectangle r, BufferedImage img) {
+            if (r == null) {
+                return;
+            }
             if (r.x < 0) {
                 r.width += r.x;
                 r.x = 0;

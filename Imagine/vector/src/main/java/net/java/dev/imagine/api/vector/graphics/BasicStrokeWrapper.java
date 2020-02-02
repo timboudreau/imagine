@@ -6,7 +6,6 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.vector.graphics;
 
 import java.awt.BasicStroke;
@@ -14,14 +13,14 @@ import java.awt.Graphics2D;
 import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
-import net.java.dev.imagine.api.vector.elements.*;
 
 /**
  * Sets the Stroke of a Graphics2D.
  *
  * @author Tim Boudreau
  */
-public final class BasicStrokeWrapper implements Primitive, Attribute <BasicStroke> {
+public final class BasicStrokeWrapper implements Primitive, Attribute<BasicStroke> {
+
     public float miterLimit;
     public float[] dashArray;
     public float dashPhase;
@@ -37,69 +36,77 @@ public final class BasicStrokeWrapper implements Primitive, Attribute <BasicStro
         this.lineWidth = stroke.getLineWidth();
         this.miterLimit = stroke.getMiterLimit();
     }
-    
-    private BasicStrokeWrapper (BasicStrokeWrapper w) {
-        this.dashArray = new float[w.dashArray.length];
-        System.arraycopy (w.dashArray, 0, dashArray, 0, dashArray.length);
+
+    private BasicStrokeWrapper(BasicStrokeWrapper w) {
+        this.dashArray = w.dashArray == null ? null : new float[w.dashArray.length];
+        if (w.dashArray != null) {
+            System.arraycopy(w.dashArray, 0, dashArray, 0, dashArray.length);
+        }
         this.dashPhase = w.dashPhase;
         this.endCap = w.endCap;
         this.lineJoin = w.lineJoin;
         this.lineWidth = w.lineWidth;
         this.miterLimit = w.miterLimit;
     }
-    
-    public BasicStrokeWrapper copy (float newLineWidth) {
-        BasicStrokeWrapper result = new BasicStrokeWrapper (this);
+
+    public BasicStrokeWrapper copy(float newLineWidth) {
+        BasicStrokeWrapper result = new BasicStrokeWrapper(this);
         result.lineWidth = newLineWidth;
         return result;
     }
 
     public BasicStroke toStroke() {
-        return new BasicStroke (lineWidth, endCap, lineJoin, miterLimit,
+        return new BasicStroke(lineWidth, endCap, lineJoin, miterLimit,
                 dashArray, dashPhase);
     }
 
+    @Override
     public String toString() {
-        return "BasicStroke: lineWidth " +
-                lineWidth + " lineJoin  " + lineJoin +
-                " endCap " + endCap + " dashPhase "
-                + dashPhase + " miterLimit " +
-                miterLimit + " dashArray " +
-                toString (dashArray);
+        return "BasicStroke: lineWidth "
+                + lineWidth + " lineJoin  " + lineJoin
+                + " endCap " + endCap + " dashPhase "
+                + dashPhase + " miterLimit "
+                + miterLimit + " dashArray "
+                + toString(dashArray);
     }
 
-    private static String toString (float[] f) {
-        if (f == null) return "null";
-        StringBuilder b = new StringBuilder (30);
-        b.append ('[');
+    private static String toString(float[] f) {
+        if (f == null) {
+            return "null";
+        }
+        StringBuilder b = new StringBuilder(30);
+        b.append('[');
         for (int i = 0; i < f.length; i++) {
-            b.append (f[i]);
+            b.append(f[i]);
             if (i != f.length - 1) {
-                b.append (", ");
+                b.append(", ");
             }
         }
-        b.append (']');
+        b.append(']');
         return b.toString();
     }
 
-    public boolean equals (Object o) {
+    @Override
+    public boolean equals(Object o) {
         boolean result = o instanceof BasicStrokeWrapper;
         if (result) {
             BasicStrokeWrapper b = (BasicStrokeWrapper) o;
             result &= endCap == b.endCap && lineJoin == b.lineJoin
-                && lineWidth == b.lineWidth && miterLimit ==
-                b.miterLimit && dashPhase == b.dashPhase &&
-                Arrays.equals (dashArray,
-                b.dashArray);
+                    && lineWidth == b.lineWidth && miterLimit
+                    == b.miterLimit && dashPhase == b.dashPhase
+                    && ((dashArray == null && b.dashArray == null)
+                    || (dashArray != null && b.dashArray != null
+                    && Arrays.equals(dashArray, b.dashArray)));
         }
         return result;
     }
 
+    @Override
     public int hashCode() {
-        int result = Arrays.hashCode(dashArray) +
-                (int) (dashPhase * 100) + endCap +
-                lineJoin + ((int) lineJoin * 100) +
-                ((int) miterLimit * 100);
+        int result = Arrays.hashCode(dashArray)
+                + (int) (dashPhase * 100) + endCap
+                + lineJoin + ((int) lineJoin * 100)
+                + ((int) miterLimit * 100);
         return result;
     }
 
@@ -108,13 +115,13 @@ public final class BasicStrokeWrapper implements Primitive, Attribute <BasicStro
     }
 
     public Primitive copy() {
-        return new BasicStrokeWrapper (this);
+        return new BasicStrokeWrapper(this);
     }
 
     public BasicStroke get() {
         return toStroke();
     }
-    
+
     public double getLineWidth() {
         return lineWidth;
     }

@@ -5,6 +5,7 @@
 	 <file name="org-netbeans-paint-effectsui-EffectsMenu.instance"/>
 	 <attr name="org-netbeans-paint-effectsui-EffectsMenu.instance/org-netbeans-paint-toolsui-ToolsMenu.instance"
 	    boolvalue="true"/>
+         <attr name="position" intvalue="200"/>
      </folder>
 </filesystem>
 

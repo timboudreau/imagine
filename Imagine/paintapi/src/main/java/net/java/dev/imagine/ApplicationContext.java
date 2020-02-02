@@ -20,7 +20,6 @@ import org.openide.util.ContextGlobalProvider;
 import org.openide.util.Lookup;
 import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
-import org.openide.util.Utilities;
 import org.openide.util.lookup.ProxyLookup;
 import org.openide.util.lookup.ServiceProvider;
 
@@ -74,7 +73,7 @@ import org.openide.util.lookup.ServiceProvider;
  *
  * @author Timothy Boudreau
  */
-@ServiceProvider(service = ContextGlobalProvider.class, supersedes="org.netbeans.modules.openide.windows.GlobalActionContextImpl")
+@ServiceProvider(service = ContextGlobalProvider.class, supersedes="org.netbeans.modules.openide.windows.GlobalActionContextImpl", position=Integer.MIN_VALUE)
 public final class ApplicationContext implements ContextGlobalProvider {
     private final MutableProxyLookup proxy = new MutableProxyLookup();    
     private static ApplicationContext INSTANCE;

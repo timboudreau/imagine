@@ -10,9 +10,11 @@
  * Code is Sun Microsystems, Inc. Portions Copyright 1997-2005 Sun
  * Microsystems, Inc. All Rights Reserved.
  */
-
 package org.netbeans.paintui;
 
+import net.java.dev.imagine.ui.common.BackgroundStyle;
+import net.java.dev.imagine.ui.common.UndoMgr;
+import net.java.dev.imagine.ui.common.UIContextLookupProvider;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -38,24 +40,22 @@ import javax.swing.JViewport;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.undo.CannotRedoException;
-import javax.swing.undo.CannotUndoException;
-import javax.swing.undo.UndoableEdit;
 import net.dev.java.imagine.api.selection.Selection;
 import net.dev.java.imagine.api.selection.Selection.Op;
 import net.dev.java.imagine.api.tool.Tool;
 import net.java.dev.imagine.spi.image.LayerImplementation;
-import org.netbeans.paint.api.editing.UndoManager;
 import org.netbeans.paint.api.editor.IO;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Picture;
 import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.spi.image.PictureImplementation;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
+import net.java.dev.imagine.ui.actions.spi.Resizable;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
 import org.netbeans.paint.api.components.FileChooserUtils;
 import org.netbeans.paintui.PictureScene.PI;
+import net.java.dev.imagine.ui.actions.spi.Selectable;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.StatusDisplayer;
@@ -70,32 +70,52 @@ import org.openide.util.LookupListener;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
 import org.openide.windows.TopComponent;
+
 /**
  *
  * @author Timothy Boudreau
  */
 @TopComponent.Description(preferredID = "PaintTopComponent",
-//iconBase="SET/PATH/TO/ICON/HERE", 
-persistenceType = TopComponent.PERSISTENCE_ALWAYS)
+        //iconBase="SET/PATH/TO/ICON/HERE",
+        persistenceType = TopComponent.PERSISTENCE_ALWAYS)
 @TopComponent.Registration(mode = "editor", openAtStartup = false)
 @ActionID(category = "Window", id = "org.netbeans.paintui.PaintTopComponent")
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
 @TopComponent.OpenActionRegistration(displayName = "#CTL_PaintAction",
-preferredID = "PaintTopComponent")
-public final class PaintTopComponent extends TopComponent implements ChangeListener, LookupListener, IO {
+        preferredID = "PaintTopComponent")
+public final class PaintTopComponent extends TopComponent implements
+        ChangeListener, LookupListener, IO, Selectable, Resizable {
+
     private final PictureScene canvas; //The component the user draws on
     private static int ct = 0; //A counter we use to provide names for new images
     private File file;
-    public static DataFlavor LAYER_DATA_FLAVOR = new DataFlavor(Layer.class, 
+    public static DataFlavor LAYER_DATA_FLAVOR = new DataFlavor(Layer.class,
             NbBundle.getMessage(PI.class,
-            "LAYER_CLIPBOARD_NAME")); //NOI18N
-    
+                    "LAYER_CLIPBOARD_NAME")); //NOI18N
+
     public PaintTopComponent() {
         this(new PictureScene());
         init();
     }
-    
-    public static PaintTopComponent tcFor (Picture p) {
+
+    @Override
+    public void resizePicture(int w, int h) {
+        for (LayerImplementation l : canvas.getPicture().getLayers()) {
+            l.resize(w, h);
+        }
+        pictureResized(w, h);
+        invalidate();
+        revalidate();
+        repaint();
+    }
+
+    @Override
+    public boolean canInvertSelection() {
+        Selection sel = getLookup().lookup(Selection.class);
+        return sel != null && !sel.isEmpty();
+    }
+
+    public static PaintTopComponent tcFor(Picture p) {
         Set<TopComponent> tcs = TopComponent.getRegistry().getOpened();
         for (TopComponent tc : tcs) {
             if (tc instanceof PaintTopComponent) {
@@ -107,7 +127,7 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
         }
         return null;
     }
-        
+
     public PaintTopComponent(BufferedImage img, File origin) throws IOException {
         this(new PictureScene(img));
         this.file = origin;
@@ -115,64 +135,66 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
         init();
         setDisplayName(origin.getName());
     }
-    
+
     public PaintTopComponent(Dimension dim, BackgroundStyle backgroundStyle) {
         this(new PictureScene(dim, backgroundStyle));
         init();
     }
-    
+
     private void init() {
         undoManager.discardAllEdits(); //XXX because we paint it white
         setOpaque(true);
-        setBackground (Color.WHITE);
+        setBackground(Color.WHITE);
     }
-    
+
     private void updateActivatedNode(File origin) throws IOException {
         FileObject fob = FileUtil.toFileObject(FileUtil.normalizeFile(origin));
         if (fob != null) {
             DataObject dob = DataObject.find(fob);
-            setActivatedNodes(new Node[] { dob.getNodeDelegate() });
+            setActivatedNodes(new Node[]{dob.getNodeDelegate()});
         }
     }
-    
+
     private PaintTopComponent(PictureScene canvas) {
         this.canvas = canvas;
         String displayName = NbBundle.getMessage(
                 PaintTopComponent.class,
                 "UnsavedImageNameFormat", //NOI18N
-                new Object[] { new Integer(ct++) }
+                new Object[]{new Integer(ct++)}
         );
         setDisplayName(displayName);
         PictureImplementation picture = canvas.getPicture();
         picture.addChangeListener(this);
         stateChanged(new ChangeEvent(picture));
         setPreferredSize(new Dimension(500, 500));
-        
+
         setLayout(new BorderLayout());
         JScrollPane pane = new JScrollPane(new InnerPanel(canvas.createView()));
         pane.getViewport().setScrollMode(JViewport.BLIT_SCROLL_MODE);
-        pane.setBorder (BorderFactory.createEmptyBorder());
-        pane.setViewportBorder (BorderFactory.createMatteBorder(1, 0, 0, 0,
-               UIManager.getColor("controlShadow"))); //NOI18N
+        pane.setBorder(BorderFactory.createEmptyBorder());
+        pane.setViewportBorder(BorderFactory.createMatteBorder(1, 0, 0, 0,
+                UIManager.getColor("controlShadow"))); //NOI18N
         add(pane, BorderLayout.CENTER);
         undoManager.setLimit(UNDO_LIMIT);
     }
     private static final int UNDO_LIMIT = 15;
-    
+
     static class InnerPanel extends JComponent {
+
         private final JComponent inner;
+
         InnerPanel(JComponent inner) {
             this.inner = inner;
             add(inner);
             setBorder(BorderFactory.createEmptyBorder());
         }
-        
+
         public Dimension getPreferredSize() {
             return inner.getPreferredSize();
         }
-        
+
         public void doLayout() {
-           Dimension d = inner.getPreferredSize();
+            Dimension d = inner.getPreferredSize();
             int offX = 0;
             int offY = 0;
             if (d.width < getWidth()) {
@@ -184,17 +206,17 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
             inner.setBounds(offX, offY, d.width, d.height);
         }
     }
-    
+
     @Override
     public int getPersistenceType() {
         return PERSISTENCE_NEVER;
     }
-    
+
     @Override
     public String preferredID() {
         return this.file == null ? "Image" : this.file.getName(); //NOI18N
     }
-    
+
     public void selectAll() {
         PictureImplementation l = canvas.getPicture();
         if (l.getActiveLayer() == null) {
@@ -203,10 +225,10 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
         }
         LayerImplementation layer = l.getActiveLayer();
         Selection s = layer.getLookup().lookup(Selection.class);
-        s.add (new Rectangle (l.getSize()), Op.REPLACE);
+        s.add(new Rectangle(l.getSize()), Op.REPLACE);
         repaint();
     }
-    
+
     public void clearSelection() {
         PictureImplementation l = canvas.getPicture();
         if (l.getActiveLayer() == null) {
@@ -220,7 +242,7 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
             repaint();
         }
     }
-    
+
     public void invertSelection() {
         PictureImplementation l = canvas.getPicture();
         if (l.getActiveLayer() == null) {
@@ -231,44 +253,28 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
         Selection s = layer.getLookup().lookup(Selection.class);
         if (s != null) {
             Dimension d = l.getSize();
-            s.invert(new Rectangle (0, 0, d.width, d.height));
+            s.invert(new Rectangle(0, 0, d.width, d.height));
             repaint();
         }
     }
-    
+
     private final UndoRedo.Manager undoManager = new UndoMgr();
 
     public void pictureResized(int width, int height) {
-        throw new UnsupportedOperationException("Not yet implemented");
+//        /throw new UnsupportedOperationException("Not yet implemented");
+        invalidate();
+        revalidate();
+        repaint();
+        canvas.getScene().validate();
     }
-    
-    public static final class UndoMgr extends UndoRedo.Manager implements UndoManager {
-        public List getEdits() {
-            return new ArrayList(super.edits);
-        }
-        
-        @Override
-        public synchronized boolean addEdit(UndoableEdit anEdit) {
-            return super.addEdit(anEdit);
-        }
 
-        @Override
-        public synchronized void redo() throws CannotRedoException {
-            super.redo();
-        }
-
-        @Override
-        public synchronized void undo() throws CannotUndoException {
-            super.undo();
-        }
-    }
-    
     @Override
     public UndoRedo getUndoRedo() {
         return undoManager;
     }
-    
+
     private LayerImplementation lastActiveLayer = null;
+
     public void stateChanged(ChangeEvent e) {
         PictureImplementation picture = canvas.getPicture();
         LayerImplementation layerImpl = picture.getActiveLayer();
@@ -294,27 +300,27 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
         for (TopComponent nue : tcs) {
             layerTopComponents.add (nue);
         }
-         */ 
-        
-        List l = new ArrayList (10);
-        l.add (this);
-        l.addAll (Arrays.asList (this, canvas.getZoom(),
+         */
+
+        List l = new ArrayList(10);
+        l.add(this);
+        l.addAll(Arrays.asList(this, canvas.getZoom(),
                 getUndoRedo(), picture.getPicture()));
         if (layerImpl != null) {
-            l.add (picture.getPicture().getLayers());
-            Layer layer = layerImpl.getLookup().lookup (Layer.class);
+            l.add(picture.getPicture().getLayers());
+            Layer layer = layerImpl.getLookup().lookup(Layer.class);
             if (layer != null) {
-                l.add (layer);
+                l.add(layer);
             }
             Selection sel = layerImpl.getLookup().lookup(Selection.class);
             if (sel != null) {
-                l.add (sel); 
+                l.add(sel);
             }
-            Surface surf = 
-                    layerImpl.getLookup().lookup(Surface.class); //XXX what is this?
-            
+            Surface surf
+                    = layerImpl.getLookup().lookup(Surface.class); //XXX what is this?
+
             if (surf != null) {
-                l.add (surf);
+                l.add(surf);
             }
         }
         if (layerImpl != null) {
@@ -325,7 +331,7 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
         System.err.println("Lookup contents set to " + UIContextLookupProvider.theLookup().lookupAll(Object.class));
         updateActiveTool();
     }
-    
+
     public void save() throws IOException {
         if (this.file != null) {
             doSave(file);
@@ -333,12 +339,12 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
             saveAs();
         }
     }
-    
+
     public void saveAs() throws IOException {
         JFileChooser ch = FileChooserUtils.getFileChooser("image");
-        if (ch.showSaveDialog(this) == JFileChooser.APPROVE_OPTION &&
-                ch.getSelectedFile() != null) {
-            
+        if (ch.showSaveDialog(this) == JFileChooser.APPROVE_OPTION
+                && ch.getSelectedFile() != null) {
+
             File f = ch.getSelectedFile();
             if (!f.getPath().endsWith(".png")) { //NOI18N
                 f = new File(f.getPath() + ".png"); //NOI18N
@@ -347,7 +353,7 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
                 if (!f.createNewFile()) {
                     String failMsg = NbBundle.getMessage(
                             PaintTopComponent.class,
-                            "MSG_SaveFailed", new Object[] { f.getPath() } //NOI18N
+                            "MSG_SaveFailed", new Object[]{f.getPath()} //NOI18N
                     );
                     JOptionPane.showMessageDialog(this, failMsg);
                     return;
@@ -355,38 +361,38 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
             } else {
                 String overwriteMsg = NbBundle.getMessage(
                         PaintTopComponent.class,
-                        "MSG_Overwrite", new Object[] { f.getPath() } //NOI18N
+                        "MSG_Overwrite", new Object[]{f.getPath()} //NOI18N
                 );
                 if (JOptionPane.showConfirmDialog(this, overwriteMsg)
-                != JOptionPane.OK_OPTION) {
-                    
+                        != JOptionPane.OK_OPTION) {
+
                     return;
                 }
             }
             doSave(f);
         }
     }
-    
+
     private void doSave(File f) throws IOException {
         BufferedImage img = canvas.toImage();
         ImageIO.write(img, "png", f);
         this.file = f;
         String statusMsg = NbBundle.getMessage(PaintTopComponent.class,
-                "MSG_Saved", new Object[] { f.getPath() }); //NOI18N
-                StatusDisplayer.getDefault().setStatusText(statusMsg);
+                "MSG_Saved", new Object[]{f.getPath()}); //NOI18N
+        StatusDisplayer.getDefault().setStatusText(statusMsg);
         setDisplayName(f.getName());
         updateActivatedNode(f);
         StatusDisplayer.getDefault().setStatusText(NbBundle.getMessage(PaintTopComponent.class,
                 "MSG_SAVED", f.getPath())); //NOI18N
     }
-    
+
     @Override
     public void open() {
         //Rare case where we *do* want to do this
         super.open();
         requestActive();
     }
-    
+
     @Override
     protected void componentActivated() {
         startListening();
@@ -397,7 +403,7 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
 //            tc.open();
 //        }
     }
-    
+
     @Override
     protected void componentDeactivated() {
         stopListening();
@@ -406,8 +412,9 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
 //            tc.close();
 //        }
     }
-    
+
     boolean firstTime = true;
+
     @Override
     protected void componentShowing() {
         PI p = canvas.getPicture();
@@ -415,6 +422,7 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
         p.setHibernated(false, false, new Runnable() {
             int ct = 0;
             ProgressHandle h;
+
             public void run() {
                 if (EventQueue.isDispatchThread()) {
                     repaint();
@@ -422,13 +430,13 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
                 }
                 ct++;
                 if (ct == 1) {
-                    h = ProgressHandleFactory.createHandle(NbBundle.getMessage(PaintTopComponent.class, 
+                    h = ProgressHandleFactory.createHandle(NbBundle.getMessage(PaintTopComponent.class,
                             "MSG_UNHIBERNATING")); //NOI18N
                     h.start();
                     h.switchToDeterminate(layerCount);
                 }
                 if (h != null) {
-                    h.progress (ct);
+                    h.progress(ct);
                 }
                 if (ct == layerCount - 1) {
                     if (h != null) {
@@ -439,43 +447,44 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
             }
         });
     }
-    
+
     @Override
     protected void componentHidden() {
         canvas.getPicture().setHibernated(true, false, null);
     }
-    
+
     public void resultChanged(LookupEvent lookupEvent) {
         updateActiveTool();
     }
-    
+
     private Tool tool = null;
+
     private void setActiveTool(Tool tool) {
         if (tool != this.tool) {
             this.tool = tool;
             canvas.setActiveTool(tool);
         }
     }
-    
+
     private Lookup.Result<Tool> tools = null;
-    
+
     private void startListening() {
         tools = Utilities.actionsGlobalContext().lookupResult(Tool.class);
         tools.addLookupListener(this);
     }
-    
+
     private void stopListening() {
         tools.removeLookupListener(this);
         tools = null;
     }
-    
+
     private void updateActiveTool() {
         if (TopComponent.getRegistry().getActivated() == this) {
             Collection<? extends Tool> oneOrNone = tools.allInstances();
             setActiveTool(oneOrNone.isEmpty() ? null : (Tool) oneOrNone.iterator().next());
         }
     }
-    
+
     @Override
     protected void componentClosed() {
         if (UIContextLookupProvider.lookup(PaintTopComponent.class) == this) {
@@ -484,23 +493,23 @@ public final class PaintTopComponent extends TopComponent implements ChangeListe
                 lastActiveLayer.getSurface().setTool(null);
             }
         }
-        
+
         super.componentClosed();
         undoManager.discardAllEdits();
     }
-    
+
     public void reload() throws IOException {
     }
-    
+
     public boolean canReload() {
         Node[] n = getActivatedNodes();
         if (n.length == 1) {
-            DataObject dob =  (DataObject) n[0].getCookie(DataObject.class);
+            DataObject dob = (DataObject) n[0].getCookie(DataObject.class);
             return dob.getPrimaryFile().isValid();
         }
         return false;
     }
-    
+
     boolean isActive() {
         return TopComponent.getRegistry().getActivated() == this;
     }

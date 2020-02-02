@@ -1,5 +1,6 @@
 package net.dev.java.imagine.spi.tool.impl;
 
+import java.awt.Image;
 import java.beans.BeanInfo;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,10 +10,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.MissingResourceException;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import net.dev.java.imagine.api.tool.Category;
 import net.dev.java.imagine.api.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDefinition;
@@ -63,6 +66,18 @@ public final class DefaultTools extends Tools {
         return null;
     }
 
+    private List<ToolDriver<?, ?>> allImpls(FileObject fo) {
+        //XXX why is Lookups.forPath() fine in tests but broken here?
+        List<ToolDriver<?, ?>> result = new ArrayList<ToolDriver<?, ?>>();
+        for (FileObject ch : fo.getChildren()) {
+            Object o = ch.getAttribute("instanceCreate"); //XXX
+            if (o instanceof ToolDriver) {
+                result.add((ToolDriver<?, ?>) o);
+            }
+        }
+        return result;
+    }
+
     public DefaultTools() {
         FileObject fld = FileUtil.getConfigFile(Tool.TOOLS_PATH);
         assert fld != null : "tools/ folder missing";
@@ -80,9 +95,11 @@ public final class DefaultTools extends Tools {
                     l = new ArrayList<Tool>();
                     toolsByCategory.put(c, l);
                 }
-                boolean hasDrivers = !lkp.lookupResult(ToolDriver.class).allItems().isEmpty();
+                List<ToolDriver<?, ?>> drivers = allImpls(fo);
+                boolean hasDrivers = !drivers.isEmpty();
+//                boolean hasDrivers = !lkp.lookupResult(ToolDriver.class).allItems().isEmpty();
                 if (!hasDrivers) {
-                    Logger.getLogger(DefaultTools.class.getName()).log(Level.WARNING, "{0} defines a tool, but no ToolDriver instances found in it", fo.getPath() + ": " + lkp.lookup(Object.class)  );
+                    Logger.getLogger(DefaultTools.class.getName()).log(Level.WARNING, "{0} defines a tool, but no ToolDriver instances found in it", fo.getPath() + ": " + lkp.lookup(Object.class));
                     for (FileObject ch : fo.getChildren()) {
                         Logger.getLogger(DefaultTools.class.getName()).log(Level.WARNING, ch.getPath());
                         Enumeration<String> en = ch.getAttributes();
@@ -90,7 +107,7 @@ public final class DefaultTools extends Tools {
                             String k = en.nextElement();
                             Logger.getLogger(DefaultTools.class.getName()).log(Level.WARNING, "   {0}={1} ({2})", new Object[]{k, ch.getAttribute(k), ch.getAttribute(k).getClass().getName()});
                         }
-                        
+
                     }
                 }
                 TD td = new TD(dob, c);
@@ -107,6 +124,7 @@ public final class DefaultTools extends Tools {
 
         private final DataObject fld;
         private final Category category;
+        private boolean logged;
 
         public TD(DataObject fld, Category category) {
             Parameters.notNull("category", category);
@@ -117,12 +135,26 @@ public final class DefaultTools extends Tools {
 
         @Override
         public String displayName() {
-            return fld.getNodeDelegate().getDisplayName();
+            try {
+                return fld.getNodeDelegate().getDisplayName();
+            } catch (MissingResourceException mre) {
+                if (!logged) {
+                    Exceptions.printStackTrace(mre);
+                    logged = true;
+                }
+                return fld.getName();
+            }
         }
 
         @Override
         public Icon icon() {
-            return ImageUtilities.image2Icon(fld.getNodeDelegate().getIcon(BeanInfo.ICON_COLOR_16x16));
+            Image ic = fld.getNodeDelegate().getIcon(BeanInfo.ICON_COLOR_16x16);
+            try {
+                return ImageUtilities.image2Icon(ic);
+            } catch (IllegalArgumentException ex) {
+                // tests - we get ToolkitImage which isn't handled correctly
+                return new ImageIcon(ic);
+            }
         }
 
         @Override
@@ -148,15 +180,14 @@ public final class DefaultTools extends Tools {
         public String toString() {
             return fld.getPrimaryFile().getPath() + " name=" + name() + " displayName=" + displayName() + " category=" + category;
         }
-        
-        
+
         public boolean equals(Object o) {
             if (o == this) {
                 return true;
             }
             return o instanceof ToolDefinition && name().equals(((ToolDefinition) o).name());
         }
-        
+
         public int hashCode() {
             return name().hashCode();
         }

@@ -39,6 +39,7 @@ public class StringWrapper implements Vector {
                 x + ", " + y;
     }
 
+    @Override
     public Shape toShape() {
        return new java.awt.Rectangle (0,0,0,0); //XXX use GlyphVector?
     }

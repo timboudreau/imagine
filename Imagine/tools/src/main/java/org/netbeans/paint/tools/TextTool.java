@@ -6,7 +6,6 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package org.netbeans.paint.tools;
 
 import java.awt.AlphaComposite;
@@ -44,27 +43,41 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Tim Boudreau
  */
-
-@ToolDef(name="Text", iconPath="org/netbeans/paint/tools/resources/text.png")
+@ToolDef(name = "Text", iconPath = "org/netbeans/paint/tools/resources/text.png")
 @Tool(Surface.class)
 public class TextTool implements KeyListener, MouseListener, MouseMotionListener, PaintParticipant, CustomizerProvider, Attachable {
+
     private final Surface surface;
-    
+    final Customizer<Fill> fillC;
+    final Customizer<String> textC;
+    final Customizer<Float> sizeC;
+    final Customizer<FontStyle> styleC;
+    final Customizer<Font> fontC;
+
     public TextTool(Surface surface) {
         this.surface = surface;
+        fillC = FillCustomizer.getDefault();
+        textC = Customizers.getCustomizer(String.class, Constants.TEXT);
+        assert textC != null : "Null text customizer";
+        sizeC = Customizers.getCustomizer(Float.class, Constants.FONT_SIZE, 4F, 180F);
+        assert sizeC != null : "Null size customizer";
+        styleC = Customizers.getCustomizer(FontStyle.class, Constants.FONT_STYLE);
+        assert styleC != null : "Null font style customizer";
+        fontC = Customizers.getCustomizer(Font.class, Constants.FONT);
+        assert fontC != null : "Null font family customizer";
     }
-    
+
     @Override
     public String toString() {
-        return NbBundle.getMessage (TextTool.class, "Text"); //NOI18N
+        return NbBundle.getMessage(TextTool.class, "Text"); //NOI18N
     }
 
     public String getInstructions() {
-        return NbBundle.getMessage (TextTool.class, "Click_to_position_text"); //NOI18N
+        return NbBundle.getMessage(TextTool.class, "Click_to_position_text"); //NOI18N
     }
 
-    public boolean canAttach (Layer layer) {
-        return layer.getLookup().lookup (Surface.class) != null;
+    public boolean canAttach(Layer layer) {
+        return layer.getLookup().lookup(Surface.class) != null;
     }
 
     public void keyTyped(KeyEvent e) {
@@ -94,43 +107,45 @@ public class TextTool implements KeyListener, MouseListener, MouseMotionListener
     }
 
     public void mousePressed(MouseEvent e) {
-        setLoc (e.getPoint());
+        setLoc(e.getPoint());
     }
 
     public void mouseReleased(MouseEvent e) {
         if (armed) {
-            commit (e.getPoint());
+            commit(e.getPoint());
         }
     }
 
     public void paint(Graphics2D g2d, Rectangle layerBounds, boolean commit) {
         committing = commit;
-        paint (g2d);
+        paint(g2d);
         committing = false;
     }
 
-
     boolean committing = false;
-    private void commit (Point p) {
-        setLoc (p);
+
+    private void commit(Point p) {
+        setLoc(p);
         repainter.requestCommit();
     }
 
     boolean armed;
+
     public void mouseEntered(MouseEvent e) {
         armed = true;
         Point p = e.getPoint();
-        setLoc (p);
+        setLoc(p);
         repainter.requestRepaint(null);
     }
 
     public void mouseExited(MouseEvent e) {
         armed = false;
-        setLoc (null);
+        setLoc(null);
         repainter.requestRepaint(null);
     }
 
     public void paint(Graphics2D g2d) {
+        assert textC != null : "Null text customizer";
         String text = textC.get();
         if (text.length() == 0 || "".equals(text.trim())) {
             return;
@@ -138,9 +153,9 @@ public class TextTool implements KeyListener, MouseListener, MouseMotionListener
         Composite comp = null;
         if (!committing) {
             comp = g2d.getComposite();
-            g2d.setComposite (AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5F));
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5F));
         }
-        g2d.setFont (getFont());
+        g2d.setFont(getFont());
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         if (loc == null) {
             return;
@@ -148,24 +163,25 @@ public class TextTool implements KeyListener, MouseListener, MouseMotionListener
         g2d.setPaint(fillC.get().getPaint());
         g2d.drawString(text, loc.x, loc.y);
         if (!committing) {
-            g2d.setComposite (comp);
+            g2d.setComposite(comp);
         }
     }
 
     public void mouseDragged(MouseEvent e) {
         armed = true;
-        setLoc (e.getPoint());
+        setLoc(e.getPoint());
     }
 
     public void mouseMoved(MouseEvent e) {
         armed = true;
-        setLoc (e.getPoint());
+        setLoc(e.getPoint());
     }
 
     private Point loc = null;
+
     private void setLoc(Point p) {
         loc = p;
-        repainter.requestRepaint (null);
+        repainter.requestRepaint(null);
     }
 
     public String getName() {
@@ -185,20 +201,15 @@ public class TextTool implements KeyListener, MouseListener, MouseMotionListener
     }
 
     private Repainter repainter;
+
     public void attachRepainter(PaintParticipant.Repainter repainter) {
         this.repainter = repainter;
     }
 
-    Customizer<Fill> fillC = FillCustomizer.getDefault();
-    Customizer<String> textC = Customizers.getCustomizer(String.class, Constants.TEXT);
-    Customizer<Float> sizeC = Customizers.getCustomizer(Float.class, Constants.FONT_SIZE, 4F, 180F);
-    Customizer<FontStyle> styleC = Customizers.getCustomizer(FontStyle.class, Constants.FONT_STYLE);
-    Customizer<Font> fontC = Customizers.getCustomizer(Font.class, Constants.FONT);
-    
     public Customizer getCustomizer() {
         return new AggregateCustomizer("foo", textC, fontC, sizeC, styleC, fillC); //NOI18N
     }
-    
+
     private Font getFont() {
         Font f = fontC.get();
         float fontSize = sizeC.get();

@@ -1,2 +1,3 @@
 Manifest-Version: 1.0
+OpenIDE-Module-Layer: net/dev/java/imagine/imagine/branding/layer.xml
 OpenIDE-Module-Localizing-Bundle: net/dev/java/imagine/imagine/branding/Bundle.properties

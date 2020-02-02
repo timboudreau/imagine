@@ -13,6 +13,8 @@
 
 package org.netbeans.paintui;
 
+import net.java.dev.imagine.ui.common.UndoMgr;
+import net.java.dev.imagine.ui.common.UIContextLookupProvider;
 import java.awt.BorderLayout;
 import java.util.Collection;
 import java.util.Collections;
@@ -124,9 +126,9 @@ public class HistoryTopComponent extends TopComponent implements LookupListener 
     }
     
     private class UndoListModel implements ListModel, ChangeListener {
-	private final PaintTopComponent.UndoMgr mgr;
+	private final UndoMgr mgr;
 	private UndoListModel (PaintTopComponent ptc) {
-	    mgr = (PaintTopComponent.UndoMgr) 
+	    mgr = (UndoMgr) 
 		ptc.getUndoRedo();
 	    mgr.addChangeListener(WeakListeners.change(this, mgr));
 	    System.err.println("Created a model - size " + getSize());

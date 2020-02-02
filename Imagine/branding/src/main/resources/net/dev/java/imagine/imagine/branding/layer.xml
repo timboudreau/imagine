@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.2//EN" "http://www.netbeans.org/dtds/filesystem-1_2.dtd">
+<filesystem>
+    <folder name="Menu">
+        <folder name="Effects">
+            <attr name="position" intvalue="1000"/>
+        </folder>
+        <folder name="Window">
+            <file name="Web_hidden"/>
+            <file name="Tools_hidden"/>
+            <file name="GroupsMenuAction_hidden"/>
+            <file name="org-netbeans-core-io-ui-IOWindowAction_hidden"/>
+        </folder>
+    </folder>
+</folder>
+</filesystem>

@@ -21,6 +21,7 @@ import java.awt.GraphicsConfiguration;
 import java.awt.Image;
 import java.awt.Paint;
 import java.awt.Point;
+import java.awt.RadialGradientPaint;
 import java.awt.RenderingHints;
 import java.awt.RenderingHints.Key;
 import java.awt.Shape;
@@ -55,6 +56,7 @@ import net.java.dev.imagine.api.vector.elements.Rectangle;
 import net.java.dev.imagine.api.vector.elements.RoundRect;
 import net.java.dev.imagine.api.vector.elements.StringWrapper;
 import net.java.dev.imagine.api.vector.graphics.PaintWrapper;
+import net.java.dev.imagine.api.vector.graphics.RadialPaintWrapper;
 import net.java.dev.imagine.api.vector.graphics.TexturePaintWrapper;
 /**
  * A Graphics2D which wrappers another Graphics2D, and produces objects
@@ -291,6 +293,8 @@ public class VectorWrapperGraphics extends Graphics2D {
             }
             if (paint.getClass() == GradientPaint.class) {
                 push(new GradientPaintWrapper((GradientPaint) paint));
+            } else if (paint instanceof RadialGradientPaint) {
+                push(new RadialPaintWrapper((RadialGradientPaint) paint));
             } else if (paint instanceof TexturePaint) {
                 push(new TexturePaintWrapper((TexturePaint) paint));
             }

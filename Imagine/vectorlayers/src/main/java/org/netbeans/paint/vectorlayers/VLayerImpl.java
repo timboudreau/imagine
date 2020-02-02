@@ -6,7 +6,6 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package org.netbeans.paint.vectorlayers;
 
 import java.awt.AlphaComposite;
@@ -33,26 +32,28 @@ import org.openide.util.lookup.Lookups;
  * @author Tim Boudreau
  */
 class VLayerImpl extends LayerImplementation {
+
     private final VSurfaceImpl surface;
     private String name = "Fred"; //NOI18N
+
     public VLayerImpl(LayerFactory factory, RepaintHandle handle, String name, Dimension d) {
-        super (factory);
-        addRepaintHandle (handle);
-        surface = new VSurfaceImpl (getMasterRepaintHandle(), d);
+        super(factory);
+        addRepaintHandle(handle);
+        surface = new VSurfaceImpl(getMasterRepaintHandle(), d);
         this.name = name;
     }
 
-    VLayerImpl (VLayerImpl other) {
-        super (other.getLookup().lookup (LayerFactory.class));
+    VLayerImpl(VLayerImpl other) {
+        super(other.getLookup().lookup(LayerFactory.class));
         addRepaintHandle(other.getMasterRepaintHandle());
         this.name = other.name;
         this.visible = other.visible;
         this.opacity = other.opacity;
-        this.surface = new VSurfaceImpl (other.surface);
+        this.surface = new VSurfaceImpl(other.surface);
     }
 
     public Object clone() {
-        return new VLayerImpl (this);
+        return new VLayerImpl(this);
     }
 
     public Rectangle getBounds() {
@@ -72,6 +73,7 @@ class VLayerImpl extends LayerImplementation {
     }
 
     SwingPropertyChangeSupport change = new SwingPropertyChangeSupport(this);
+
     public void addPropertyChangeListener(PropertyChangeListener l) {
         change.addPropertyChangeListener(l);
     }
@@ -81,6 +83,7 @@ class VLayerImpl extends LayerImplementation {
     }
 
     private boolean visible = true;
+
     public void setVisible(boolean visible) {
         if (visible != this.visible) {
             this.visible = visible;
@@ -98,6 +101,7 @@ class VLayerImpl extends LayerImplementation {
     }
 
     private float opacity = 1.0F;
+
     public void setOpacity(float f) {
         if (opacity != f) {
             float old = opacity;
@@ -121,9 +125,9 @@ class VLayerImpl extends LayerImplementation {
         }
         Composite old = g.getComposite();
         if (opacity != 1.0F) {
-            g.setComposite (AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
         }
-        
+
         boolean result = surface.paint(g, bounds);
         if (old != null) {
             g.setComposite(old);
@@ -141,12 +145,12 @@ class VLayerImpl extends LayerImplementation {
 
     @Override
     protected Lookup createLookup() {
-        return Lookups.fixed (layer, surface, 
-                surface.getSurface(), 
+        return Lookups.fixed(layer, surface,
+                surface.getSurface(),
                 surface.stack, surface.getGraphics(),
                 new IS());
     }
-    
+
     class CompositeReceiver extends EffectReceiver<Composite> {
 
         public CompositeReceiver() {
@@ -163,9 +167,9 @@ class VLayerImpl extends LayerImplementation {
         public Dimension getSize() {
             return surface.getSize();
         }
-        
+
     }
-    
+
     class IS implements ImageSource {
 
         @Override
@@ -182,18 +186,22 @@ class VLayerImpl extends LayerImplementation {
         public BufferedImage createImageCopy(Dimension size) {
             Dimension d = surface.getSize();
             BufferedImage result = new BufferedImage(size.width, size.height, GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
-            AffineTransform xform = AffineTransform.getScaleInstance(size.getWidth() / d.getWidth(), size.getHeight() / d.getHeight());
+            AffineTransform xform = AffineTransform.getScaleInstance((double) size.getWidth() / (double) d.getWidth(),
+                    (double) size.getHeight() / (double) d.getHeight());
             Graphics2D g = result.createGraphics();
             g.setTransform(xform);
             surface.paint(g, null);
             g.dispose();
             return result;
         }
-        
+
     }
 
     @Override
     public void resize(int width, int height) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        Dimension size = surface.getSize();
+        AffineTransform xform = AffineTransform.getScaleInstance((double) size.getWidth() / (double) width,
+                (double) size.getHeight() / (double) height);
+        surface.transform(xform);
     }
 }

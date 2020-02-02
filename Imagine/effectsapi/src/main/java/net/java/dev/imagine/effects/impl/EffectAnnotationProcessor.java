@@ -41,10 +41,6 @@ import org.openide.util.lookup.ServiceProvider;
 @Messages("effects=Effects")
 public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
 
-    {
-        System.out.println("CREATED A PROCESSOR");
-    }
-
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         Set<String> result = Collections.singleton(Effect.class.getCanonicalName());
@@ -139,7 +135,7 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
 
             LayerBuilder b = layer(e);
             LayerBuilder.File effectsDir = b.folder(net.java.dev.imagine.effects.api.Effect.EFFECT_FOLDER);
-            effectsDir.bundlevalue("displayName", "net/java/dev/imagine/effects/api/Bundle", "effects");
+            effectsDir.bundlevalue("displayName", "net.java.dev.imagine.effects.api.Bundle", "effects");
             b = effectsDir.write();
             System.err.println("OUT TYPE IS " + outType);
             LayerBuilder.File effectFile = b.file(net.java.dev.imagine.effects.api.Effect.EFFECT_FOLDER + '/' + name + ".instance");
@@ -158,7 +154,7 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
             LayerBuilder.File actionsFolder = b.folder("Actions");
             b = actionsFolder.write();
             LayerBuilder.File effectActions = b.folder("Actions/Effects");
-            effectActions.bundlevalue("displayName", "net/java/dev/imagine/effects/api/Bundle", "effects");
+            effectActions.bundlevalue("displayName", "net.java.dev.imagine.effects.api.Bundle", "effects");
             b = effectActions.write();
 
             LayerBuilder.File action = b.file("Actions/Effects/" + name + ".instance");
@@ -170,9 +166,13 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
             action.write();
 
             LayerBuilder.File menuFolder = b.folder("Menu");
+            menuFolder.position(200);
             b = menuFolder.write();
             LayerBuilder.File fxMenu = b.folder("Menu/Effects");
-            fxMenu.bundlevalue("displayName", "net/java/dev/imagine/effectsapi", "effects");
+            fxMenu.bundlevalue("displayName", "net.java.dev.imagine.effectsapi.Bundle", "effects");
+
+            b.shadowFile("Actions/Effects/" + name + ".instance", "Menu/Effects", null).write();
+
             b = fxMenu.write();
 
             b.shadowFile(action.getPath(), "Menu/Effects", name);

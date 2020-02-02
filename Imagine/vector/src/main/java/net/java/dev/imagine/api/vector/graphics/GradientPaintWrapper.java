@@ -18,7 +18,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
-import net.java.dev.imagine.api.vector.elements.*;
 
 /**
  *

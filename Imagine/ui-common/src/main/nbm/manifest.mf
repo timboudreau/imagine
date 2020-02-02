@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+OpenIDE-Module-Layer: net/java/dev/imagine/ui/common/layer.xml
+OpenIDE-Module-Localizing-Bundle: net/java/dev/imagine/ui/common/Bundle.properties
+

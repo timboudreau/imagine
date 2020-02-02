@@ -30,6 +30,8 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
 import javax.swing.undo.UndoableEdit;
+import net.java.dev.imagine.ui.common.UIContextLookupProvider;
+import net.java.dev.imagine.ui.common.UndoMgr;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.util.Lookup;
@@ -96,10 +98,9 @@ public class HistoryTopComponent extends TopComponent implements LookupListener 
 	super.open();
     }
     
-    private Lookup.Result res = null;
+    private Lookup.Result<PaintTopComponent> res = null;
     private void startListening() {
-	res = UIContextLookupProvider.lookup(new Lookup.Template (
-		PaintTopComponent.class));
+	res = UIContextLookupProvider.theLookup().lookupResult(PaintTopComponent.class);
 	res.addLookupListener(this);
 	resultChanged (null);
     }
@@ -125,9 +126,9 @@ public class HistoryTopComponent extends TopComponent implements LookupListener 
     }
     
     private class UndoListModel implements ListModel, ChangeListener {
-	private final PaintTopComponent.UndoMgr mgr;
+	private final UndoMgr mgr;
 	private UndoListModel (PaintTopComponent ptc) {
-	    mgr = (PaintTopComponent.UndoMgr) 
+	    mgr = (UndoMgr) 
 		ptc.getUndoRedo();
 	    mgr.addChangeListener(WeakListeners.change(this, mgr));
 	    System.err.println("Created a model - size " + getSize());

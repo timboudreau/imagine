@@ -1,5 +1,7 @@
 package org.netbeans.paintui;
 
+import net.java.dev.imagine.ui.common.PositionStatusLineElementProvider;
+import net.java.dev.imagine.ui.common.BackgroundStyle;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;

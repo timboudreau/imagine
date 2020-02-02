@@ -27,6 +27,10 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>ui-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>misc-swing</artifactId>
         </dependency>
         <dependency>
@@ -88,9 +92,11 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
+                <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <extensions>true</extensions>
+                <configuration>
+                    <moduleType>normal</moduleType>                    
+                </configuration>
             </plugin>
         </plugins>
     </build>

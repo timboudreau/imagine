@@ -344,6 +344,9 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
             return;
         }
         JSlider js = (JSlider)e.getSource();
+        if (sliderInPopup == null) {
+            return;
+        }
         boolean horiz = sliderInPopup.getOrientation() == JSlider.HORIZONTAL;
         int key = e.getKeyCode();
 

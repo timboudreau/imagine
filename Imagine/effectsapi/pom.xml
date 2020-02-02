@@ -43,6 +43,10 @@
             <artifactId>org-openide-filesystems</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-awt</artifactId>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -51,10 +55,11 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
+                <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <extensions>true</extensions>
+                <version>4.3</version>
                 <configuration>
+                    <moduleType>regular</moduleType>
                     <publicPackages>
                         <publicPackage>net.java.dev.imagine.effects.api</publicPackage>
                         <publicPackage>net.java.dev.imagine.effects.spi</publicPackage>

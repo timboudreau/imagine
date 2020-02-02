@@ -8,6 +8,7 @@ import java.util.Map;
 import javax.swing.Action;
 import net.java.dev.imagine.effects.api.Effect;
 import net.java.dev.imagine.effects.api.EffectReceiver;
+import org.openide.awt.StatusDisplayer;
 import org.openide.filesystems.FileObject;
 import org.openide.util.ContextAwareAction;
 import org.openide.util.Lookup;
@@ -44,26 +45,31 @@ public class EffectAction implements Action, ContextAwareAction {
         r = lkp.lookupResult(EffectReceiver.class);
         r.allItems();
     }
-    
-    private Effect<?,?> effect() {
+
+    private Effect<?, ?> effect() {
         return Effect.getEffectByName(name);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        Action a = createContextAwareInstance(Utilities.actionsGlobalContext());
+        if (a.isEnabled()) {
+            a.actionPerformed(e);
+        } else {
+            StatusDisplayer.getDefault().setStatusText(getValue(NAME) + " not enabled");
+        }
     }
 
     @Override
     public Action createContextAwareInstance(Lookup lkp) {
         return new EffectAction(name, lkp);
     }
-    
-    private final Map<String,Object> pairs = new HashMap<String,Object>();
+
+    private final Map<String, Object> pairs = new HashMap<String, Object>();
 
     @Override
     public Object getValue(String key) {
-        Effect<?,?> e = effect();
+        Effect<?, ?> e = effect();
         if (Action.NAME.equals(key)) {
             return e == null ? name : e.getName();
         } else if (Action.SHORT_DESCRIPTION.equals(key)) {
@@ -80,6 +86,7 @@ public class EffectAction implements Action, ContextAwareAction {
 
     private boolean enabled;
     private final PropertyChangeSupport supp = new PropertyChangeSupport(this);
+
     @Override
     public void setEnabled(boolean b) {
         if (b != this.enabled) {
