@@ -39,7 +39,7 @@ public final class ShapeStack implements VectorRepaintHandle {
 
     List<Primitive> primitives
             = new ArrayList<Primitive>();
-    private List<Attribute> currentAttributes = new ArrayList<Attribute>();
+    private List<Attribute<?>> currentAttributes = new ArrayList<>();
     private List<Primitive> unknown = new ArrayList<Primitive>();
 
     private static Logger logger = Logger.getLogger(ShapeStack.class.getName());

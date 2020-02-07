@@ -18,7 +18,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.event.ChangeListener;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import org.netbeans.paint.tools.spi.BrushTip;
 
@@ -28,10 +27,6 @@ import org.netbeans.paint.tools.spi.BrushTip;
  */
 public class RoundBrushTip implements BrushTip, Customizable {
     
-    /** Creates a new instance of RoundBrushTip */
-    public RoundBrushTip() {
-    }
-
     public Rectangle draw(Graphics2D g, Point p, int size) {
 	int half = size / 2;
 	Rectangle result = new Rectangle (p.x - half, p.y - half, size, size);

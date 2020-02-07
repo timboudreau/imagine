@@ -6,7 +6,6 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.vector.elements;
 
 import java.awt.Graphics2D;
@@ -19,10 +18,12 @@ import net.java.dev.imagine.api.vector.Primitive;
  * @author Tim Boudreau
  */
 public final class CharacterIteratorWrapper implements Primitive {
+
     private static long serialVersionUID = 203942L;
     public final AttributedCharacterIterator it;
     public final double x;
     public final double y;
+
     public CharacterIteratorWrapper(AttributedCharacterIterator it, double x, double y) {
         assert it instanceof Serializable;
         this.it = it;
@@ -30,6 +31,7 @@ public final class CharacterIteratorWrapper implements Primitive {
         this.y = y;
     }
 
+    @Override
     public String toString() {
         return "CharacterIteratorWrapper: " + x
                 + ", " + y + ": " + it;
@@ -40,6 +42,6 @@ public final class CharacterIteratorWrapper implements Primitive {
     }
 
     public Primitive copy() {
-        return new CharacterIteratorWrapper (it, x, y);
+        return new CharacterIteratorWrapper(it, x, y);
     }
 }

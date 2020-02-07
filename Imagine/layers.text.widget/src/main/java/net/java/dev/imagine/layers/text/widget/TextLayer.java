@@ -46,6 +46,7 @@ import org.netbeans.paint.api.components.FontCellRenderer;
 import org.netbeans.paint.api.components.FontComboBoxModel;
 import org.netbeans.paint.api.components.PopupSliderUI;
 import org.netbeans.paint.api.components.Fonts;
+import org.netbeans.paint.api.util.GraphicsUtils;
 import org.netbeans.paintui.widgetlayers.WidgetLayer;
 import org.netbeans.paintui.widgetlayers.WidgetLayer.WidgetFactory;
 import org.openide.util.Lookup;
@@ -102,6 +103,11 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
     private class ER implements EffectRecipient {
 
         @Override
+        public boolean canApplyEffects() {
+            return isVisible();
+        }
+
+        @Override
         public boolean canApplyComposite() {
             return true;
         }
@@ -114,7 +120,16 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
         @Override
         public void applyComposite(Composite composite, Shape clip) {
             //XXX do what about selection?
-            TextLayer.this.composite = composite; //XXX should build a stack
+            if (composite == null) {
+                TextLayer.this.composite = null;
+            } else {
+                if (TextLayer.this.composite != null) {
+                    TextLayer.this.composite =
+                            GraphicsUtils.combine(TextLayer.this.composite, composite);
+                } else {
+                    TextLayer.this.composite = composite;
+                }
+            }
             getMasterRepaintHandle().repaintArea(0, 0, 1000, 1000); //XXX
         }
 
@@ -127,7 +142,6 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
         public Dimension getSize() {
             return new Dimension(0,0); //doesn't matter
         }
-        
     }
     
     private class S implements ShapeConverter<Text>, Universe<Collection<Text>> {
@@ -158,7 +172,6 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
             }
             return result;
         }
-        
     }
 
     private class Ed implements TextItemsSupport.Editor {
@@ -392,7 +405,7 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
     }
 
     @Override
-    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection) {
+    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignore) {
         //do nothing
         return false;
     }

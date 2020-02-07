@@ -23,17 +23,18 @@ import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
+import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
+import java.awt.geom.Rectangle2D;
 import java.awt.geom.Rectangle2D.Double;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Mutable;
-import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
@@ -63,12 +64,43 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
     }
 
     public PathIteratorWrapper(GlyphVector gv, float x, float y) {
-        this(gv.getOutline(x, y).getPathIterator(AffineTransform.getTranslateInstance(0, 0)));
+        this(gv.getOutline(x, y).getPathIterator(null));
     }
 
     PathIteratorWrapper(Segment[] segments, boolean fill) {
         this.segments = segments;
         this.fill = fill;
+    }
+
+    public boolean hasMultiplePaths() {
+        int ct = 0;
+        for (Segment seg : segments) {
+            if (seg.type == PathIterator.SEG_MOVETO) {
+                ct++;
+                if (ct > 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public void split(Consumer<PathIteratorWrapper> wrapper) {
+        List<Segment> curr = new ArrayList<>(segments.length);
+        for (int i = 0; i < segments.length; i++) {
+            Segment seg = segments[i];
+            if (seg.type == PathIterator.SEG_MOVETO) {
+                if (!curr.isEmpty()) {
+                    wrapper.accept(new PathIteratorWrapper(curr.toArray(new Segment[0]), fill));
+                    curr.clear();
+                }
+            }
+            curr.add(seg);
+        }
+        if (!curr.isEmpty()) {
+            wrapper.accept(new PathIteratorWrapper(curr.toArray(new Segment[0]), fill));
+            curr.clear();
+        }
     }
 
     public synchronized boolean deleteElement(int element) {
@@ -79,9 +111,9 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         if (seg.type == PathIterator.SEG_MOVETO || seg.type == PathIterator.SEG_CLOSE) {
             return false;
         }
-        Segment[] nue = new Segment[segments.length-1];
+        Segment[] nue = new Segment[segments.length - 1];
         System.arraycopy(segments, 0, nue, 0, element);
-        System.arraycopy(segments, element+1, nue, element, segments.length - (element+1));
+        System.arraycopy(segments, element + 1, nue, element, segments.length - (element + 1));
         segments = nue;
         return true;
     }
@@ -271,6 +303,11 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
 
         @Override
         public boolean equals(Object o) {
+            if (o == this) {
+                return true;
+            } else if (o == null) {
+                return false;
+            }
             boolean result = o instanceof Segment;
             if (result) {
                 Segment s = (Segment) o;
@@ -286,7 +323,8 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
 
         @Override
         public int hashCode() {
-            return data == null ? 1 : (Arrays.hashCode(data) * (type + 1) * 31);
+            return data == null ? 1
+                    : (Arrays.hashCode(data) * (type + 1) * 31);
         }
     }
 
@@ -300,7 +338,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
 
     @Override
     public synchronized Shape toShape() {
-        GeneralPath path = new GeneralPath();
+        Path2D.Double path = new Path2D.Double();
         for (int i = 0; i < segments.length; i++) {
             Segment seg = segments[i];
             switch (seg.type) {
@@ -311,10 +349,12 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
                     path.lineTo(seg.data[0], seg.data[1]);
                     break;
                 case PathIterator.SEG_QUADTO:
-                    path.quadTo(seg.data[0], seg.data[1], seg.data[2], seg.data[3]);
+                    path.quadTo(seg.data[0], seg.data[1], seg.data[2],
+                            seg.data[3]);
                     break;
                 case PathIterator.SEG_CUBICTO:
-                    path.curveTo(seg.data[0], seg.data[1], seg.data[2], seg.data[3],
+                    path.curveTo(seg.data[0], seg.data[1], seg.data[2],
+                            seg.data[3],
                             seg.data[4], seg.data[5]);
                     break;
                 case PathIterator.SEG_CLOSE:
@@ -345,6 +385,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         }
     }
 
+    @Override
     public void clearLocation() {
         Pt pt = getLocation();
         setLocation(0 - pt.x, 0 - pt.y);
@@ -379,7 +420,14 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         }
     }
 
-    public Vector copy(AffineTransform xform) {
+    public void applyScale(AffineTransform xform) {
+        if (xform.isIdentity()) {
+            return;
+        }
+        unpack(xform.createTransformedShape(toShape()).getPathIterator(null));
+    }
+
+    public PathIteratorWrapper copy(AffineTransform xform) {
         if (xform == null || xform.isIdentity()) {
             Segment[] nue = new Segment[segments.length];
             for (int i = 0; i < segments.length; i++) {
@@ -402,7 +450,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         }
     }
 
-    public Primitive copy() {
+    public PathIteratorWrapper copy() {
         return copy(null);
     }
 
@@ -956,5 +1004,12 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             }
         }
         return sb.toString();
+    }
+
+    @Override
+    public java.awt.Rectangle getBounds() {
+        Rectangle2D.Double bds = new Rectangle2D.Double();
+        getBounds(bds);
+        return bds.getBounds();
     }
 }

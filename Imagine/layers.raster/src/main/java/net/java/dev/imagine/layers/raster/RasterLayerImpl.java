@@ -69,7 +69,7 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
         } else {
             name = copy.getName();
         }
-        surface = new RasterSurfaceImpl(copy.surface(), isUserCopy, selection);
+        surface = new RasterSurfaceImpl(copy.surface(), isUserCopy, selection, this::isVisible);
         surface.addPropertyChangeListener(pcl);
     }
 
@@ -79,7 +79,7 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
         addRepaintHandle(handle);
         name = NbBundle.getMessage(RasterLayerImpl.class,
                 "LBL_Layer", new Object[]{new Integer(0)}); //NOI18N
-        surface = new RasterSurfaceImpl(getMasterRepaintHandle(), size, selection);
+        surface = new RasterSurfaceImpl(getMasterRepaintHandle(), size, selection, this::isVisible);
         surface.addPropertyChangeListener(pcl);
     }
 
@@ -92,7 +92,7 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
         bounds.height = img.getHeight();
         name = NbBundle.getMessage(RasterLayerImpl.class,
                 "LBL_Layer", new Object[]{new Integer(0)}); //NOI18N
-        surface = new RasterSurfaceImpl(getMasterRepaintHandle(), img, selection);
+        surface = new RasterSurfaceImpl(getMasterRepaintHandle(), img, selection, this::isVisible);
         surface.addPropertyChangeListener(pcl);
     }
     
@@ -122,8 +122,8 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
                 this, userCopy);
     }
 
-    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection) {
-        if (!visible) {
+    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignoreVisibility) {
+        if (!visible && !ignoreVisibility) {
             return false;
         }
         if (bounds != null) {

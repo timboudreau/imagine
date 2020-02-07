@@ -28,7 +28,17 @@ public class EffectAction implements Action, ContextAwareAction {
 
         @Override
         public void resultChanged(LookupEvent le) {
-            setEnabled(!r.allItems().isEmpty());
+            boolean ena = !r.allItems().isEmpty();
+            if (ena) {
+                boolean anyEnabled = false;
+                for (EffectReceiver e : r.allInstances()) {
+                    anyEnabled |= e.canApplyEffects();
+                }
+                if (!anyEnabled) {
+                    ena = false;
+                }
+            }
+            setEnabled(ena);
         }
     };
 

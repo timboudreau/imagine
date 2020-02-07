@@ -13,8 +13,8 @@ import net.java.dev.imagine.layers.text.widget.api.TextItems;
  *
  * @author Tim Boudreau
  */
-@ToolDef(name = "Text", iconPath = "net/java/dev/imagine/layers/text/widget/tools/text.png", category = "text")
-@Tool(TextItems.class)
+@ToolDef(name = "VectorText", iconPath = "net/java/dev/imagine/layers/text/widget/tools/text.png", category = "text")
+@Tool(name="VectorText", value=TextItems.class)
 public class TextTool extends MouseAdapter {
 
     private final TextItems items;

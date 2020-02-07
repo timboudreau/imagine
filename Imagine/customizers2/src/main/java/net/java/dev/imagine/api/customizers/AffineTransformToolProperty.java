@@ -1,8 +1,6 @@
 package net.java.dev.imagine.api.customizers;
 
 import java.awt.geom.AffineTransform;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
 import javax.swing.event.ChangeListener;
@@ -83,18 +81,18 @@ final class AffineTransformToolProperty<R extends Enum<R>> implements Property<A
         return true;
     }
 
-    @Override
-    public <R> R get(Class<R> type) {
-        return null;
-    }
-
-    @Override
-    public <R> Collection<? extends R> getAll(Class<R> type) {
-        if (Property.class == type) {
-            return (Collection<? extends R>) map.values();
-        }
-        return Collections.<R>emptySet();
-    }
+//    @Override
+//    public <R> R get(Class<R> type) {
+//        return null;
+//    }
+//
+//    @Override
+//    public <R> Collection<? extends R> getAll(Class<R> type) {
+//        if (Property.class == type) {
+//            return (Collection<? extends R>) map.values();
+//        }
+//        return Collections.<R>emptySet();
+//    }
 
 //    @Override
 //    protected AffineTransform load() {

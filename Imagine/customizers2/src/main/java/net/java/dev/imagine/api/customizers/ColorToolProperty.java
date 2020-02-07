@@ -1,9 +1,6 @@
 package net.java.dev.imagine.api.customizers;
 
 import java.awt.Color;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.api.properties.ComposedProperty;
 import net.java.dev.imagine.api.properties.EnumPropertyID;
@@ -98,18 +95,18 @@ final class ColorToolProperty<R extends Enum<R>> implements Property<Color> {
         return true;
     }
 
-    @Override
-    public <R> R get(Class<R> type) {
-        return null;
-    }
-
-    @Override
-    public <R> Collection<? extends R> getAll(Class<R> type) {
-        if (Property.class == type) {
-            return (Collection<? extends R>) Arrays.asList(red, green, blue, alpha);
-        }
-        return Collections.<R>emptySet();
-    }
+//    @Override
+//    public <R> R get(Class<R> type) {
+//        return null;
+//    }
+//
+//    @Override
+//    public <R> Collection<? extends R> getAll(Class<R> type) {
+//        if (Property.class == type) {
+//            return (Collection<? extends R>) Arrays.asList(red, green, blue, alpha);
+//        }
+//        return Collections.<R>emptySet();
+//    }
 
     private void removeNotify() {
     }

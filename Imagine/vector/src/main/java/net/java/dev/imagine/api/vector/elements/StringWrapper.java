@@ -13,7 +13,6 @@ import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.util.Pt;
 
@@ -39,16 +38,29 @@ public class StringWrapper implements Vector {
                 x + ", " + y;
     }
 
+    public String getText() {
+        return string;
+    }
+
+    @Override
+    public void applyScale(AffineTransform xform) {
+        // do nothing
+    }
+
     @Override
     public Shape toShape() {
-       return new java.awt.Rectangle (0,0,0,0); //XXX use GlyphVector?
+        // XXX create a combined font + string primitive which
+        // uses a scratch graphics + GlyphVector to create a
+        // useful shape
+       return new java.awt.Rectangle (0,0,0,0);
     }
 
     public boolean equals(Object o) {
         boolean result = o instanceof StringWrapper;
         if (result) {
             StringWrapper sw = (StringWrapper) o;
-            result = string.equals (sw.string);
+            result = string.equals (sw.string)
+                    && x == sw.x && y == sw.y;
         }
         return result;
     }
@@ -66,7 +78,7 @@ public class StringWrapper implements Vector {
         r.setRect (x, y, 1000, 20);
     }
 
-    public Primitive copy() {
+    public StringWrapper copy() {
         return new StringWrapper (string, x, y);
     }
 
@@ -87,5 +99,12 @@ public class StringWrapper implements Vector {
         double[] pts = new double [] { x, y };
         transform.transform (pts, 0, pts, 0, 1);
         return new StringWrapper (string, pts[0], pts[1]);
+    }
+
+    @Override
+    public java.awt.Rectangle getBounds() {
+        Rectangle2D.Double bds = new Rectangle2D.Double();
+        getBounds(bds);
+        return bds.getBounds();
     }
 }

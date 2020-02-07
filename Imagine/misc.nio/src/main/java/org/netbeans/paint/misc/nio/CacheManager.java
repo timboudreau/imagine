@@ -18,8 +18,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A crude memory manager to recycle unused regions of a memory mapped file
@@ -37,7 +37,9 @@ public class CacheManager implements CacheMap {
     private FileChannel fc;
     CacheManager() {
         try {
-            cacheFile = File.createTempFile("imagine_" + new Random(System.currentTimeMillis()).nextLong(), "imgdata");
+            String uniq = Long.toString(System.currentTimeMillis(), 36) + "-"
+                    + Integer.toString(ThreadLocalRandom.current().nextInt(15360), 36);
+            cacheFile = File.createTempFile("imagine_" + uniq, "imgcache");
             fc = new RandomAccessFile(cacheFile, "rw").getChannel();
         } catch (IOException ex) {
             throw new Error("Could not create cache file");

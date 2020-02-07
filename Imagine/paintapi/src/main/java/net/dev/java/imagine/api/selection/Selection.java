@@ -16,6 +16,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.undo.UndoManager;
 import javax.swing.undo.UndoableEdit;
+import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
 
@@ -31,7 +32,7 @@ import org.openide.util.Utilities;
  *
  * @author Tim Boudreau
  */
-public abstract class Selection<T> {
+public abstract class Selection<T> implements Lookup.Provider {
     private final Class<? super T> type;
     public enum Op {
         ADD(true), SUBTRACT(true), XOR(true), INTERSECT(true), REPLACE(true), CLEAR(false), INVERT(false);
@@ -51,6 +52,15 @@ public abstract class Selection<T> {
             return NbBundle.getMessage(Selection.class, name());
         }
     };
+
+    /**
+     * Default impl returns Lookup.EMPTY.
+     *
+     * @return
+     */
+    public Lookup getLookup() {
+        return Lookup.EMPTY;
+    }
     
     public abstract Selection<T> clone();
     

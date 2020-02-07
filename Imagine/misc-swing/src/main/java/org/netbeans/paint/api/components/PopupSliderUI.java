@@ -12,6 +12,7 @@
  * Microsystems, Inc. All Rights Reserved.
  */
 package org.netbeans.paint.api.components;
+
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -55,39 +56,39 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.SliderUI;
-import org.netbeans.paint.api.components.SimpleSliderUI.StringConverter;
 
 /**
  *
- * An implementation of SliderUI that draws an integer with a down arrow,
- * and pops up an actual JSlider.
+ * An implementation of SliderUI that draws an integer with a down arrow, and
+ * pops up an actual JSlider.
  *
  * @author Timothy Boudreau
  */
 public final class PopupSliderUI extends SliderUI implements PropertyChangeListener,
-                                                             ChangeListener,
-                                                             MouseListener,
-                                                             KeyListener,
-                                                             FocusListener,
-                                                             MouseMotionListener {
+        ChangeListener,
+        MouseListener,
+        KeyListener,
+        FocusListener,
+        MouseMotionListener {
+
     private Icon downArrow;
     private Icon downArrowLit;
-    
+
     public PopupSliderUI() {
         try {
             InputStream downArrowStream = PopupSliderUI.class.getResourceAsStream("downarrow.png");
             BufferedImage downArrowImage = ImageIO.read(downArrowStream);
             downArrow = new ImageIcon(downArrowImage);
-            
+
             InputStream downArrowLitStream = PopupSliderUI.class.getResourceAsStream("downarrowlit.png");
-            BufferedImage downArrowLitImage = ImageIO.read (downArrowLitStream);
+            BufferedImage downArrowLitImage = ImageIO.read(downArrowLitStream);
             downArrowLit = new ImageIcon(downArrowLitImage);
         } catch (Exception e) {
-            throw new Error (e);
+            throw new Error(e);
         }
     }
     Border raised = BorderFactory.createBevelBorder(BevelBorder.RAISED);
-    private static Map mdls2sliders = new WeakHashMap();
+    private static Map<BoundedRangeModel, Reference<JSlider>> mdls2sliders = new WeakHashMap<>();
     private static PopupSliderUI instance = null;
 
     public static ComponentUI createUI(JComponent b) {
@@ -99,21 +100,21 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
     }
 
     private static JSlider findSlider(BoundedRangeModel mdl) {
-        Reference r = (Reference)mdls2sliders.get(mdl);
+        Reference<JSlider> r = mdls2sliders.get(mdl);
 
-        return (JSlider)r.get();
+        return r.get();
     }
 
     @Override
     public void installUI(JComponent c) {
-        JSlider js = (JSlider)c;
+        JSlider js = (JSlider) c;
 
         c.addMouseListener(this);
         c.addKeyListener(this);
-        js.getModel().addChangeListener(this);
+        js.addChangeListener(this);
         js.setOrientation(JSlider.VERTICAL);
         c.setFocusable(true);
-        mdls2sliders.put(((JSlider)c).getModel(), new WeakReference(c));
+        mdls2sliders.put(((JSlider) c).getModel(), new WeakReference(c));
         c.addPropertyChangeListener("model", this);
         c.setFont(UIManager.getFont("controlFont"));
         c.addFocusListener(this);
@@ -123,16 +124,16 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         Insets ins = raised.getBorderInsets(c);
 
         c.setBorder(BorderFactory.createEmptyBorder(ins.top, ins.left,
-                                                    ins.bottom, ins.right));
+                ins.bottom, ins.right));
     }
 
     @Override
     public void uninstallUI(JComponent c) {
         c.removeMouseListener(this);
         c.removeKeyListener(this);
-        ((JSlider)c).getModel().addChangeListener(this);
+        ((JSlider) c).removeChangeListener(this);
         c.setBorder(null);
-        mdls2sliders.remove(((JSlider)c).getModel());
+        mdls2sliders.remove(((JSlider) c).getModel());
         c.removePropertyChangeListener(this);
         c.removeFocusListener(this);
     }
@@ -144,9 +145,9 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
 
         clip = clip.intersection(g.getClipBounds());
         g.setClip(clip);
-        JSlider js = (JSlider)c;
+        JSlider js = (JSlider) c;
         String val;
-        StringConverter conv = (StringConverter) js.getClientProperty("converter");
+        StringConverter conv = (StringConverter) js.getClientProperty(StringConverter.CLIENT_PROP_CONVERTER);
         if (conv != null) {
             val = conv.valueToString(js);
         } else {
@@ -165,11 +166,11 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         int h = fm.getHeight();
         int w = fm.stringWidth(val);
         int txtY = fm.getMaxAscent() + ins.top;
-        int txtX = c.getWidth() -
-                   (w + ins.right + FOCUS_GAP + downArrow.getIconWidth() - 2);
+        int txtX = c.getWidth()
+                - (w + ins.right + FOCUS_GAP + downArrow.getIconWidth() - 2);
 
         g.setColor(js.isEnabled() ? js.getForeground()
-                                  : UIManager.getColor("controlDkShadow"));
+                : UIManager.getColor("controlDkShadow"));
         g.setColor(Color.BLACK);
         g.drawString(val, txtX, txtY);
         if (c.hasFocus() && c.getBorder() != raised) {
@@ -177,13 +178,13 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
 
             g.setColor(col);
             g.drawRect(ins.left, ins.top,
-                       js.getWidth() - (ins.left + ins.right),
-                       js.getHeight() - (ins.top + ins.bottom));
+                    js.getWidth() - (ins.left + ins.right),
+                    js.getHeight() - (ins.top + ins.bottom));
         }
         int iconY = txtY + 1;
         int iconX = c.getWidth() - (ins.right + downArrow.getIconWidth());
         Icon ic = containsMouse(js) ? downArrowLit
-                                    : downArrow;
+                : downArrow;
 
         ic.paintIcon(js, g, iconX, iconY);
         g.setColor(UIManager.getColor("controlShadow"));
@@ -198,24 +199,24 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
             g = GraphicsEnvironment.
                     getLocalGraphicsEnvironment().
                     getDefaultScreenDevice().
-                    getDefaultConfiguration().createCompatibleImage(2,2).
+                    getDefaultConfiguration().createCompatibleImage(2, 2).
                     getGraphics();
             created = true;
         }
         try {
             g.setFont(c.getFont());
-            JSlider js = (JSlider)c;
+            JSlider js = (JSlider) c;
             int maxchars = Math.max(Integer.toString(js.getMaximum()).length(),
-                                    Integer.toString(js.getMinimum()).length());
+                    Integer.toString(js.getMinimum()).length());
             int w = g.getFontMetrics().charWidth('A') * maxchars;
             int h = g.getFontMetrics().getHeight();
 
-            w += downArrow.getIconWidth()/2;
+            w += downArrow.getIconWidth() / 2;
             Insets ins = c.getInsets();
 
-            w += ins.left + ins.right + (FOCUS_GAP*2) +
-                 (downArrow.getIconWidth() - 2);
-            h += ins.top + ins.bottom + (FOCUS_GAP*2) + 3;
+            w += ins.left + ins.right + (FOCUS_GAP * 2)
+                    + (downArrow.getIconWidth() - 2);
+            h += ins.top + ins.bottom + (FOCUS_GAP * 2) + 3;
             return new Dimension(w, h);
         } finally {
             if (created) {
@@ -223,7 +224,7 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
             }
         }
     }
-    
+
     @Override
     public Dimension getMaximumSize(JComponent c) {
         return getPreferredSize(c);
@@ -236,8 +237,8 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
     Popup currPopup = null;
     JComponent popupOwner = null;
     JSlider sliderInPopup = null;
-    
-    public static Popup showPopup(JComponent owner, BoundedRangeModel model, Point pointOnScreen, SimpleSliderUI.StringConverter conv) {
+
+    public static Popup showPopup(JComponent owner, BoundedRangeModel model, Point pointOnScreen, StringConverter conv) {
         if (instance == null) {
             instance = new PopupSliderUI();
         }
@@ -246,7 +247,7 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
     }
 
     private Popup showPopup(JSlider js, Point p) {
-        SimpleSliderUI.StringConverter conv = (SimpleSliderUI.StringConverter) js.getClientProperty("converter");
+        StringConverter conv = (StringConverter) js.getClientProperty(StringConverter.CLIENT_PROP_CONVERTER);
         int orientation = js.getOrientation();
         SwingUtilities.convertPointToScreen(p, js);
         Rectangle screenBounds = js.getGraphicsConfiguration().getDevice().getDefaultConfiguration().getBounds();
@@ -255,15 +256,15 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         return showPopup(js, model, screenBounds, orientation, conv, p);
     }
 
-    private Popup showPopup(JComponent owner, BoundedRangeModel model, Rectangle screenBounds, int orientation, SimpleSliderUI.StringConverter conv, Point p) {
+    private Popup showPopup(JComponent owner, BoundedRangeModel model, Rectangle screenBounds, int orientation, StringConverter conv, Point p) {
         if (currPopup != null) {
             hidePopup();
         }
         popupOwner = owner;
         sliderInPopup = new JSlider();
-        SimpleSliderUI ui = (SimpleSliderUI)SimpleSliderUI.createUI(sliderInPopup);
+        SimpleSliderUI ui = (SimpleSliderUI) SimpleSliderUI.createUI(sliderInPopup);
         if (conv != null) {
-            ui.setStringConverter (conv);
+            ui.setStringConverter(conv);
         }
         sliderInPopup.setUI(ui);
         sliderInPopup.setBorder(BorderFactory.createLineBorder(UIManager.getColor("controlShadow")));
@@ -273,22 +274,25 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         Dimension psize = sliderInPopup.getPreferredSize();
         Rectangle r = screenBounds;
         Rectangle rf = new Rectangle(screenBounds);
-        Rectangle test = new Rectangle (p, psize);
+        Rectangle test = new Rectangle(p, psize);
         if (!r.contains(test)) {
-            int offy = Math.max (0, (test.y + test.height) - (rf.y + rf.height));
-            int offx = Math.max (0, (test.x + test.width) - (rf.x + rf.width));
+            int offy = Math.max(0, (test.y + test.height) - (rf.y + rf.height));
+            int offx = Math.max(0, (test.x + test.width) - (rf.x + rf.width));
             p.x -= offx;
             p.y -= offy;
         }
-        
+
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener(this);
         sliderInPopup.setModel(model);
         currPopup = PopupFactory.getSharedInstance().getPopup(owner, sliderInPopup,
-                                                              p.x, p.y);
+                p.x, p.y);
         currPopup.show();
         popupOwner.addMouseMotionListener(this);
         return currPopup;
     }
+
+    private static final DefaultBoundedRangeModel UNOWEND_MODEL
+            = new DefaultBoundedRangeModel();
 
     private void hidePopup() {
         if (currPopup == null) {
@@ -300,7 +304,7 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         KeyboardFocusManager.getCurrentKeyboardFocusManager().removePropertyChangeListener(this);
         // Do this so our slider's model won't hold a permanent
         // reference to our popup slider by listening on its model
-        sliderInPopup.setModel(new DefaultBoundedRangeModel());
+        sliderInPopup.setModel(UNOWEND_MODEL);
         popupOwner.removeMouseMotionListener(this);
         popupOwner = null;
         sliderInPopup = null;
@@ -311,12 +315,12 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
     }
 
     private SimpleSliderUI uiOf(JSlider sl) {
-        return (SimpleSliderUI)sl.getUI();
+        return (SimpleSliderUI) sl.getUI();
     }
     private Reference containingMouse = null;
 
     public void mouseEntered(MouseEvent e) {
-        Component js = (Component)e.getSource();
+        Component js = (Component) e.getSource();
 
         containingMouse = new WeakReference(e.getSource());
         js.repaint();
@@ -330,7 +334,7 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
     }
 
     public void mouseExited(MouseEvent e) {
-        Component js = (Component)e.getSource();
+        Component js = (Component) e.getSource();
 
         containingMouse = null;
         js.repaint();
@@ -343,7 +347,7 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         if (!(e.getSource() instanceof JSlider)) {
             return;
         }
-        JSlider js = (JSlider)e.getSource();
+        JSlider js = (JSlider) e.getSource();
         if (sliderInPopup == null) {
             return;
         }
@@ -357,14 +361,13 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
                 Point p = js.getLocation();
                 SwingUtilities.convertPointToScreen(p, js);
                 showPopup(js,
-                      new Point(p.x + js.getWidth()/2,
+                        new Point(p.x + js.getWidth() / 2,
                                 p.y + js.getHeight()));
             }
             e.consume();
-        }
-        else if (((key == KeyEvent.VK_UP && horiz) ||
-                  (key == KeyEvent.VK_DOWN && !horiz)) ||
-                 key == KeyEvent.VK_RIGHT) {
+        } else if (((key == KeyEvent.VK_UP && horiz)
+                || (key == KeyEvent.VK_DOWN && !horiz))
+                || key == KeyEvent.VK_RIGHT) {
             int val = js.getValue();
 
             if (val < js.getMaximum()) {
@@ -372,9 +375,8 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
                 js.setValue(val);
             }
             e.consume();
-        }
-        else if (((key == KeyEvent.VK_DOWN && horiz) ||
-                  (key == KeyEvent.VK_UP && !horiz)) || key == KeyEvent.VK_LEFT) {
+        } else if (((key == KeyEvent.VK_DOWN && horiz)
+                || (key == KeyEvent.VK_UP && !horiz)) || key == KeyEvent.VK_LEFT) {
             int val = js.getValue();
 
             if (val >= js.getMinimum()) {
@@ -382,8 +384,7 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
                 js.setValue(val);
             }
             e.consume();
-        }
-        else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+        } else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
             hidePopup();
             e.consume();
         }
@@ -401,42 +402,39 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
     }
 
     public void stateChanged(ChangeEvent e) {
-        BoundedRangeModel mdl = (BoundedRangeModel)e.getSource();
-        JSlider js = findSlider(mdl);
-
+        JSlider js = (JSlider) e.getSource();
         js.repaint();
     }
 
     public void propertyChange(PropertyChangeEvent evt) {
         if (evt.getSource() instanceof JSlider) {
             if ("model".equals(evt.getPropertyName())) {
-                JSlider js = (JSlider)evt.getSource();
+                JSlider js = (JSlider) evt.getSource();
 
                 mdls2sliders.put(js.getModel(), new WeakReference(js));
             }
-        }
-        else if (evt.getSource() instanceof KeyboardFocusManager) {
+        } else if (evt.getSource() instanceof KeyboardFocusManager) {
             if ("activeWindow".equals(evt.getPropertyName())) {
                 hidePopup();
-            }
-            else if (!"permanentFocusOwner".equals(evt.getPropertyName()) ||
-                     evt.getNewValue() == sliderInPopup ||
-                     evt.getNewValue() == null)
+            } else if (!"permanentFocusOwner".equals(evt.getPropertyName())
+                    || evt.getNewValue() == sliderInPopup
+                    || evt.getNewValue() == null) {
                 if ("focusOwner".equals(evt.getPropertyName())) {
-                    if (!(evt.getNewValue() instanceof JSlider) &&
-                        evt.getNewValue() != null) {
+                    if (!(evt.getNewValue() instanceof JSlider)
+                            && evt.getNewValue() != null) {
                         hidePopup();
                     }
                 }
+            }
         }
     }
 
     public void mousePressed(MouseEvent e) {
-        Component js = (Component)e.getSource();
+        Component js = (Component) e.getSource();
 
         js.requestFocus();
         if (!e.isPopupTrigger() && e.getClickCount() == 1) {
-            showPopup((JSlider)e.getSource(), e.getPoint());
+            showPopup((JSlider) e.getSource(), e.getPoint());
         }
     }
 
@@ -445,7 +443,7 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
             boolean horiz = sliderInPopup.getOrientation() == JSlider.HORIZONTAL;
 
             uiOf(sliderInPopup).dragTo(horiz ? e.getX()
-                                             : e.getY(), sliderInPopup);
+                    : e.getY(), sliderInPopup);
         }
     }
 

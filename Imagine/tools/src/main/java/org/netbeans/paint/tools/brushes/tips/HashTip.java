@@ -9,7 +9,6 @@ import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
 import javax.swing.JComponent;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
@@ -30,7 +29,7 @@ public class HashTip implements BrushTip, Customizable {
     
     Customizer<Integer> horizDist = Customizers.getCustomizer(Integer.class, NbBundle.getMessage(HashTip.class, "hashHorizontal"),
             0, 100); //NOI18N
-    Customizer<Integer> stroke = Customizers.getCustomizer(Integer.class, Constants.STROKE, 0, 20); //NOI18N
+    Customizer<Float> stroke = Customizers.getCustomizer(Float.class, Constants.STROKE, 0.05F, 20F); //NOI18N
 //    Customizer<Integer> rot = Customizers2.getCustomizer(Integer.class, NbBundle.getMessage(HashTip.class, "rotation"), 0, 359); //NOI18N
     AggregateCustomizer c = new AggregateCustomizer("foo", vertDist, horizDist, stroke);
 
@@ -43,8 +42,8 @@ public class HashTip implements BrushTip, Customizable {
         int yOff = vDist == 0 ? 0 : p.y % vDist;
         x -= xOff;
         y -= yOff;
-        AffineTransform t = g.getTransform();
-        AffineTransform xform = null;
+//        AffineTransform t = g.getTransform();
+//        AffineTransform xform = null;
 //        if (rot.get() != 0) {
 //            g.setTransform(xform = AffineTransform.getRotateInstance(Math.toRadians(rot.get())));
 //        }
@@ -61,11 +60,11 @@ public class HashTip implements BrushTip, Customizable {
                 g.drawLine(x + (i * hDist), y, x + (i * hDist), y + size - yOff);
             }
         }
-        g.setTransform(t);
+//        g.setTransform(t);
         Rectangle result = new Rectangle (x, y, x + size, y + size);
-        if (xform != null) {
-            result = xform.createTransformedShape(result).getBounds();
-        }
+//        if (xform != null) {
+//            result = xform.createTransformedShape(result).getBounds();
+//        }
         return result;
     }
 

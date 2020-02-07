@@ -6,96 +6,110 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.vector.graphics;
 
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
+import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Primitive;
-import net.java.dev.imagine.api.vector.elements.*;
+import net.java.dev.imagine.api.vector.Transformable;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class AffineTransformWrapper implements Primitive {
+public class AffineTransformWrapper implements Primitive, Transformable {
+
     public static final int TRANSLATE = 0;
     public static final int SCALE = 1;
     public static final int SHEAR = 2;
     public static final int ROTATE = 3;
     public static final int QUADROTATE = 4;
     public final double[] matrix = new double[6];
+
     public AffineTransformWrapper(AffineTransform xform) {
         xform.getMatrix(matrix);
     }
 
-    public AffineTransformWrapper (int x, int y, int kind) {
+    public AffineTransformWrapper(int x, int y, int kind) {
         switch (kind) {
-            case TRANSLATE :
+            case TRANSLATE:
                 AffineTransform.getTranslateInstance(x, y).getMatrix(matrix);
                 break;
-            case SCALE :
-                AffineTransform.getScaleInstance (x, y).getMatrix(matrix);
+            case SCALE:
+                AffineTransform.getScaleInstance(x, y).getMatrix(matrix);
                 break;
-            case SHEAR :
+            case SHEAR:
                 AffineTransform.getShearInstance(x, y).getMatrix(matrix);
                 break;
-            case ROTATE :
+            case ROTATE:
             case QUADROTATE:
-            default :
+            default:
                 throw new IllegalArgumentException("Wrong constructor");
 
         }
     }
 
-    /** Quadrant rotate */
-    public AffineTransformWrapper (int numquadrants) {
-//        AffineTransform.getQuadrantRotateInstance(numquadrants).getMatrix(matrix);
+    /**
+     * Quadrant rotate
+     */
+    public AffineTransformWrapper(int numquadrants) {
+        AffineTransform.getQuadrantRotateInstance(numquadrants).getMatrix(matrix);
     }
 
-    /** Quadrant rotate */
-    public AffineTransformWrapper (int numquadrants, double anchorx, double anchory) {
-//        AffineTransform.getQuadrantRotateInstance(numquadrants, anchorx, anchory).getMatrix(matrix);
+    /**
+     * Quadrant rotate
+     */
+    public AffineTransformWrapper(int numquadrants, double anchorx, double anchory) {
+        AffineTransform.getQuadrantRotateInstance(numquadrants, anchorx, anchory).getMatrix(matrix);
     }
 
-    /** Rotate */
-    public AffineTransformWrapper (double theta) {
+    /**
+     * Rotate
+     */
+    public AffineTransformWrapper(double theta) {
         AffineTransform.getRotateInstance(theta).getMatrix(matrix);
     }
 
-    /** Rotate */
-    public AffineTransformWrapper (double vecx, double vecy, int kind) {
+    /**
+     * Rotate
+     */
+    public AffineTransformWrapper(double vecx, double vecy, int kind) {
         switch (kind) {
-            case TRANSLATE :
+            case TRANSLATE:
                 AffineTransform.getTranslateInstance(vecx, vecy).getMatrix(matrix);
                 break;
-            case ROTATE :
+            case ROTATE:
 //                AffineTransform.getRotateInstance(vecx, vecy).getMatrix(matrix);
                 break;
-            case SCALE :
+            case SCALE:
                 AffineTransform.getScaleInstance(vecx, vecy).getMatrix(matrix);
                 break;
-            default :
-                throw new IllegalArgumentException ("Only TRANSLATE, ROTATE" +
-                        "and SCALE allowed by this constructor");
+            default:
+                throw new IllegalArgumentException("Only TRANSLATE, ROTATE"
+                        + "and SCALE allowed by this constructor");
         }
     }
 
-    /** Rotate */
-    public AffineTransformWrapper (double theta, double vecx, double vecy) {
+    /**
+     * Rotate
+     */
+    public AffineTransformWrapper(double theta, double vecx, double vecy) {
         AffineTransform.getRotateInstance(theta, vecx, vecy).getMatrix(matrix);
     }
 
-    /** Rotate */
-    public AffineTransformWrapper (double vecx, double vecy, double anchorx, double anchory) {
-//        AffineTransform.getRotateInstance(vecx, vecy, anchorx, anchory).getMatrix(matrix);
+    /**
+     * Rotate
+     */
+    public AffineTransformWrapper(double vecx, double vecy, double anchorx, double anchory) {
+        AffineTransform.getRotateInstance(vecx, vecy, anchorx, anchory).getMatrix(matrix);
     }
 
     public AffineTransform getAffineTransform() {
-        return new AffineTransform (matrix);
+        return new AffineTransform(matrix);
     }
 
-    public AffineTransformWrapper merge (AffineTransform at) {
+    public AffineTransformWrapper merge(AffineTransform at) {
         AffineTransform result = getAffineTransform();
         result.concatenate(at);
         return new AffineTransformWrapper(result);
@@ -106,7 +120,51 @@ public class AffineTransformWrapper implements Primitive {
         g.setTransform(getAffineTransform());
     }
 
-    public Primitive copy() {
-        return new AffineTransformWrapper (getAffineTransform());
+    public AffineTransformWrapper copy() {
+        return new AffineTransformWrapper(getAffineTransform());
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 53 * hash + Arrays.hashCode(this.matrix);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final AffineTransformWrapper other = (AffineTransformWrapper) obj;
+        if (!Arrays.equals(this.matrix, other.matrix)) {
+            return false;
+        }
+        return true;
+    }
+
+    public String toString() {
+        return "AffineTransformWrapper("
+                + Arrays.toString(matrix) + ")";
+    }
+
+    @Override
+    public void applyScale(AffineTransform xform) {
+        AffineTransform xf = getAffineTransform();
+        xf.concatenate(xform);
+        xf.getMatrix(matrix);
+    }
+
+    @Override
+    public AffineTransformWrapper copy(AffineTransform xform) {
+        AffineTransform xf = getAffineTransform();
+        xf.concatenate(xform);
+        return new AffineTransformWrapper(new AffineTransform(xf));
     }
 }

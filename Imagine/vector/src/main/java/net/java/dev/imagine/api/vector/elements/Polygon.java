@@ -18,7 +18,6 @@ import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Mutable;
-import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
@@ -127,8 +126,20 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
         g.drawPolygon (xpoints, ypoints, npoints);
     }
 
-    public Primitive copy() {
+    public Polygon copy() {
         return new Polygon (xpoints, ypoints, npoints, fill);
+    }
+
+    @Override
+    public void applyScale(AffineTransform xform) {
+        Point2D.Double scratch = new Point2D.Double();
+        for (int i = 0; i < npoints; i++) {
+            scratch.x = xpoints[i];
+            scratch.y = ypoints[i];
+            xform.transform(scratch, scratch);
+            xpoints[i] = (int) Math.round(scratch.x);
+            ypoints[i] = (int) Math.round(scratch.x);
+        }
     }
 
     public void fill(Graphics2D g) {
@@ -255,5 +266,12 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
     public void setControlPointLocation(int pointIndex, Pt pt) {
         xpoints[pointIndex] = (int) pt.x;
         ypoints[pointIndex] = (int) pt.y;
+    }
+
+    @Override
+    public java.awt.Rectangle getBounds() {
+        Rectangle2D.Double bds = new Rectangle2D.Double();
+        getBounds(bds);
+        return bds.getBounds();
     }
 }

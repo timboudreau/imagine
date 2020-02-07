@@ -47,6 +47,11 @@ public final class Surface implements EffectRecipient { //XXX should implement t
         return impl.getGraphics();
     }
 
+    @Override
+    public String toString() {
+        return "Surface(" + impl + ")";
+    }
+
     /** Apply an effect, in the form of a Composite, to the image */
     public void applyComposite (Composite composite, Shape clip) {
         impl.applyComposite(composite, clip);

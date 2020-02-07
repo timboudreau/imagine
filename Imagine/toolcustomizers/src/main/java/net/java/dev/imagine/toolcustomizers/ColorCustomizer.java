@@ -36,7 +36,7 @@ public class ColorCustomizer extends AbstractCustomizer <Color> implements Actio
         int red = p.getInt(getName() + ".red", 0); //NOI18N
         int green = p.getInt(getName() + ".green", 0); //NOI18N
         int blue = p.getInt(getName() + ".blue", 0); //NOI18N
-        int alpha = p.getInt(getName() + ".alpha", 0); //NOI18N
+        int alpha = p.getInt(getName() + ".alpha", 255); //NOI18N
         Color color = new Color (red, green, blue, alpha);
         chooser.setColor (color);
         chooser.addActionListener(this);

@@ -10,6 +10,7 @@ package net.java.dev.imagine.api.vector;
 
 import java.awt.Graphics2D;
 import java.io.Serializable;
+import java.util.function.Consumer;
 
 /**
  * Parent interface for all vector primitives. A primitive is an object that
@@ -44,4 +45,21 @@ public interface Primitive extends Serializable {
     default <T> T as(Class<T> type) {
         return type.isInstance(this) ? type.cast(this) : null;
     }
+
+    default <T> Primitive as(Class<T> type, Consumer<T> c) {
+        if (type.isInstance(this)) {
+            c.accept(type.cast(this));
+        }
+        return this;
+    }
+
+    default <T> Primitive as(Class<T> type, Consumer<T> c, Runnable orElse) {
+        if (type.isInstance(this)) {
+            c.accept(type.cast(this));
+        } else {
+            orElse.run();
+        }
+        return this;
+    }
+
 }

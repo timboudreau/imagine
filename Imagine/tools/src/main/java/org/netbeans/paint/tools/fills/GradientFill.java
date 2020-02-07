@@ -22,7 +22,7 @@ import org.openide.util.NbBundle;
  */
 public class GradientFill extends BaseFill {
     
-    private ColorChooser ch = null;
+    protected ColorChooser ch = null;
     @Override
     public JComponent getCustomizer() {
         JPanel result = (JPanel) super.getCustomizer();
@@ -30,14 +30,18 @@ public class GradientFill extends BaseFill {
             ch = new ColorChooser();
             //so it's not the same color as the other one
             ch.setColor (Color.ORANGE);
-            JLabel lbl = new JLabel (NbBundle.getMessage (GradientFill.class, 
-                    "LBL_GradientSecond"));
+            JLabel lbl = new JLabel (secondChooserCaption());
             ch.addActionListener (this);
             result.add (lbl);
             result.add (ch);
             ch.setPreferredSize(new Dimension (16, 16));
         }
         return result;
+    }
+
+    protected String secondChooserCaption() {
+        return NbBundle.getMessage (GradientFill.class,
+                    "LBL_GradientSecond");
     }
 
     @Override

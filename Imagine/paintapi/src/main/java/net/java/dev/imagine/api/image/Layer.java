@@ -203,8 +203,9 @@ public final class Layer implements Lookup.Provider {
      * @param r A bounding rectangle if painting a thumbnail image, or null
      *  if full quality painting is desired
      */
-    public boolean paint (Graphics2D g, Rectangle bounds,boolean showSelection) {
-        return impl.paint (g, bounds, showSelection);
+    public boolean paint (Graphics2D g, Rectangle bounds,boolean showSelection,
+            boolean paintWhenVisibleFalse) {
+        return impl.paint (g, bounds, showSelection, paintWhenVisibleFalse);
     }
 
     public void commitLastPropertyChangeToUndoHistory() {

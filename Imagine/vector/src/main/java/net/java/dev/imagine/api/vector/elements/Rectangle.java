@@ -6,12 +6,12 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.vector.elements;
 
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Set;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
-import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
@@ -30,12 +29,14 @@ import net.java.dev.imagine.api.vector.util.Pt;
  * @author Tim Boudreau
  */
 public final class Rectangle implements Strokable, Fillable, Volume, Adjustable {
+
     public long serialVersionUID = 2354354L;
     public double h;
     public double x;
     public double y;
     public double w;
     public boolean fill;
+
     public Rectangle(double x, double y, double w, double h, boolean fill) {
         this.x = x;
         this.y = y;
@@ -45,7 +46,7 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
     }
 
     public String toString() {
-        return "Rectangle " + x  + ", " + y + ", " + w
+        return "Rectangle " + x + ", " + y + ", " + w
                 + ", " + h + " fill: " + fill;
     }
 
@@ -53,27 +54,27 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
         return new Rectangle2D.Double(x, y, w, h);
     }
 
-    public String toSvgFragment(Map <String, String> otherAttributes) {
+    public String toSvgFragment(Map<String, String> otherAttributes) {
         //PENDING:  Do this for other primitives
         if (!otherAttributes.keySet().containsAll(requiredAttributes())) {
-            HashSet <String> set = new HashSet <String> (otherAttributes.keySet());
-            set.removeAll (requiredAttributes());
-            throw new IllegalArgumentException ("Missing attributes " + set);
+            HashSet<String> set = new HashSet<String>(otherAttributes.keySet());
+            set.removeAll(requiredAttributes());
+            throw new IllegalArgumentException("Missing attributes " + set);
         }
         StringBuilder bld = new StringBuilder("<");
-        bld.append (getSvgName() + " x=\"");
-        bld.append (x);
-        bld.append ("\" y=\"");
-        bld.append (y);
-        bld.append ("\" width=\"");
-        bld.append (w);
-        bld.append ("\" height=\"");
-        bld.append (h);
-        bld.append ("\" fill=\"");
-        bld.append (otherAttributes.get("fill"));
-        bld.append ("\" stroke=\"");
-        bld.append (otherAttributes.get("stroke"));
-        bld.append ("\"/>");
+        bld.append(getSvgName() + " x=\"");
+        bld.append(x);
+        bld.append("\" y=\"");
+        bld.append(y);
+        bld.append("\" width=\"");
+        bld.append(w);
+        bld.append("\" height=\"");
+        bld.append(h);
+        bld.append("\" fill=\"");
+        bld.append(otherAttributes.get("fill"));
+        bld.append("\" stroke=\"");
+        bld.append(otherAttributes.get("stroke"));
+        bld.append("\"/>");
         return bld.toString();
     }
 
@@ -81,15 +82,15 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
         return "rect";
     }
 
-    public Set <String> requiredAttributes() {
-        return new HashSet <String> (Arrays.asList ("fill", "stroke"));
+    public Set<String> requiredAttributes() {
+        return new HashSet<String>(Arrays.asList("fill", "stroke"));
     }
 
     public boolean isFill() {
         return fill;
     }
 
-    public boolean equals (Object o) {
+    public boolean equals(Object o) {
         boolean result = o instanceof Rectangle;
         if (result) {
             Rectangle r = (Rectangle) o;
@@ -102,11 +103,23 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
         return getClass().hashCode() + ((int) ((x * y) + (w * h)));
     }
 
+    @Override
+    public void applyScale(AffineTransform xform) {
+        Point2D.Double a = new Point2D.Double(x, y);
+        Point2D.Double b = new Point2D.Double(x + w, y + h);
+        xform.transform(a, a);
+        xform.transform(b, b);
+        x = a.x;
+        y = a.y;
+        w = b.x - a.x;
+        h = b.y - a.y;
+    }
+
     public void paint(Graphics2D g) {
         if (fill) {
-            fill (g);
+            fill(g);
         } else {
-            draw (g);
+            draw(g);
         }
     }
 
@@ -114,28 +127,28 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
         return 4;
     }
 
-    public void getBounds (Rectangle2D.Double r) {
+    public void getBounds(Rectangle2D.Double r) {
         r.setRect(x, y, w, h);
     }
 
     public Strokable createInverseFilledInstance() {
-        return new Rectangle (x, y, w, h, !fill);
+        return new Rectangle(x, y, w, h, !fill);
     }
 
     public void draw(Graphics2D g) {
-        g.draw (toShape());
+        g.draw(toShape());
     }
 
-    public Primitive copy() {
-        return new Rectangle (x, y, w, h, fill);
+    public Rectangle copy() {
+        return new Rectangle(x, y, w, h, fill);
     }
 
     public void fill(Graphics2D g) {
-        g.fill (toShape());
+        g.fill(toShape());
     }
 
     public Pt getLocation() {
-        return new Pt (x, y);
+        return new Pt(x, y);
     }
 
     public void setLocation(double x, double y) {
@@ -144,65 +157,64 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
     }
 
     public void clearLocation() {
-        setLocation (0, 0);
+        setLocation(0, 0);
     }
 
     public Vector copy(AffineTransform transform) {
-        double[] pts = new double[] {
-            x, y, x + w, y + h,
-        };
-        transform.transform (pts, 0, pts, 0, 2);
-        return new Rectangle (pts[0], pts[1], 
+        double[] pts = new double[]{
+            x, y, x + w, y + h,};
+        transform.transform(pts, 0, pts, 0, 2);
+        return new Rectangle(pts[0], pts[1],
                 pts[2] - pts[0], pts[3] - pts[1], fill);
     }
 
     public int[] getVirtualControlPointIndices() {
         return EMPTY_INT;
     }
-    
+
     public void getControlPoints(double[] xy) {
         assert xy.length >= 8 : "Array too small";
         xy[0] = x;
         xy[1] = y;
-        
+
         xy[2] = x;
         xy[3] = y + h;
-        
+
         xy[4] = x + w;
         xy[5] = y + h;
-        
+
         xy[6] = x + w;
         xy[7] = y;
-    }    
+    }
 
     public void setControlPointLocation(int pointIndex, Pt pt) {
         switch (pointIndex) {
-            case 0 :
+            case 0:
                 h += x - pt.x;
                 w += y - pt.y;
                 x = pt.x;
                 y = pt.y;
                 break;
-            case 1 :
+            case 1:
                 w += x - pt.x;
                 x = pt.x;
                 h = pt.y - y;
                 break;
-            case 2 :
+            case 2:
                 w = pt.x - x;
                 h = pt.y - y;
                 break;
-            case 3 :
+            case 3:
                 w = pt.x - x;
                 h += y - pt.y;
                 y = pt.y;
                 break;
-            default :
-                throw new IllegalArgumentException (Integer.toString(pointIndex));
+            default:
+                throw new IllegalArgumentException(Integer.toString(pointIndex));
         }
         renormalize();
     }
-    
+
     private void renormalize() {
         if (w < 0) {
             double ww = w;
@@ -213,5 +225,12 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
             y += h;
             h *= -1;
         }
+    }
+
+    @Override
+    public java.awt.Rectangle getBounds() {
+        Rectangle2D.Double bds = new Rectangle2D.Double();
+        getBounds(bds);
+        return bds.getBounds();
     }
 }

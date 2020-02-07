@@ -2,7 +2,9 @@ package net.dev.java.imagine.spi.tool;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.dev.java.imagine.api.tool.aspects.Attachable;
@@ -110,42 +112,32 @@ public class ToolDriver<T, R> {
         return null;
     }
 
+    private final Map<T, ToolImplementation<T>> cache
+            = new WeakHashMap<>();
     /**
      * Create the ToolImplementation, constructing an instance of R by reflection.
      * @param t An object of type T found in the layer's lookup
      * @return A ToolImplementation, or null
      */
     protected ToolImplementation<T> create(T t) {
+        ToolImplementation<T> cached = cache.get(t);
+        if (cached != null) {
+            return cached;
+        }
         try {
             Constructor<R> c = implType.getConstructor(sensitiveTo);
             R result = c.newInstance(t);
             if (result instanceof ToolImplementation) {
                 //XXX can do better than unsafe cast?
-                return (ToolImplementation<T>) result;
+                ToolImplementation<T> res = (ToolImplementation<T>) result;
+                cache.put(t, res);
+                return res;
             } else {
-                return new WrapperImplementation<T>(t, result);
+                ToolImplementation<T> res = new WrapperImplementation<T>(t, result);
+                cache.put(t, res);
+                return res;
             }
-        } catch (InstantiationException ex) {
-            Logger.getLogger(ToolDriver.class.getName()).log(Level.WARNING, "Failed to "
-                    + "instantiate " + implType.getName() + " passing instance " + t + " of "
-                    + implType.getName() + " to the constructor", ex);
-        } catch (IllegalAccessException ex) {
-            Logger.getLogger(ToolDriver.class.getName()).log(Level.WARNING, "Failed to "
-                    + "instantiate " + implType.getName() + " passing instance " + t + " of "
-                    + implType.getName() + " to the constructor", ex);
-        } catch (IllegalArgumentException ex) {
-            Logger.getLogger(ToolDriver.class.getName()).log(Level.WARNING, "Failed to "
-                    + "instantiate " + implType.getName() + " passing instance " + t + " of "
-                    + implType.getName() + " to the constructor", ex);
-        } catch (InvocationTargetException ex) {
-            Logger.getLogger(ToolDriver.class.getName()).log(Level.WARNING, "Failed to "
-                    + "instantiate " + implType.getName() + " passing instance " + t + " of "
-                    + implType.getName() + " to the constructor", ex);
-        } catch (NoSuchMethodException ex) {
-            Logger.getLogger(ToolDriver.class.getName()).log(Level.WARNING, "Failed to "
-                    + "instantiate " + implType.getName() + " passing instance " + t + " of "
-                    + implType.getName() + " to the constructor", ex);
-        } catch (SecurityException ex) {
+        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
             Logger.getLogger(ToolDriver.class.getName()).log(Level.WARNING, "Failed to "
                     + "instantiate " + implType.getName() + " passing instance " + t + " of "
                     + implType.getName() + " to the constructor", ex);

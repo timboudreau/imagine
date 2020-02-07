@@ -18,8 +18,6 @@ import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.event.ChangeListener;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import org.netbeans.paint.tools.spi.BrushTip;
 
@@ -29,9 +27,6 @@ import org.netbeans.paint.tools.spi.BrushTip;
  */
 public class TriangleBrushTip implements BrushTip, Customizable {
     
-    /** Creates a new instance of TriangleBrushTip */
-    public TriangleBrushTip() {
-    }
     
     public Rectangle draw(Graphics2D g, Point p, int size) {
         Rectangle r = new Rectangle();

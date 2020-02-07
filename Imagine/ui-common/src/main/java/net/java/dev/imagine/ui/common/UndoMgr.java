@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package net.java.dev.imagine.ui.common;
 
 import java.util.ArrayList;
@@ -15,11 +9,13 @@ import org.netbeans.paint.api.editing.UndoManager;
 import org.openide.awt.UndoRedo;
 
 /**
+ * Subclass of undo support which exposes the ability to add edits.
  *
  * @author Tim Boudreau
  */
 public final class UndoMgr extends UndoRedo.Manager implements UndoManager {
 
+    @Override
     public List getEdits() {
         return new ArrayList(super.edits);
     }

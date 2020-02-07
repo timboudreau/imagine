@@ -17,6 +17,10 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>paintapi</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.mastfrog</groupId>
             <artifactId>util-collections</artifactId>
             <version>2.6.8</version>
@@ -27,7 +31,6 @@
             <plugin>
                 <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <version>4.3</version>
                 <configuration>
                     <publicPackages>
                         <publicPackage>net.java.dev.imagine.api.vector.*</publicPackage>

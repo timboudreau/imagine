@@ -5,38 +5,97 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.LayoutManager;
+import java.util.LinkedList;
+import java.util.Objects;
 import javax.swing.SwingUtilities;
 
 /**
- * A layout manager which gets data a shared ancestor about grid column positions,
- * so multiple LDPLayout components can be placed on a panel and their columns
- * will align.
- * 
+ * A layout manager which gets data a shared ancestor about grid column
+ * positions, so multiple LDPLayout components can be placed on a panel and
+ * their columns will align.
+ *
  * @author Tim Boudreau
  */
-
 public final class LDPLayout implements LayoutManager {
+
     private final int gap;
-    public LDPLayout (int gap) {
+    private final LinkedList<Reentry> reentry = new LinkedList<>();
+
+    public LDPLayout(int gap) {
         this.gap = gap;
     }
-    
-    public LDPLayout () {
-        this (5);
+
+    public LDPLayout() {
+        this(5);
     }
-    
-    public int getColumnPosition (Container parent, int index) {
-        Insets ins = parent.getInsets();
-        Component[] comps = parent.getComponents();
-        int x = ins.left + ins.right;
-        int y = ins.top + ins.bottom;
-        for (int i=0; i < comps.length; i++) {
-            if (i == index) {
-                break;
+
+
+    public int getColumnPosition(Container parent, int index) {
+        Reentry r = new Reentry(parent, index);
+        for (Reentry rr : reentry) {
+            if (rr.equals(r)) {
+                return r.x;
             }
-            x += comps[i].getPreferredSize().width + gap;
         }
-        return x;
+        try {
+            reentry.push(r);
+            Insets ins = parent.getInsets();
+            Component[] comps = parent.getComponents();
+            int x = ins.left + ins.right;
+            r.x = x;
+            for (int i = 0; i < comps.length; i++) {
+                if (i == index) {
+                    break;
+                }
+                x += comps[i].getPreferredSize().width + gap;
+                r.x = x;
+            }
+            return x;
+        } finally {
+            reentry.pop();
+        }
+    }
+
+    private static final class Reentry {
+
+        private final Container parent;
+        private final int index;
+        int x;
+
+        public Reentry(Container parent, int index) {
+            this.parent = parent;
+            this.index = index;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 97 * hash + Objects.hashCode(this.parent);
+            hash = 97 * hash + this.index;
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final Reentry other = (Reentry) obj;
+            if (this.index != other.index) {
+                return false;
+            }
+            if (!Objects.equals(this.parent, other.parent)) {
+                return false;
+            }
+            return true;
+        }
+
     }
 
     public void addLayoutComponent(String name, Component comp) {

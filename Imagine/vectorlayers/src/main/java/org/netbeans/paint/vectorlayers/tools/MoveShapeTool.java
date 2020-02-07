@@ -6,8 +6,8 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package org.netbeans.paint.vectorlayers.tools;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -51,8 +51,9 @@ import org.openide.util.Lookup;
  *
  * @author Tim Boudreau
  */
-@ToolDef(name="Move Shape", iconPath="net/java/dev/imagine/api/tool/unknown.png")
-@Tool(name="Move Shape", value=ShapeStack.class)
+@ToolDef(name = "MoveShape", iconPath = "net/java/dev/imagine/api/tool/unknown.png",
+        displayNameBundle = "net.dev.java.imagine.vectorlayers.tools.Bundle")
+@Tool(name = "MoveShape", value = ShapeStack.class)
 public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, */ PaintParticipant, MouseListener, ControlPoint.Controller, Attachable {
 
     public MoveShapeTool(ShapeStack stack) {
@@ -61,9 +62,10 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
 
     private ShapeStack stack;
     private Layer layer;
+
     public void attach(Lookup.Provider p) {
         this.layer = p.getLookup().lookup(Layer.class);
-        ShapeStack stack = (ShapeStack) layer.getLookup().lookup (ShapeStack.class);
+        ShapeStack stack = (ShapeStack) layer.getLookup().lookup(ShapeStack.class);
         assert stack != null;
         this.stack = stack;
         if (repainter != null) {
@@ -81,13 +83,19 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
     }
 
     private Point mousePressPoint;
-    public void mousePressed (MouseEvent e) {
+
+    public void mousePressed(MouseEvent e) {
         if (e.isPopupTrigger()) {
-            showPopup (e);
+            showPopup(e);
             return;
         }
-        if (stack == null && layer != null) stack = layer.getLookup().lookup (ShapeStack.class);
-        List <Primitive> l = stack.getPrimitives();
+        if (stack == null && layer != null) {
+            stack = layer.getLookup().lookup(ShapeStack.class);
+        }
+        if (stack == null) {
+            return;
+        }
+        List<Primitive> l = stack.getPrimitives();
         Rectangle2D.Double scratch = new Rectangle2D.Double(0, 0, 0, 0);
         Point point = mousePressPoint = e.getPoint();
         if (shape != null) {
@@ -95,7 +103,7 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
             for (int i = 0; i < p.length; i++) {
                 ControlPoint pt = p[i];
                 if (pt.hit(point.x, point.y)) {
-                    setSelectedControlPoint (pt);
+                    setSelectedControlPoint(pt);
                     return;
                 }
             }
@@ -106,7 +114,7 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
                 Vector vector = (Vector) p;
                 Shape shape = vector.toShape();
                 if (shape.contains(point.x, point.y)) {
-                    setSelectedShape (p);
+                    setSelectedShape(p);
                     found = true;
                 }
             } else if (p instanceof Volume) {
@@ -114,18 +122,19 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
                 volume.getBounds(scratch);
                 System.err.println(p);
                 if (scratch.contains(point.x, point.y)) {
-                    setSelectedShape (p);
+                    setSelectedShape(p);
                     found = true;
                 }
             }
         }
         if (!found) {
-            setSelectedShape (null);
+            setSelectedShape(null);
         }
     }
 
     private Primitive shape;
-    private void setSelectedShape (Primitive p) {
+
+    private void setSelectedShape(Primitive p) {
         if (this.shape != p) {
             this.shape = p;
             repainter.requestRepaint(layer.getBounds());
@@ -133,6 +142,7 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
     }
 
     private Repainter repainter;
+
     public void attachRepainter(Repainter repainter) {
         this.repainter = repainter;
         if (layer != null) {
@@ -147,21 +157,21 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
         int full = 6;
         int half = 3;
         Rectangle2D.Double scratch = new Rectangle2D.Double(0, 0, full, full);
-        g.setStroke(new BasicStroke (1F));
+        g.setStroke(new BasicStroke(1F));
         int max = ((Adjustable) shape).getControlPointCount();
-        double[] d = new double [max * 2];
+        double[] d = new double[max * 2];
         ((Adjustable) shape).getControlPoints(d);
         Point p = layer.getSurface().getLocation();
-        for (int i=0; i < d.length; i+=2) {
+        for (int i = 0; i < d.length; i += 2) {
             d[i] -= p.x;
-            d[i+1] -= p.y;
+            d[i + 1] -= p.y;
             scratch.x = d[i] - half;
-            scratch.y = d[i+1] - half;
+            scratch.y = d[i + 1] - half;
             g.setColor(Color.WHITE);
             g.fill(scratch);
-            g.setColor (Color.BLACK);
+            g.setColor(Color.BLACK);
             g.draw(scratch);
-            if (cpoint != null && cpoint.getX() == d[i] && cpoint.getY() == d[i+1]) {
+            if (cpoint != null && cpoint.getX() == d[i] && cpoint.getY() == d[i + 1]) {
                 scratch.x -= 3;
                 scratch.y -= 3;
                 scratch.width += 6;
@@ -174,14 +184,14 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
 
     public void mouseClicked(MouseEvent e) {
         if (e.isPopupTrigger()) {
-            showPopup (e);
+            showPopup(e);
             return;
         }
     }
 
     public void mouseReleased(MouseEvent e) {
         if (e.isPopupTrigger()) {
-            showPopup (e);
+            showPopup(e);
             return;
         }
         cpoint = null;
@@ -194,15 +204,34 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
     public void mouseExited(MouseEvent arg0) {
     }
 
-    private void setSelectedControlPoint (ControlPoint cpoint) {
+    private void setSelectedControlPoint(ControlPoint cpoint) {
         this.cpoint = cpoint;
         repainter.requestRepaint();
     }
 
+    private final Rectangle2D.Double scratch = new Rectangle2D.Double();
+    private final Rectangle2D.Double scratch2 = new Rectangle2D.Double();
+
     public void mouseDragged(MouseEvent e) {
         Point p = e.getPoint();
+        Primitive shape = this.shape;
         if (cpoint != null) {
             cpoint.set(p.x, p.y);
+        } else if (shape instanceof Volume && shape instanceof Vector) {
+            int xoff = p.x - mousePressPoint.x;
+            int yoff = p.y - mousePressPoint.y;
+            ((Volume) shape).getBounds(scratch);
+            Vector v = (Vector) shape;
+            Pt loc = v.getLocation();
+            v.setLocation(loc.x + xoff, loc.y + yoff);
+            ((Volume) shape).getBounds(scratch2);
+            Rectangle toRepaint = scratch2
+                    .createIntersection(scratch).getBounds();
+            toRepaint.x -= 5;
+            toRepaint.y -= 5;
+            toRepaint.width += 10;
+            toRepaint.height += 10;
+            repainter.requestRepaint(toRepaint);
         } else if (shape instanceof Vector) {
             int xoff = p.x - mousePressPoint.x;
             int yoff = p.y - mousePressPoint.y;
@@ -218,18 +247,19 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
         repainter.requestRepaint();
     }
 
-    private final Size SIZE = new Size (12, 12);
+    private final Size SIZE = new Size(12, 12);
+
     public Size getControlPointSize() {
         return SIZE;
     }
     private ControlPoint cpoint;
 
-    private void showPopup (MouseEvent e) {
+    private void showPopup(MouseEvent e) {
         Point point = e.getPoint();
-        List <Primitive> l = stack.getPrimitives();
+        List<Primitive> l = stack.getPrimitives();
         Rectangle2D.Double scratch = new Rectangle2D.Double(0, 0, 0, 0);
-        List <Primitive> shapes = new ArrayList <Primitive> ();
-        List <Vector> vectors = new ArrayList <Vector> ();
+        List<Primitive> shapes = new ArrayList<Primitive>();
+        List<Vector> vectors = new ArrayList<Vector>();
         Primitive topMost = null;
         for (Primitive p : l) {
             if (p instanceof Vector) {
@@ -238,7 +268,7 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
                 System.err.println(shape);
                 if (shape.contains(point.x, point.y)) {
                     topMost = vector;
-                    shapes.add (vector);
+                    shapes.add(vector);
                     vectors.add(vector);
                 }
             } else if (p instanceof Volume) {
@@ -247,39 +277,41 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
                 System.err.println(p);
                 if (scratch.contains(point.x, point.y)) {
                     topMost = volume;
-                    shapes.add (volume);
+                    shapes.add(volume);
                 }
             }
         }
         if (!shapes.isEmpty()) {
             assert topMost != null;
             JPopupMenu menu = new JPopupMenu();
-            menu.add (new FrontBackAction (true, topMost, stack));
-            menu.add (new FrontBackAction (false, topMost, stack));
-            menu.add (new CSGAction (UNION, vectors, stack));
-            menu.add (new CSGAction (INTERSECTION, vectors, stack));
-            menu.add (new CSGAction (SUBTRACTION, vectors, stack));
-            menu.add (new CSGAction (XOR, vectors, stack));
+            menu.add(new FrontBackAction(true, topMost, stack));
+            menu.add(new FrontBackAction(false, topMost, stack));
+            menu.add(new CSGAction(UNION, vectors, stack));
+            menu.add(new CSGAction(INTERSECTION, vectors, stack));
+            menu.add(new CSGAction(SUBTRACTION, vectors, stack));
+            menu.add(new CSGAction(XOR, vectors, stack));
             menu.show(repainter.getDialogParent(), point.x, point.y);
         }
     }
 
     private class FrontBackAction extends AbstractAction {
+
         private final ShapeStack stack;
         private final Primitive primitive;
         private final boolean front;
-        public FrontBackAction (boolean front, Primitive p, ShapeStack stack) {
-            putValue (Action.NAME, front ? "To Front" : "To Back");
+
+        public FrontBackAction(boolean front, Primitive p, ShapeStack stack) {
+            putValue(Action.NAME, front ? "To Front" : "To Back");
             this.front = front;
             this.primitive = p;
             this.stack = stack;
         }
 
-        public void actionPerformed (ActionEvent ae) {
+        public void actionPerformed(ActionEvent ae) {
             if (front) {
-                stack.toFront (primitive);
+                stack.toFront(primitive);
             } else {
-                stack.toBack (primitive);
+                stack.toBack(primitive);
             }
             if (repainter != null) {
                 repainter.requestRepaint();;
@@ -290,38 +322,45 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
     public static final int INTERSECTION = 1;
     public static final int SUBTRACTION = 2;
     private static final int XOR = 3;
+
     private class CSGAction extends AbstractAction {
+
         private final int kind;
-        private final List <Vector> shapes;
+        private final List<Vector> shapes;
         private final ShapeStack stack;
-        public CSGAction (int kind, List <Vector> shapes, ShapeStack stack) {
+
+        public CSGAction(int kind, List<Vector> shapes, ShapeStack stack) {
             String name;
             this.kind = kind;
             this.shapes = shapes;
             this.stack = stack;
             assert !shapes.isEmpty();
             switch (kind) {
-                case UNION :
+                case UNION:
                     name = "Union";
                     break;
-                case INTERSECTION :
+                case INTERSECTION:
                     name = "Intersection";
                     break;
-                case SUBTRACTION :
+                case SUBTRACTION:
                     name = "Subtract";
                     break;
-                case XOR :
+                case XOR:
                     name = "XOR";
                     break;
-                default :
-                    throw new IllegalArgumentException ("" + kind);
+                default:
+                    throw new IllegalArgumentException("" + kind);
             }
-            putValue (Action.NAME, name);
+            putValue(Action.NAME, name);
         }
 
-        public void actionPerformed (ActionEvent ae) {
+        public boolean isEnabled() {
+            return shapes.size() > 1;
+        }
+
+        public void actionPerformed(ActionEvent ae) {
             Area area = null;
-            List <Attribute> attrs = new ArrayList <Attribute> ();
+            List<Attribute<?>> attrs = new ArrayList<>();
             boolean fill = false;
             for (Vector v : shapes) {
                 Primitive vv = v;
@@ -330,40 +369,40 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
                 }
                 if (vv instanceof PaintedPrimitive) {
                     PaintedPrimitive pp = (PaintedPrimitive) vv;
-                    List <Attribute> atts = pp.allAttributes();
+                    List<Attribute<?>> atts = pp.allAttributes();
                     System.err.println("  include attributes " + atts);
-                    attrs.addAll (pp.allAttributes());
+                    attrs.addAll(pp.allAttributes());
                 }
                 fill |= v instanceof Fillable && ((Fillable) v).isFill();
                 if (area == null) {
-                    area = new Area (v.toShape());
+                    area = new Area(v.toShape());
                 } else {
-                    Area other = new Area (v.toShape());
+                    Area other = new Area(v.toShape());
                     switch (kind) {
-                        case UNION :
+                        case UNION:
                             area.add(other);
                             break;
-                        case INTERSECTION :
+                        case INTERSECTION:
                             area.intersect(other);
                             break;
-                        case SUBTRACTION :
+                        case SUBTRACTION:
                             area.subtract(other);
                             break;
-                        case XOR :
+                        case XOR:
                             area.exclusiveOr(other);
                             break;
-                        default :
+                        default:
                             throw new AssertionError();
                     }
                 }
             }
             if (area != null) {
-                PathIteratorWrapper wrap = new PathIteratorWrapper (area.getPathIterator(
-                        AffineTransform.getTranslateInstance(0,0)), fill);
+                PathIteratorWrapper wrap = new PathIteratorWrapper(area.getPathIterator(
+                        AffineTransform.getTranslateInstance(0, 0)), fill);
                 //XXX probably don't want all attributes, they may be 
                 //redundant
                 PaintedPrimitive pp = PaintedPrimitive.create(wrap, attrs);
-                
+
                 stack.replace(shapes, pp);
                 if (repainter != null) {
                     repainter.requestRepaint();;

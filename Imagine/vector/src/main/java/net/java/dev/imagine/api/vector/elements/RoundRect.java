@@ -11,11 +11,11 @@ package net.java.dev.imagine.api.vector.elements;
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
-import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
@@ -93,8 +93,8 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
 //        xy[7] = y + halfw;
 //    }
 //
-    public Primitive copy() {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public RoundRect copy() {
+        return new RoundRect(x, y, w, h, aw, ah, fill);
     }
 
     public void getBounds(Rectangle2D.Double r) {
@@ -226,4 +226,22 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
         }
     }
 
+    @Override
+    public void applyScale(AffineTransform xform) {
+        Point2D.Double a = new Point2D.Double(x, y);
+        Point2D.Double b = new Point2D.Double(x + w, y + h);
+        xform.transform(a, a);
+        xform.transform(b, b);
+        x = a.x;
+        y = a.y;
+        w = b.x - a.x;
+        h = b.y - a.y;
+    }
+
+    @Override
+    public java.awt.Rectangle getBounds() {
+        Rectangle2D.Double bds = new Rectangle2D.Double();
+        getBounds(bds);
+        return bds.getBounds();
+    }
 }

@@ -59,7 +59,7 @@ public class TextTool implements KeyListener, MouseListener, MouseMotionListener
         fillC = FillCustomizer.getDefault();
         textC = Customizers.getCustomizer(String.class, Constants.TEXT);
         assert textC != null : "Null text customizer";
-        sizeC = Customizers.getCustomizer(Float.class, Constants.FONT_SIZE, 4F, 180F);
+        sizeC = Customizers.getCustomizer(Float.class, Constants.FONT_SIZE, 4F, 320F);
         assert sizeC != null : "Null size customizer";
         styleC = Customizers.getCustomizer(FontStyle.class, Constants.FONT_STYLE);
         assert styleC != null : "Null font style customizer";
@@ -191,6 +191,7 @@ public class TextTool implements KeyListener, MouseListener, MouseMotionListener
     public void detach() {
         if (repainter != null) {
             repainter.requestRepaint(null);
+            repainter = null;
         }
         armed = false;
         loc = null;

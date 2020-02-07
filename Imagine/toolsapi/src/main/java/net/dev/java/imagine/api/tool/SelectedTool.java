@@ -1,6 +1,5 @@
 package net.dev.java.imagine.api.tool;
 
-import java.awt.EventQueue;
 import java.awt.Toolkit;
 import java.util.Collections;
 import java.util.Iterator;
@@ -25,7 +24,7 @@ import org.openide.util.lookup.InstanceContent;
  */
 public class SelectedTool {
 
-    private final Set<Observer> observers = Collections.synchronizedSet(new WeakSet<Observer>());
+    private final Set<Observer> observers = Collections.synchronizedSet(new WeakSet<>());
     private final InstanceContent content = new InstanceContent();
     private final Lookup lookup = new AbstractLookup(content);
     private Tool selected;

@@ -9,8 +9,10 @@
 
 package net.java.dev.imagine.ui.common;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import net.java.dev.imagine.spi.SelectionContextContributor;
 import org.openide.ErrorManager;
 import org.openide.util.Lookup;
@@ -28,9 +30,9 @@ public final class UIContextLookupProvider implements SelectionContextContributo
     private final InstanceContent content = new InstanceContent();
     private final AbstractLookup custom = new AbstractLookup (content);
     private final PL lkp = new PL (new Lookup[] { custom });
-    
+
     private static UIContextLookupProvider INSTANCE = null;
-    
+
     @SuppressWarnings("LeakingThisInConstructor")
     public UIContextLookupProvider() {
 	if (INSTANCE != null) {
@@ -39,41 +41,46 @@ public final class UIContextLookupProvider implements SelectionContextContributo
 	}
 	INSTANCE = this;
     }
-        
+
     public Lookup getLookup() {
         return lkp;
     }
-    
+
     public static Lookup theLookup() {
         ensureCreated();
         return INSTANCE.lkp;
     }
-    
+
     public static void set (Object[] o) {
 	ensureCreated();
         INSTANCE.content.set(Arrays.asList(o), null);
     }
-    
-    public static void set (Collection c) {
+
+    public static void set (Collection<?> c) {
         ensureCreated();
         INSTANCE.content.set(c, null);
     }
-    
+
     public static <T> T lookup (Class<T> clazz) {
 	ensureCreated();
 	return INSTANCE.lkp.lookup(clazz);
     }
-    
+
     public static <T> Lookup.Result<T> lookupResult (Class<T> type) {
 	ensureCreated();
 	return INSTANCE.lkp.lookupResult (type);
     }
-    
-    static void setLayer(Lookup layer) {
+
+    public static void setLayerAndSelection(Lookup layer, Lookup selection) {
+        ensureCreated();
+        INSTANCE.lkp.setOtherLookups(layer, selection);
+    }
+
+    public static void setLayer(Lookup layer) {
         INSTANCE.lkp.setOtherLookup(layer == null ?
                 null : layer);
     }
-    
+
     private static void ensureCreated() {
 	if (INSTANCE == null) {
 	    Lookup.getDefault().lookup(UIContextLookupProvider.class);
@@ -88,13 +95,28 @@ public final class UIContextLookupProvider implements SelectionContextContributo
 	    }
 	}
     }
-    
+
     static class PL extends ProxyLookup {
 
         public PL(Lookup... lookups) {
             super(lookups);
         }
-        
+
+        void setOtherLookups(Lookup... lookups) {
+            if (lookups.length == 0) {
+                setLookups(INSTANCE.custom);
+            } else {
+                List<Lookup> lkps = new ArrayList<>(lookups.length + 1);
+                lkps.add(INSTANCE.custom);
+                for (Lookup lkp : lookups) {
+                    if (lkp != null) {
+                        lkps.add(lkp);
+                    }
+                }
+                setLookups(lkps.toArray(new Lookup[lkps.size()]));
+            }
+        }
+
         void setOtherLookup(Lookup lkp) {
             if (lkp == null) {
                 setLookups(INSTANCE.custom);
@@ -102,6 +124,6 @@ public final class UIContextLookupProvider implements SelectionContextContributo
                 setLookups(INSTANCE.custom, lkp);
             }
         }
-        
+
     }
 }

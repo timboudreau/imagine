@@ -23,6 +23,7 @@ import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Mutable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Strokable;
+import net.java.dev.imagine.api.vector.Transformable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.util.Pt;
@@ -91,6 +92,15 @@ public class Compound implements Primitive, Strokable, Vector, Volume, Adjustabl
 
     public int indexOf (Primitive p) {
         return contents.indexOf(p);
+    }
+
+    @Override
+    public void applyScale(AffineTransform xform) {
+        for (Primitive p : contents) {
+            if (p instanceof Transformable) {
+                ((Transformable) p).applyScale(xform);
+            }
+        }
     }
 
     public java.awt.Rectangle getBounds() {
@@ -162,7 +172,7 @@ public class Compound implements Primitive, Strokable, Vector, Volume, Adjustabl
         }
     }
 
-    public Primitive copy() {
+    public Compound copy() {
         Compound nue = new Compound (x, y);
         List <Primitive> l = new ArrayList <Primitive> (contents.size());
         for (Primitive p : contents) {
@@ -173,14 +183,13 @@ public class Compound implements Primitive, Strokable, Vector, Volume, Adjustabl
     }
 
     public void draw(Graphics2D g) {
-        AffineTransform oldXform = g.getTransform();
-        g.setTransform(AffineTransform.getTranslateInstance(x, y));
+        g.translate(x, y);
         for (Primitive p : contents) {
             if (p instanceof Strokable) {
                 ((Strokable)p).draw(g);
             }
         }
-        g.setTransform(oldXform);
+        g.translate(-x, -y);
     }
 
     public Pt getLocation() {

@@ -6,17 +6,16 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.vector.elements;
 
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
-import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
@@ -27,9 +26,11 @@ import net.java.dev.imagine.api.vector.util.Pt;
  * @author Tim Boudreau
  */
 public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
+
     public long serialVersionUID = 232354194L;
     public double x, y, width, height;
     public boolean fill;
+
     public Oval(double x, double y, double width, double height, boolean fill) {
         this.x = x;
         this.y = y;
@@ -39,23 +40,35 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
     }
 
     public String toString() {
-        return "Oval " + x  + ", " + y + ", " + width
+        return "Oval " + x + ", " + y + ", " + width
                 + ", " + height + " fill: " + fill;
     }
 
     public Shape toShape() {
-        return new Ellipse2D.Double (x, y, width, height);
+        return new Ellipse2D.Double(x, y, width, height);
+    }
+
+    @Override
+    public void applyScale(AffineTransform xform) {
+        Point2D.Double a = new Point2D.Double(x, y);
+        Point2D.Double b = new Point2D.Double(x + width, y + height);
+        xform.transform(a, a);
+        xform.transform(b, b);
+        x = a.x;
+        y = a.y;
+        width = b.x - a.x;
+        height = b.y - a.y;
     }
 
     public void paint(Graphics2D g) {
         if (fill) {
-            fill (g);
+            fill(g);
         } else {
-            draw (g);
+            draw(g);
         }
     }
 
-    public void getBounds (Rectangle2D.Double r) {
+    public void getBounds(Rectangle2D.Double r) {
         double wid = width;
         double hi = height;
         double xx, yy, ww, hh;
@@ -85,15 +98,15 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
     }
 
     public void draw(Graphics2D g) {
-        g.draw (toShape());
+        g.draw(toShape());
     }
 
     public void fill(Graphics2D g) {
-        g.fill (toShape());
+        g.fill(toShape());
     }
 
-    public Primitive copy() {
-        return new Oval (x, y, width, height, fill);
+    public Oval copy() {
+        return new Oval(x, y, width, height, fill);
     }
 
 //    public void getControlPoints(double[] xp) {
@@ -108,9 +121,8 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
 //        xp[6] = x;
 //        xp[7] = y + halfh;
 //    }
-
     public Pt getLocation() {
-        return new Pt (x, y);
+        return new Pt(x, y);
     }
 
     public void setLocation(double x, double y) {
@@ -124,11 +136,10 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
     }
 
     public Vector copy(AffineTransform xform) {
-        double[] pts = new double[] {
-            x, y, x + width, y + height,
-        };
+        double[] pts = new double[]{
+            x, y, x + width, y + height,};
         xform.transform(pts, 0, pts, 0, 2);
-        return new Oval (pts[0], pts[1],
+        return new Oval(pts[0], pts[1],
                 pts[2] - pts[0], pts[3] - pts[1], fill);
     }
 
@@ -137,7 +148,7 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
     }
 
     @Override
-    public boolean equals (Object o) {
+    public boolean equals(Object o) {
         boolean result = o instanceof Oval;
         if (result) {
             Oval v = (Oval) o;
@@ -149,51 +160,50 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
     public int hashCode() {
         return (int) ((width * height) + x + (y * width));
     }
-    
 
     public void getControlPoints(double[] xy) {
         assert xy.length >= 8 : "Array too small";
         xy[0] = x;
         xy[1] = y;
-        
+
         xy[2] = x;
         xy[3] = y + height;
-        
+
         xy[4] = x + width;
         xy[5] = y + height;
-        
+
         xy[6] = x + width;
         xy[7] = y;
-    }    
+    }
 
     public void setControlPointLocation(int pointIndex, Pt pt) {
         switch (pointIndex) {
-            case 0 :
+            case 0:
                 height += x - pt.x;
                 width += y - pt.y;
                 x = pt.x;
                 y = pt.y;
                 break;
-            case 1 :
+            case 1:
                 width += x - pt.x;
                 x = pt.x;
                 height = pt.y - y;
                 break;
-            case 2 :
+            case 2:
                 width = pt.x - x;
                 height = pt.y - y;
                 break;
-            case 3 :
+            case 3:
                 width = pt.x - x;
                 height += y - pt.y;
                 y = pt.y;
                 break;
-            default :
-                throw new IllegalArgumentException (Integer.toString(pointIndex));
+            default:
+                throw new IllegalArgumentException(Integer.toString(pointIndex));
         }
         renormalize();
     }
-    
+
     private void renormalize() {
         if (width < 0) {
             double ww = width;
@@ -204,7 +214,15 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
             y += height;
             height *= -1;
         }
-    }    
+    }
+
+    @Override
+    public java.awt.Rectangle getBounds() {
+        Rectangle2D.Double bds = new Rectangle2D.Double();
+        getBounds(bds);
+        return bds.getBounds();
+    }
+
 
 //    public void setControlPointLocation(int pointIndex, Pt pt) {
 //        switch (pointIndex) {

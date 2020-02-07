@@ -43,7 +43,7 @@ public final class Clear implements Volume, Primitive {
         r.setRect(x, y, width, height);
     }
 
-    public Primitive copy() {
+    public Clear copy() {
         return new Clear (x, y, width, height);
     }
 

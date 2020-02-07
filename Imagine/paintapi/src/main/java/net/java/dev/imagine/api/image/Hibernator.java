@@ -30,6 +30,13 @@ public interface Hibernator {
      * low-memory, dormant state.
      */ 
     void hibernate();
+    /**
+     * Cause the Layer providing this instance of Hibernator to enter a
+     * low-memory, dormant state.
+     */
+    default void hibernate(boolean immediately) {
+        hibernate();
+    }
     
     /**
      * Cause the Layer providing this instance of Hibernator to return to

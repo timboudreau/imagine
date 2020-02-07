@@ -161,7 +161,7 @@ class AppPicture extends PictureImplementation {
         boolean result = false;
         for (Iterator i = state.layers.iterator(); i.hasNext(); ) {
             LayerImplementation l = (LayerImplementation)i.next();
-            result |= l.paint(g, r, showSelection);
+            result |= l.paint(g, r, showSelection, false);
         }
         return result;
     }
@@ -659,7 +659,6 @@ class AppPicture extends PictureImplementation {
         return false;
     }
     
-    
     private class LayerSelection implements Transferable, ClipboardOwner {
         private final boolean allLayers;
         private final boolean isCut;
@@ -697,7 +696,7 @@ class AppPicture extends PictureImplementation {
                 if (allLayers) {
                     AppPicture.this.paint(g, null, false);
                 } else {
-                    layer.paint(g, null, false);
+                    layer.paint(g, null, false, false);
                 }
                 g.dispose();
                 if (!isCut) {

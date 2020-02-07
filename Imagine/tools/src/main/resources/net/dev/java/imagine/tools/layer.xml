@@ -22,14 +22,17 @@
             <attr name="SystemFileSystem.icon" urlvalue="nbresloc:/org/netbeans/paint/tools/resources/gradientfill.png"/>
             <attr name="position" intvalue="300"/>
         </file>
-        
+        <file name="org-netbeans-paint-tools-fills-RadialGradientFill.instance">
+            <attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.paint.tools.Bundle"/>
+            <attr name="SystemFileSystem.icon" urlvalue="nbresloc:/org/netbeans/paint/tools/resources/radialgradientfill.png"/>
+            <attr name="position" intvalue="350"/>
+        </file>
         <file name="TestFill.instance" url="resources/smudge.png">
             <attr name="SystemFileSystem.icon" urlvalue="nbfs:/SystemFileSystem/fills/TestFill.instance"/>
             <attr name="instanceClass" stringvalue="org.netbeans.paint.tools.fills.PatternFill"/>
             <attr name="instanceCreate" methodvalue="org.netbeans.paint.tools.fills.PatternFill.create"/>
             <attr name="position" intvalue="400"/>
         </file>
-        
     </folder>
     
     <folder name="brushtips">

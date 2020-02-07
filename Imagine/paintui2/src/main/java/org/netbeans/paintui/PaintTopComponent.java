@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import javax.imageio.ImageIO;
@@ -164,7 +165,6 @@ public final class PaintTopComponent extends TopComponent implements
         );
         setDisplayName(displayName);
         PictureImplementation picture = canvas.getPicture();
-        picture.addChangeListener(this);
         stateChanged(new ChangeEvent(picture));
         setPreferredSize(new Dimension(500, 500));
 
@@ -176,6 +176,7 @@ public final class PaintTopComponent extends TopComponent implements
                 UIManager.getColor("controlShadow"))); //NOI18N
         add(pane, BorderLayout.CENTER);
         undoManager.setLimit(UNDO_LIMIT);
+        picture.addChangeListener(this);
     }
     private static final int UNDO_LIMIT = 15;
 
@@ -286,6 +287,7 @@ public final class PaintTopComponent extends TopComponent implements
             }
         }
         //What the heck was this?
+        // Ah, a way for layers to provide their own palettes
         /*
         Collection <? extends TopComponent> tcs = layerImpl.getLookup().lookupAll (TopComponent.class);
         for (TopComponent tc : tcs) {
@@ -306,13 +308,15 @@ public final class PaintTopComponent extends TopComponent implements
         l.add(this);
         l.addAll(Arrays.asList(this, canvas.getZoom(),
                 getUndoRedo(), picture.getPicture()));
+        Layer layer = null;
+        Selection<?> sel = null;
         if (layerImpl != null) {
             l.add(picture.getPicture().getLayers());
-            Layer layer = layerImpl.getLookup().lookup(Layer.class);
+            layer = layerImpl.getLookup().lookup(Layer.class);
             if (layer != null) {
                 l.add(layer);
             }
-            Selection sel = layerImpl.getLookup().lookup(Selection.class);
+            sel = layerImpl.getLookup().lookup(Selection.class);
             if (sel != null) {
                 l.add(sel);
             }
@@ -327,6 +331,12 @@ public final class PaintTopComponent extends TopComponent implements
             l.addAll(layerImpl.getLookup().lookupAll(Object.class)); //XXX use PRoxyLookup properly
         }
         UIContextLookupProvider.set(l);
+        if (layer != null) {
+            UIContextLookupProvider.setLayerAndSelection(layer.getLookup(),
+                    canvas.getLookup());
+        } else {
+            UIContextLookupProvider.setLayerAndSelection(canvas.getLookup(), null);
+        }
 //        UIContextLookupProvider.setLayer(layerImpl.getLookup());
         System.err.println("Lookup contents set to " + UIContextLookupProvider.theLookup().lookupAll(Object.class));
         updateActiveTool();
@@ -393,9 +403,13 @@ public final class PaintTopComponent extends TopComponent implements
         requestActive();
     }
 
+    private boolean active;
+
     @Override
     protected void componentActivated() {
+        active = true;
         startListening();
+        System.out.println("activated, update active tool");
         updateActiveTool();
         stateChanged(null);
         canvas.getView().requestFocus();
@@ -406,7 +420,9 @@ public final class PaintTopComponent extends TopComponent implements
 
     @Override
     protected void componentDeactivated() {
+        active = false;
         stopListening();
+        System.out.println("deactivated, set active tool null");
         setActiveTool(null);
 //        for (TopComponent tc : layerTopComponents) {
 //            tc.close();
@@ -419,69 +435,76 @@ public final class PaintTopComponent extends TopComponent implements
     protected void componentShowing() {
         PI p = canvas.getPicture();
         final int layerCount = p.getLayers().size();
-        p.setHibernated(false, false, new Runnable() {
-            int ct = 0;
-            ProgressHandle h;
+        if (p.hibernated()) {
+            p.wakeup(false, new Runnable() {
+                int ct = 0;
+                ProgressHandle h;
 
-            public void run() {
-                if (EventQueue.isDispatchThread()) {
-                    repaint();
-                    return;
-                }
-                ct++;
-                if (ct == 1) {
-                    h = ProgressHandleFactory.createHandle(NbBundle.getMessage(PaintTopComponent.class,
-                            "MSG_UNHIBERNATING")); //NOI18N
-                    h.start();
-                    h.switchToDeterminate(layerCount);
-                }
-                if (h != null) {
-                    h.progress(ct);
-                }
-                if (ct == layerCount - 1) {
-                    if (h != null) {
-                        h.finish();
+                public void run() {
+                    if (EventQueue.isDispatchThread()) {
+                        invalidate();
+                        revalidate();
+                        repaint();
+                        return;
                     }
-                    EventQueue.invokeLater(this);
+                    ct++;
+                    if (ct == 1) {
+                        h = ProgressHandleFactory.createHandle(NbBundle.getMessage(PaintTopComponent.class,
+                                "MSG_UNHIBERNATING")); //NOI18N
+                        h.start();
+                        h.switchToDeterminate(layerCount);
+                    }
+                    if (h != null) {
+                        h.progress(ct);
+                    }
+                    if (ct == layerCount - 1) {
+                        if (h != null) {
+                            h.finish();
+                        }
+                        EventQueue.invokeLater(this);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     @Override
     protected void componentHidden() {
-        canvas.getPicture().setHibernated(true, false, null);
+        canvas.getPicture().hibernate(false);
     }
 
+    @Override
     public void resultChanged(LookupEvent lookupEvent) {
         updateActiveTool();
     }
 
-    private Tool tool = null;
-
     private void setActiveTool(Tool tool) {
-        if (tool != this.tool) {
-            this.tool = tool;
-            canvas.setActiveTool(tool);
-        }
+        System.out.println("set active tool " + tool);
+        canvas.setActiveTool(tool);
     }
 
     private Lookup.Result<Tool> tools = null;
 
     private void startListening() {
+        System.out.println("  start listening for active tool changes");
         tools = Utilities.actionsGlobalContext().lookupResult(Tool.class);
         tools.addLookupListener(this);
     }
 
     private void stopListening() {
+        System.out.println("  stop listening for active tool changes");
         tools.removeLookupListener(this);
         tools = null;
     }
 
     private void updateActiveTool() {
-        if (TopComponent.getRegistry().getActivated() == this) {
-            Collection<? extends Tool> oneOrNone = tools.allInstances();
+        System.out.println("update active tool");
+        if (isActive()) {
+            Collection<? extends Tool> oneOrNone = tools == null
+                    ? Collections.emptySet() : tools.allInstances();
             setActiveTool(oneOrNone.isEmpty() ? null : (Tool) oneOrNone.iterator().next());
+        } else {
+            System.out.println("  not active, no update");
         }
     }
 
@@ -511,6 +534,8 @@ public final class PaintTopComponent extends TopComponent implements
     }
 
     boolean isActive() {
-        return TopComponent.getRegistry().getActivated() == this;
+        return UIContextLookupProvider.lookup(PaintTopComponent.class)
+                == this;
+//        return TopComponent.getRegistry().getActivated() == this;
     }
 }

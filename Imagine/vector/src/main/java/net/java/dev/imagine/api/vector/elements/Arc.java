@@ -9,13 +9,12 @@
 package net.java.dev.imagine.api.vector.elements;
 
 import java.awt.Graphics2D;
-import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
-import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
@@ -49,6 +48,18 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
         this.fill = fill;
     }
 
+    @Override
+    public void applyScale(AffineTransform xform) {
+        Point2D.Double a = new Point2D.Double(x, y);
+        Point2D.Double b = new Point2D.Double(x + width, y + height);
+        xform.transform(a, a);
+        xform.transform(b, b);
+        x = a.x;
+        y = a.y;
+        width = b.x - a.x;
+        height = b.y - a.y;
+    }
+
     public double getStartAngle() {
         return startAngle;
     }
@@ -72,7 +83,7 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
                 + " fill:" + fill;
     }
 
-    public Shape toShape() {
+    public Arc2D.Double toShape() {
         return new Arc2D.Double(x, y, width, height, startAngle, arcAngle,
                 fill ? Arc2D.OPEN : Arc2D.CHORD); //XXX PIE?
     }
@@ -124,7 +135,7 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
         g.fill(toShape());
     }
 
-    public Primitive copy() {
+    public Arc copy() {
         return new Arc(x, y, width, height, startAngle, arcAngle, fill);
     }
 
@@ -142,9 +153,9 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
         y = 0;
     }
 
-    public Vector copy(AffineTransform transform) {
+    public Arc copy(AffineTransform transform) {
         double[] pts = new double[]{
-            x, y, x + width, y + height,};
+            x, y, x + width, y + height};
         transform.transform(pts, 0, pts, 0, 2);
         return new Arc(pts[0], pts[1], pts[2] - pts[0], pts[3] - pts[1],
                 startAngle, arcAngle, fill);
@@ -188,5 +199,12 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
             default:
                 throw new IllegalArgumentException("Illegal point index");
         }
+    }
+
+    @Override
+    public java.awt.Rectangle getBounds() {
+        Rectangle2D.Double bds = new Rectangle2D.Double();
+        getBounds(bds);
+        return bds.getBounds();
     }
 }

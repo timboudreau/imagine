@@ -14,6 +14,9 @@ import java.awt.image.BufferedImageOp;
  * @author Tim Boudreau
  */
 public interface EffectRecipient {
+    default boolean canApplyEffects() {
+        return true;
+    }
     public boolean canApplyComposite();
     public boolean canApplyBufferedImageOp();
     public void applyComposite (Composite composite, Shape clip);

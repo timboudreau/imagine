@@ -17,6 +17,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
@@ -128,7 +129,10 @@ public class SimpleSliderUI extends SliderUI implements ChangeListener {
     private void computeCharWidth(Graphics g, Font f) {
         boolean created = g == null;
         if (created) {
-            BufferedImage im = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+            BufferedImage im = GraphicsEnvironment
+                    .getLocalGraphicsEnvironment()
+                    .getDefaultScreenDevice()
+                    .getDefaultConfiguration().createCompatibleImage(1, 1);
             g = im.createGraphics();
         }
         FontMetrics fm = g.getFontMetrics(f);
@@ -199,10 +203,6 @@ public class SimpleSliderUI extends SliderUI implements ChangeListener {
         return converter == null ? Integer.toString (sl.getValue()) : converter.valueToString(sl);
     }
     
-    public interface StringConverter {
-        public String valueToString(JSlider sl);
-        public int maxChars();
-    }
 
     private void paintTrack(Graphics g, JSlider sl) {
         Insets ins = sl.getInsets();
@@ -260,10 +260,6 @@ public class SimpleSliderUI extends SliderUI implements ChangeListener {
     }
     private int detent = -1;
 
-    void setDetent(int x) {
-        detent = x;
-    }
-
     void clearDetent() {
         detent = -1;
         baseValue = -1;
@@ -287,10 +283,12 @@ public class SimpleSliderUI extends SliderUI implements ChangeListener {
                       (int)(factor*
                             ((x + (horiz ? ins.left
                                          : ins.top) - detent)));
+
         int val = sl.getMinimum() + normVal;
 
         if (val < sl.getMinimum()) {
-            detent -= ((float)sl.getMinimum() - (normVal + baseValue))*factor;
+//            detent -= ((float)sl.getMinimum() - (normVal + baseValue))*factor;
+            detent = -1;
             if (sl.getValue() > sl.getMinimum()) {
                 sl.setValue(sl.getMinimum());
             }

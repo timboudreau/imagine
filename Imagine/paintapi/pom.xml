@@ -35,6 +35,10 @@
             <artifactId>org-openide-util-ui</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-awt</artifactId>
+        </dependency>
+        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>toolsapi</artifactId>
         </dependency>
@@ -48,13 +52,14 @@
             <plugin>
                 <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <version>4.3</version>
                 <configuration>
+                    <moduleType>autoload</moduleType>
                     <publicPackages>
                         <publicPackage>net.dev.java.imagine.api.selection</publicPackage>
                         <publicPackage>net.dev.java.imagine.spi.effects</publicPackage>
                         <publicPackage>net.dev.java.imagine.spi.tools</publicPackage>
                         <publicPackage>net.java.dev.imagine.api.image</publicPackage>
+                        <publicPackage>net.java.dev.imagine.spi.image.support</publicPackage>
                         <publicPackage>net.java.dev.imagine.spi</publicPackage>
                         <publicPackage>net.java.dev.imagine.spi.image</publicPackage>
                         <publicPackage>org.netbeans.modules.progress.spi</publicPackage>

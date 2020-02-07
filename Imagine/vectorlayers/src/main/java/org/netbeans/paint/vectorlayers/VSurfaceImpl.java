@@ -22,18 +22,27 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiPredicate;
+import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.dev.java.imagine.api.tool.Tool;
+import net.dev.java.imagine.api.tool.aspects.SnapPointsConsumer;
+import net.dev.java.imagine.api.tool.aspects.SnapPointsConsumer.SnapPoints;
+import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.spi.image.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import net.java.dev.imagine.api.vector.painting.VectorWrapperGraphics;
 import net.java.dev.imagine.api.vector.util.Pt;
+import org.netbeans.paint.api.util.GraphicsUtils;
+import org.netbeans.paint.api.util.LazyGraphics;
+import org.netbeans.paint.api.util.LazyGraphics.GraphicsProvider;
 import org.openide.util.Pair;
 
 /**
@@ -44,7 +53,7 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
 
     private Point location = new Point();
     ShapeStack stack;
-    private final VectorWrapperGraphics graphics;
+    private final Graphics2D graphics;
     private final RepaintHandle owner;
     private static Logger logger = Logger.getLogger(VSurfaceImpl.class.getName());
 //    static {
@@ -53,20 +62,61 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     private static final boolean log = logger.isLoggable(Level.FINE);
 
     private final Dimension initialSize;
+    private final BooleanSupplier isVisible;
 
-    public VSurfaceImpl(RepaintHandle owner, Dimension d) {
+    public VSurfaceImpl(RepaintHandle owner, Dimension d, BooleanSupplier isVisible) {
         stack = new ShapeStack(this);
         initialSize = d;
-        graphics = new VectorWrapperGraphics(stack,
-                new DummyGraphics(),
-                //                getFakeGraphics(),
-                new Point(), 1, 1);
+//        graphics = new VectorWrapperGraphics(stack,
+//                GraphicsUtils.noOpGraphics(),
+//                new Point(), 1, 1);
+
+        graphics = LazyGraphics.create(new GraphicsProvider() {
+            @Override
+            public Graphics2D getGraphics() {
+                return new VectorWrapperGraphics(stack,
+                        GraphicsUtils.noOpGraphics(),
+                        new Point(), 1, 1);
+            }
+
+            @Override
+            public void onDispose(Graphics2D graphics) {
+                stack.endDraw();
+            }
+        }, true);
+
         this.owner = owner;
+        this.isVisible = isVisible;
     }
 
     public VSurfaceImpl(VSurfaceImpl other) {
-        this(other.owner, other.getBounds().getSize());
+        this(other.owner, other.getBounds().getSize(), other.isVisible);
         stack = new ShapeStack(other.stack);
+    }
+
+    class SurfaceRepaintHandle implements RepaintHandle {
+
+        private final RepaintHandle orig;
+
+        public SurfaceRepaintHandle(RepaintHandle orig) {
+            this.orig = orig;
+        }
+
+        @Override
+        public void repaintArea(int x, int y, int w, int h) {
+            snapPointSupplier.discardCache();
+            orig.repaintArea(x, y, w, h);
+        }
+
+        @Override
+        public void setCursor(Cursor cursor) {
+            orig.setCursor(cursor);
+        }
+
+    }
+
+    public boolean canApplyEffects() {
+        return isVisible.getAsBoolean();
     }
 
     void transform(AffineTransform xform) {
@@ -159,13 +209,68 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
 
     private Tool tool;
 
+    @Override
     public void setTool(Tool tool) {
         if (tool != this.tool) {
             this.tool = tool;
-            if (tool == null) {
-                createCache();
-            } else {
-                dumpCache();
+            if (!NO_CACHE) {
+                if (tool == null) {
+                    createCache();
+                } else {
+                    dumpCache();
+                }
+            }
+            if (tool != null) {
+                SnapPointsConsumer c = tool.getLookup().lookup(SnapPointsConsumer.class);
+                if (c != null) {
+                    c.accept(snapPointSupplier);
+                }
+            }
+        }
+    }
+
+    Supplier<SnapPoints> snapPoints() {
+        return snapPointSupplier;
+    }
+
+    private final SnSupplier snapPointSupplier = new SnSupplier();
+
+    class SnSupplier implements Supplier<SnapPoints> {
+
+        SnapPoints cached;
+
+        @Override
+        public SnapPoints get() {
+            if (cached != null) {
+                return cached;
+            }
+            SnapPointsConsumer.SnapPoints.Builder b
+                    = SnapPoints.builder(5);
+            for (Primitive p : stack.primitives) {
+                addTo(p, b);
+            }
+            return cached = b.build();
+        }
+
+        private void discardCache() {
+            cached = null;
+        }
+    }
+
+    private double[] pts = new double[8];
+
+    private void addTo(Primitive vect, SnapPointsConsumer.SnapPoints.Builder bldr) {
+        if (vect instanceof Adjustable) {
+            Adjustable adj = (Adjustable) vect;
+            int cpCount = adj.getControlPointCount();
+            adj.getControlPoints(pts);
+            int[] virt = adj.getVirtualControlPointIndices();
+            for (int i = 0; i < cpCount * 2; i += 2) {
+                int ptIx = i / 2;
+                if (Arrays.binarySearch(virt, ptIx) < 0) {
+                    bldr.add(SnapPointsConsumer.Axis.X, pts[i]);
+                    bldr.add(SnapPointsConsumer.Axis.Y, pts[i + 1]);
+                }
             }
         }
     }
@@ -183,7 +288,8 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         }
         cache = GraphicsEnvironment.getLocalGraphicsEnvironment().
                 getDefaultScreenDevice().getDefaultConfiguration().
-                createCompatibleImage(r.width - location.x, r.height - location.x, Transparency.TRANSLUCENT);
+                createCompatibleImage(r.width - location.x,
+                        r.height - location.x, Transparency.TRANSLUCENT);
     }
 
     private List<AppliedComposite> composites = Collections.synchronizedList(
@@ -192,6 +298,11 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     public void applyComposite(Composite composite, Shape clip) {
         composites.clear(); //XXX handle stacking/merging these
         composites.add(new AppliedComposite(composite, clip));
+        repaint();
+    }
+
+    private void repaint() {
+        owner.repaintArea(getBounds());
     }
 
     @Override
@@ -222,6 +333,7 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     @Override
     public void applyBufferedImageOp(BufferedImageOp op, Shape clip) {
         ops.add(op, clip);
+        repaint();
     }
 
     private final class AppliedBufferedImageOp {
@@ -245,13 +357,7 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             BufferedImage buffer = new BufferedImage(d.width, d.height, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g = buffer.createGraphics();
             try {
-                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-                g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-                g.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                GraphicsUtils.setHighQualityRenderingHints(g);
                 result = internalPaint.test(g, null);
                 if (!result) {
                     return false;
@@ -304,6 +410,11 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     }
 
     static boolean NO_CACHE = true;//Boolean.getBoolean("vector.no.cache");
+//    static boolean NO_CACHE = Boolean.getBoolean("vector.no.cache");
+
+    public boolean paint(Graphics2D g) {
+        return paint(g, null);
+    }
 
     public boolean paint(Graphics2D g, Rectangle r) {
         return ops.apply(g, r, this::internalPaint);

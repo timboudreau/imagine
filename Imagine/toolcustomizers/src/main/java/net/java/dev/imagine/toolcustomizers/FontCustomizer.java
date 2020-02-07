@@ -6,10 +6,10 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.toolcustomizers;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
@@ -20,58 +20,75 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.JPanel;
 import net.java.dev.imagine.api.toolcustomizers.AbstractCustomizer;
 import org.netbeans.paint.api.components.FontComboBoxModel;
 import org.netbeans.paint.api.components.Fonts;
-import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.openide.util.NbBundle;
 
 /**
  *
  * @author Tim Boudreau
  */
-public final class FontCustomizer extends AbstractCustomizer <Font> implements ActionListener {
-    
+public final class FontCustomizer extends AbstractCustomizer<Font> implements ActionListener {
+
     private enum FontStyle {
         PLAIN, BOLD, ITALIC, BOLD_ITALIC;
+
         @Override
         public String toString() {
             return NbBundle.getMessage(FontCustomizer.class, name());
         }
-        
+
         int toFontConstant() {
             switch (this) {
-                case PLAIN :
+                case PLAIN:
                     return Font.PLAIN;
-                case BOLD :
+                case BOLD:
                     return Font.BOLD;
-                case ITALIC :
+                case ITALIC:
                     return Font.ITALIC;
-                case BOLD_ITALIC :
+                case BOLD_ITALIC:
                     return Font.BOLD | Font.ITALIC;
-                default : 
+                default:
                     throw new AssertionError();
             }
         }
-        
+
         static FontStyle fromFontConstant(int val) {
             switch (val) {
-                case Font.PLAIN : return PLAIN;
-                case Font.BOLD : return BOLD;
-                case Font.ITALIC : return ITALIC;
-                case Font.BOLD | Font.ITALIC : return BOLD_ITALIC;
-                default : return PLAIN;
+                case Font.PLAIN:
+                    return PLAIN;
+                case Font.BOLD:
+                    return BOLD;
+                case Font.ITALIC:
+                    return ITALIC;
+                case Font.BOLD | Font.ITALIC:
+                    return BOLD_ITALIC;
+                default:
+                    return PLAIN;
             }
         }
     }
-    
-    /** Creates a new instance of FontCustomizer */
+
+    private boolean initialized;
+    /**
+     * Creates a new instance of FontCustomizer
+     */
     public FontCustomizer(String name) {
-        super (name);
+        super(name);
+        getComponents();
+        initialized = true;
+    }
+
+    @Override
+    public Font get() {
+        return getValue();
     }
 
     public Font getValue() {
+        if (fontSelectBox == null) {
+            getComponent();
+        }
         Font f = (Font) fontSelectBox.getSelectedItem();
         FontStyle style = (FontStyle) styleBox.getSelectedItem();
         if (style != FontStyle.PLAIN) {
@@ -83,60 +100,82 @@ public final class FontCustomizer extends AbstractCustomizer <Font> implements A
     JComboBox styleBox;
     JLabel styleLabel;
     JComboBox fontSelectBox;
+
     protected JComponent[] createComponents() {
-        fontSelectBox = new JComboBox();
-        fontSelectBox.addActionListener(this);
-        Font[] f = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
-        DefaultComboBoxModel fontsModel = new FontComboBoxModel();
-        JLabel fontLabel = new JLabel (NbBundle.getMessage(FontCustomizer.class, 
+        JLabel fontLabel = new JLabel(NbBundle.getMessage(FontCustomizer.class,
                 "FONT_FACE")); //NOI18N
-        fontSelectBox.setModel (fontsModel);
-        fontSelectBox.setSelectedItem(loadValue());
-        fontSelectBox.setRenderer(new FontRenderer());
+        if (fontSelectBox == null) {
+            fontSelectBox = new JComboBox();
+            fontSelectBox.addActionListener(this);
+            Font[] f = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
+            DefaultComboBoxModel fontsModel = new FontComboBoxModel();
+            fontSelectBox.setModel(fontsModel);
+            Font val = loadValue();
+            fontSelectBox.setSelectedItem(val == null ? f[0] : val);
+            fontSelectBox.setRenderer(new FontRenderer());
+            fontSelectBox.setMinimumSize(new Dimension(100, 20));
+        }
+        if (styleLabel == null) {
+            styleLabel = new JLabel(NbBundle.getMessage(FontCustomizer.class, "FONT_STYLE")); //NOI18N
+        }
         if (styleBox == null) {
-            DefaultComboBoxModel styleModel = new DefaultComboBoxModel (FontStyle.values());
+            DefaultComboBoxModel styleModel = new DefaultComboBoxModel(FontStyle.values());
             styleBox = new JComboBox(styleModel);
-            styleLabel = new JLabel (NbBundle.getMessage(FontCustomizer.class, "FONT_STYLE")); //NOI18N
             Font ff = getValue();
-            FontStyle style = f == null ? FontStyle.PLAIN : FontStyle.fromFontConstant(ff.getStyle());
+            FontStyle style = FontStyle.fromFontConstant(ff.getStyle());
             styleBox.setSelectedItem(style);
             styleBox.addActionListener(this);
         }
-        JPanel font = new SharedLayoutPanel();
-        font.add (fontLabel, fontSelectBox);
-        JPanel style = new SharedLayoutPanel();
-        style.add (styleLabel, styleBox);
-        return new JComponent[] { font, style };
+        return new JComponent[]{
+            fontLabel, fontSelectBox, styleLabel, styleBox
+        };
+//        JPanel font = new SharedLayoutPanel();
+//        font.add(fontLabel);
+//        font.add(fontSelectBox);
+//        JPanel style = new SharedLayoutPanel();
+//        style.add(styleLabel);
+//        style.add(styleBox);
+//        return new JComponent[]{font, style};
     }
-    
+
+    @Override
     public void actionPerformed(ActionEvent e) {
-        change();
+        if (initialized) {
+            change();
+        }
     }
-    
-    
+
     private static final class FontRenderer extends DefaultListCellRenderer {
-        public void propertyChange (String s, Object a, Object b) {
+
+        public void propertyChange(String s, Object a, Object b) {
             //performance - do nothing
         }
-        
+
         @Override
-        public void repaint(int x, int y, int w, int h) {}
+        public void repaint(int x, int y, int w, int h) {
+        }
+
         @Override
-        public void validate() {}
+        public void validate() {
+        }
+
         @Override
-        public void invalidate() {}
+        public void invalidate() {
+        }
+
         @Override
-        public void revalidate() {}
+        public void revalidate() {
+        }
 
         @Override
         public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             Component retValue = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             if (value != null) {
                 Font f = (Font) value;
-                retValue.setFont (f);
-                setText (f.getName());
+                retValue.setFont(f);
+                setText(f.getName());
             } else {
-                setText ("");
+                setText("");
             }
             return retValue;
         }
@@ -149,7 +188,7 @@ public final class FontCustomizer extends AbstractCustomizer <Font> implements A
         }
         Fonts.getDefault().set(getName(), value);
     }
-    
+
     private Font loadValue() {
         return Fonts.getDefault().get(getName());
     }

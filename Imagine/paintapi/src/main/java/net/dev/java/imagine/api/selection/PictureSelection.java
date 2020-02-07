@@ -12,16 +12,18 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.openide.util.ChangeSupport;
+import org.openide.util.Lookup;
 
 /**
  *
  * @author Tim Boudreau
  */
-public final class PictureSelection {
-    private final Map<Class<?>, Shape> shapeByType = new HashMap<Class<?>, Shape>();
+public final class PictureSelection implements Lookup.Provider {
+
+    private final Map<Class<?>, Shape> shapeByType = new HashMap<>();
     private Selection<?> storedSelection;
     private Selection<?> currSelection;
-
+    private final MutableProxyLookup lookup = new MutableProxyLookup();
     private final ChangeSupport supp = new ChangeSupport(this);
 
     public PictureSelection() {
@@ -29,6 +31,11 @@ public final class PictureSelection {
 
     public PictureSelection(LayerImplementation initial) {
         activeLayerChanged(null, initial);
+    }
+
+    @Override
+    public Lookup getLookup() {
+        return lookup;
     }
 
     public void activeLayerChanged(LayerImplementation old, LayerImplementation nue) {
@@ -42,6 +49,10 @@ public final class PictureSelection {
         Selection ns = nue == null ? null : nue.getLookup().lookup(Selection.class);
         setCurrentSelection(ns);
         currSelection = ns;
+    }
+
+    public boolean isEmpty() {
+        return currSelection == null ? true : currSelection.isEmpty();
     }
 
     public Shape toShape() {
@@ -80,14 +91,16 @@ public final class PictureSelection {
             return s.contains(s.type().cast(o));
         } else if (o instanceof Shape) {
             return s.asShape().getBounds2D().intersects(((Shape) o).getBounds2D());
+        } else if (s instanceof ObjectSelection<?>) {
+            return ((ObjectSelection<?>) s).containsObject(o);
         }
         return false;
     }
 
     /**
-     * Convenience method so implementations can be consistent in the colors
-     * and outlining they use to paint the selection.
-     * 
+     * Convenience method so implementations can be consistent in the colors and
+     * outlining they use to paint the selection.
+     *
      * @param g The graphics context
      * @param content A shape
      */
@@ -126,6 +139,13 @@ public final class PictureSelection {
         if (selection != null) {
             selection.addChangeListener(cl);
         }
+        Lookup lkp = selection instanceof Lookup.Provider
+                ? ((Lookup.Provider) selection).getLookup() : null;
+        if (lkp == null) {
+            lookup.changeLookups(new Lookup[]{});
+        } else {
+            lookup.changeLookups(new Lookup[]{lkp});
+        }
     }
     private final ChangeListener cl = new CL();
 
@@ -151,7 +171,8 @@ public final class PictureSelection {
     private void change() {
         supp.fireChange();
     }
-    
+
+    @Override
     public String toString() {
         return super.toString() + '{' + currSelection + '}';
     }

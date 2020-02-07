@@ -28,6 +28,8 @@ public final class Constants {
     public static final String FONT_STYLE = NbBundle.getMessage(Constants.class, "fontStyle"); //NOI18N
     public static final String ARC_WIDTH = NbBundle.getMessage(Constants.class, "arcWidth"); //NOI18N
     public static final String ARC_HEIGHT = NbBundle.getMessage(Constants.class, "arcHeight"); //NOI18N
+    public static final String ARC_WIDTH_PERCENTAGE = NbBundle.getMessage(Constants.class, "arcWidthPercentage"); //NOI18N
+    public static final String ARC_HEIGHT_PERCENTAGE = NbBundle.getMessage(Constants.class, "arcHeightPercentage"); //NOI18N
     public static final String ANTIALIAS = NbBundle.getMessage(Constants.class, "antialias"); //NOI18N
     public static final String SIZE = NbBundle.getMessage(Constants.class, "size"); //NOI18N
 }

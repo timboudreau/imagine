@@ -22,4 +22,7 @@ public interface Strokable extends Vector {
      * Draw the outline of the shape this object represents
      */
     public void draw(Graphics2D g);
+
+    @Override
+    public Strokable copy();
 }

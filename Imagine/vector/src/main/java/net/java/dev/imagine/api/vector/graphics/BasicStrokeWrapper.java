@@ -114,7 +114,7 @@ public final class BasicStrokeWrapper implements Primitive, Attribute<BasicStrok
         g.setStroke(toStroke());
     }
 
-    public Primitive copy() {
+    public BasicStrokeWrapper copy() {
         return new BasicStrokeWrapper(this);
     }
 

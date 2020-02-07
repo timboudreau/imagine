@@ -1,7 +1,6 @@
 package net.java.dev.imagine.api.properties;
 
 import net.java.dev.imagine.customizers.impl.ChangeProxy;
-import org.openide.util.lookup.InstanceContent;
 
 /**
  *
@@ -15,7 +14,9 @@ public interface Property<T> extends Value<T>, Mutable<T>, Listenable {
 
     public String getDisplayName();
 
-    public Properties getSubProperties();
+    default Properties getSubProperties() {
+        return Properties.EMPTY;
+    }
 
     public static abstract class Abstract<T, R extends Listenable> extends ChangeProxy<R> implements Property<T> {
 

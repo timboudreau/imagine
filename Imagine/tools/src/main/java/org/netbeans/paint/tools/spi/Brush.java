@@ -11,11 +11,8 @@ package org.netbeans.paint.tools.spi;
 
 import java.awt.Component;
 import java.awt.Graphics2D;
-import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.Shape;
-import org.netbeans.paint.api.components.explorer.Customizable;
 
 /**
  * Place .instance files for Brush implementations in the 
@@ -32,5 +29,5 @@ import org.netbeans.paint.api.components.explorer.Customizable;
 public interface Brush {
     public Component getCustomizer();
     public boolean isAntialiased();
-    public Rectangle paint (Graphics2D g, Point loc);
+    public Rectangle paint (Graphics2D g, Point loc, int modifiers);
 }

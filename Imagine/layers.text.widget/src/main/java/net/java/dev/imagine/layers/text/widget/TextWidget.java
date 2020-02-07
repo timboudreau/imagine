@@ -28,7 +28,7 @@ import org.netbeans.api.visual.action.WidgetAction.WidgetMouseEvent;
 import org.netbeans.api.visual.widget.LabelWidget;
 import org.netbeans.api.visual.widget.Widget;
 import org.netbeans.paint.api.components.TextWrapLabelUI;
-import org.netbeans.paint.api.util.MetaComposite;
+import org.netbeans.paint.api.util.GraphicsUtils;
 import org.openide.util.Lookup;
 import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
@@ -106,7 +106,7 @@ final class TextWidget extends LabelWidget implements PropertyChangeListener, Te
             if (layer.getComposite() == null) {
                 g.setComposite(alpha);
             } else {
-                g.setComposite(new MetaComposite(g.getComposite(), alpha));
+                g.setComposite(GraphicsUtils.combine(g.getComposite(), alpha));
             }
         } else if (layer.getComposite() != null) {
             g.setComposite(layer.getComposite());

@@ -1,4 +1,5 @@
 package net.java.dev.imagine.layers.raster;
+
 import net.java.dev.imagine.api.image.Picture;
 import org.netbeans.paint.api.editing.UndoManager;
 import java.awt.BorderLayout;
@@ -27,6 +28,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -50,53 +52,55 @@ import org.openide.util.RequestProcessor;
 import org.openide.util.Utilities;
 
 class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
+
     private BufferedImage img;
     private RepaintHandle handle;
     private Tool currentTool = null;
     private Point location = new Point();
     private Selection<Shape> selection;
     private final PropertyChangeSupport supp = new PropertyChangeSupport(this);
+    private final BooleanSupplier isVisible;
 
-    RasterSurfaceImpl(RepaintHandle handle, Dimension d, Selection<Shape> selection) {
-        this (handle, d, null, selection);
+    RasterSurfaceImpl(RepaintHandle handle, Dimension d, Selection<Shape> selection, BooleanSupplier isVisible) {
+        this(handle, d, null, selection, isVisible);
     }
-    
-    RasterSurfaceImpl(RepaintHandle handle, Dimension d, BufferedImage img, Selection<Shape> selection) {
-        this.img = img == null ? 
-            new BufferedImage(d.width, d.height, GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE) :
-            null;
+
+    RasterSurfaceImpl(RepaintHandle handle, Dimension d, BufferedImage img, Selection<Shape> selection, BooleanSupplier isVisible) {
+        this.img = img == null
+                ? GraphicsUtils.newBufferedImage(d.width, d.height)
+                : null;
         this.handle = handle;
         this.selection = selection;
+        this.isVisible = isVisible;
         EventQueue.invokeLater(
                 new Runnable() {
-                   public void run() {
-                       //XXX wouldn't a background thread be preferable?
-                       takeSnapshot();
-                   }
-               });
+            public void run() {
+                //XXX wouldn't a background thread be preferable?
+                takeSnapshot();
+            }
+        });
     }
 
-    RasterSurfaceImpl(RasterSurfaceImpl other, boolean isUserCopy, Selection<Shape> selection) {
-        this(other.handle, 
-             new Dimension(other.img.getWidth(), other.img.getHeight()), selection);
+    RasterSurfaceImpl(RasterSurfaceImpl other, boolean isUserCopy, Selection<Shape> selection, BooleanSupplier isVisible) {
+        this(other.handle,
+                new Dimension(other.img.getWidth(), other.img.getHeight()), selection, isVisible);
         if (isUserCopy) {
             other.img.copyData(img.getRaster());
-        }
-        else {
+        } else {
             // XXX get rid of bi creation in the super constructor
             img = ByteNIOBufferedImage.copy(other.img);
         }
         this.selection = selection;
     }
-    
-    void addPropertyChangeListener (PropertyChangeListener pcl) {
+
+    void addPropertyChangeListener(PropertyChangeListener pcl) {
         supp.addPropertyChangeListener(pcl);
     }
-    
+
     void removePropertyChangeListener(PropertyChangeListener pcl) {
         supp.removePropertyChangeListener(pcl);
     }
-    
+
     void firePropertyChange(String name, Object old, Object nue) {
         supp.firePropertyChange(name, old, nue);
     }
@@ -105,36 +109,41 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     public BufferedImage getImage() {
         return img;
     }
-    
-    RasterSurfaceImpl(Dimension size, RepaintHandle handle, Picture picture, Selection<Shape> selection) {
-        this(handle, picture.getSize(), selection);
-        picture.paint((Graphics2D)img.getGraphics(), null, false);
+
+    RasterSurfaceImpl(Dimension size, RepaintHandle handle, Picture picture, Selection<Shape> selection, BooleanSupplier isVisible) {
+        this(handle, picture.getSize(), selection, isVisible);
+        picture.paint((Graphics2D) img.getGraphics(), null, false);
         this.selection = selection;
     }
 
-    RasterSurfaceImpl(RepaintHandle handle, BufferedImage img, Selection<Shape> selection) {
+    RasterSurfaceImpl(RepaintHandle handle, BufferedImage img, Selection<Shape> selection, BooleanSupplier isVisible) {
         this.img = img;
         this.handle = handle;
         this.selection = selection;
+        this.isVisible = isVisible;
     }
-    
+
     BufferedImage image() {
         //for unit tests
         return img;
     }
-    
-    public void setCursor (Cursor cursor) {
+
+    public void setCursor(Cursor cursor) {
         handle.setCursor(cursor);
     }
-    
-    
+
     final EffectReceiver<Composite> compositeReceiver = new CompositeReceiver();
     final EffectReceiver<BufferedImageOp> bufferedImageOpReceiver = new BufferedImageOpReceiver();
-    
+
     class BufferedImageOpReceiver extends EffectReceiver<BufferedImageOp> {
 
         public BufferedImageOpReceiver() {
             super(BufferedImageOp.class);
+        }
+
+        @Override
+        public boolean canApplyEffects() {
+            return isVisible.getAsBoolean();
         }
 
         @Override
@@ -149,10 +158,16 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             return RasterSurfaceImpl.this.getSize();
         }
     }
-    
+
     class CompositeReceiver extends EffectReceiver<Composite> {
+
         CompositeReceiver() {
             super(Composite.class);
+        }
+
+        @Override
+        public boolean canApplyEffects() {
+            return isVisible.getAsBoolean();
         }
 
         @Override
@@ -165,16 +180,17 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             }
             return true;
         }
+
         @Override
         public Dimension getSize() {
             return RasterSurfaceImpl.this.getSize();
         }
     }
 
-   private Snapshot snapshot = null;
+    private Snapshot snapshot = null;
 
     void resize(int width, int height) {
-        BufferedImage nue = new BufferedImage (width, height, GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
+        BufferedImage nue = new BufferedImage(width, height, GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
         double w = width;
         double h = height;
         double ow = img.getWidth();
@@ -188,43 +204,43 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         img = nue;
         g.dispose();
     }
-    
-   private void takeSnapshot() {
-       if (snapshot == null && (currentTool == null || !isNonPainting(currentTool))) {
-           Point loc = getLocation();
-           int width = img.getWidth();
-           int height = img.getHeight();
-           Shape shape = selection.asShape();
-           if (shape != null) {
-               Rectangle b = shape.getBounds();
-               loc = b.getLocation();
-               width = b.width;
-               height = b.height;
-               if (loc.x < 0) {
-                   width += loc.x;
-                   loc.x = 0;
-               }
-               if (loc.y < 0) {
-                   height += loc.y;
-                   loc.y = 0;
-               }
-               if (loc.x + width > img.getWidth()) {
-                   width -= (loc.x + width) - img.getWidth();
-               }
-               if (loc.y + height > img.getHeight()) {
-                   height -= (loc.y + height) - img.getHeight();
-               }
-           }
-           snapshot = new Snapshot(img, loc, new Dimension (
-                   width, height));
-       }
-   }
-   
-   boolean isNonPainting(Tool tool) {
-       NonPaintingTool oldNP = tool == null ? null : tool.getLookup().lookup(NonPaintingTool.class);
-       return tool == null ? true : oldNP != null;
-   }
-    
+
+    private void takeSnapshot() {
+        if (snapshot == null && (currentTool == null || !isNonPainting(currentTool))) {
+            Point loc = getLocation();
+            int width = img.getWidth();
+            int height = img.getHeight();
+            Shape shape = selection.asShape();
+            if (shape != null) {
+                Rectangle b = shape.getBounds();
+                loc = b.getLocation();
+                width = b.width;
+                height = b.height;
+                if (loc.x < 0) {
+                    width += loc.x;
+                    loc.x = 0;
+                }
+                if (loc.y < 0) {
+                    height += loc.y;
+                    loc.y = 0;
+                }
+                if (loc.x + width > img.getWidth()) {
+                    width -= (loc.x + width) - img.getWidth();
+                }
+                if (loc.y + height > img.getHeight()) {
+                    height -= (loc.y + height) - img.getHeight();
+                }
+            }
+            snapshot = new Snapshot(img, loc, new Dimension(
+                    width, height));
+        }
+    }
+
+    boolean isNonPainting(Tool tool) {
+        NonPaintingTool oldNP = tool == null ? null : tool.getLookup().lookup(NonPaintingTool.class);
+        return tool == null ? true : oldNP != null;
+    }
+
     public void setTool(Tool tool) {
         Tool old = currentTool;
         if (old != tool) {
@@ -236,8 +252,8 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
                 takeSnapshot();
             }
 
-            if (wasNonPainting &&
-                !isNonPainting & (location.x != 0 || location.y != 0)) {
+            if (wasNonPainting
+                    && !isNonPainting & (location.x != 0 || location.y != 0)) {
                 growImageIfNeeded();
             }
         }
@@ -256,9 +272,9 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     }
 
     private static final Rectangle UNMODIFIED = new Rectangle(Integer.MAX_VALUE,
-                                                              Integer.MAX_VALUE,
-                                                              Integer.MIN_VALUE,
-                                                              Integer.MIN_VALUE);
+            Integer.MAX_VALUE,
+            Integer.MIN_VALUE,
+            Integer.MIN_VALUE);
     private static final Rectangle ALL_MODIFIED = new Rectangle(-1, -1, -1, -1);
     private Rectangle modifiedBounds = new Rectangle(UNMODIFIED);
 
@@ -266,7 +282,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         if (!modifiedBounds.equals(ALL_MODIFIED)) {
             if (w != -1 && h != -1) {
                 if (UNMODIFIED.equals(modifiedBounds)) {
-                    modifiedBounds = new Rectangle (x, y, w, h);
+                    modifiedBounds = new Rectangle(x, y, w, h);
                 } else {
                     modifiedBounds.add(new Rectangle(x, y, w, h));
                 }
@@ -274,13 +290,13 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
                 modifiedBounds.setBounds(ALL_MODIFIED);
             }
         }
-        _repaintArea(x, y, w < 0 ? img.getWidth() : w, h < 0 ?
-            img.getHeight() : h);
+        _repaintArea(x, y, w < 0 ? img.getWidth() : w, h < 0
+                ? img.getHeight() : h);
     }
 
     private void _repaintArea(int x, int y, int w, int h) {
-        int maxW = Math.min (img.getWidth(), x + w);
-        int maxH = Math.min (img.getHeight(), y + h);
+        int maxW = Math.min(img.getWidth(), x + w);
+        int maxH = Math.min(img.getHeight(), y + h);
         handle.repaintArea(x, y, maxW - x, maxH - y);
     }
 
@@ -298,25 +314,25 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             return false;
         }
         g.drawRenderedImage(img,
-                            AffineTransform.getTranslateInstance(location.x,
-                                                                 location.y));
+                AffineTransform.getTranslateInstance(location.x,
+                        location.y));
         return true;
     }
 
-    public boolean paint (Graphics2D g2d, Rectangle r) {
+    public boolean paint(Graphics2D g2d, Rectangle r) {
         if (img instanceof ByteNIOBufferedImage) {
             return false;
         }
         if (r == null) {
-            return paintFull (g2d);
+            return paintFull(g2d);
         }
 
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                             RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-        double xfactor = (double)r.width/(double)img.getWidth();
-        double yfactor = (double)r.height/(double)img.getHeight();
+                RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        double xfactor = (double) r.width / (double) img.getWidth();
+        double yfactor = (double) r.height / (double) img.getHeight();
 
-        AffineTransform xform = AffineTransform.getScaleInstance(xfactor, 
+        AffineTransform xform = AffineTransform.getScaleInstance(xfactor,
                 yfactor);
         xform.concatenate(AffineTransform.getTranslateInstance(r.x, r.y));
         g2d.drawRenderedImage(img, xform);
@@ -329,12 +345,12 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         Tool tool = currentTool;
         currentTool = null; //So undo works properly
         try {
-            doApplyComposite (composite, region);
+            doApplyComposite(composite, region);
         } finally {
             currentTool = tool;
         }
     }
-    
+
     public void applyBufferedImageOp(BufferedImageOp op, Shape clip) {
         Tool tool = currentTool;
         currentTool = null;
@@ -344,8 +360,8 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             currentTool = tool;
         }
     }
-    
-    private void doApplyBufferedImageOp (BufferedImageOp op, Shape region) {
+
+    private void doApplyBufferedImageOp(BufferedImageOp op, Shape region) {
         BufferedImage old = img;
         if (region == null || region.getBounds().contains(0, 0, img.getWidth(), img.getHeight())) {
             BufferedImage nue = op.filter(old, null);
@@ -363,12 +379,12 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             repaintArea(regBounds);
         }
     }
-    
-    private void repaintArea(Rectangle r) {
+
+    public void repaintArea(Rectangle r) {
         repaintArea(r.x, r.y, r.width, r.height);
     }
 
-    private void doApplyComposite (Composite composite, Shape region) {
+    private void doApplyComposite(Composite composite, Shape region) {
         if (location.x != 0 && location.y != 0) {
             // Rectangle r = new Rectangle (location.x, location.y,
             // img.getWidth(), img.getHeight());
@@ -380,9 +396,9 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             // Create a new image that will become this surface's image at the
             // end of the operation
             BufferedImage applied = new BufferedImage(img.getWidth(),
-                                                      img.getHeight(),
-                                                      img.getType());
-            Graphics2D g = (Graphics2D)applied.getGraphics();
+                    img.getHeight(),
+                    img.getType());
+            Graphics2D g = (Graphics2D) applied.getGraphics();
             // Save its composite
             Composite old = g.getComposite();
 
@@ -391,11 +407,11 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             if (region == null) {
                 g.setComposite(composite);
                 g.drawRenderedImage(img,
-                                    AffineTransform.getTranslateInstance(0, 0));
+                        AffineTransform.getTranslateInstance(0, 0));
                 repaintArea(0, 0, img.getWidth(), img.getHeight());
             } else {
                 Rectangle bds = new Rectangle(location.x, location.y,
-                                              img.getWidth(), img.getHeight());
+                        img.getWidth(), img.getHeight());
                 // Store the last known clip
                 Shape clip = g.getClip();
                 int xOff = location.x;
@@ -417,24 +433,23 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
 
                 try {
                     g.drawRenderedImage(img,
-                                        AffineTransform.getTranslateInstance(xOff,
-                                                                             yOff));
-                }
-                catch (RasterFormatException rfe) {
+                            AffineTransform.getTranslateInstance(xOff,
+                                    yOff));
+                } catch (RasterFormatException rfe) {
                     // Debugging stuff
-                    IllegalStateException ise = new IllegalStateException("Fail: src " +
-                                                                          img.getWidth() +
-                                                                          "," +
-                                                                          img.getHeight() +
-                                                                          " dest " +
-                                                                          "" +
-                                                                          applied.getWidth() +
-                                                                          "," +
-                                                                          applied.getHeight() +
-                                                                          " clip " +
-                                                                          g.getClipBounds() +
-                                                                          " actual clip " +
-                                                                          g.getClip());
+                    IllegalStateException ise = new IllegalStateException("Fail: src "
+                            + img.getWidth()
+                            + ","
+                            + img.getHeight()
+                            + " dest "
+                            + ""
+                            + applied.getWidth()
+                            + ","
+                            + applied.getHeight()
+                            + " clip "
+                            + g.getClipBounds()
+                            + " actual clip "
+                            + g.getClip());
 
                     ErrorManager.getDefault().annotate(ise, rfe);
                     throw ise;
@@ -456,8 +471,8 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
                 // Now that its empty, paint the original back into the
                 // non-selection area
                 g.drawRenderedImage(img,
-                                    AffineTransform.getTranslateInstance(xOff,
-                                                                         yOff));
+                        AffineTransform.getTranslateInstance(xOff,
+                                yOff));
                 // And restore the clipping bounds
                 g.setClip(clip);
                 // And tell the editor what to repaint
@@ -468,8 +483,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             // And restore the composite
             g.setComposite(old);
             g.dispose();
-        }
-        catch (RuntimeException re) {
+        } catch (RuntimeException re) {
             // Oops, something went wrong
             cancelUndoableOperation();
             throw re;
@@ -477,7 +491,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         // Pushes our undo operation onto the UndoManager's stack.
         endUndoableOperation();
     }
-    
+
     private volatile boolean shouldBeHibernated = false;
 
     void hibernate() {
@@ -493,7 +507,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             notify.run();
         }
     }
-    
+
     void unhibernateImmediately() {
         //If we were created as undo data, we may need to urgently
         //switch to being a standard buffered image
@@ -508,8 +522,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
                 return null;
             }
             return ByteNIOBufferedImage.copy(img);
-        }
-        else {
+        } else {
             if (!(img instanceof ByteNIOBufferedImage)) {
                 return null;
             }
@@ -521,23 +534,23 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
 
     @Override
     public Dimension getSize() {
-        return new Dimension (img.getWidth(), img.getHeight());
+        return new Dimension(img.getWidth(), img.getHeight());
     }
+
     private static class HibernateQueue implements Runnable {
-        private java.util.List <RasterSurfaceImpl> queue = Collections.<RasterSurfaceImpl>
-                synchronizedList(new ArrayList <RasterSurfaceImpl>());
+
+        private java.util.List<RasterSurfaceImpl> queue = Collections.<RasterSurfaceImpl>synchronizedList(new ArrayList<RasterSurfaceImpl>());
         private RequestProcessor.Task task = rp.create(this);
-        private List <Runnable> toNotify = Collections.synchronizedList(new LinkedList<Runnable>());
+        private List<Runnable> toNotify = Collections.synchronizedList(new LinkedList<Runnable>());
 
         public void add(RasterSurfaceImpl surface, boolean hibernate, Runnable notify) {
             if (notify != null) {
-                toNotify.add (notify);
+                toNotify.add(notify);
             }
             if (!hibernate) {
                 // prioritize unhibernate operations
                 queue.add(0, surface);
-            }
-            else {
+            } else {
                 queue.add(surface);
             }
             task.schedule(0);
@@ -559,17 +572,17 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             // Have to do this this way, otherwise we will
             // have to synchronize all access to the img field, which
             // will cause performance problems
-            
+
             try {
                 EventQueue.invokeAndWait(new Runnable() {
-                                           public void run() {
-                                               for (int i = 0; i < surfaces.length; i++) {
-                                                   if (imgs[i] != null) {
-                                                       surfaces[i].img = imgs[i];
-                                                   }
-                                               }
-                                           }
-                                       });
+                    public void run() {
+                        for (int i = 0; i < surfaces.length; i++) {
+                            if (imgs[i] != null) {
+                                surfaces[i].img = imgs[i];
+                            }
+                        }
+                    }
+                });
             } catch (InterruptedException ex) {
                 ErrorManager.getDefault().notify(ex);
             } catch (InvocationTargetException ex1) {
@@ -586,18 +599,18 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             task.waitFinished();
         }
     }
-    
+
     OwnedEdit[] myEdits() {
         //XXX the undomanager returned here may belong to a different image!
-        UndoManager mgr = 
-                Utilities.actionsGlobalContext().lookup(UndoManager.class);
+        UndoManager mgr
+                = Utilities.actionsGlobalContext().lookup(UndoManager.class);
         if (mgr != null) {
             List l = mgr.getEdits();
-            ArrayList <UndoableEdit> result = new ArrayList <UndoableEdit> (l.size());
+            ArrayList<UndoableEdit> result = new ArrayList<UndoableEdit>(l.size());
             for (Iterator it = l.iterator(); it.hasNext();) {
                 UndoableEdit ed = (UndoableEdit) it.next();
                 if (ed instanceof OwnedEdit && ((OwnedEdit) ed).isChangeOf(this)) {
-                    result.add (ed);
+                    result.add(ed);
                 }
             }
             OwnedEdit[] results = result.toArray(new OwnedEdit[result.size()]);
@@ -608,19 +621,20 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     }
 
     public Point getLocation() {
-        return new Point (location);
+        return new Point(location);
     }
-    
+
     interface OwnedEdit extends UndoableEdit {
-        public boolean isChangeOf (RasterSurfaceImpl impl);
+
+        public boolean isChangeOf(RasterSurfaceImpl impl);
 
         void zeroMoved(int x, int y);
     }
-    
+
     private Shape getSelection() {
         return selection.asShape();
     }
-    
+
     private void boundsMayBeChanged(BufferedImage old, BufferedImage nue) {
         Rectangle a = new Rectangle(location, new Dimension(old.getWidth(), old.getHeight()));
         Rectangle b = new Rectangle(location, new Dimension(nue.getWidth(), nue.getHeight()));
@@ -634,13 +648,14 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     private Dimension grow = null;
     private Point imageReplacePosition = null;
     private Point actualImagePosition = null;
+
     public void setLocation(Point p) {
         if (!location.equals(p)) {
             Point old = new Point(location);
             Point nue = new Point(p);
             firePropertyChange(PROP_LOCATION, old, nue);
             if (actualImagePosition == null) {
-                actualImagePosition = new Point (location);
+                actualImagePosition = new Point(location);
             }
             location.setLocation(p);
 
@@ -650,15 +665,15 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             int minY = Math.min(location.y, actualImagePosition.y);
 
             imageReplacePosition = new Point();
-            imageReplacePosition.x = Math.max (0, location.x);
-            imageReplacePosition.y = Math.max (0, location.y);
-            
+            imageReplacePosition.x = Math.max(0, location.x);
+            imageReplacePosition.y = Math.max(0, location.y);
+
             grow = new Dimension(wdiff, hdiff);
             _repaintArea(minX, minY, img.getWidth() + wdiff, img.getHeight()
-                + hdiff);
+                    + hdiff);
         }
     }
-    
+
     void growImageIfNeeded() {
         if (grow != null) {
             int type = img.getType();
@@ -667,22 +682,22 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
                 //need to grow the image in this state
                 return;
             }
-            BufferedImage nue = new BufferedImage (img.getWidth() + 
-                    grow.width, img.getHeight() + grow.height, type);
+            BufferedImage nue = new BufferedImage(img.getWidth()
+                    + grow.width, img.getHeight() + grow.height, type);
             Graphics2D g2d = nue.createGraphics();
             g2d.drawRenderedImage(img, AffineTransform.getTranslateInstance(
-                    imageReplacePosition.x, 
+                    imageReplacePosition.x,
                     imageReplacePosition.y));
             g2d.dispose();
             img = nue;
             if (imageReplacePosition.x > 0 || imageReplacePosition.y > 0) {
                 OwnedEdit[] edits = myEdits();
-                for (int i=0; i < edits.length; i++) {
+                for (int i = 0; i < edits.length; i++) {
                     edits[i].zeroMoved(imageReplacePosition.x,
                             imageReplacePosition.y);
                 }
             }
-            location.setLocation(Math.min (0, location.x), Math.min (0, location.y));
+            location.setLocation(Math.min(0, location.x), Math.min(0, location.y));
 
             grow = null;
             imageReplacePosition = null;
@@ -691,14 +706,15 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
                 undoableStartLocation = new Point(location);
             }
         }
-    }    
+    }
 
     Point undoableStartLocation = null;
-    
+
     boolean inUndoableOperation = false;
     String undoName = "XX";
+
     public void beginUndoableOperation(String what) {
-        what = what == null ? currentTool != null ? currentTool.getName() : "??" : what; 
+        what = what == null ? currentTool != null ? currentTool.getName() : "??" : what;
         inUndoableOperation = true;
         takeSnapshot();
 
@@ -706,32 +722,31 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         if (currentTool != null && !isNonPainting(currentTool)) {
             growImageIfNeeded();
         }
-        
-        undoableStartLocation = new Point (location);
+
+        undoableStartLocation = new Point(location);
         undoName = what;
     }
 
     public void endUndoableOperation() {
         inUndoableOperation = false;
-        if (!location.equals (undoableStartLocation) && undoableStartLocation != null) {
-            UndoManager mgr = (UndoManager) 
-                Utilities.actionsGlobalContext().lookup(UndoManager.class);
+        if (!location.equals(undoableStartLocation) && undoableStartLocation != null) {
+            UndoManager mgr = (UndoManager) Utilities.actionsGlobalContext().lookup(UndoManager.class);
 
             if (mgr != null) {
-                Point nue = new Point (location);
-                MoveEdit ed = new MoveEdit (undoableStartLocation, nue);
-                UndoableEditEvent evt = new UndoableEditEvent (this, ed);
+                Point nue = new Point(location);
+                MoveEdit ed = new MoveEdit(undoableStartLocation, nue);
+                UndoableEditEvent evt = new UndoableEditEvent(this, ed);
                 mgr.undoableEditHappened(evt);
             }
-        } else if (snapshot != null && !UNMODIFIED.equals (modifiedBounds)) {
+        } else if (snapshot != null && !UNMODIFIED.equals(modifiedBounds)) {
             Snapshot snap = snapshot;
             snapshot = null;
             OwnedEdit edit = null;
-            edit = new PaintEdit (new PaintingUndoData(snap),
+            edit = new PaintEdit(new PaintingUndoData(snap),
                     undoName);
 
             undoName = "--";
-            UndoManager undo = (UndoManager)Utilities.actionsGlobalContext().lookup(UndoManager.class);
+            UndoManager undo = (UndoManager) Utilities.actionsGlobalContext().lookup(UndoManager.class);
             if (undo != null) {
                 undo.undoableEditHappened(new UndoableEditEvent(this, edit));
             }
@@ -749,59 +764,62 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             undoableStartLocation = null;
         }
     }
-    
+
     private static class Snapshot {
+
         private Point location;
         private BufferedImage img;
         private Dimension size;
+
         private Snapshot(BufferedImage img, Point loc, Dimension size) {
-            this.img = new BufferedImage (img.getWidth(), img.getHeight(),
-                    img.getType() == 0 ? GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE : 
-                    img.getType());
-            this.img.createGraphics().drawRenderedImage(img, 
-                    AffineTransform.getTranslateInstance(0,0));
+            this.img = new BufferedImage(img.getWidth(), img.getHeight(),
+                    img.getType() == 0 ? GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE
+                    : img.getType());
+            this.img.createGraphics().drawRenderedImage(img,
+                    AffineTransform.getTranslateInstance(0, 0));
             this.location = loc;
             this.size = size;
         }
-        
+
         void updateLocation(Point p) {
             this.location = new Point(p);
         }
-        
+
         BufferedImage getImage() {
             return img;
         }
-        
+
         Point getLocation() {
             return location;
         }
-        
+
         Dimension getSize() {
             return size;
         }
     }
-    
+
     class PaintingUndoData {
+
         ImageHolder undoImage;
         private Rectangle redoBounds;
         private Rectangle undoBounds;
         private Rectangle clearLeftRight = null;
         private Rectangle clearTopBottom = null;
         ImageHolder redoImage = null;
-        
-        public PaintingUndoData (Snapshot snapshot) {
-            init (snapshot);
+
+        public PaintingUndoData(Snapshot snapshot) {
+            init(snapshot);
         }
-        
-        public PaintingUndoData () {
-            clearLeftRight = new Rectangle (0, 0, img.getWidth(), 
+
+        public PaintingUndoData() {
+            clearLeftRight = new Rectangle(0, 0, img.getWidth(),
                     img.getHeight());
             undoImage = null;
-            redoBounds = new Rectangle (clearLeftRight);
-            undoBounds = new Rectangle (clearLeftRight);
+            redoBounds = new Rectangle(clearLeftRight);
+            undoBounds = new Rectangle(clearLeftRight);
         }
-        
-        private void rollClip (Rectangle r) {
+
+        private void rollClip(Rectangle r) {
             if (r != null && r.x < 0) {
                 r.width += r.x;
                 r.x = 0;
@@ -814,44 +832,44 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             }
         }
 
-        private void calcClearRects (Rectangle common, Rectangle all, Rectangle startBounds, Rectangle endBounds, boolean zeroMoveX, boolean zeroMoveY) {
+        private void calcClearRects(Rectangle common, Rectangle all, Rectangle startBounds, Rectangle endBounds, boolean zeroMoveX, boolean zeroMoveY) {
             //XXX clean up args - passing more info than needed
             if (zeroMoveX && common.width != all.width) {
-                clearLeftRight = new Rectangle (all.x, all.y,
+                clearLeftRight = new Rectangle(all.x, all.y,
                         all.width - common.width, all.height);
             } else if (common.width != all.width) {
-                clearLeftRight = new Rectangle (all.x + common.width, all.y, 
+                clearLeftRight = new Rectangle(all.x + common.width, all.y,
                         all.width - common.width, all.height);
             }
             if (zeroMoveX && common.height != all.height) {
-                clearTopBottom = new Rectangle (all.x, all.y, 
+                clearTopBottom = new Rectangle(all.x, all.y,
                         all.width, all.height - common.height);
             } else if (common.height != all.height) {
-                clearTopBottom = new Rectangle (all.x, all.y + common.height,
+                clearTopBottom = new Rectangle(all.x, all.y + common.height,
                         all.width, all.height - common.height);
             }
-        }                
-        
-        private void init (Snapshot snapshot) {
+        }
+
+        private void init(Snapshot snapshot) {
             BufferedImage before = snapshot.getImage();
             BufferedImage after = img;
             Rectangle r = getChangeBounds();
-            
+
             boolean allModified = ALL_MODIFIED.equals(r);
-            
-            Dimension sizeAtStart = new Dimension (before.getWidth(), before.getHeight());
-            Dimension sizeAtFinish = new Dimension (img.getWidth(), 
+
+            Dimension sizeAtStart = new Dimension(before.getWidth(), before.getHeight());
+            Dimension sizeAtFinish = new Dimension(img.getWidth(),
                     img.getHeight());
-            
+
             boolean sizeChanged = !sizeAtStart.equals(sizeAtFinish);
-            Rectangle saveBounds = new Rectangle (r);
+            Rectangle saveBounds = new Rectangle(r);
             if (sizeChanged) {
                 Point startLoc = snapshot.getLocation();
                 Point endLoc = getLocation();
-                
-                Rectangle startBounds = new Rectangle (startLoc.x, startLoc.y, sizeAtStart.width,
+
+                Rectangle startBounds = new Rectangle(startLoc.x, startLoc.y, sizeAtStart.width,
                         sizeAtStart.height);
-                Rectangle endBounds = new Rectangle (endLoc.x, endLoc.y, sizeAtFinish.width,
+                Rectangle endBounds = new Rectangle(endLoc.x, endLoc.y, sizeAtFinish.width,
                         sizeAtFinish.height);
 
                 boolean zeroMoveX = startBounds.x == endBounds.x;
@@ -862,61 +880,59 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
                 if (zeroMoveY) {
                     startBounds.y += sizeAtFinish.height - sizeAtStart.height;
                 }
-                
-                Rectangle all = startBounds.union (endBounds);
+
+                Rectangle all = startBounds.union(endBounds);
                 Point allLoc = all.getLocation();
                 Rectangle common = startBounds.intersection(endBounds);
-                Point offsets = new Point (endBounds.x - startBounds.x, endBounds.y - startBounds.y);
-                
-                all.setLocation (0, 0);
-                common.setLocation (-offsets.x, -offsets.y);
-                
-                startBounds.translate (-allLoc.x, -allLoc.y);
-                endBounds.translate (-allLoc.x, -allLoc.y);
-                
-                calcClearRects (common, all, startBounds, endBounds, zeroMoveX, zeroMoveY);
-                
+                Point offsets = new Point(endBounds.x - startBounds.x, endBounds.y - startBounds.y);
+
+                all.setLocation(0, 0);
+                common.setLocation(-offsets.x, -offsets.y);
+
+                startBounds.translate(-allLoc.x, -allLoc.y);
+                endBounds.translate(-allLoc.x, -allLoc.y);
+
+                calcClearRects(common, all, startBounds, endBounds, zeroMoveX, zeroMoveY);
+
                 redoBounds = new Rectangle(r);
-                r.translate (-allLoc.x, -allLoc.y);
-                
+                r.translate(-allLoc.x, -allLoc.y);
+
                 undoBounds = new Rectangle(r);
                 saveBounds = new Rectangle(r);
-                
+
                 if (zeroMoveX) {
                     saveBounds.x += offsets.x;
                 }
                 if (zeroMoveY) {
                     saveBounds.y += offsets.y;
                 }
-                undoBounds = undoBounds.intersection (common);
-                
+                undoBounds = undoBounds.intersection(common);
+
                 if (DEBUG) {
-                    showFrame(new Rectangle[] {
-                        startBounds, endBounds, all, common, 
+                    showFrame(new Rectangle[]{
+                        startBounds, endBounds, all, common,
                         redoBounds, undoBounds, saveBounds,
-                        clearLeftRight, clearTopBottom,
-                    }, new String[] {
+                        clearLeftRight, clearTopBottom,}, new String[]{
                         "Start Bounds", "End bounds", "All", "Common",
                         "Redo bounds", "Undo bounds", "Save bounds",
-                        "Clear L/R", "Clear T/B",
-                    });
+                        "Clear L/R", "Clear T/B",});
                 }
-                
+
             } else {
                 rollClip(r);
                 redoBounds = new Rectangle(r);
                 undoBounds = new Rectangle(r);
-                saveBounds = r.intersection (new Rectangle(0, 0, sizeAtStart.width, sizeAtStart.height));
+                saveBounds = r.intersection(new Rectangle(0, 0, sizeAtStart.width, sizeAtStart.height));
                 if (saveBounds.width <= 0 || saveBounds.height <= 0) {
                     saveBounds = null;
                 }
             }
-            
-            generateImages (saveBounds, allModified, before, after);
-            
+
+            generateImages(saveBounds, allModified, before, after);
+
         }
-        
-        private void fitToImage (Rectangle r, BufferedImage img) {
+
+        private void fitToImage(Rectangle r, BufferedImage img) {
             if (r == null) {
                 return;
             }
@@ -935,53 +951,53 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
                 r.height = img.getHeight() - r.y;
             }
         }
-        
-        private void generateImages (Rectangle saveBounds, boolean allModified,
+
+        private void generateImages(Rectangle saveBounds, boolean allModified,
                 BufferedImage before, BufferedImage after) {
 //            System.err.println("Generate images " + saveBounds + " allModified " + allModified + " before null? " + (before == null) + " after null? " + (after == null));
             if (saveBounds != null) {
-                saveBounds = saveBounds.intersection (new Rectangle (0, 0, before.getWidth(),
+                saveBounds = saveBounds.intersection(new Rectangle(0, 0, before.getWidth(),
                         before.getHeight()));
             }
-            
-            if (allModified ) {
-                undoImage = new ImageHolder (before);
-                redoImage = new ImageHolder (after);
+
+            if (allModified) {
+                undoImage = new ImageHolder(before);
+                redoImage = new ImageHolder(after);
             } else {
-                fitToImage (saveBounds, before);
-                undoImage = saveBounds == null ||
-                        saveBounds.width <= 0 || 
-                        saveBounds.height <= 0 
-                        ? null : new ImageHolder (before, saveBounds);
+                fitToImage(saveBounds, before);
+                undoImage = saveBounds == null
+                        || saveBounds.width <= 0
+                        || saveBounds.height <= 0
+                                ? null : new ImageHolder(before, saveBounds);
                 try {
-                    fitToImage (redoBounds, after);
-                    redoImage = new ImageHolder (after, redoBounds);
+                    fitToImage(redoBounds, after);
+                    redoImage = new ImageHolder(after, redoBounds);
                 } catch (RasterFormatException ref) {
-                    throw new IllegalStateException ("RFE on redo image for " +
-                            redoBounds + " from " + after.getWidth()  + "," + 
-                            after.getHeight());
+                    throw new IllegalStateException("RFE on redo image for "
+                            + redoBounds + " from " + after.getWidth() + ","
+                            + after.getHeight());
                 }
             }
             if (DEBUG && undoImage != null) {
                 showImageInFrame(undoImage.getImage(false), "Undo image");
             }
             if (DEBUG) {
-                showImageInFrame (redoImage.getImage(false), "Redo image");
+                showImageInFrame(redoImage.getImage(false), "Redo image");
             }
         }
-        
+
         Rectangle[] getRectanglesToClear() {
             if ((clearLeftRight == null && clearTopBottom == null)) {
                 return new Rectangle[0];
             } else if ((clearLeftRight == null) != (clearTopBottom == null)) {
-                return new Rectangle[] {
-                  clearLeftRight == null ? clearTopBottom : clearLeftRight  
+                return new Rectangle[]{
+                    clearLeftRight == null ? clearTopBottom : clearLeftRight
                 };
             } else {
-                return new Rectangle[] { clearLeftRight, clearTopBottom };
+                return new Rectangle[]{clearLeftRight, clearTopBottom};
             }
         }
-        
+
         void dispose() {
             if (undoImage != null) {
                 undoImage.dispose();
@@ -990,257 +1006,266 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
                 redoImage.dispose();
             }
         }
-        
-        public void zeroMoved (int padX, int padY) {
+
+        public void zeroMoved(int padX, int padY) {
             if (undoBounds != null) { //XXX shouldn't ever be null
-                undoBounds.translate (padX, padY);
+                undoBounds.translate(padX, padY);
             }
             if (redoBounds != null) { //XXX shouldn't ever be null
-                redoBounds.translate (padX, padY);
+                redoBounds.translate(padX, padY);
             }
             //XXX for clear rects, expand to meet the edges of the new image size
             if (clearLeftRight != null) {
-                clearLeftRight.translate (padX, padY);
+                clearLeftRight.translate(padX, padY);
             }
             if (clearTopBottom != null) {
-                clearTopBottom.translate (padX, padY);
+                clearTopBottom.translate(padX, padY);
             }
         }
-        
+
         Point getRedoLocation() {
             return redoBounds.getLocation();
         }
-        
+
         Point getUndoLocation() {
             return undoBounds.getLocation();
         }
-        
+
         Rectangle getRedoBounds() {
-            return new Rectangle (redoBounds);
+            return new Rectangle(redoBounds);
         }
-        
+
         Rectangle getUndoBounds() {
-            return new Rectangle (undoBounds);
+            return new Rectangle(undoBounds);
         }
-        
+
         BufferedImage getRedoImage() {
             return redoImage != null ? redoImage.getImage(false) : null;
         }
-        
+
         BufferedImage getUndoImage() {
             return undoImage != null ? undoImage.getImage(false) : null;
         }
-    }    
-    
-    
+    }
+
     private static class SRect extends Rectangle implements Comparable {
-        public SRect (Rectangle r, String s) {
-            super (r == null ? new Rectangle(-1000, -1000, -1000, -1000) : r);
+
+        public SRect(Rectangle r, String s) {
+            super(r == null ? new Rectangle(-1000, -1000, -1000, -1000) : r);
             this.s = s;
         }
         private String s;
+
         @Override
         public String toString() {
-            return s + " [" + x  + "," + y  + "," + width  + "," + height + "]";
+            return s + " [" + x + "," + y + "," + width + "," + height + "]";
         }
-        
+
         public int compareTo(Object o) {
             Rectangle r = (Rectangle) o;
             return (width * height) - (r.width * r.height);
         }
     }
-    
-    private static void showFrame (final Rectangle[] r, String[] s) {
+
+    private static void showFrame(final Rectangle[] r, String[] s) {
         int minX = 0;
         int minY = 0;
-        for (int i=0; i < r.length; i++) {
+        for (int i = 0; i < r.length; i++) {
             if (r[i] != null) {
-                minX = Math.min (r[i].x, minX);
-                minY = Math.min (r[i].y, minY);
+                minX = Math.min(r[i].x, minX);
+                minY = Math.min(r[i].y, minY);
             }
         }
-        
+
         assert r.length == s.length;
         for (int i = 0; i < r.length; i++) {
             r[i] = new SRect(r[i], s[i]);
         }
         Arrays.sort(r);
-        
+
         class C extends JComponent {
+
             int minX;
             int minY;
-            C (int minX, int minY) {
+
+            C(int minX, int minY) {
                 this.minX = minX;
                 this.minY = minY;
             }
-            
+
             @Override
             public void addNotify() {
                 super.addNotify();
                 ToolTipManager.sharedInstance().registerComponent(this);
             }
-            
+
             @Override
             public void removeNotify() {
                 ToolTipManager.sharedInstance().unregisterComponent(this);
                 super.removeNotify();
             }
-            
-            public String getToolTipText (Point p) {
+
+            public String getToolTipText(Point p) {
                 Point p2 = new Point(p);
                 p2.x -= minX;
                 p2.y -= minY;
-                return p2.x  + "," + p2.y + hitString (p2);
+                return p2.x + "," + p2.y + hitString(p2);
             }
-            
-            public String hitString (Point p) {
+
+            public String hitString(Point p) {
                 Rectangle[] rects = new Rectangle[r.length];
                 System.arraycopy(r, 0, rects, 0, r.length);
-                Arrays.sort (rects);
-                for (int i=0; i < rects.length; i++) {
+                Arrays.sort(rects);
+                for (int i = 0; i < rects.length; i++) {
                     if (r[i].contains(p)) {
                         return " " + r[i].toString();
                     }
                 }
                 return " (no rect)";
             }
-            
+
             @Override
             public Dimension getPreferredSize() {
                 Dimension result = new Dimension(-1, -1);
-                for (int i=0; i < r.length; i++) {
-                    result.width = Math.max (result.width, r[i].width);
-                    result.height = Math.max (result.height, r[i].height);
+                for (int i = 0; i < r.length; i++) {
+                    result.width = Math.max(result.width, r[i].width);
+                    result.height = Math.max(result.height, r[i].height);
                 }
                 result.width += 80;
                 result.height += 80;
                 return result;
             }
-            private Color[] c = new Color[] { Color.RED, Color.GREEN, Color.BLUE,
-               Color.ORANGE, Color.MAGENTA, Color.CYAN, Color.GRAY, Color.BLACK,
-               Color.PINK, new Color (150, 150, 0), new Color (0, 150, 150),
-               new Color (150, 0, 150),
-            };
-            
+            private Color[] c = new Color[]{Color.RED, Color.GREEN, Color.BLUE,
+                Color.ORANGE, Color.MAGENTA, Color.CYAN, Color.GRAY, Color.BLACK,
+                Color.PINK, new Color(150, 150, 0), new Color(0, 150, 150),
+                new Color(150, 0, 150),};
+
             @Override
-            public void paint (Graphics g) {
-                g.translate (-minX, -minY);
-                g.translate (40, 40);
-                g.setColor (Color.WHITE);
-                g.fillRect (0, 0, getWidth(), getHeight());
-                g.setFont (getFont());
+            public void paint(Graphics g) {
+                g.translate(-minX, -minY);
+                g.translate(40, 40);
+                g.setColor(Color.WHITE);
+                g.fillRect(0, 0, getWidth(), getHeight());
+                g.setFont(getFont());
                 int h = g.getFontMetrics().getHeight();
                 int ix = h;
-                for (int i=0; i < r.length; i++) {
+                for (int i = 0; i < r.length; i++) {
                     if (r[i] != null) {
-                        g.setColor (c[i]);
-                        g.drawRect (r[i].x, r[i].y, r[i].width, r[i].height);
-                        g.drawString (r[i].toString(), r[i].x + 20, r[i].y + ix);
+                        g.setColor(c[i]);
+                        g.drawRect(r[i].x, r[i].y, r[i].width, r[i].height);
+                        g.drawString(r[i].toString(), r[i].x + 20, r[i].y + ix);
                         ix += h;
                     }
                 }
-                g.translate (-40, -40);
+                g.translate(-40, -40);
             }
         }
         JFrame jf = new JFrame();
-        jf.getContentPane().setLayout (new BorderLayout());
-        jf.getContentPane().add (new C(minX, minY));
+        jf.getContentPane().setLayout(new BorderLayout());
+        jf.getContentPane().add(new C(minX, minY));
         jf.pack();
         jf.setVisible(true);
     }
-    private static void showImageInFrame (BufferedImage redoImage, String caption) {
+
+    private static void showImageInFrame(BufferedImage redoImage, String caption) {
         JFrame jf = new JFrame();
-        jf.setLayout (new BorderLayout());
-        jf.add(new JLabel(new ImageIcon (redoImage)), BorderLayout.CENTER);
+        jf.setLayout(new BorderLayout());
+        jf.add(new JLabel(new ImageIcon(redoImage)), BorderLayout.CENTER);
         jf.setBounds(300, 300, redoImage.getWidth() + 10, redoImage.getHeight() + 80);
-        if (caption != null) jf.setTitle(caption);
+        if (caption != null) {
+            jf.setTitle(caption);
+        }
         jf.setVisible(true);
     }
-    
+
     public static boolean DEBUG = false;
+
     final class PaintEdit implements OwnedEdit {
+
         PaintingUndoData data;
         final String what;
-        public PaintEdit (PaintingUndoData data, String what) {
+
+        public PaintEdit(PaintingUndoData data, String what) {
             this.data = data;
             this.what = what;
         }
 
         public boolean isUndo = true;
+
         public void undo() throws CannotUndoException {
             if (!canUndo()) {
-                throw new CannotUndoException ();
+                throw new CannotUndoException();
             }
             BufferedImage undoImage = data.getUndoImage();
             Graphics2D g2d = img.createGraphics();
-            g2d.setBackground(new Color (0,0,0,0));
+            g2d.setBackground(new Color(0, 0, 0, 0));
             if (undoImage != null) {
                 if (DEBUG) {
 //                    showImageInFrame(undoImage, "Undo image");
                 }
                 Point p = data.getUndoLocation();
-                g2d.clearRect(p.x, p.y, undoImage.getWidth(), 
+                g2d.clearRect(p.x, p.y, undoImage.getWidth(),
                         undoImage.getHeight());
-                replaceArea (undoImage, g2d, p);
+                replaceArea(undoImage, g2d, p);
                 if (DEBUG) {
-                    g2d.setColor (new Color (128, 255, 128, 128));
-                    g2d.fillRect (p.x, p.y, undoImage.getWidth(), undoImage.getHeight());
+                    g2d.setColor(new Color(128, 255, 128, 128));
+                    g2d.fillRect(p.x, p.y, undoImage.getWidth(), undoImage.getHeight());
                 }
             }
             Rectangle[] r = data.getRectanglesToClear();
-            for (int i=0; i < r.length; i++) {
+            for (int i = 0; i < r.length; i++) {
                 g2d.clearRect(r[i].x, r[i].y, r[i].width, r[i].height);
                 if (DEBUG) {
-                    g2d.setColor (new Color (255, 128, 128, 128));
-                    g2d.fillRect (r[i].x, r[i].y, r[i].width, r[i].height);
+                    g2d.setColor(new Color(255, 128, 128, 128));
+                    g2d.fillRect(r[i].x, r[i].y, r[i].width, r[i].height);
                 }
             }
             g2d.dispose();
             snapshot = null;
             takeSnapshot();
             isUndo = false;
-            _repaintArea (-1, -1, -1, -1);
+            _repaintArea(-1, -1, -1, -1);
         }
 
         public boolean canUndo() {
             return isUndo && data != null;
         }
-        
+
         public void redo() throws CannotRedoException {
             if (!canRedo()) {
                 throw new CannotRedoException();
             }
             BufferedImage redoImage = data.getRedoImage();
             if (DEBUG) {
-                showImageInFrame (redoImage, "Redo image");
+                showImageInFrame(redoImage, "Redo image");
             }
             Graphics2D g2d = img.createGraphics();
-            replaceArea (redoImage, g2d, data.getRedoLocation());
+            replaceArea(redoImage, g2d, data.getRedoLocation());
             g2d.dispose();
             snapshot = null;
             takeSnapshot();
             isUndo = true;
-            _repaintArea (-1, -1, -1, -1);
+            _repaintArea(-1, -1, -1, -1);
         }
-        
-        private void replaceArea (BufferedImage replaceData, Graphics2D g2d, Point loc) {
-            Rectangle replaceBounds = new Rectangle (loc,
-                    new Dimension (replaceData.getWidth(), 
-                    replaceData.getHeight()));
-            g2d.setBackground(new Color (0,0,0,0));
-            g2d.clearRect(replaceBounds.x, replaceBounds.y, replaceData.getWidth(), 
+
+        private void replaceArea(BufferedImage replaceData, Graphics2D g2d, Point loc) {
+            Rectangle replaceBounds = new Rectangle(loc,
+                    new Dimension(replaceData.getWidth(),
+                            replaceData.getHeight()));
+            g2d.setBackground(new Color(0, 0, 0, 0));
+            g2d.clearRect(replaceBounds.x, replaceBounds.y, replaceData.getWidth(),
                     replaceData.getHeight());
-            
-            g2d.drawRenderedImage(replaceData, 
+
+            g2d.drawRenderedImage(replaceData,
                     AffineTransform.getTranslateInstance(replaceBounds.x,
-                    replaceBounds.y));
+                            replaceBounds.y));
 
 //            if (DEBUG) {
 //                g2d.setColor (new Color (128,128,255,128));
 //                g2d.fillRect (replaceBounds.x, replaceBounds.y, replaceBounds.width, replaceBounds.height);
 //                System.err.println("REPLACE BONUDS " + replaceBounds);
 //            }
-            _repaintArea (replaceBounds.x, replaceBounds.y, replaceBounds.width, 
+            _repaintArea(replaceBounds.x, replaceBounds.y, replaceBounds.width,
                     replaceBounds.height);
         }
 
@@ -1287,8 +1312,9 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             data.zeroMoved(x, y);
         }
     }
-    
+
     private class MoveEdit implements OwnedEdit {
+
         private Point then;
         private Point now;
 
@@ -1296,13 +1322,13 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             this.then = then;
             this.now = now;
         }
-        
-        public void zeroMoved (int x, int y) {
+
+        public void zeroMoved(int x, int y) {
             then.translate(-x, -y);
             now.translate(-x, -y);
         }
-        
-        public boolean isChangeOf (RasterSurfaceImpl impl) {
+
+        public boolean isChangeOf(RasterSurfaceImpl impl) {
             return impl == RasterSurfaceImpl.this;
         }
 
@@ -1344,8 +1370,8 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         }
 
         public String getPresentationName() {
-            return "Move layer from " + then.x + "," + then.y + " to " + now.x +
-                   "," + now.y;
+            return "Move layer from " + then.x + "," + then.y + " to " + now.x
+                    + "," + now.y;
         }
 
         public String getUndoPresentationName() {

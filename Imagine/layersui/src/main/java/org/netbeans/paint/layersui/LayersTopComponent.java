@@ -1,4 +1,5 @@
 package org.netbeans.paint.layersui;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -64,7 +65,6 @@ import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
-import org.openide.util.lookup.Lookups;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
@@ -72,19 +72,19 @@ import org.openide.windows.WindowManager;
 /**
  * Top component which displays something.
  */
-
 @TopComponent.Description(preferredID = "LayersTopComponent",
-//iconBase="SET/PATH/TO/ICON/HERE", 
-persistenceType = TopComponent.PERSISTENCE_ALWAYS)
+        //iconBase="SET/PATH/TO/ICON/HERE",
+        persistenceType = TopComponent.PERSISTENCE_ALWAYS)
 @TopComponent.Registration(mode = "layersMode", openAtStartup = true)
 @ActionID(category = "Window", id = "org.netbeans.paint.layersui.LayersTopComponent")
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
 @TopComponent.OpenActionRegistration(displayName = "#CTL_LayersAction",
-preferredID = "LayersTopComponent")
+        preferredID = "LayersTopComponent")
 public final class LayersTopComponent extends TopComponent implements LookupListener,
-                                                               ChangeListener,
-                                                               ActionListener,
-                                                               Runnable {
+        ChangeListener,
+        ActionListener,
+        Runnable {
+
     private static final long serialVersionUID = -1323452L;
     private static LayersTopComponent instance;
     private final JPanel innerPanel = new JPanel();
@@ -93,14 +93,15 @@ public final class LayersTopComponent extends TopComponent implements LookupList
     private final AbstractLookup lkp = new AbstractLookup(content);
     private final JScrollPane scrollPane = new JScrollPane(innerPanel);
     private final JButton newButton;
+
     private LayersTopComponent() {
         initComponents();
-	scrollPane.setBorder (BorderFactory.createEmptyBorder ());
-	scrollPane.setViewportBorder (BorderFactory.createEmptyBorder ());
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.setViewportBorder(BorderFactory.createEmptyBorder());
         setName(NbBundle.getMessage(LayersTopComponent.class,
-                                    "CTL_LayersTopComponent"));
+                "CTL_LayersTopComponent"));
         setToolTipText(NbBundle.getMessage(LayersTopComponent.class,
-                                           "HINT_LayersTopComponent"));
+                "HINT_LayersTopComponent"));
         innerPanel.setLayout(new LM());
         // innerPanel.setLayout (new BoxLayout (innerPanel, BoxLayout.Y_AXIS));
         add(scrollPane, BorderLayout.CENTER);
@@ -109,7 +110,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
 
         newButton.setPreferredSize(bdim);
         newButton.setToolTipText(NbBundle.getMessage(LayersTopComponent.class,
-                                                     "LBL_New"));
+                "LBL_New"));
         newButton.setIcon(new ImageIcon(ImageUtilities.loadImage("org/netbeans/paint/layersui/resources/newlayer.png")));
         newButton.setName(NAME_NEW);
         newButton.addActionListener(this);
@@ -118,7 +119,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         JButton delButton = new JButton();
 
         delButton.setToolTipText(NbBundle.getMessage(LayersTopComponent.class,
-                                                     "LBL_Delete"));
+                "LBL_Delete"));
         delButton.setIcon(new ImageIcon(ImageUtilities.loadImage("org/netbeans/paint/layersui/resources/delete.png")));
         delButton.setName(NAME_DELETE);
         delButton.addActionListener(this);
@@ -129,7 +130,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
 
         upButton.setPreferredSize(bdim);
         upButton.setToolTipText(NbBundle.getMessage(LayersTopComponent.class,
-                                                    "LBL_Up"));
+                "LBL_Up"));
         upButton.setIcon(new ImageIcon(ImageUtilities.loadImage("org/netbeans/paint/layersui/resources/up.png")));
         upButton.setName(NAME_UP);
         upButton.setEnabled(false);
@@ -139,7 +140,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
 
         downButton.setPreferredSize(bdim);
         downButton.setToolTipText(NbBundle.getMessage(LayersTopComponent.class,
-                                                      "LBL_Down"));
+                "LBL_Down"));
         downButton.setIcon(new ImageIcon(ImageUtilities.loadImage("org/netbeans/paint/layersui/resources/down.png")));
         downButton.setName(NAME_DOWN);
         downButton.setEnabled(false);
@@ -149,7 +150,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
 
         dupButton.setPreferredSize(bdim);
         dupButton.setToolTipText(NbBundle.getMessage(LayersTopComponent.class,
-                                                     "LBL_Duplicate"));
+                "LBL_Duplicate"));
         dupButton.setIcon(new ImageIcon(ImageUtilities.loadImage("org/netbeans/paint/layersui/resources/clone.png")));
         dupButton.setName(NAME_DUP);
         dupButton.setEnabled(false);
@@ -157,12 +158,9 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         bar.add(dupButton);
         JButton flattenButton = new JButton();
 
-        
-        
-        
         flattenButton.setPreferredSize(bdim);
         flattenButton.setToolTipText(NbBundle.getMessage(LayersTopComponent.class,
-                                                         "LBL_Flatten"));
+                "LBL_Flatten"));
         flattenButton.setIcon(new ImageIcon(ImageUtilities.loadImage("org/netbeans/paint/layersui/resources/flatten.png")));
         flattenButton.setName(NAME_FLATTEN);
         flattenButton.setEnabled(false);
@@ -172,7 +170,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         associateLookup(lkp);
         // Show the empty label
         updateContents();
-        
+
     }
     private static final String NAME_NEW = "new";
     private static final String NAME_DELETE = "delete";
@@ -180,7 +178,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
     private static final String NAME_DOWN = "down";
     private static final String NAME_DUP = "dup";
     private static final String NAME_FLATTEN = "flatten";
-    
+
     @Override
     public void open() {
         Mode m = WindowManager.getDefault().findMode("layers");
@@ -196,10 +194,9 @@ public final class LayersTopComponent extends TopComponent implements LookupList
     // }
 
     /**
-     * This method is called from within the constructor to
-     * initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is
-     * always regenerated by the Form Editor.
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
      */
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
 
@@ -212,10 +209,10 @@ public final class LayersTopComponent extends TopComponent implements LookupList
 
     /**
      *
-     * Gets default instance. Don't use directly, it reserved for '.settings' file only,
-     * i.e. deserialization routines, otherwise you can get non-deserialized instance.
+     * Gets default instance. Don't use directly, it reserved for '.settings'
+     * file only, i.e. deserialization routines, otherwise you can get
+     * non-deserialized instance.
      */
-
     public static synchronized LayersTopComponent getDefault() {
         if (instance == null) {
             instance = new LayersTopComponent();
@@ -223,8 +220,6 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         return instance;
     }
 
-    
- 
     Result pictureLookupResult = null;
 
     @Override
@@ -237,8 +232,8 @@ public final class LayersTopComponent extends TopComponent implements LookupList
     }
 
     private void updatePicture() {
-        Picture curr = 
-                Utilities.actionsGlobalContext().lookup(Picture.class);
+        Picture curr
+                = Utilities.actionsGlobalContext().lookup(Picture.class);
 
         setPicture(curr);
     }
@@ -253,13 +248,14 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         stopTimer();
     }
     private Picture picture = null;
-    
-    private final Timer timer = new Timer (5000, this);
+
+    private final Timer timer = new Timer(5000, this);
+
     private void startTimer() {
         timer.setRepeats(true);
         timer.start();
     }
-    
+
     private void stopTimer() {
         timer.stop();
     }
@@ -281,7 +277,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
             c[i].setEnabled(layers != null);
         }
         content.set(layers == null ? Collections.EMPTY_SET
-                                   : Collections.singleton(layers), null);
+                : Collections.singleton(layers), null);
         updateContents();
     }
 
@@ -292,18 +288,16 @@ public final class LayersTopComponent extends TopComponent implements LookupList
     public void run() {
         innerPanel.removeAll();
         if (picture != null) {
-            List l = picture.getLayers();
+            List<Layer> l = picture.getLayers();
 
-            for (Iterator i = l.iterator(); i.hasNext(); ) {
-                Layer layer = (Layer)i.next();
+            for (Iterator<Layer> i = l.iterator(); i.hasNext();) {
+                Layer layer = i.next();
                 LayerPanel pnl = new LayerPanel(layer);
-
                 innerPanel.add(pnl, 0);
             }
-        }
-        else {
+        } else {
             JLabel lbl = new JLabel(NbBundle.getMessage(LayersTopComponent.class,
-                                                        "LBL_Empty"));
+                    "LBL_Empty"));
 
             lbl.setHorizontalTextPosition(SwingConstants.CENTER);
             lbl.setEnabled(false);
@@ -317,7 +311,6 @@ public final class LayersTopComponent extends TopComponent implements LookupList
     /**
      * replaces this in object stream
      */
-
     @Override
     public Object writeReplace() {
         return new ResolvableHelper();
@@ -337,13 +330,14 @@ public final class LayersTopComponent extends TopComponent implements LookupList
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (picture == null)
+        if (picture == null) {
             return;
+        }
         if (e.getSource() instanceof Timer) {
             repaint();
             return;
         }
-        JButton jb = (JButton)e.getSource();
+        JButton jb = (JButton) e.getSource();
 
         if (NAME_DELETE.equals(jb.getName())) {
             Layer l = picture.getActiveLayer();
@@ -351,10 +345,9 @@ public final class LayersTopComponent extends TopComponent implements LookupList
             if (l != null) {
                 picture.delete(l);
             }
-        }
-        else if (NAME_NEW.equals(jb.getName())) {
-            Collection <? extends LayerFactory> factories = 
-                    Lookup.getDefault().lookupAll(LayerFactory.class);
+        } else if (NAME_NEW.equals(jb.getName())) {
+            Collection<? extends LayerFactory> factories
+                    = Lookup.getDefault().lookupAll(LayerFactory.class);
             if (factories.size() == 1) {
                 Layer layer = Utilities.actionsGlobalContext().lookup(Layer.class);
                 int pos;
@@ -369,31 +362,33 @@ public final class LayersTopComponent extends TopComponent implements LookupList
                 picture.add(pos);
             } else {
                 class AA extends AbstractAction {
+
                     private LayerFactory f;
-                    public AA (LayerFactory f) {
+
+                    public AA(LayerFactory f) {
                         this.f = f;
                         String name = f.getDisplayName();
-                        String s = NbBundle.getMessage (
+                        String s = NbBundle.getMessage(
                                 LayersTopComponent.class,
                                 "FMT_NewLayer", name); //NOI18N
-                        putValue (Action.NAME, s);
+                        putValue(Action.NAME, s);
                     }
 
                     public void actionPerformed(ActionEvent ae) {
                         int ct = picture.getLayers().size();
-                        Set <String> usedNames = new HashSet<String> (ct);
+                        Set<String> usedNames = new HashSet<String>(ct);
                         for (Layer l : picture.getLayers()) {
-                            usedNames.add (l.getName());
+                            usedNames.add(l.getName());
                         }
                         String newName = null;
                         int ix = 1;
                         while (newName == null || usedNames.contains(newName)) {
-                            newName = NbBundle.getMessage(LayersTopComponent.class, 
+                            newName = NbBundle.getMessage(LayersTopComponent.class,
                                     "NEW_LAYER_NAME", "" + (ix++));
                         }
-                        LayerImplementation impl = f.createLayer(newName, 
-                                 picture.getRepaintHandle(),
-                                 picture.getSize());
+                        LayerImplementation impl = f.createLayer(newName,
+                                picture.getRepaintHandle(),
+                                picture.getSize());
                         Layer layer = Utilities.actionsGlobalContext().lookup(Layer.class);
                         int pos;
                         if (layer != null) {
@@ -404,66 +399,66 @@ public final class LayersTopComponent extends TopComponent implements LookupList
                         } else {
                             pos = Picture.POSITION_BOTTOM;
                         }
-                        picture.add (pos, 
+                        picture.add(pos,
                                 impl.getLayer());
                     }
                 }
                 JPopupMenu popup = new JPopupMenu();
                 for (LayerFactory factory : factories) {
-                    popup.add (new AA(factory));
+                    popup.add(new AA(factory));
                 }
                 EventObject event = EventQueue.getCurrentEvent();
                 if (event instanceof MouseEvent) {
                     MouseEvent me = (MouseEvent) event;
                     Point p = me.getPoint();
-                    popup.show ((Component) me.getSource(), 
+                    popup.show((Component) me.getSource(),
                             p.x, p.y);
                 } else {
-                    Point p = new Point (newButton.getWidth() / 2,
+                    Point p = new Point(newButton.getWidth() / 2,
                             newButton.getHeight() / 2);
-                    popup.show (newButton, p.x, p.y);
+                    popup.show(newButton, p.x, p.y);
                 }
             }
-        }
-        else if (NAME_DOWN.equals(jb.getName())) {
+        } else if (NAME_DOWN.equals(jb.getName())) {
             Layer l = picture.getActiveLayer();
             int ix = picture.getLayers().indexOf(l);
 
             if (ix >= 1) {
                 picture.move(l, ix - 1);
             }
-        }
-        else if (NAME_UP.equals(jb.getName())) {
+        } else if (NAME_UP.equals(jb.getName())) {
             Layer l = picture.getActiveLayer();
             int ix = picture.getLayers().indexOf(l);
 
             if (ix != picture.getLayers().size() - 1) {
                 picture.move(l, ix + 2);
             }
-        }
-        else if (NAME_DUP.equals(jb.getName())) {
+        } else if (NAME_DUP.equals(jb.getName())) {
             Layer l = picture.getActiveLayer();
 
             picture.duplicate(l);
-        }
-        else if (NAME_FLATTEN.equals(jb.getName())) {
+        } else if (NAME_FLATTEN.equals(jb.getName())) {
             picture.flatten();
         }
         stateChanged(null);
     }
+
     static final class ResolvableHelper implements java.io.Serializable {
+
         private static final long serialVersionUID = 1L;
 
         public Object readResolve() {
             return LayersTopComponent.getDefault();
         }
     }
-    private class LayerPanel extends JPanel implements PropertyChangeListener,
-                                                       MouseListener,
-                                                       FocusListener,
-                                                       ActionListener,
-                                                       KeyListener,
-                                                       ChangeListener {
+
+    private final class LayerPanel extends JPanel implements PropertyChangeListener,
+            MouseListener,
+            FocusListener,
+            ActionListener,
+            KeyListener,
+            ChangeListener {
+
         private final Layer layer;
         private final JCheckBox box;
         private final JLabel lbl;
@@ -471,6 +466,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         private final Thumbnail thumbnail;
 
         public LayerPanel(final Layer layer) {
+            assert layer != null : "Layer null";
             this.layer = layer;
             add(thumbnail = new Thumbnail());
             box = new JCheckBox();
@@ -479,16 +475,15 @@ public final class LayersTopComponent extends TopComponent implements LookupList
             lbl = new JLabel();
             // So the editor will have enough room
             add(lbl);
-            refresh();
             setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0,
-                                                                                         0,
-                                                                                         1,
-                                                                                         0,
-                                                                                         Color.GRAY),
-                                                         BorderFactory.createEmptyBorder(0,
-                                                                                         12,
-                                                                                         0,
-                                                                                         0)));
+                    0,
+                    1,
+                    0,
+                    Color.GRAY),
+                    BorderFactory.createEmptyBorder(0,
+                            12,
+                            0,
+                            0)));
             box.addMouseListener(this);
             lbl.addMouseListener(this);
             addMouseListener(this);
@@ -497,13 +492,14 @@ public final class LayersTopComponent extends TopComponent implements LookupList
             opacity.setMinimum(0);
             opacity.setMaximum(100);
             opacity.setValue(Math.max(100,
-                                      (int)(layer.getOpacity()*100.0F)));
+                    (int) (layer.getOpacity() * 100.0F)));
             add(opacity);
             opacity.addChangeListener(this);
-            opacity.setUI((javax.swing.plaf.SliderUI)org.netbeans.paint.api.components.PopupSliderUI.createUI(opacity));
+            opacity.setUI((javax.swing.plaf.SliderUI) org.netbeans.paint.api.components.PopupSliderUI.createUI(opacity));
             opacity.setOpaque(false);
             opacity.addMouseListener(this);
             box.setOpaque(false);
+            refresh();
         }
         private static final int GAP = 3;
 
@@ -540,10 +536,10 @@ public final class LayersTopComponent extends TopComponent implements LookupList
             for (int i = 0; i < c.length; i++) {
                 result.width += c[i].getPreferredSize().width;
                 result.height = Math.max(result.height,
-                                         c[i].getPreferredSize().height);
+                        c[i].getPreferredSize().height);
             }
-            result.width += GAP*(c.length - 2);
-            result.height += GAP*2;
+            result.width += GAP * (c.length - 2);
+            result.height += GAP * 2;
             result.width = Math.max(120, result.width);
             return result;
         }
@@ -560,17 +556,17 @@ public final class LayersTopComponent extends TopComponent implements LookupList
 
         private int center(int height, Insets ins) {
             return Math.max(0,
-                            ((getHeight() - (ins.top + ins.bottom))/2) -
-                            (height/2));
+                    ((getHeight() - (ins.top + ins.bottom)) / 2)
+                    - (height / 2));
         }
 
         public void stateChanged(ChangeEvent e) {
-            JSlider opacitySlider = (JSlider)e.getSource();
+            JSlider opacitySlider = (JSlider) e.getSource();
             float val = opacitySlider.getValue();
 
-            layer.setOpacity(val/100.0F);
+            layer.setOpacity(val / 100.0F);
         }
-        
+
         private class Thumbnail extends JComponent {
 
             @Override
@@ -587,12 +583,15 @@ public final class LayersTopComponent extends TopComponent implements LookupList
                 g.setColor(Color.GRAY);
                 g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
                 Rectangle r = new Rectangle(1, 1, getWidth() - 1,
-                                            getHeight() - 1);
+                        getHeight() - 1);
                 Shape clip = g.getClip();
 
                 g.setClip(r);
-                layer.paint (g, r,true);
-                g.setClip(clip);
+                try {
+                    layer.paint(g, r, true, true);
+                } finally {
+                    g.setClip(clip);
+                }
             }
 
             @Override
@@ -602,10 +601,10 @@ public final class LayersTopComponent extends TopComponent implements LookupList
                 int ht = 32;
 
                 if (lsize.height != 0) {
-                    float htFactor = (float)(ht - 4)/
-                                     (float)picture.getSize().height;
+                    float htFactor = (float) (ht - 4)
+                            / (float) picture.getSize().height;
 
-                    result.width = (int)(lsize.width*htFactor);
+                    result.width = (int) (lsize.width * htFactor);
                     result.height = ht - 4;
                 }
                 return result;
@@ -631,10 +630,13 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         }
 
         private void refresh() {
-            lbl.setText(layer.getName());
-            box.setSelected(layer.isVisible());
-            setBackground(picture.getActiveLayer() == layer ? Color.LIGHT_GRAY
-                                                           : Color.WHITE);
+            if (layer != null) {
+                opacity.setValue((int) (100 * layer.getOpacity()));
+                lbl.setText(layer.getName());
+                box.setSelected(layer.isVisible());
+                setBackground(picture.getActiveLayer() == layer ? Color.LIGHT_GRAY
+                        : Color.WHITE);
+            }
         }
 
         public void propertyChange(PropertyChangeEvent evt) {
@@ -669,8 +671,9 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         }
 
         private void stopEditing(boolean takeValue) {
-            if (editor == null)
+            if (editor == null) {
                 return;
+            }
             if (takeValue && editor.getText().trim().length() > 0) {
                 layer.setName(editor.getText().trim());
                 layer.commitLastPropertyChangeToUndoHistory();
@@ -687,8 +690,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
 
             if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_TAB) {
                 stopEditing(true);
-            }
-            else if (code == KeyEvent.VK_ESCAPE) {
+            } else if (code == KeyEvent.VK_ESCAPE) {
                 stopEditing(false);
             }
         }
@@ -699,7 +701,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
 
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() instanceof JCheckBox) {
-                JCheckBox checkbox = (JCheckBox)e.getSource();
+                JCheckBox checkbox = (JCheckBox) e.getSource();
 
                 layer.setVisible(checkbox.isSelected());
                 layer.commitLastPropertyChangeToUndoHistory();
@@ -711,7 +713,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
                         List<Layer> l = picture.getLayers();
                         int ix = l.indexOf(layer);
                         boolean found = false;
-                        for (int i=ix; i < l.size(); i++) {
+                        for (int i = ix; i < l.size(); i++) {
                             Layer nue = l.get(i);
                             if (nue.isVisible()) {
                                 picture.setActiveLayer(nue);
@@ -720,7 +722,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
                             }
                         }
                         if (!found) {
-                            for (int i=ix; i >= 0; i--) {
+                            for (int i = ix; i >= 0; i--) {
                                 Layer nue = l.get(i);
                                 if (nue.isVisible()) {
                                     picture.setActiveLayer(nue);
@@ -735,8 +737,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
                     }
                 }
                 stopEditing(true);
-            }
-            else {
+            } else {
                 stopEditing(true);
             }
         }
@@ -746,10 +747,10 @@ public final class LayersTopComponent extends TopComponent implements LookupList
                 System.err.println("Got popup trigger");
                 Point p = e.getPoint();
                 Component src = (Component) e.getSource();
-                getPopupMenu().show (src, p.x, p.y);
+                getPopupMenu().show(src, p.x, p.y);
             }
         }
-        
+
         public void mouseReleased(MouseEvent e) {
             if (e.getSource() instanceof JSlider && !e.isPopupTrigger()) {
                 layer.commitLastPropertyChangeToUndoHistory();
@@ -757,7 +758,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
                 System.err.println("Got popup trigger");
                 Point p = e.getPoint();
                 Component src = (Component) e.getSource();
-                getPopupMenu().show (src, p.x, p.y);
+                getPopupMenu().show(src, p.x, p.y);
             }
         }
 
@@ -776,67 +777,69 @@ public final class LayersTopComponent extends TopComponent implements LookupList
 
         public void keyPressed(KeyEvent e) {
         }
-        
+
         private JPopupMenu getPopupMenu() {
             JPopupMenu menu = new JPopupMenu();
             Action[] a = getPopupActions(layer);
             for (int i = 0; i < a.length; i++) {
-                menu.add (a[i]);
+                menu.add(a[i]);
             }
             return menu;
         }
     }
-    
-    private static Action[] getPopupActions (Layer layer) {
-        Collection <? extends Action> actions = 
-                layer.getLookup().lookupAll (Action.class);
-        
-        List <Action> result = new ArrayList <Action> (actions.size() + 3);
-        result.addAll (actions);
-        Collection <? extends LayerFactory> factories = 
-                Lookup.getDefault().lookupAll (LayerFactory.class);
+
+    private static Action[] getPopupActions(Layer layer) {
+        Collection<? extends Action> actions
+                = layer.getLookup().lookupAll(Action.class);
+
+        List<Action> result = new ArrayList<Action>(actions.size() + 3);
+        result.addAll(actions);
+        Collection<? extends LayerFactory> factories
+                = Lookup.getDefault().lookupAll(LayerFactory.class);
         for (LayerFactory factory : factories) {
             if (factory.canConvert(layer)) {
-                result.add (new ConvertAction (factory, layer));
+                result.add(new ConvertAction(factory, layer));
             }
         }
-        Action[] a = 
-                (Action[]) result.toArray(new Action[result.size()]);
+        Action[] a
+                = (Action[]) result.toArray(new Action[result.size()]);
         return a;
     }
-    
+
     private static final class ConvertAction extends AbstractAction {
+
         private final LayerFactory factory;
 
         private final Layer layer;
-        ConvertAction (LayerFactory factory, Layer layer) {
+
+        ConvertAction(LayerFactory factory, Layer layer) {
             this.factory = factory;
             this.layer = layer;
             String s = factory.getConversionActionDisplayName();
-            putValue (Action.NAME, s);
+            putValue(Action.NAME, s);
         }
-        
-        public void actionPerformed (ActionEvent ae) {
-            Picture picture = Utilities.actionsGlobalContext().lookup (Picture.class);
+
+        public void actionPerformed(ActionEvent ae) {
+            Picture picture = Utilities.actionsGlobalContext().lookup(Picture.class);
             if (picture == null) {
-                throw new IllegalStateException ("No Picture in " + //NOI18N
+                throw new IllegalStateException("No Picture in "
+                        + //NOI18N
                         "action context"); //NOI18N
             }
             if (picture != null) {
-                List <Layer> layers = picture.getLayers();
-                int index = layers.indexOf (layer);
+                List<Layer> layers = picture.getLayers();
+                int index = layers.indexOf(layer);
                 if (index != -1) {
                     Layer nue = factory.convert(layer).getLayer();
                     picture.delete(layer);
-                    picture.add (index, nue);
+                    picture.add(index, nue);
                     return;
                 }
             }
             Toolkit.getDefaultToolkit().beep();
         }
     }
-    
-    
+
     private static final class LM implements LayoutManager {
 
         public void addLayoutComponent(String name, Component comp) {

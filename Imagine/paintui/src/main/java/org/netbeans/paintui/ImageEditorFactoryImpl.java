@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.netbeans.paintui;
 
 import java.awt.Dimension;
@@ -63,8 +58,8 @@ public class ImageEditorFactoryImpl extends ImageEditorFactory {
             }
             PaintTopComponent last;
             try {
-                last = new PaintTopComponent(img, file);
-                last.setDisplayName(file.getName());
+                last = new PaintTopComponent(img, origin);
+                last.setDisplayName(origin.getName());
                 last.open();
                 last.requestActive();
             } catch (IOException ex) {

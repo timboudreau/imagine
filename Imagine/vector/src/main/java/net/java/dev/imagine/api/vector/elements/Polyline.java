@@ -6,7 +6,6 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.vector.elements;
 
 import java.awt.Graphics2D;
@@ -17,7 +16,6 @@ import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Mutable;
-import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
@@ -29,6 +27,7 @@ import net.java.dev.imagine.api.vector.util.Pt;
  * @author Tim Boudreau
  */
 public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mutable {
+
     public long serialVersionUID = 80238954L;
     public int[] xpoints;
     public int[] ypoints;
@@ -48,42 +47,42 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
     public String toString() {
         StringBuilder b = new StringBuilder("Polyline ");
         for (int i = 0; i < npoints; i++) {
-            b.append ('[');
-            b.append (xpoints[i]);
-            b.append (", ");
+            b.append('[');
+            b.append(xpoints[i]);
+            b.append(", ");
             b.append(ypoints[i]);
-            b.append (']');
+            b.append(']');
         }
-        b.append (" fill:");
-        b.append (fill);
+        b.append(" fill:");
+        b.append(fill);
         return b.toString();
     }
 
     public Shape toShape() {
-        java.awt.Polygon result = new java.awt.Polygon (xpoints, ypoints, npoints);
+        java.awt.Polygon result = new java.awt.Polygon(xpoints, ypoints, npoints);
         return result;
     }
 
-    public boolean equals (Object o) {
+    public boolean equals(Object o) {
         boolean result = o instanceof Polyline;
         if (result) {
             Polyline p = (Polyline) o;
             result = p.npoints == npoints;
             if (result) {
-                result &= Arrays.equals (p.xpoints, xpoints);
-                result &= Arrays.equals (p.ypoints, ypoints);
+                result &= Arrays.equals(p.xpoints, xpoints);
+                result &= Arrays.equals(p.ypoints, ypoints);
             }
         }
         return result;
     }
 
     public int hashCode() {
-        int a = Arrays.hashCode (xpoints);
-        int b = Arrays.hashCode (ypoints);
+        int a = Arrays.hashCode(xpoints);
+        int b = Arrays.hashCode(ypoints);
         return (a + 1) * (b + 1) + npoints;
     }
 
-    public void paint (Graphics2D g) {
+    public void paint(Graphics2D g) {
         g.drawPolygon(xpoints, ypoints, npoints);
     }
 
@@ -92,49 +91,61 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
     }
 
     public void getControlPoints(double[] xy) {
-        for (int i=0; i < npoints; i++) {
+        for (int i = 0; i < npoints; i++) {
             int ix = i * 2;
             xy[ix] = xpoints[i];
             xy[ix + 1] = ypoints[i];
         }
     }
 
-    public void getBounds (Rectangle2D.Double r) {
+    public void getBounds(Rectangle2D.Double r) {
         int minX = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE;
         int minY = Integer.MAX_VALUE;
         int maxY = Integer.MIN_VALUE;
-        for (int i=0; i < npoints; i++) {
-            minX = Math.min (minX, xpoints[i]);
-            minY = Math.min (minY, ypoints[i]);
-            maxX = Math.max (maxX, xpoints[i]);
-            maxY = Math.max (maxY, ypoints[i]);
+        for (int i = 0; i < npoints; i++) {
+            minX = Math.min(minX, xpoints[i]);
+            minY = Math.min(minY, ypoints[i]);
+            maxX = Math.max(maxX, xpoints[i]);
+            maxY = Math.max(maxY, ypoints[i]);
         }
         int width = maxX - minX;
         int height = maxY - minY;
         int x = minX;
         int y = minY;
-        r.setRect (x, y, width, height);
+        r.setRect(x, y, width, height);
     }
 
     public void draw(Graphics2D g) {
         g.drawPolyline(xpoints, ypoints, npoints);
     }
 
-    public Primitive copy() {
-        return new Polyline (xpoints, ypoints, npoints, fill);
+    public Polyline copy() {
+        return new Polyline(xpoints, ypoints, npoints, fill);
+    }
+
+    @Override
+    public void applyScale(AffineTransform xform) {
+        Point2D.Double scratch = new Point2D.Double();
+        for (int i = 0; i < npoints; i++) {
+            scratch.x = xpoints[i];
+            scratch.y = ypoints[i];
+            xform.transform(scratch, scratch);
+            xpoints[i] = (int) Math.round(scratch.x);
+            ypoints[i] = (int) Math.round(scratch.x);
+        }
     }
 
     public Pt getLocation() {
         int minx = Integer.MAX_VALUE;
         int miny = Integer.MAX_VALUE;
-        for (int i=0; i < npoints; i++) {
-            minx = Math.min (minx, xpoints[i]);
-            miny = Math.min (miny, ypoints[i]);
+        for (int i = 0; i < npoints; i++) {
+            minx = Math.min(minx, xpoints[i]);
+            miny = Math.min(miny, ypoints[i]);
         }
         minx = minx == Integer.MAX_VALUE ? 0 : minx;
         miny = miny == Integer.MAX_VALUE ? 0 : miny;
-        return new Pt (minx, miny);
+        return new Pt(minx, miny);
     }
 
     public void setLocation(double xx, double yy) {
@@ -160,7 +171,7 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
     }
 
     public void clearLocation() {
-        setLocation (0, 0);
+        setLocation(0, 0);
     }
 
     public Vector copy(AffineTransform transform) {
@@ -168,7 +179,7 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
         //XXX not really returning the right type here
         return new PathIteratorWrapper(
                 transform.createTransformedShape(s).getPathIterator(
-                AffineTransform.getTranslateInstance(0, 0)), false);
+                        AffineTransform.getTranslateInstance(0, 0)), false);
     }
 
     public int[] getVirtualControlPointIndices() {
@@ -180,7 +191,7 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
             return false;
         }
         int ix = 0;
-        for (int i=0; i < npoints; i++) {
+        for (int i = 0; i < npoints; i++) {
             if (i == pointIndex) {
                 ix++;
             }
@@ -205,13 +216,13 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
         }
 
         int ix = npoints;
-        for (int i=npoints; i >= 0; i--) {
+        for (int i = npoints; i >= 0; i--) {
             if (i == index) {
                 xpoints[i] = (int) x;
                 ypoints[i] = (int) y;
             } else if (i > index) {
-                xpoints[i] = xpoints[i-1];
-                ypoints[i] = ypoints[i-1];
+                xpoints[i] = xpoints[i - 1];
+                ypoints[i] = ypoints[i - 1];
             } else {
                 break;
             }
@@ -221,11 +232,11 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
     }
 
     public int getPointIndexNearest(double x, double y) {
-        Point2D.Double curr = new Point2D.Double (0, 0);
+        Point2D.Double curr = new Point2D.Double(0, 0);
         double bestDistance = Double.MAX_VALUE;
         int bestIndex = -1;
-        for (int i=0; i < npoints; i++) {
-            curr.setLocation (xpoints[i], ypoints[i]);
+        for (int i = 0; i < npoints; i++) {
+            curr.setLocation(xpoints[i], ypoints[i]);
             double dist = curr.distance(x, y);
             if (dist < bestDistance) {
                 bestDistance = dist;
@@ -238,5 +249,12 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
     public void setControlPointLocation(int pointIndex, Pt pt) {
         xpoints[pointIndex] = (int) pt.x;
         ypoints[pointIndex] = (int) pt.y;
+    }
+
+    @Override
+    public java.awt.Rectangle getBounds() {
+        Rectangle2D.Double bds = new Rectangle2D.Double();
+        getBounds(bds);
+        return bds.getBounds();
     }
 }

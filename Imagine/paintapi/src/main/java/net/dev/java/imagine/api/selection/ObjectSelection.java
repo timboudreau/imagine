@@ -12,29 +12,45 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoableEdit;
 import net.dev.java.imagine.api.selection.Selection.Op;
+import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
+import org.openide.util.lookup.AbstractLookup;
+import org.openide.util.lookup.InstanceContent;
 
 /**
  *
  * @author Tim Boudreau
  */
-public final class ObjectSelection<T> extends Selection<Collection<T>> {
+public final class ObjectSelection<T> extends Selection<Collection<T>> implements Lookup.Provider {
 
-    private final Set<T> contents = new HashSet<T>();
+    private final Set<T> contents = new LinkedHashSet<>();
     private final Class<T> elementType;
     private final Universe<Collection<T>> universe;
     private final ShapeConverter<T> converter;
+    private final InstanceContent content = new InstanceContent();
+    private final AbstractLookup lookup = new AbstractLookup(content);
 
     public ObjectSelection(Class<T> type, Universe<Collection<T>> universe, ShapeConverter<T> converter) {
         super(Collection.class);
         elementType = type;
         this.universe = universe;
         this.converter = converter;
+    }
+
+    @Override
+    public Lookup getLookup() {
+        return lookup;
+    }
+
+    public boolean containsObject(Object o) {
+        return contents.contains(o);
     }
 
     ShapeConverter<T> converter() {
@@ -53,6 +69,11 @@ public final class ObjectSelection<T> extends Selection<Collection<T>> {
     public ObjectSelection<T> clone() {
         ObjectSelection<T> result = new ObjectSelection<T>(elementType, universe, converter);
         result.contents.addAll(contents);
+        for (T obj : contents) {
+            result.content.add(obj);
+        }
+        result.storedShape = storedShape;
+
         return result;
     }
 
@@ -61,29 +82,29 @@ public final class ObjectSelection<T> extends Selection<Collection<T>> {
     }
 
     @Override
-    public void add(Collection<T> content, Op op) {
-        Set<T> old = new HashSet<T>(contents);
+    public void add(Collection<T> toAdd, Op op) {
+        Set<T> old = new HashSet<>(contents);
         switch (op) {
             case ADD:
-                contents.addAll(content);
+                contents.addAll(toAdd);
                 break;
             case SUBTRACT:
-                contents.removeAll(content);
+                contents.removeAll(toAdd);
                 break;
             case INTERSECT:
-                contents.retainAll(content);
+                contents.retainAll(toAdd);
                 break;
             case REPLACE:
                 contents.clear();
-                contents.addAll(content);
+                contents.addAll(toAdd);
                 break;
             case XOR:
-                Set<T> nue = new HashSet<T>(content);
-                Set<T> newContents = new HashSet<T>();
+                Set<T> nue = new HashSet<>(toAdd);
+                Set<T> newContents = new HashSet<>();
                 nue.addAll(contents);
                 for (Iterator<T> it = nue.iterator(); it.hasNext();) {
                     T t = it.next();
-                    boolean contentContains = content.contains(t);
+                    boolean contentContains = toAdd.contains(t);
                     boolean oldContains = contents.contains(t);
                     if (contentContains != oldContains) {
                         newContents.add(t);
@@ -94,19 +115,28 @@ public final class ObjectSelection<T> extends Selection<Collection<T>> {
                 break;
         }
         if (!old.equals(contents)) {
-            changed(new ObjectsUndoableEdit(old, contents, op));
+            changed(new ObjectsUndoableEdit(old, contents, op, storedShape));
+            updateContents(old, contents);
         }
+    }
+
+    void diff(Set<T> old, Set<T> nue, BiConsumer<Set<T>, Set<T>> receiver) {
+        Set<T> added = new HashSet<>(nue);
+        added.removeAll(old);
+        Set<T> removed = new HashSet<>(old);
+        removed.retainAll(nue);
+        receiver.accept(removed, added);
     }
 
     @Override
     public void clear() {
-        contents.clear();
+        clearContents();
     }
 
     @Override
     public void paint(Graphics2D g, Rectangle bounds) {
         Shape shape = asShape();
-        if (shape != null) {
+        if (shape != null && shape.intersects(bounds)) {
             paintSelectionAsShape(g, shape, bounds);
         }
     }
@@ -131,10 +161,17 @@ public final class ObjectSelection<T> extends Selection<Collection<T>> {
         }
         storedShape = s;
         Area a = toArea(s);
-        contents.clear();
+        clearContents();
         addIntersectingObjects(a, contents);
     }
-    
+
+    private void clearContents() {
+        for (T obj : contents) {
+            content.remove(obj);
+        }
+        contents.clear();
+    }
+
     private void addIntersectingObjects(Area a, Collection<T> addTo) {
         if (a != null) {
             for (T t : universe.getAll()) {
@@ -156,7 +193,7 @@ public final class ObjectSelection<T> extends Selection<Collection<T>> {
         addIntersectingObjects(toArea(shape), objs);
         add(objs, op);
     }
-    
+
     private Area toArea(Shape s) {
         return s == null ? null : s instanceof Area ? (Area) s : new Area(s);
     }
@@ -178,21 +215,34 @@ public final class ObjectSelection<T> extends Selection<Collection<T>> {
 
     @Override
     public void clearNoUndo() {
-        contents.clear();
+        clearContents();
     }
 
     @Override
     public void invert(Rectangle bds) {
-        Set<T> nue = new HashSet<T>();
+        Set<T> nue = new HashSet<>();
+        Area area = new Area(bds);
+        if (storedShape != null) {
+            area.subtract(new Area(storedShape));
+        }
         for (T t : universe.getAll()) {
             if (!contents.contains(t)) {
                 Shape s = converter.toShape(t);
+                if (s != null) {
+                    area.subtract(new Area(s));
+                }
                 if (bds.contains(s.getBounds())) {
                     nue.add(t);
                 }
             }
         }
-
+        if (!nue.equals(contents)) {
+            Set<T> old = new HashSet<>(contents);
+            updateContents(contents, nue);
+            ObjectsUndoableEdit ed = new ObjectsUndoableEdit(old, nue, Op.INVERT, storedShape);
+            changed(ed);
+            storedShape = null;
+        }
     }
 
     @Override
@@ -200,8 +250,26 @@ public final class ObjectSelection<T> extends Selection<Collection<T>> {
         return what == null ? false : contents.containsAll(what);
     }
 
+    @Override
     public String toString() {
         return super.toString() + "[" + contents + "]";
+    }
+
+    private void updateContents(Set<T> old, Set<T> nue) {
+        diff(old, nue, (removed, added) -> {
+            for (T rem : removed) {
+                content.remove(rem);
+                if (nue != contents) {
+                    contents.remove(rem);
+                }
+            }
+            for (T add : added) {
+                if (nue != contents) {
+                    contents.add(add);
+                }
+                content.add(add);
+            }
+        });
     }
 
     class ObjectsUndoableEdit implements UndoableEdit {
@@ -209,17 +277,21 @@ public final class ObjectSelection<T> extends Selection<Collection<T>> {
         private final Set<T> old;
         private final Set<T> nue;
         private final Op op;
+        private final Shape shape;
+        private Shape otherShape;
 
-        public ObjectsUndoableEdit(Set<T> old, Set<T> nue, Op op) {
+        public ObjectsUndoableEdit(Set<T> old, Set<T> nue, Op op, Shape shape) {
             this.old = new HashSet<T>(old);
             this.nue = new HashSet<T>(nue);
             this.op = op;
+            this.shape = shape;
         }
 
         @Override
         public void undo() throws CannotUndoException {
-            contents.clear();
-            contents.addAll(old);
+            otherShape = storedShape;
+            updateContents(contents, old);
+            storedShape = shape;
         }
 
         @Override
@@ -229,8 +301,8 @@ public final class ObjectSelection<T> extends Selection<Collection<T>> {
 
         @Override
         public void redo() throws CannotRedoException {
-            contents.clear();
-            contents.addAll(nue);
+            updateContents(contents, nue);
+            storedShape = otherShape;
         }
 
         @Override

@@ -53,7 +53,7 @@ public class StandardBrush implements Customizable, Brush {
         }
     }
     
-    public Rectangle paint(Graphics2D g, Point p) {
+    public Rectangle paint(Graphics2D g, Point p, int modifiers) {
         Paint paint = getPaint();
         Paint old = g.getPaint();
         g.setPaint (paint);

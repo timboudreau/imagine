@@ -82,6 +82,11 @@ public abstract class PreferencesFactory<T> {
             return id.name();
         }
 
+        @Override
+        public Property<T> createProperty(T defaultVal, Object... contents) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
         class M implements Mutable<T> {
             
             V toNotify;

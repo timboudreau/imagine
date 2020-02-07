@@ -284,13 +284,15 @@ public class PaintTopComponent extends TopComponent implements ChangeListener,
         l.add(this);
         l.addAll(Arrays.asList(this, canvas.zoomImpl,
                 getUndoRedo(), picture.getPicture()));
+        Layer layer = null;
+        Selection<?> sel = null;
         if (layerImpl != null) {
             l.add(picture.getPicture().getLayers());
-            Layer layer = layerImpl.getLookup().lookup(Layer.class);
+            layer = layerImpl.getLookup().lookup(Layer.class);
             if (layer != null) {
                 l.add(layer);
             }
-            Selection sel = layerImpl.getLookup().lookup(Selection.class);
+            sel = layerImpl.getLookup().lookup(Selection.class);
             if (sel != null) {
                 l.add(sel);
             }
@@ -301,8 +303,18 @@ public class PaintTopComponent extends TopComponent implements ChangeListener,
                 l.add(surf);
             }
         }
-        System.err.println("Lookup contents set to " + l);
+//        System.err.println("Lookup contents set to " + l);
         UIContextLookupProvider.set(l);
+        if (layer != null) {
+            if (sel != null) {
+                UIContextLookupProvider.setLayerAndSelection(layer.getLookup(),
+                        sel.getLookup());
+            } else {
+                UIContextLookupProvider.setLayer(layer.getLookup());
+            }
+        } else {
+            UIContextLookupProvider.setLayerAndSelection(null, null);
+        }
         updateActiveTool();
     }
 

@@ -6,11 +6,13 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package org.netbeans.paint.tools;
 
+import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.geom.RoundRectangle2D;
+import java.text.DecimalFormat;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
@@ -18,68 +20,62 @@ import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Constants;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
+import org.netbeans.paint.tools.fills.PaintingStyle;
 import org.openide.util.NbBundle;
+
 /**
  *
  * @author Tim Boudreau
  */
-@ToolDef(name="Rounded_Rectangle", iconPath="org/netbeans/paint/tools/resources/roundrect.png")
+@ToolDef(name = "Rounded_Rectangle", iconPath = "org/netbeans/paint/tools/resources/roundrect.png")
 @Tool(Surface.class)
 public class RoundRectTool extends RectangleTool {
-    public RoundRectTool (Surface surface) {
+
+    public RoundRectTool(Surface surface) {
         super(surface);
     }
 
+    static final RoundRectangle2D.Double scratchRR = new RoundRectangle2D.Double();
     @Override
-    protected void draw (Rectangle toPaint, Graphics2D g2d, boolean fill) {
-        int arcWidth = arcWc.get();
-        int arcHeight = arcHc.get();
-        if (fill) {
-            g2d.fillRoundRect(toPaint.x, toPaint.y, toPaint.width, toPaint.height, arcWidth, arcHeight);
+    protected void draw(Rectangle toPaint, Graphics2D g2d, PaintingStyle style) {
+        scratchRR.setFrame(toPaint);
+        double arcWidthPercentage = arcWc.get();
+        double arcHeightPercentage = arcHc.get();
+        scratchRR.arcwidth = arcWidthPercentage * toPaint.getWidth();
+        scratchRR.archeight = arcHeightPercentage * toPaint.getHeight();
+
+        if (style.isFill()) {
             g2d.setPaint(paintC.get().getPaint());
-            g2d.drawRoundRect(toPaint.x, toPaint.y, toPaint.width, toPaint.height, arcWidth, arcHeight);
-        } else {
-            g2d.drawRoundRect(toPaint.x, toPaint.y, toPaint.width, toPaint.height, arcWidth, arcHeight);
+            g2d.fill(scratchRR);
+//            g2d.fillRoundRect(toPaint.x, toPaint.y, toPaint.width, toPaint.height, arcWidth, arcHeight);
+        }
+        if (style.isOutline()) {
+            g2d.setStroke(new BasicStroke(strokeC.get()));
+            g2d.setColor(outlineC.get());
+//            g2d.drawRoundRect(toPaint.x, toPaint.y, toPaint.width, toPaint.height, arcWidth, arcHeight);
+            g2d.draw(scratchRR);
         }
     }
 
     @Override
     public String toString() {
-        return NbBundle.getMessage (getClass(), "Rounded_Rectangle");
+        return NbBundle.getMessage(getClass(), "Rounded_Rectangle");
     }
-
-    private Customizer <Integer> arcHeightCustomizer;
-    private Customizer <Integer> arcWidthCustomizer;
-    private Customizer customizer;
 
     @Override
     public Customizer getCustomizer() {
         Customizer c = super.getCustomizer();
-        AggregateCustomizer nue = new AggregateCustomizer ("foo", c, arcWc, arcHc);
+        AggregateCustomizer nue = new AggregateCustomizer("foo", c, arcWc, arcHc);
         return nue;
     }
-//    @Override
-//    public Customizer<PaintAttributes> getCustomizer() {
-//        if (customizer == null) {
-//            customizer = superGetCustomizer();
-//        }
-//        return customizer;
-//    }
-//
-//    private Customizer <PaintAttributes> superGetCustomizer() {
-//        Customizer base = super.getCustomizer();
-//
-//        arcWidthCustomizer = customizers.getIntegerCustomizer(NbBundle.getMessage (getClass(), "Arc_Width"));
-//        arcHeightCustomizer = customizers.getIntegerCustomizer (NbBundle.getMessage (getClass(), "Arc_Height"));
-//
-//        Customizer <PaintAttributes> result = new AggregateCustomizer <PaintAttributes> (NbBundle.getMessage(getClass(), "Round_Rect_Properties"),
-//                base, arcWidthCustomizer, arcHeightCustomizer);
-//        result.addChangeListener(WeakListeners.change(this, result));
-//
-//        return result;
-//    }
-    
-    private final Customizer<Integer> arcWc = Customizers.getCustomizer(Integer.class, Constants.ARC_WIDTH, 0, 50);
-    private final Customizer<Integer> arcHc = Customizers.getCustomizer(Integer.class, Constants.ARC_HEIGHT, 0, 50);
 
+    private final Customizer<Double> arcWc = Customizers.getCustomizer(
+            Double.class, Constants.ARC_WIDTH_PERCENTAGE, 0D, 1D, 0.25D, RoundRectTool::toPercentage);
+    private final Customizer<Double> arcHc = Customizers.getCustomizer(
+            Double.class, Constants.ARC_HEIGHT_PERCENTAGE, 0D, 1D, 0.25D, RoundRectTool::toPercentage);
+
+    private static final DecimalFormat FMT = new DecimalFormat("##0.#%");
+    static String toPercentage(double val) {
+        return FMT.format(val);
+    }
 }

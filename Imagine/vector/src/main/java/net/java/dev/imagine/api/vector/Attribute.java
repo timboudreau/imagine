@@ -15,4 +15,7 @@ package net.java.dev.imagine.api.vector;
  */
 public interface Attribute <T extends Object> extends Primitive {
     public T get();
+
+    @Override
+    public Attribute<T> copy();
 }

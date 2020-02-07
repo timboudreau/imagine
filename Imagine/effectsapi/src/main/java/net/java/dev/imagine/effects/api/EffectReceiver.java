@@ -19,7 +19,14 @@ public abstract class EffectReceiver<EffectType> {
         return type;
     }
 
+    public boolean canApplyEffects() {
+        return true;
+    }
+
     public <ParamType> boolean apply(Effect<ParamType, EffectType> effect, ParamType params) {
+        if (!canApplyEffects()) {
+            return false;
+        }
         Parameters.notNull("effect", effect);
         assert params == null || effect.parameterType().isInstance(params);
 

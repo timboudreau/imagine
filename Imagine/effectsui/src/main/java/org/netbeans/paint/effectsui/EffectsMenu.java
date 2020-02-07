@@ -100,21 +100,22 @@ public class EffectsMenu extends JMenu {
         protected boolean checkEnabled(Collection<? extends EffectRecipient> coll, Class clazz) {
             boolean result = false;
             for (EffectRecipient r : coll) {
+                boolean can = r.canApplyEffects();
                 switch (effect.type()) {
                     case COMPOSITE :
-                        result |= r.canApplyComposite();
+                        result |= can && r.canApplyComposite();
                         break;
                     case BUFFERED_IMAGE_OP :
-                        result |= r.canApplyBufferedImageOp();
+                        result |= can && r.canApplyBufferedImageOp();
                         break;
                     default :
                         throw new AssertionError(effect.type());
                 }
             }
-            System.out.println("enabled result for " + coll + " is " + result);
             return result;
         }
         
+        @Override
         protected void performAction(EffectRecipient recipient) {
 	    Effect.Applicator applicator = effect.getApplicator();
             assert ((applicator instanceof BufferedImageOpApplicator) == (effect.type() == Effect.Type.BUFFERED_IMAGE_OP)) : 
@@ -302,7 +303,7 @@ public class EffectsMenu extends JMenu {
 
 	    Graphics2D imageGr = (Graphics2D) temp.createGraphics();
 	    //Paint a thumbnail into that
-	    layer.paint (imageGr, new Rectangle (0, 0, 320, 200), false);
+	    layer.paint (imageGr, new Rectangle (0, 0, 320, 200), false, true);
 	    //Now recreate our back buffer
 	    BufferedImage back = new BufferedImage (320, 200, 
 		    GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);

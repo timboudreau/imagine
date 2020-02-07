@@ -36,10 +36,14 @@ import org.openide.util.NbBundle;/**
 class BaseFill implements Customizable, Fill, ActionListener {
     private ColorChooser cc = null;
     
-     BaseFill() {
+    BaseFill() {
     }
 
     public Paint getPaint() {
+        return cc == null ? Color.BLUE : cc.getColor();
+    }
+
+    protected Color baseColor() {
         return cc == null ? Color.BLUE : cc.getColor();
     }
 

@@ -20,11 +20,6 @@
             <artifactId>paintapi</artifactId>
         </dependency>
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>paintui2</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-api-visual</artifactId>
         </dependency>
@@ -43,11 +38,10 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tools</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>tools</artifactId>
+            <artifactId>visual-library-layer-spi</artifactId>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>

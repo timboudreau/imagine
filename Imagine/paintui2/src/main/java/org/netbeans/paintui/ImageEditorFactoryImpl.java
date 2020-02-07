@@ -23,7 +23,9 @@ import java.util.function.Consumer;
 import javax.imageio.ImageIO;
 import net.java.dev.imagine.ui.common.BackgroundStyle;
 import net.java.dev.imagine.ui.common.ImageEditorFactory;
+import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.paint.api.util.GraphicsUtils;
+import org.openide.util.Cancellable;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
 import org.openide.util.RequestProcessor;
@@ -109,9 +111,20 @@ public class ImageEditorFactoryImpl extends ImageEditorFactory {
         final Iterator<File> iter = Arrays.asList(files).iterator();
         Map<File, BufferedImage> images = new LinkedHashMap<>(files.length);
         Set<File> unopened = Collections.synchronizedSet(new HashSet<>());
+        String msg = NbBundle.getMessage(ImageEditorFactoryImpl.class, "OPENING_IMAGES", files.length);
+        ProgressHandle h = ProgressHandle.createHandle(msg, new Cancellable(){
+            @Override
+            public boolean cancel() {
+                // do nothing
+                return false;
+            }
+        });
+        h.start(files.length * 2);
         OpenConsumer c = new OpenConsumer() {
+            int completed = 0;
             @Override
             public void accept(Exception t, BufferedImage u, File origin) {
+                h.progress(++completed);
                 if (t != null) {
                     Exceptions.printStackTrace(t);
                     unopened.add(origin);
@@ -131,6 +144,9 @@ public class ImageEditorFactoryImpl extends ImageEditorFactory {
                                 last.open();
                                 if (!it.hasNext()) {
                                     last.requestActive();
+                                    h.finish();
+                                } else {
+                                    h.progress(++completed);
                                 }
                             } catch (IOException ex) {
                                 Exceptions.printStackTrace(ex);

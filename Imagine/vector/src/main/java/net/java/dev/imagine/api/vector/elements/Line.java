@@ -11,12 +11,11 @@ package net.java.dev.imagine.api.vector.elements;
 
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import net.java.dev.imagine.api.vector.Adjustable;
-import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.util.Pt;
@@ -43,8 +42,20 @@ public class Line implements Strokable, Adjustable, Vector {
                 "->" + x2 + ", " + y2;
     }
 
-    public Shape toShape() {
+    public Line2D.Double toShape() {
         return new Line2D.Double(x1, y1, x2, y2);
+    }
+
+    @Override
+    public void applyScale(AffineTransform xform) {
+        Point2D.Double a = new Point2D.Double(x1, y1);
+        Point2D.Double b = new Point2D.Double(x2, y2);
+        xform.transform(a, a);
+        xform.transform(b, b);
+        x1 = a.x;
+        x2 = b.x;
+        y1 = a.y;
+        y2 = b.y;
     }
 
     public void paint(Graphics2D g) {
@@ -99,7 +110,7 @@ public class Line implements Strokable, Adjustable, Vector {
         paint (g);
     }
 
-    public Primitive copy() {
+    public Line copy() {
         return new Line (x1, y1, x2, y2);
     }
 
@@ -173,5 +184,12 @@ public class Line implements Strokable, Adjustable, Vector {
             default :
                 throw new IllegalArgumentException (Integer.toString(pointIndex));
         }
+    }
+
+    @Override
+    public Rectangle getBounds() {
+        Rectangle2D.Double bds = new Rectangle2D.Double();
+        getBounds(bds);
+        return bds.getBounds();
     }
 }

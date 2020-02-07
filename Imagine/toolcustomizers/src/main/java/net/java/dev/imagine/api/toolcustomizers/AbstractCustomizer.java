@@ -24,16 +24,20 @@ import org.openide.util.ChangeSupport;
  */
 public abstract class AbstractCustomizer <T extends Object> implements Customizer <T> {
     private final String name;
+    private JPanel component;
     public AbstractCustomizer(String name) {
         this.name = name;
     }
     
     public final JComponent getComponent() {
+        if (component != null) {
+            return component;
+        }
         JPanel result = new SharedLayoutPanel();
         for (JComponent comp : getComponents()) {
             result.add (comp);
         }
-        return result;
+        return component = result;
     }
 
     public final String getName() {

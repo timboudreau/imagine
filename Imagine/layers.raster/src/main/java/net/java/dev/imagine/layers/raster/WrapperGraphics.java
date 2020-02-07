@@ -27,6 +27,7 @@ import java.awt.Stroke;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
@@ -165,7 +166,18 @@ class WrapperGraphics extends TrackingGraphics {
     public void drawGlyphVector(GlyphVector g, float x, float y) {
         other.drawGlyphVector(g, x, y);
         Rectangle2D r = g.getLogicalBounds();
-        changed((int) Math.floor(x), (int) Math.floor(y), (int) Math.ceil(r.getWidth()), (int) Math.ceil(r.getHeight()));
+        r.setFrame(r.getX() + x, r.getY() + y, w, h);
+        AffineTransform xform = getTransform();
+        if (xform != null && !xform.isIdentity()) {
+            Point2D.Double topLeft = new Point2D.Double(r.getX(), r.getY());
+            Point2D.Double bottomRight = new Point2D.Double(r.getX() + r.getWidth(), r.getY() + r.getHeight());
+            xform.transform(topLeft, topLeft);
+            xform.transform(bottomRight, bottomRight);
+            r.setFrame(topLeft.getX(), topLeft.getY(),
+                    bottomRight.getX() - topLeft.getX(),
+                    bottomRight.getY() - topLeft.getY());
+        }
+        changed(r.getBounds());
     }
 
     public void fill(Shape s) {

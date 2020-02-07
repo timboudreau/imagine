@@ -38,7 +38,13 @@ public final class VectorLayerFactory extends LayerFactory {
         result.setName(name);
         return result;
     }
+
+    @Override
+    protected boolean supportsImagePainting() {
+        return false;
+    }
         
+    @Override
     public boolean canConvert(Layer other) {
         return false;
     }

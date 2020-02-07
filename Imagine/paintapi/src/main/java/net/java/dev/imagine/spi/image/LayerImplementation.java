@@ -150,7 +150,7 @@ public abstract class LayerImplementation<T extends LayerFactory> {
      * @param r A bounding rectangle if painting a thumbnail image, or null
      *  if full quality painting is desired
      */
-    public abstract boolean paint (Graphics2D g, Rectangle bounds, boolean showSelection);
+    public abstract boolean paint (Graphics2D g, Rectangle bounds, boolean showSelection, boolean paintWhenVisibleFalse);
 
     /** Get a surface for drawing into.  Looks for an instance of
      * SurfaceImplementation in the Lookup returned by getLookup().

@@ -51,4 +51,7 @@ public interface Mutable extends Adjustable {
      *  point making up the shape to the point that was passed
      */
     public int getPointIndexNearest (double x, double y);
+
+    @Override
+    public Mutable copy();
 }

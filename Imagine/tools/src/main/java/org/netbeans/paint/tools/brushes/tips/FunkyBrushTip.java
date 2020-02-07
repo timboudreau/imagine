@@ -17,7 +17,6 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import javax.swing.JComponent;
-import javax.swing.event.ChangeListener;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import org.netbeans.paint.tools.spi.BrushTip;
 
@@ -27,9 +26,6 @@ import org.netbeans.paint.tools.spi.BrushTip;
  */
 public class FunkyBrushTip implements BrushTip, Customizable {
     
-    public FunkyBrushTip() {
-    }
-
     public Rectangle draw (Graphics2D g, Point p, int size) {
         int half = size / 2;
         g.drawOval(p.x - half, p.y - half, p.x + size, p.y + size);

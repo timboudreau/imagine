@@ -23,7 +23,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
-import java.awt.TexturePaint;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -59,7 +58,6 @@ import net.java.dev.imagine.ui.common.PositionStatusLineElementProvider;
 import org.netbeans.paint.api.util.GraphicsUtils;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
-import org.openide.util.Utilities;
 import org.openide.util.WeakListeners;
 
 /**
@@ -70,7 +68,7 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
 
     private String comma = ",";
     private AppPicture picture;
-    private boolean showGrid = true;
+    private boolean showGrid = false;
     private Color gridColor = Color.BLACK;
     private PositionStatusLineElementProvider pslep;
     StringBuilder builder = new StringBuilder();
@@ -184,10 +182,6 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
         scratchAt1.concatenate(scratchAt2);
         return scratchAt1;
     }
-    private static final TexturePaint bg = new TexturePaint(
-            ((BufferedImage) Utilities.loadImage(
-            "org/netbeans/paintui/resources/backgroundpattern.png")), //NOI18N
-            new Rectangle(0, 0, 16, 16));
 
     @Override
     public void paint(Graphics g) {
@@ -206,7 +200,7 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
         Shape clip = g2d.getClip();
         g2d.setClip(r.intersection(g2d.getClipBounds()));
         if (!showGrid) {
-            g2d.setPaint(bg);
+            g2d.setPaint(GraphicsUtils.checkerboardBackground());
             g.fillRect(r.x, r.y, r.width, r.height);
         }
 
@@ -232,12 +226,13 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
 
             double gridDistance = zoom;
 
-            if (gridDistance < 2) // Disable painting of grid if no image pixels would be visible.
+            if (gridDistance < 3) // Disable painting of grid if no image pixels would be visible.
             {
                 return;
             }
 
             g.setColor(gridColor);
+            g.setXORMode(Color.WHITE);
 
             double actualDistance = r.x;
 
@@ -250,6 +245,7 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
             for (int j = (int) actualDistance; j < y; actualDistance += gridDistance, j = (int) actualDistance) {
                 g.drawLine(r.x, j, x, j);
             }
+            g.setPaintMode();
         }
 //	g2d.dispose();
     }

@@ -8,6 +8,8 @@
  */
 package net.java.dev.imagine.api.vector;
 
+import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
 
 /**
@@ -15,7 +17,22 @@ import java.awt.geom.Rectangle2D;
  *
  * @author Tim Boudreau
  */
-public interface Volume extends Primitive {
+public interface Volume extends Primitive, Shaped {
+
+    @Override
+    public Volume copy();
+
+    default Shape toShape() {
+        Rectangle2D.Double rect = new Rectangle2D.Double();
+        getBounds(rect);
+        return rect;
+    }
 
     void getBounds(Rectangle2D.Double dest);
+
+    default Rectangle getBounds() {
+        Rectangle2D.Double rect = new Rectangle2D.Double();
+        getBounds(rect);
+        return rect.getBounds();
+    }
 }

@@ -126,6 +126,8 @@
         <module>toolsapi</module>
         <!--<module>customizers2</module>-->
         <module>ui-common</module>
+        <module>vector-editor-ui</module>
+        <module>visual-library-layer-spi</module>
     </modules>
     <repositories>
         <repository>
@@ -159,6 +161,11 @@
     </repositories>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>visual-library-layer-spi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>branding</artifactId>
@@ -267,6 +274,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>vectorlayers</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>vector-editor-ui</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

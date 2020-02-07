@@ -11,11 +11,10 @@ package org.netbeans.paint.tools;
 
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Surface;
+import org.netbeans.paint.tools.fills.PaintingStyle;
 import org.openide.util.NbBundle;
 
 /**
@@ -37,13 +36,13 @@ public class OvalTool extends RectangleTool {
     }
 
     @Override
-    protected void draw (Rectangle toPaint, Graphics2D g2d, boolean fill) {
-        if (fill) {
+    protected void draw (Rectangle toPaint, Graphics2D g2d, PaintingStyle style) {
+        if (style.isFill()) {
             g2d.setPaint (paintC.get().getPaint());
             g2d.fillOval(toPaint.x, toPaint.y, toPaint.width, toPaint.height);
+        }
+        if (style.isOutline()) {
             g2d.setColor (outlineC.get());
-            g2d.drawOval(toPaint.x, toPaint.y, toPaint.width, toPaint.height);
-        } else {
             g2d.drawOval(toPaint.x, toPaint.y, toPaint.width, toPaint.height);
         }
     }

@@ -32,6 +32,10 @@ public enum BackgroundStyle {
         return mdl;
     }
 
+    public boolean isOpaque() {
+        return this != TRANSPARENT;
+    }
+
     public Color toColor() {
         switch (this) {
             case TRANSPARENT:

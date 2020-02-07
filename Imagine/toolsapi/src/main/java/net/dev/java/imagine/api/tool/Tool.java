@@ -82,6 +82,10 @@ public final class Tool {
         };
     }
 
+    public <T> T lookup(Class<T> type) {
+        return current == null ? null : getLookup().lookup(type);
+    }
+
     public Lookup getLookup() {
         return lookup;
     }

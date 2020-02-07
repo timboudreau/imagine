@@ -67,6 +67,7 @@ final class OneLayerWidget extends Widget {
         layer.removePropertyChangeListener(pcl);
         if (factory != null) {
             factory.detach();
+            factory = null;
         }
     }
 
@@ -108,7 +109,7 @@ final class OneLayerWidget extends Widget {
             g.setComposite(comp);
         }
         try {
-            layer.paint(g, layer.getBounds(), false);
+            layer.paint(g, layer.getBounds(), false, false);
         } finally {
             if (old != null) {
                 g.setComposite(old);

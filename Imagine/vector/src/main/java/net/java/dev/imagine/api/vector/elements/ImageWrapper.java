@@ -6,14 +6,15 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.vector.elements;
 
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
@@ -25,14 +26,15 @@ import java.io.ObjectStreamException;
 import javax.imageio.ImageIO;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Vector;
-import net.java.dev.imagine.api.vector.elements.*;
 import net.java.dev.imagine.api.vector.util.Pt;
+import org.netbeans.paint.api.util.GraphicsUtils;
 
 /**
  *
  * @author Tim Boudreau
  */
 public class ImageWrapper implements Primitive, Vector {
+
     public transient BufferedImage img;
     public double x;
     public double y;
@@ -61,17 +63,28 @@ public class ImageWrapper implements Primitive, Vector {
         this.y = y;
     }
 
-    public ImageWrapper (double x, double y, Image img) {
-        this.img = getBufferedImage (img);
+    public ImageWrapper(double x, double y, Image img) {
+        this.img = getBufferedImage(img);
         this.x = x;
         this.y = y;
     }
 
-    private static BufferedImage getBufferedImage (Image img) {
+    @Override
+    public void applyScale(AffineTransform xform) {
+        Point2D.Double b = new Point2D.Double(img.getWidth(), img.getHeight());
+        xform.transform(b, b);
+        if (b.getX() > 0 && b.getY() > 0) {
+            GraphicsUtils.newBufferedImage((int) Math.ceil(b.x), (int) Math.ceil(b.y), g -> {
+                g.drawRenderedImage(img, xform);
+            });
+        }
+    }
+
+    private static BufferedImage getBufferedImage(Image img) {
         if (img instanceof BufferedImage) {
             return (BufferedImage) img;
         } else {
-            BufferedImage result = new BufferedImage (img.getWidth(null), img.getHeight(null),
+            BufferedImage result = new BufferedImage(img.getWidth(null), img.getHeight(null),
                     BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = result.createGraphics();
             g2d.drawImage(img, AffineTransform.getTranslateInstance(0, 0), null);
@@ -80,72 +93,72 @@ public class ImageWrapper implements Primitive, Vector {
         }
     }
 
-    private static BufferedImage getBufferedImage (RenderedImage img, boolean force) {
+    private static BufferedImage getBufferedImage(RenderedImage img, boolean force) {
         if (img instanceof BufferedImage && !force) {
             return (BufferedImage) img;
         } else {
-            BufferedImage result = new BufferedImage (img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            BufferedImage result = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = result.createGraphics();
-            g2d.drawRenderedImage(img, AffineTransform.getTranslateInstance(0,0));
+            g2d.drawRenderedImage(img, AffineTransform.getTranslateInstance(0, 0));
             g2d.dispose();
             return result;
         }
     }
 
-    private static BufferedImage getBufferedImage (RenderableImage img) {
+    private static BufferedImage getBufferedImage(RenderableImage img) {
         if (img instanceof BufferedImage) {
             return (BufferedImage) img;
         } else {
-            BufferedImage result = new BufferedImage ((int) img.getWidth(), (int) img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            BufferedImage result = new BufferedImage((int) img.getWidth(), (int) img.getHeight(), BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = result.createGraphics();
-            g2d.drawRenderableImage(img, AffineTransform.getTranslateInstance(0,0));
+            g2d.drawRenderableImage(img, AffineTransform.getTranslateInstance(0, 0));
             g2d.dispose();
             return result;
         }
     }
 
-     private void writeObject(ObjectOutputStream out) throws IOException {
-            ImageIO.write(img, "jpg", out);
-            out.writeDouble(x);
-            out.writeDouble (y);
-     }
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        ImageIO.write(img, "jpg", out);
+        out.writeDouble(x);
+        out.writeDouble(y);
+    }
 
-     private void readObject(ObjectInputStream in)   throws IOException, ClassNotFoundException {
-            img = ImageIO.read(in);
-            x = in.readDouble();
-            y = in.readDouble();
-     }
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        img = ImageIO.read(in);
+        x = in.readDouble();
+        y = in.readDouble();
+    }
 
-     private void readObjectNoData() throws ObjectStreamException {
-            img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-            x = 0;
-            y = 0;
-     }
+    private void readObjectNoData() throws ObjectStreamException {
+        img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        x = 0;
+        y = 0;
+    }
 
-     public String toString() {
-         return "ImageWrapper " + img;
-     }
+    public String toString() {
+        return "ImageWrapper " + img;
+    }
 
-     public void paint (Graphics2D g) {
-         g.drawRenderedImage(img, AffineTransform.getTranslateInstance (x, y));
-     }
+    public void paint(Graphics2D g) {
+        g.drawRenderedImage(img, AffineTransform.getTranslateInstance(x, y));
+    }
 
-    public void getBounds (java.awt.Rectangle r) {
-        r.setBounds((int)Math.floor(x), (int) Math.floor(y), 
+    public void getBounds(java.awt.Rectangle r) {
+        r.setBounds((int) Math.floor(x), (int) Math.floor(y),
                 img.getWidth(), img.getHeight());
     }
 
-    public Primitive copy() {
-        BufferedImage nue = getBufferedImage (img, true);
-        return new ImageWrapper (x, y, nue);
+    public ImageWrapper copy() {
+        BufferedImage nue = getBufferedImage(img, true);
+        return new ImageWrapper(x, y, nue);
     }
 
     public Shape toShape() {
-        return new Rectangle2D.Double (x, y, img.getWidth(), img.getHeight());
+        return new Rectangle2D.Double(x, y, img.getWidth(), img.getHeight());
     }
 
     public Pt getLocation() {
-        return new Pt ((int)x, (int)y);
+        return new Pt((int) x, (int) y);
     }
 
     public void setLocation(double x, double y) {
@@ -159,14 +172,13 @@ public class ImageWrapper implements Primitive, Vector {
     }
 
     public Vector copy(AffineTransform xform) {
-        double[] pts = new double[] {
-            x, y, x + img.getWidth(), y + img.getHeight(),
-        };
-        xform.transform (pts, 0, pts, 0, 2);
-        int nw = (int)(pts[2] - pts[0]);
-        int nh = (int)(pts[3] - pts[1]);
-        BufferedImage nue = 
-                GraphicsEnvironment.getLocalGraphicsEnvironment()
+        double[] pts = new double[]{
+            x, y, x + img.getWidth(), y + img.getHeight(),};
+        xform.transform(pts, 0, pts, 0, 2);
+        int nw = (int) (pts[2] - pts[0]);
+        int nh = (int) (pts[3] - pts[1]);
+        BufferedImage nue
+                = GraphicsEnvironment.getLocalGraphicsEnvironment()
                         .getDefaultScreenDevice()
                         .getDefaultConfiguration()
                         .createCompatibleImage(nw, nh);
@@ -175,6 +187,22 @@ public class ImageWrapper implements Primitive, Vector {
         g.dispose();
         double nx = pts[0];
         double ny = pts[1];
-        return new ImageWrapper (nue, nx, ny);
+        return new ImageWrapper(nue, nx, ny);
     }
+
+    @Override
+    public void getBounds(Rectangle2D.Double dest) {
+        dest.x = x;
+        dest.y = y;
+        dest.width = img.getWidth();
+        dest.height = img.getHeight();
+    }
+
+    @Override
+    public Rectangle getBounds() {
+        return new Rectangle((int) Math.floor(x), (int) Math.floor(y),
+                img.getWidth(), img.getHeight());
+    }
+
+
 }

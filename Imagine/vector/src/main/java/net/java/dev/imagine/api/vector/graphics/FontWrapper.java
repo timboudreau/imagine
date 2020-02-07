@@ -11,9 +11,9 @@ package net.java.dev.imagine.api.vector.graphics;
 
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.util.Objects;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
-import net.java.dev.imagine.api.vector.elements.*;
 
 /**
  * Sets the Font of a Graphics2D
@@ -68,11 +68,46 @@ public class FontWrapper implements Primitive, Attribute <Font> {
         g.setFont (toFont());
     }
 
-    public Primitive copy() {
+    public FontWrapper copy() {
         return new FontWrapper (name, size, style);
     }
 
     public Font get() {
         return toFont();
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 83 * hash + Objects.hashCode(this.name);
+        hash = 83 * hash + this.size;
+        hash = 83 * hash + this.style;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final FontWrapper other = (FontWrapper) obj;
+        if (this.size != other.size) {
+            return false;
+        }
+        if (this.style != other.style) {
+            return false;
+        }
+        if (!Objects.equals(this.name, other.name)) {
+            return false;
+        }
+        return true;
+    }
+
+
 }

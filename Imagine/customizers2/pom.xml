@@ -25,6 +25,10 @@
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-util-ui</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util-lookup</artifactId>
         </dependency>
         <dependency>
@@ -55,9 +59,8 @@
             <plugin>
                 <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <version>4.3</version>
                 <configuration>
-       	       	    <moduleType>regular</moduleType>
+       	       	    <moduleType>autoload</moduleType>
                 </configuration>
             </plugin>
         </plugins>
