@@ -8,6 +8,7 @@
  */
 package org.netbeans.paint.tools;
 
+import java.awt.BasicStroke;
 import net.dev.java.imagine.api.tool.aspects.Attachable;
 import net.dev.java.imagine.spi.tool.Tool;
 import java.lang.Float;
@@ -39,7 +40,7 @@ import org.openide.util.NbBundle;
 import org.openide.util.lookup.Lookups;
 
 import static net.java.dev.imagine.api.toolcustomizers.Constants.*;
-import org.netbeans.paint.tools.fills.PaintingStyle;
+import org.imagine.editor.api.PaintingStyle;
 
 /**
  *
@@ -102,6 +103,7 @@ public class RectangleTool implements PaintParticipant, MouseMotionListener, Mou
             g2d.fillRect(toPaint.x, toPaint.y, toPaint.width, toPaint.height);
         }
         if (style.isOutline()) {
+            g2d.setStroke(new BasicStroke(strokeC.get()));
             g2d.setColor (outlineC.get());
             g2d.drawRect(toPaint.x, toPaint.y, toPaint.width, toPaint.height);
         }
@@ -231,17 +233,10 @@ public class RectangleTool implements PaintParticipant, MouseMotionListener, Mou
     }
 
     public void paint(Graphics2D g2d, Rectangle layerBounds, boolean commit) {
-        boolean wasCommitting = committing;
         committing = commit;
-        if (commit) {
-//            surface.beginUndoableOperation(null);
-        }
         try {
             paint(g2d);
         } finally {
-            if (commit) {
-//                surface.endUndoableOperation();
-            }
             committing = false;
             g2d.dispose();
         }

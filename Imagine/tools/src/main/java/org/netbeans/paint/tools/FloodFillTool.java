@@ -25,7 +25,7 @@ import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Constants;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
-import org.netbeans.paint.api.util.TrackingGraphics;
+import org.imagine.utils.java2d.TrackingGraphics;
 import org.openide.util.Lookup;
 import org.openide.util.Lookup.Provider;
 import org.openide.util.lookup.Lookups;

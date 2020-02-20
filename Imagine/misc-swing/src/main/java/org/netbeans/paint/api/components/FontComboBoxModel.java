@@ -2,43 +2,94 @@ package org.netbeans.paint.api.components;
 
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
-import java.util.HashSet;
-import java.util.Set;
-import javax.swing.DefaultComboBoxModel;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import javax.swing.ComboBoxModel;
+import javax.swing.JComboBox;
+import javax.swing.event.ListDataListener;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class FontComboBoxModel extends DefaultComboBoxModel {
+public class FontComboBoxModel implements ComboBoxModel<Font> {
+
+    private static final List<String> fontNames = new ArrayList<>();
+    private static String lastSelected;
+    private String selectedName;
 
     public FontComboBoxModel() {
-        Font times = null;
-        Set<String> all = new HashSet<String>();
-        for (Font f : GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts()) {
-            if (all.contains(f.getFamily())) {
-                continue;
-            }
-            all.add(f.getFamily());
-            f = f.deriveFont(12F);
-            if (times == null && f.getFamily().equals("Times New Roman")) {
-                times = f;
-            }
-            addElement(f);
+        selectedName = lastSelected;
+        if (selectedName == null) {
+            selectedName = fontNames().get(0);
         }
-        setSelectedItem(times);
+    }
+
+    public static JComboBox<Font> newFontComboBox() {
+        JComboBox result = new JComboBox(new FontComboBoxModel());
+        result.setRenderer(FontCellRenderer.instance());
+        return result;
+    }
+
+    private static List<String> fontNames() {
+        if (fontNames.isEmpty()) {
+            String[] names = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+            Arrays.sort(names, (a, b) -> {
+                return a.compareToIgnoreCase(b);
+            });
+            fontNames.addAll(Arrays.asList(names));
+        }
+        return fontNames;
     }
 
     @Override
-    public void setSelectedItem(Object o) {
-        if (o instanceof String) {
-            int max = getSize();
-            for (int i = 0; i < max; i++) {
-                if (o.toString().equals(((Font) getElementAt(i)).getFamily())) {
-                    o = getElementAt(i);
-                }
+    public void setSelectedItem(Object anItem) {
+        if (anItem instanceof String) {
+            selectedName = (String) anItem;
+            lastSelected = selectedName;
+            if (!fontNames.isEmpty()) {
+                fontNames.remove(selectedName);
+                fontNames.add(0, selectedName);
             }
+        } else if (anItem instanceof Font) {
+            selectedName = ((Font) anItem).getFamily();
+            lastSelected = selectedName;
+            if (!fontNames.isEmpty()) {
+                fontNames.remove(selectedName);
+                fontNames.add(0, selectedName);
+            }
+        } else if (anItem == null) {
+            selectedName = null;
         }
-        super.setSelectedItem(o);
+    }
+
+    @Override
+    public Object getSelectedItem() {
+        if (selectedName == null) {
+            return null;
+        }
+        return new Font(selectedName, Font.PLAIN, 14);
+    }
+
+    @Override
+    public int getSize() {
+        return fontNames().size();
+    }
+
+    @Override
+    public Font getElementAt(int index) {
+        String name = fontNames().get(index);
+        return new Font(name, Font.PLAIN, 14);
+    }
+
+    @Override
+    public void addListDataListener(ListDataListener l) {
+        // do nothing
+    }
+
+    @Override
+    public void removeListDataListener(ListDataListener l) {
+        // do nothing
     }
 }

@@ -21,8 +21,8 @@ import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
-import net.java.dev.imagine.spi.image.RepaintHandle;
-import org.netbeans.paint.api.util.ConvertList;
+import org.imagine.utils.painting.RepaintHandle;
+import org.imagine.utils.ConvertList;
 import org.openide.util.ChangeSupport;
 
 /**

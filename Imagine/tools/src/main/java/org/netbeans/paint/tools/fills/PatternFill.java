@@ -36,7 +36,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
 import org.netbeans.paint.api.components.explorer.Customizable;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.api.util.ImageEditorProvider;
 import org.netbeans.paint.tools.spi.Fill;
 import org.openide.DialogDescriptor;

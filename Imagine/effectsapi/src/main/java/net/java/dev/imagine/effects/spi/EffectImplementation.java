@@ -49,9 +49,17 @@ public abstract class EffectImplementation<ParamType, OutputType> {
         return null;
     }
 
+    public <T> T get(Class<T> type) {
+        if (type.isInstance(this)) {
+            return type.cast(this);
+        }
+        return null;
+    }
+
     /**
      * If a BufferedImage is present in the lookup of the argument, creates an
      * ImageSource which uses that image to create scaled previews.
+     *
      * @param layer A Lookup.Provider such as an instance of Layer
      * @return An image source if a BufferedImage is available, otherwise null
      */

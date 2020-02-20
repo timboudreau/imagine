@@ -23,6 +23,13 @@ public abstract class EffectReceiver<EffectType> {
         return true;
     }
 
+    public final <T> EffectReceiver<T> as(Class<T> type) {
+        if (type == this.type) {
+            return (EffectReceiver<T>) this;
+        }
+        return null;
+    }
+
     public <ParamType> boolean apply(Effect<ParamType, EffectType> effect, ParamType params) {
         if (!canApplyEffects()) {
             return false;
@@ -36,6 +43,6 @@ public abstract class EffectReceiver<EffectType> {
     }
 
     protected abstract <ParamType> boolean onApply(EffectType effect);
-    
+
     public abstract Dimension getSize();
 }

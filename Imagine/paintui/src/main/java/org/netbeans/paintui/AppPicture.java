@@ -43,10 +43,11 @@ import net.dev.java.imagine.api.selection.Selection;
 import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
-import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
+import org.imagine.editor.api.AspectRatio;
 import org.netbeans.paint.api.editing.LayerFactory;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.api.util.RasterConverter;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Exceptions;
@@ -121,6 +122,12 @@ class AppPicture extends PictureImplementation {
 */
     void resized(int width, int height) {
         state.size = new Dimension (width, height);
+    }
+
+    private AspectRatio aspectRatio = AspectRatio.create(() -> state.size);
+
+    AspectRatio aspectRatio() {
+        return aspectRatio;
     }
 
     private LayerImplementation createInitialLayer(Dimension d) {

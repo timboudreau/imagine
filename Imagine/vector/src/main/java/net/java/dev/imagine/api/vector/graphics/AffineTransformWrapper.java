@@ -115,11 +115,13 @@ public class AffineTransformWrapper implements Primitive, Transformable {
         return new AffineTransformWrapper(result);
     }
 
+    @Override
     public void paint(Graphics2D g) {
         //XXX should concatenate to current transform?
         g.setTransform(getAffineTransform());
     }
 
+    @Override
     public AffineTransformWrapper copy() {
         return new AffineTransformWrapper(getAffineTransform());
     }
@@ -135,27 +137,23 @@ public class AffineTransformWrapper implements Primitive, Transformable {
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
-        }
-        if (obj == null) {
+        } else if (obj == null) {
             return false;
-        }
-        if (getClass() != obj.getClass()) {
+        } else if (!(obj instanceof AffineTransformWrapper)) {
             return false;
         }
         final AffineTransformWrapper other = (AffineTransformWrapper) obj;
-        if (!Arrays.equals(this.matrix, other.matrix)) {
-            return false;
-        }
-        return true;
+        return Arrays.equals(this.matrix, other.matrix);
     }
 
+    @Override
     public String toString() {
         return "AffineTransformWrapper("
                 + Arrays.toString(matrix) + ")";
     }
 
     @Override
-    public void applyScale(AffineTransform xform) {
+    public void applyTransform(AffineTransform xform) {
         AffineTransform xf = getAffineTransform();
         xf.concatenate(xform);
         xf.getMatrix(matrix);

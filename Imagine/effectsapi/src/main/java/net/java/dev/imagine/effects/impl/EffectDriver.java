@@ -1,5 +1,6 @@
 package net.java.dev.imagine.effects.impl;
 
+import java.util.function.Supplier;
 import net.java.dev.imagine.effects.api.Effect;
 import net.java.dev.imagine.effects.api.Preview;
 import net.java.dev.imagine.effects.spi.EffectDescriptor;
@@ -115,17 +116,17 @@ public class EffectDriver<StubClass extends EffectStub<ParamType, OutputType>, P
 
         @Override
         public String displayName() {
-            return dob.getNodeDelegate().getDisplayName();
+            return withDefaultClassloader(dob.getNodeDelegate()::getDisplayName);
         }
 
         @Override
         public String description() {
-            return dob.getNodeDelegate().getShortDescription();
+            return withDefaultClassloader(dob.getNodeDelegate()::getShortDescription);
         }
 
         @Override
         public HelpCtx helpCtx() {
-            return dob.getNodeDelegate().getHelpCtx();
+            return withDefaultClassloader(dob.getNodeDelegate()::getHelpCtx);
         }
 
         @Override
@@ -135,6 +136,17 @@ public class EffectDriver<StubClass extends EffectStub<ParamType, OutputType>, P
 
         public String toString() {
             return "Descriptor: " + name() + " " + displayName();
+        }
+    }
+
+    static <T> T withDefaultClassloader(Supplier<T> supp) {
+        ClassLoader ldr = Thread.currentThread().getContextClassLoader();
+        try {
+            ClassLoader def = Lookup.getDefault().lookup(ClassLoader.class);
+            Thread.currentThread().setContextClassLoader(def);
+            return supp.get();
+        } finally {
+            Thread.currentThread().setContextClassLoader(ldr);
         }
     }
 }

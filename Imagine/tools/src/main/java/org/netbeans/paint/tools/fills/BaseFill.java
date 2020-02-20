@@ -83,7 +83,7 @@ class BaseFill implements Customizable, Fill, ActionListener {
         fire();
     }
 
-    private ChangeSupport changes = new ChangeSupport(this);
+    private final ChangeSupport changes = new ChangeSupport(this);
     public void addChangeListener(ChangeListener cl) {
 	changes.addChangeListener(cl);
     }

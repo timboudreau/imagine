@@ -9,6 +9,7 @@
 
 package net.java.dev.imagine.spi.image;
 
+import org.imagine.utils.painting.RepaintHandle;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.beans.PropertyChangeListener;
@@ -38,7 +39,7 @@ public abstract class LayerImplementation<T extends LayerFactory> {
     protected static final String PROP_VISIBLE = Layer.PROP_VISIBLE;
     protected static final String PROP_OPACITY = Layer.PROP_OPACITY;
     private final RepaintHandleProxySupport proxy =
-            new RepaintHandleProxySupport(toString());
+            new RepaintHandleProxySupport(this);
 
     static {
         init();

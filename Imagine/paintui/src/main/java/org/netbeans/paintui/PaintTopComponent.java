@@ -303,6 +303,7 @@ public class PaintTopComponent extends TopComponent implements ChangeListener,
                 l.add(surf);
             }
         }
+        l.add(canvas.aspectRatio());
 //        System.err.println("Lookup contents set to " + l);
         UIContextLookupProvider.set(l);
         if (layer != null) {

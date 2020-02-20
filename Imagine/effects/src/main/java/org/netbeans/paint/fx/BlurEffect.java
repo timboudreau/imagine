@@ -29,7 +29,7 @@ import net.java.dev.imagine.effects.api.Preview;
 import net.java.dev.imagine.effects.spi.CompositeEffectStub;
 import net.java.dev.imagine.effects.spi.Effect;
 import net.java.dev.imagine.effects.spi.ImageSource;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 
@@ -92,10 +92,6 @@ public class BlurEffect extends CompositeEffectStub<Void> {
     @Override
     public Preview<?, Void, Composite> createPreview(Lookup.Provider layer) {
         ImageSource src = layer.getLookup().lookup(ImageSource.class);
-        if (src != null) {
-//            BufferedImage raw = src.getRawImage();
-            System.out.println("Have an image source");
-        }
         return super.createPreview(layer); //To change body of generated methods, choose Tools | Templates.
     }
     

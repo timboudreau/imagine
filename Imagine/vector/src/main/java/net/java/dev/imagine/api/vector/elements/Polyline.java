@@ -19,6 +19,7 @@ import net.java.dev.imagine.api.vector.Mutable;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
+import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 
 /**
@@ -28,7 +29,7 @@ import net.java.dev.imagine.api.vector.util.Pt;
  */
 public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mutable {
 
-    public long serialVersionUID = 80238954L;
+    public long serialVersionUID = 80_238_954L;
     public int[] xpoints;
     public int[] ypoints;
     public int npoints;
@@ -44,6 +45,20 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
         this.fill = fill;
     }
 
+    @Override
+    public void translate(double x, double y) {
+        int xx = (int) x;
+        int yy = (int) y;
+        if (xx == 0 && yy == 0) {
+            return;
+        }
+        for (int i = 0; i < npoints; i++) {
+            xpoints[i] += xx;
+            ypoints[i] += yy;
+        }
+    }
+
+    @Override
     public String toString() {
         StringBuilder b = new StringBuilder("Polyline ");
         for (int i = 0; i < npoints; i++) {
@@ -58,12 +73,19 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
         return b.toString();
     }
 
+    @Override
     public Shape toShape() {
         java.awt.Polygon result = new java.awt.Polygon(xpoints, ypoints, npoints);
         return result;
     }
 
+    @Override
     public boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        } else if (o == this) {
+            return true;
+        }
         boolean result = o instanceof Polyline;
         if (result) {
             Polyline p = (Polyline) o;
@@ -76,20 +98,24 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
         return result;
     }
 
+    @Override
     public int hashCode() {
         int a = Arrays.hashCode(xpoints);
         int b = Arrays.hashCode(ypoints);
         return (a + 1) * (b + 1) + npoints;
     }
 
+    @Override
     public void paint(Graphics2D g) {
         g.drawPolygon(xpoints, ypoints, npoints);
     }
 
+    @Override
     public int getControlPointCount() {
         return npoints;
     }
 
+    @Override
     public void getControlPoints(double[] xy) {
         for (int i = 0; i < npoints; i++) {
             int ix = i * 2;
@@ -98,6 +124,7 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
         }
     }
 
+    @Override
     public void getBounds(Rectangle2D.Double r) {
         int minX = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE;
@@ -116,16 +143,19 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
         r.setRect(x, y, width, height);
     }
 
+    @Override
     public void draw(Graphics2D g) {
         g.drawPolyline(xpoints, ypoints, npoints);
     }
 
+    @Override
     public Polyline copy() {
-        return new Polyline(xpoints, ypoints, npoints, fill);
+        return new Polyline(Arrays.copyOf(xpoints, xpoints.length),
+                Arrays.copyOf(ypoints, ypoints.length), npoints, fill);
     }
 
     @Override
-    public void applyScale(AffineTransform xform) {
+    public void applyTransform(AffineTransform xform) {
         Point2D.Double scratch = new Point2D.Double();
         for (int i = 0; i < npoints; i++) {
             scratch.x = xpoints[i];
@@ -136,6 +166,14 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
         }
     }
 
+    @Override
+    public ControlPointKind[] getControlPointKinds() {
+        ControlPointKind[] kinds = new ControlPointKind[npoints];
+        Arrays.fill(kinds, ControlPointKind.PHYSICAL_POINT);
+        return kinds;
+    }
+
+    @Override
     public Pt getLocation() {
         int minx = Integer.MAX_VALUE;
         int miny = Integer.MAX_VALUE;
@@ -148,6 +186,7 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
         return new Pt(minx, miny);
     }
 
+    @Override
     public void setLocation(double xx, double yy) {
         //XXX do all this double precision?
         int x = (int) xx;
@@ -170,10 +209,12 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
         }
     }
 
+    @Override
     public void clearLocation() {
         setLocation(0, 0);
     }
 
+    @Override
     public Vector copy(AffineTransform transform) {
         Shape s = toShape();
         //XXX not really returning the right type here
@@ -182,10 +223,12 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
                         AffineTransform.getTranslateInstance(0, 0)), false);
     }
 
+    @Override
     public int[] getVirtualControlPointIndices() {
         return EMPTY_INT;
     }
 
+    @Override
     public boolean delete(int pointIndex) {
         if (npoints <= 2) {
             return false;
@@ -205,6 +248,7 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
         return true;
     }
 
+    @Override
     public boolean insert(double x, double y, int index, int kind) {
         if (xpoints.length < npoints + 1) {
             int[] xp = new int[xpoints.length + 2];
@@ -214,7 +258,6 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
             xpoints = xp;
             ypoints = yp;
         }
-
         int ix = npoints;
         for (int i = npoints; i >= 0; i--) {
             if (i == index) {
@@ -231,6 +274,7 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
         return true;
     }
 
+    @Override
     public int getPointIndexNearest(double x, double y) {
         Point2D.Double curr = new Point2D.Double(0, 0);
         double bestDistance = Double.MAX_VALUE;
@@ -246,6 +290,7 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
         return bestIndex;
     }
 
+    @Override
     public void setControlPointLocation(int pointIndex, Pt pt) {
         xpoints[pointIndex] = (int) pt.x;
         ypoints[pointIndex] = (int) pt.y;

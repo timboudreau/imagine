@@ -15,9 +15,9 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.spi.image.LayerImplementation;
-import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.imagine.utils.painting.RepaintHandle;
 import org.netbeans.paint.api.editing.LayerFactory;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.NbBundle;
 import org.openide.util.lookup.ServiceProvider;
 

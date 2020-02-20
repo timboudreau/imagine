@@ -22,7 +22,7 @@ import java.util.Set;
 import net.dev.java.imagine.api.selection.Selection;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.NbBundle;
 
 /**
@@ -72,25 +72,21 @@ class TransferableImpl implements Transferable, ClipboardOwner {
             }
             Selection sel = layer == null ? null : layer.getLookup().lookup(Selection.class);
             Shape clip = sel == null ? null : sel.asShape();
-            BufferedImage nue = new BufferedImage(d.width, d.height, GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
-            Graphics2D g = nue.createGraphics();
-            GraphicsUtils.setHighQualityRenderingHints(g);
-            try {
+
+            BufferedImage nue = GraphicsUtils.newBufferedImage(d.width, d.height, g -> {
+                GraphicsUtils.setHighQualityRenderingHints(g);
                 if (clip != null) {
                     g.setClip(clip);
                 }
                 if (allLayers) {
                     picture.paint(g, null, false);
                 } else {
-                    if (!layer.isVisible()) {
-                        return nue;
+                    if (layer.isVisible()) {
+                        layer.paint(g, null, false, false);
                     }
-                    layer.paint(g, null, false, false);
                 }
-            } finally {
-                g.dispose();
-            }
-            if (!isCut) {
+            });
+            if (isCut) {
                 Iterable<LayerImplementation> toCutFrom = allLayers ? picture.getLayers() : Collections.singleton(layer);
                 for (LayerImplementation l : toCutFrom) {
                     if (!l.isVisible()) {

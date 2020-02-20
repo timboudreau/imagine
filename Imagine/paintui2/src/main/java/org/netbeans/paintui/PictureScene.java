@@ -32,9 +32,10 @@ import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.spi.image.LayerImplementation;
-import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import net.java.dev.imagine.spi.image.support.AbstractPictureImplementation;
+import org.imagine.editor.api.AspectRatio;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.border.BorderFactory;
 import org.netbeans.api.visual.layout.LayoutFactory;
@@ -42,8 +43,9 @@ import org.netbeans.api.visual.widget.LayerWidget;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
 import org.netbeans.paint.api.editing.LayerFactory;
-import org.netbeans.paint.api.editor.Zoom;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.editor.api.Zoom;
+import org.imagine.utils.java2d.GraphicsUtils;
+import org.netbeans.paintui.widgetlayers.WidgetController;
 import org.netbeans.paintui.widgetlayers.WidgetLayer;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
@@ -53,7 +55,7 @@ import org.openide.util.NbBundle;
  *
  * @author Tim Boudreau
  */
-final class PictureScene extends Scene {
+final class PictureScene extends Scene implements WidgetController {
 
     private final PI picture;
     private final ZoomImpl zoom = new ZoomImpl();
@@ -243,7 +245,8 @@ final class PictureScene extends Scene {
         return tool == null ? null : tool.getLookup().lookup(clazz);
     }
 
-    Zoom getZoom() {
+    @Override
+    public Zoom getZoom() {
         return zoom;
     }
 
@@ -678,6 +681,8 @@ final class PictureScene extends Scene {
 
     class PI extends AbstractPictureImplementation {
 
+        private AspectRatio ratio = AspectRatio.create(this::getSize);
+
         public PI(RepaintHandle handle, Dimension size, BackgroundStyle backgroundStyle) {
             super(size);
             addRepaintHandle(handle);
@@ -699,6 +704,10 @@ final class PictureScene extends Scene {
                 psel.activeLayerChanged(null, getActiveLayer());
             }
             initialized();
+        }
+
+        AspectRatio aspectRatio() {
+            return ratio;
         }
 
         public PI(RepaintHandle handle, BufferedImage img) {
@@ -833,7 +842,10 @@ final class PictureScene extends Scene {
         protected void onUnhibernate() {
             for (LayerImplementation layer : this.getLayers()) {
                 for (Hibernator hib : layer.getLookup().lookupAll(Hibernator.class)) {
-                    hib.hibernate();
+                    hib.wakeup(hasResolutionDependentLayers, () -> {
+                        PictureScene.this.validate();
+                        PictureScene.this.repaint();
+                    });
                 }
             }
         }

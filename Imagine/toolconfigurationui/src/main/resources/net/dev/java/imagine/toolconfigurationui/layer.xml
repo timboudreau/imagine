@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.0//EN" "http://www.netbeans.org/dtds/filesystem-1_0.dtd">
 <filesystem>
- 
+     <folder name="Windows2Local">
+        <folder name="Modes">
+            <file name="customizers.wsmode" url="customizers.wsmode"/>
+            <folder name="layersMode">
+                <file name="customizers.wstcref" url="customizers.wstcref"/>
+            </folder>
+        </folder>
+    </folder>
 </filesystem>

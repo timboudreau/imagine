@@ -17,9 +17,14 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.RenderingHints;
+import static java.awt.RenderingHints.KEY_ANTIALIASING;
+import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
+import static java.awt.RenderingHints.VALUE_ANTIALIAS_ON;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
@@ -87,9 +92,11 @@ public class SimpleSliderUI extends SliderUI implements ChangeListener {
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        JSlider sl = (JSlider)c;
-//        ((Graphics2D) g).setRenderingHints(getHints());
+        Graphics2D gr = (Graphics2D) g;
+        gr.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
+        gr.setRenderingHint(KEY_TEXT_ANTIALIASING, VALUE_TEXT_ANTIALIAS_LCD_HRGB);
 
+        JSlider sl = (JSlider)c;
         if (sl.getOrientation() == JSlider.VERTICAL) {
             g.translate(-8, 0);
             paintTrack(g, sl);

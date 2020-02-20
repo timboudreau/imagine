@@ -36,6 +36,7 @@ public final class Pt implements Serializable{
         return new Rect (x - halfx, y - halfy, size.w, size.h);
     }
 
+    @Override
     public boolean equals (Object o) {
         boolean result = o instanceof Pt;
         if (result) {
@@ -45,10 +46,12 @@ public final class Pt implements Serializable{
         return result;
     }
 
+    @Override
     public int hashCode() {
         return (int) ((x + 1) * (y + 1)) * -100;
     }
 
+    @Override
     public String toString() {
         return "Pt<" + x + ',' + y + '>';
      }

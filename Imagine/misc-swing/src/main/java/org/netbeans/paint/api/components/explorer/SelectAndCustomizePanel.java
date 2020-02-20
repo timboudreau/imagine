@@ -8,11 +8,13 @@
  * and open the template in the editor.
  */
 package org.netbeans.paint.api.components.explorer;
+
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.Font;
 import java.awt.Insets;
 import java.awt.LayoutManager;
 import java.beans.PropertyChangeEvent;
@@ -23,7 +25,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
-import org.netbeans.paint.api.components.*;
 import org.openide.ErrorManager;
 import org.openide.cookies.InstanceCookie;
 import org.openide.explorer.ExplorerManager;
@@ -39,29 +40,27 @@ import org.openide.nodes.Node;
 import org.openide.util.Exceptions;
 
 /**
- * A general panel which can be pointed at a folder in the system filesystem
- * and will show a ChoiceView (combobox) of its contents with a custom icon-only
- * UI.
+ * A general panel which can be pointed at a folder in the system filesystem and
+ * will show a ChoiceView (combobox) of its contents with a custom icon-only UI.
  *
  * @author Timothy Boudreau
  */
 public final class SelectAndCustomizePanel extends JPanel implements ExplorerManager.Provider,
-                                                                     PropertyChangeListener,
-                                                                     LayoutManager {
+        PropertyChangeListener,
+        LayoutManager {
+
     private final ChoiceView choice = new ChoiceView();
     private final ExplorerManager mgr = new ExplorerManager();
     private final JPanel customizerContainer = new JPanel();
     private String folder;
-    private JLabel lbl;
-    private JPanel top;
+    private final JLabel lbl = new JLabel();
+    private final JPanel top = new JPanel();
+
     public SelectAndCustomizePanel(String folder, boolean useIconDropDown) {
         customizerContainer.setLayout(new BorderLayout());
         mgr.addPropertyChangeListener(this);
         choice.setMinimumSize(new Dimension(80, 16));
-        lbl = new JLabel();
         setLayout(new BorderLayout());
-        top = new JPanel();
-
         top.setLayout(this);
         top.add(lbl);
         top.add(choice);
@@ -74,16 +73,27 @@ public final class SelectAndCustomizePanel extends JPanel implements ExplorerMan
         this.folder = folder;
     }
 
+    @Override
+    public void setFont(Font font) {
+        super.setFont(font);
+        if (choice != null) {
+            choice.setFont(font);
+            lbl.setFont(font);
+            customizerContainer.setFont(font);
+            invalidate();
+        }
+    }
+
     public void initialize() {
         try {
             FileObject fld = FileUtil.getConfigFile(folder);
             DataFolder dfldr = DataFolder.findFolder(fld);
-            Node root = new FilterNode (dfldr.getNodeDelegate(), new NameFilterNodeChildren(dfldr.getNodeDelegate()));
+            Node root = new FilterNode(dfldr.getNodeDelegate(), new NameFilterNodeChildren(dfldr.getNodeDelegate()));
 
             lbl.setText(root.getDisplayName());
             mgr.setRootContext(root);
             mgr.setExploredContext(root);
-            String last = (String)fld.getAttribute("lastSelection");
+            String last = (String) fld.getAttribute("lastSelection");
             Node[] n = mgr.getRootContext().getChildren().getNodes(true);
 
             if (n.length > 0) {
@@ -98,9 +108,9 @@ public final class SelectAndCustomizePanel extends JPanel implements ExplorerMan
                 }
                 choice.setShowExploredContext(false);
                 // set an initial selection, so the folder isn't selected
-                mgr.setSelectedNodes(new Node[] {sel});
+                mgr.setSelectedNodes(new Node[]{sel});
                 // XXX shouldn't need to do this:
-                NodeListModel mdl = (NodeListModel)choice.getModel();
+                NodeListModel mdl = (NodeListModel) choice.getModel();
 
                 mdl.setSelectedItem(sel);
                 choice.setToolTipText(sel.getDisplayName());
@@ -108,26 +118,20 @@ public final class SelectAndCustomizePanel extends JPanel implements ExplorerMan
             if (n.length == 1) {
                 //XXX - should listen to children changes on the node, in case a module
                 //is loaded that adds children
-                top.remove (lbl);
-                top.remove (choice);
+                top.remove(lbl);
+                top.remove(choice);
             }
-        }
-        catch (PropertyVetoException pve) {
+        } catch (PropertyVetoException pve) {
             // won't actually happen
             Exceptions.printStackTrace(pve);
         }
-        
+
     }
 
     @Override
     public void addNotify() {
         super.addNotify();
-        EventQueue.invokeLater(new Runnable() {
-
-                                   public void run() {
-                                       initialize();
-                                   }
-                               });
+        EventQueue.invokeLater(this::initialize);
     }
 
     public ExplorerManager getExplorerManager() {
@@ -135,8 +139,8 @@ public final class SelectAndCustomizePanel extends JPanel implements ExplorerMan
     }
 
     public void propertyChange(PropertyChangeEvent evt) {
-        if (evt == null ||
-            ExplorerManager.PROP_SELECTED_NODES.equals(evt.getPropertyName())) {
+        if (evt == null
+                || ExplorerManager.PROP_SELECTED_NODES.equals(evt.getPropertyName())) {
             if (mgr.getSelectedNodes().length > 0) {
                 Node n = mgr.getSelectedNodes()[0];
 
@@ -144,29 +148,25 @@ public final class SelectAndCustomizePanel extends JPanel implements ExplorerMan
                 if (n.hasCustomizer()) {
                     setSelection(null);
                     setInnerComponent(n.getCustomizer());
-                }
-                else if (n.getCookie(InstanceCookie.class) != null) {
-                    InstanceCookie ic = (InstanceCookie)n.getCookie(InstanceCookie.class);
+                } else if (n.getCookie(InstanceCookie.class) != null) {
+                    InstanceCookie ic = (InstanceCookie) n.getCookie(InstanceCookie.class);
 
                     try {
                         if (Customizable.class.isAssignableFrom(ic.instanceClass())) {
-                            setSelection((Customizable)ic.instanceCreate());
-                        }
-                        else {
+                            setSelection((Customizable) ic.instanceCreate());
+                        } else {
                             setSelection(null);
                         }
-                    }
-                    catch (IOException ioe) {
+                    } catch (IOException ioe) {
                         ErrorManager.getDefault().notify(ioe);
                         setSelection(null);
-                    }
-                    catch (ClassNotFoundException cnfe) {
+                    } catch (ClassNotFoundException cnfe) {
                         ErrorManager.getDefault().notify(cnfe);
                         setSelection(null);
                     }
                 } else {
                     System.err.println("No instance cookie found in " + n);
-                    
+
                     setSelection(null);
                 }
                 FileSystem systemFileSystem = Repository.getDefault().getDefaultFileSystem();
@@ -174,8 +174,7 @@ public final class SelectAndCustomizePanel extends JPanel implements ExplorerMan
 
                 try {
                     fld.setAttribute("lastSelection", n.getName());
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     ErrorManager.getDefault().notify(e);
                 }
             }
@@ -203,7 +202,7 @@ public final class SelectAndCustomizePanel extends JPanel implements ExplorerMan
             jl.setHorizontalAlignment(SwingConstants.CENTER);
             jl.setHorizontalTextPosition(SwingConstants.CENTER);
             jl.setText(org.openide.util.NbBundle.getMessage(SelectAndCustomizePanel.class,
-                                                            "LBL_NoCustomizer"));
+                    "LBL_NoCustomizer"));
             c = jl;
         }
         customizerContainer.add(c, BorderLayout.CENTER);
@@ -252,10 +251,10 @@ public final class SelectAndCustomizePanel extends JPanel implements ExplorerMan
 
         for (int i = 0; i < c.length; i++) {
             Dimension d = c[i].getPreferredSize();
-            int y = Math.max(0, (parent.getHeight()/2) - (d.height/2));
-            int w = i == c.length - 1 ? (parent.getWidth() -
-                                         (ins.left + ins.right)) - x
-                                      : d.width;
+            int y = Math.max(0, (parent.getHeight() / 2) - (d.height / 2));
+            int w = i == c.length - 1 ? (parent.getWidth()
+                    - (ins.left + ins.right)) - x
+                    : d.width;
 
             if (i == 0) {
                 w = Math.max(w, MIN_LBL_WIDTH);

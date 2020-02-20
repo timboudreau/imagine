@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.netbeans.paint.tools;
 
 import java.awt.Color;
@@ -27,13 +22,15 @@ import static net.java.dev.imagine.api.toolcustomizers.Constants.FILL;
 import static net.java.dev.imagine.api.toolcustomizers.Constants.FOREGROUND;
 import static net.java.dev.imagine.api.toolcustomizers.Constants.STROKE;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
-import org.netbeans.paint.api.editor.Zoom;
+import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.tools.fills.FillCustomizer;
-import org.netbeans.paint.tools.fills.PaintingStyle;
+import org.imagine.editor.api.PaintingStyle;
 import org.openide.util.Lookup;
 import org.openide.util.Utilities;
 
 /**
+ * Base class for modal drawing tools, where each mouse gesture may change
+ * the thing that handles the next gesture.
  *
  * @author Tim Boudreau
  */
@@ -77,6 +74,7 @@ abstract class MultiStateTool extends ToolImplementation<Surface> implements Cus
         clearState();
         currentHandler = InputHandler.NO_OP;
         active = false;
+        repainter = null;
         onDetach();
     }
 
@@ -96,7 +94,7 @@ abstract class MultiStateTool extends ToolImplementation<Surface> implements Cus
 
     protected abstract Rectangle paintLive(Graphics2D g, Rectangle layerBounds);
 
-    private final Rectangle paint(Graphics2D g, Rectangle layerBounds, boolean isCommit) {
+    private Rectangle paint(Graphics2D g, Rectangle layerBounds, boolean isCommit) {
         if (isCommit) {
             return paintCommit(g);
         } else {

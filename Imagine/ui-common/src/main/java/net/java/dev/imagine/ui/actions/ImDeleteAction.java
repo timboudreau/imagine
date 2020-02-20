@@ -61,10 +61,13 @@ public class ImDeleteAction extends GenericContextSensitiveAction<Picture> imple
     private Selection lastSelection;
 
     @Override
-    protected boolean checkEnabled(Collection<? extends Picture> coll, Class clazz) {
+    protected <T> boolean checkEnabled(Collection<? extends T> coll, Class<T> clazz) {
+        if (Picture.class != clazz) {
+            return true;
+        }
         boolean result = super.checkEnabled(coll, clazz);
         if (result) {
-            Picture p = coll.iterator().next();
+            Picture p = (Picture) coll.iterator().next();
             Layer layer = p.getActiveLayer();
             result = layer != null;
             if (result) {

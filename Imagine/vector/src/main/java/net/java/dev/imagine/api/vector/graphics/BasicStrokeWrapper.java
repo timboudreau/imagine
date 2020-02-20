@@ -10,16 +10,19 @@ package net.java.dev.imagine.api.vector.graphics;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
+import net.java.dev.imagine.api.vector.Transformable;
 
 /**
  * Sets the Stroke of a Graphics2D.
  *
  * @author Tim Boudreau
  */
-public final class BasicStrokeWrapper implements Primitive, Attribute<BasicStroke> {
+public final class BasicStrokeWrapper implements Primitive, Attribute<BasicStroke>, Transformable {
 
     public float miterLimit;
     public float[] dashArray;
@@ -103,26 +106,67 @@ public final class BasicStrokeWrapper implements Primitive, Attribute<BasicStrok
 
     @Override
     public int hashCode() {
-        int result = Arrays.hashCode(dashArray)
-                + (int) (dashPhase * 100) + endCap
-                + lineJoin + ((int) lineJoin * 100)
-                + ((int) miterLimit * 100);
-        return result;
+        int hash = 3;
+        hash = 71 * hash + Float.floatToIntBits(this.miterLimit);
+        hash = 71 * hash + Arrays.hashCode(this.dashArray);
+        hash = 71 * hash + Float.floatToIntBits(this.dashPhase);
+        hash = 71 * hash + Float.floatToIntBits(this.lineWidth);
+        hash = 71 * hash + this.endCap;
+        hash = 71 * hash + this.lineJoin;
+        return hash;
     }
 
+    @Override
     public void paint(Graphics2D g) {
         g.setStroke(toStroke());
     }
 
+    @Override
     public BasicStrokeWrapper copy() {
         return new BasicStrokeWrapper(this);
     }
 
+    @Override
     public BasicStroke get() {
         return toStroke();
     }
 
     public double getLineWidth() {
         return lineWidth;
+    }
+
+    @Override
+    public void applyTransform(AffineTransform xform) {
+        switch (xform.getType()) {
+            case AffineTransform.TYPE_GENERAL_TRANSFORM:
+                double[] pts = new double[]{0, 0, lineWidth, lineWidth};
+                double origDist = Point2D.distance(0, 0, lineWidth, lineWidth);
+                xform.transform(pts, 0, pts, 0, pts.length / 2);
+                double newDist = Point2D.distance(pts[0], pts[0], pts[1], pts[1]);
+                double factor = newDist / origDist;
+                lineWidth *= factor;
+                break;
+            case AffineTransform.TYPE_GENERAL_SCALE:
+                // No right way to do this, but doing nothing is
+                // definitely wrong
+                double avg = (xform.getScaleX() + xform.getScaleY()) / 2D;
+                lineWidth *= avg;
+                break;
+            case AffineTransform.TYPE_UNIFORM_SCALE:
+                lineWidth *= xform.getScaleX();
+                break;
+        }
+    }
+
+    @Override
+    public void applyScale(double scale) {
+        lineWidth *= scale;
+    }
+
+    @Override
+    public BasicStrokeWrapper copy(AffineTransform transform) {
+        BasicStrokeWrapper result = copy(transform);
+        result.applyTransform(transform);
+        return result;
     }
 }

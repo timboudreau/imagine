@@ -35,16 +35,24 @@ public class ColorWrapper implements Primitive, PaintWrapper, Attribute<Color> {
                 color == null ? 0 : color.getBlue(), color == null ? 0 : color.getAlpha());
     }
 
+    @Override
     public Color toColor() {
         return new Color(r, g, b, a);
     }
 
+    @Override
     public void paint(Graphics2D g) {
         g.setPaint(toPaint());
     }
 
+    @Override
     public boolean equals(Object o) {
-        boolean result = o != null && o.getClass() == getClass();
+        if (o == this) {
+            return true;
+        } else if (o == null) {
+            return false;
+        }
+        boolean result = o instanceof ColorWrapper;
         if (result) {
             ColorWrapper c = (ColorWrapper) o;
             result = c.r == r && c.b == b && c.g == g && c.a == a;
@@ -52,22 +60,32 @@ public class ColorWrapper implements Primitive, PaintWrapper, Attribute<Color> {
         return result;
     }
 
+    @Override
     public int hashCode() {
-        return getClass().hashCode() + toColor().hashCode();
+        int hash = 7;
+        hash = 71 * hash + this.r;
+        hash = 71 * hash + this.g;
+        hash = 71 * hash + this.b;
+        hash = 71 * hash + this.a;
+        return hash;
     }
 
+    @Override
     public Paint toPaint() {
         return toColor();
     }
 
+    @Override
     public ColorWrapper copy() {
         return new ColorWrapper(r, g, b, a);
     }
 
-    public PaintWrapper createScaledInstance(AffineTransform xform) {
-        return (PaintWrapper) copy();
+    @Override
+    public ColorWrapper createScaledInstance(AffineTransform xform) {
+        return copy();
     }
 
+    @Override
     public Color get() {
         return toColor();
     }

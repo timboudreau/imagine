@@ -90,6 +90,11 @@ public final class PaintTopComponent extends TopComponent implements
     private final PictureScene canvas; //The component the user draws on
     private static int ct = 0; //A counter we use to provide names for new images
     private File file;
+    private final UndoRedo.Manager undoManager = new UndoMgr();
+    private static final int UNDO_LIMIT = 15;
+    private boolean active;
+    boolean firstTime = true;
+    private Lookup.Result<Tool> tools = null;
     public static DataFlavor LAYER_DATA_FLAVOR = new DataFlavor(Layer.class,
             NbBundle.getMessage(PI.class,
                     "LAYER_CLIPBOARD_NAME")); //NOI18N
@@ -178,7 +183,6 @@ public final class PaintTopComponent extends TopComponent implements
         undoManager.setLimit(UNDO_LIMIT);
         picture.addChangeListener(this);
     }
-    private static final int UNDO_LIMIT = 15;
 
     static class InnerPanel extends JComponent {
 
@@ -190,10 +194,12 @@ public final class PaintTopComponent extends TopComponent implements
             setBorder(BorderFactory.createEmptyBorder());
         }
 
+        @Override
         public Dimension getPreferredSize() {
             return inner.getPreferredSize();
         }
 
+        @Override
         public void doLayout() {
             Dimension d = inner.getPreferredSize();
             int offX = 0;
@@ -218,6 +224,7 @@ public final class PaintTopComponent extends TopComponent implements
         return this.file == null ? "Image" : this.file.getName(); //NOI18N
     }
 
+    @Override
     public void selectAll() {
         PictureImplementation l = canvas.getPicture();
         if (l.getActiveLayer() == null) {
@@ -226,10 +233,13 @@ public final class PaintTopComponent extends TopComponent implements
         }
         LayerImplementation layer = l.getActiveLayer();
         Selection s = layer.getLookup().lookup(Selection.class);
-        s.add(new Rectangle(l.getSize()), Op.REPLACE);
+        if (s != null) {
+            s.add(new Rectangle(l.getSize()), Op.REPLACE);
+        }
         repaint();
     }
 
+    @Override
     public void clearSelection() {
         PictureImplementation l = canvas.getPicture();
         if (l.getActiveLayer() == null) {
@@ -244,6 +254,7 @@ public final class PaintTopComponent extends TopComponent implements
         }
     }
 
+    @Override
     public void invertSelection() {
         PictureImplementation l = canvas.getPicture();
         if (l.getActiveLayer() == null) {
@@ -259,7 +270,6 @@ public final class PaintTopComponent extends TopComponent implements
         }
     }
 
-    private final UndoRedo.Manager undoManager = new UndoMgr();
 
     public void pictureResized(int width, int height) {
 //        /throw new UnsupportedOperationException("Not yet implemented");
@@ -276,8 +286,9 @@ public final class PaintTopComponent extends TopComponent implements
 
     private LayerImplementation lastActiveLayer = null;
 
+    @Override
     public void stateChanged(ChangeEvent e) {
-        PictureImplementation picture = canvas.getPicture();
+        PI picture = canvas.getPicture();
         LayerImplementation layerImpl = picture.getActiveLayer();
         if (layerImpl != lastActiveLayer && lastActiveLayer != null) {
             SurfaceImplementation lastSurface = lastActiveLayer.getSurface();
@@ -403,7 +414,6 @@ public final class PaintTopComponent extends TopComponent implements
         requestActive();
     }
 
-    private boolean active;
 
     @Override
     protected void componentActivated() {
@@ -429,7 +439,6 @@ public final class PaintTopComponent extends TopComponent implements
 //        }
     }
 
-    boolean firstTime = true;
 
     @Override
     protected void componentShowing() {
@@ -483,7 +492,6 @@ public final class PaintTopComponent extends TopComponent implements
         canvas.setActiveTool(tool);
     }
 
-    private Lookup.Result<Tool> tools = null;
 
     private void startListening() {
         System.out.println("  start listening for active tool changes");

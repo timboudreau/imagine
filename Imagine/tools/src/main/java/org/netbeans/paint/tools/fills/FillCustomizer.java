@@ -10,7 +10,6 @@ import java.util.Set;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
-import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import org.netbeans.paint.api.components.explorer.FolderPanel;
 import org.netbeans.paint.tools.spi.Fill;
 import org.openide.util.NbBundle;
@@ -49,14 +48,6 @@ public class FillCustomizer implements Customizer<Fill> {
             INSTANCE = new FillCustomizer();
         }
         return INSTANCE;
-    }
-    
-    public static Customizer combine(String name, Customizer... other) {
-        Customizer[] c = new Customizer[other.length + 1];
-        System.arraycopy(other, 0, c, 0, other.length);
-        c[other.length] = getDefault();
-        AggregateCustomizer result = new AggregateCustomizer (name, c);
-        return result;
     }
 
     public JComponent getComponent() {

@@ -38,12 +38,8 @@ public class ImPasteAction extends GenericContextSensitiveAction<Picture> implem
     }
 
     @Override
-    protected boolean checkEnabled(Collection<? extends Picture> coll, Class clazz) {
-        boolean result = super.checkEnabled(coll, clazz);
-//        if (result) {
-//            Picture p = coll.iterator().next();
-//        }
-        return result;
+    protected <T> boolean checkEnabled(Collection<? extends T> coll, Class<T> clazz) {
+        return super.checkEnabled(coll, clazz);
     }
 
     @Override

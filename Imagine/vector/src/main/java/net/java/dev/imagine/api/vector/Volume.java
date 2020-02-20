@@ -22,14 +22,17 @@ public interface Volume extends Primitive, Shaped {
     @Override
     public Volume copy();
 
+    @Override
     default Shape toShape() {
         Rectangle2D.Double rect = new Rectangle2D.Double();
         getBounds(rect);
         return rect;
     }
 
+    @Override
     void getBounds(Rectangle2D.Double dest);
 
+    @Override
     default Rectangle getBounds() {
         Rectangle2D.Double rect = new Rectangle2D.Double();
         getBounds(rect);

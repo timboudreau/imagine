@@ -1,9 +1,6 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.netbeans.paintui;
 
+import com.mastfrog.util.collections.ArrayUtils;
 import java.awt.AlphaComposite;
 import java.awt.Composite;
 import java.awt.Cursor;
@@ -14,14 +11,12 @@ import java.beans.PropertyChangeListener;
 import javax.swing.JComponent;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.spi.image.LayerImplementation;
-import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.imagine.utils.painting.RepaintHandle;
 import org.netbeans.api.visual.border.BorderFactory;
-import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paintui.widgetlayers.WidgetLayer;
-import org.netbeans.paintui.widgetlayers.WidgetLayer.WidgetController;
-import org.netbeans.paintui.widgetlayers.WidgetLayer.WidgetFactory;
+import org.netbeans.paintui.widgetlayers.WidgetFactory;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
@@ -31,12 +26,14 @@ import org.openide.util.lookup.ProxyLookup;
  * @author Tim Boudreau
  */
 final class OneLayerWidget extends Widget {
+
     private final InternalRepaintHandle repaintHandle = new InternalRepaintHandle();
     final LayerImplementation layer;
     private final PCL pcl = new PCL();
     private final WidgetLayer widgetLayer;
+    private LKP lkp;
 
-    public OneLayerWidget(LayerImplementation layer, Scene scene, WidgetLayer widgetLayer) {
+    public OneLayerWidget(LayerImplementation layer, PictureScene scene, WidgetLayer widgetLayer) {
         super(scene);
         this.layer = layer;
         setOpaque(false);
@@ -44,20 +41,22 @@ final class OneLayerWidget extends Widget {
         layer.addPropertyChangeListener(pcl);
         setBorder(BorderFactory.createEmptyBorder());
         this.widgetLayer = widgetLayer;
+        lkp = new LKP(Lookups.fixed(this), layer.getLookup());
         addNotify();
     }
 
     @Override
     public Lookup getLookup() {
-        return new ProxyLookup(super.getLookup(), Lookups.fixed(this), layer.getLookup());
+        return lkp;
     }
-    
+
     private WidgetFactory factory;
+
     void addNotify() {
         if (widgetLayer != null) {
-            factory = widgetLayer.createWidgetController(this, new WidgetController(){});
+            factory = widgetLayer.createWidgetController(this, (PictureScene) getScene());
             if (factory != null) {
-                factory.attach();
+                factory.attach(lkp::lookups);
             }
         }
     }
@@ -88,7 +87,7 @@ final class OneLayerWidget extends Widget {
             r.y = 0;
         }
         return r;
-        */
+         */
         Rectangle result = layer.getBounds();
         result.width += Math.max(0, result.x);
         result.height += Math.max(0, result.y);
@@ -132,7 +131,7 @@ final class OneLayerWidget extends Widget {
             } else if (Layer.PROP_BOUNDS.equals(evt.getPropertyName())) {
                 revalidate();
                 repaintHandle.repaint();
-                getScene().getView().paintImmediately(new Rectangle(0,0, 2000,2000)); //XXX
+                getScene().getView().paintImmediately(new Rectangle(0, 0, 2000, 2000)); //XXX
             } else if (!Layer.PROP_NAME.equals(evt.getPropertyName())) {
                 repaintHandle.repaintArea(layer.getBounds());
             }
@@ -153,14 +152,14 @@ final class OneLayerWidget extends Widget {
         public void repaintArea(int x, int y, int w, int h) {
             JComponent v = getScene().getView();
             if (v != null) {
-                Rectangle r = new Rectangle (x, y, w, h);
+                Rectangle r = new Rectangle(x, y, w, h);
                 r = convertLocalToScene(r);
                 r = getScene().convertSceneToView(r);
                 v.repaint(r);
             } else {
                 OneLayerWidget.this.repaint();
             }
-            
+
         }
 
         @Override
@@ -168,5 +167,21 @@ final class OneLayerWidget extends Widget {
             ((PictureScene) getScene()).setCursor(cursor);
         }
     }
-    
+
+    static class LKP extends ProxyLookup {
+        private final Lookup[] defaults;
+
+        public LKP(Lookup... defaults) {
+            super(defaults);
+            this.defaults = defaults;
+        }
+
+        void lookups(Lookup... lkps) {
+            if (lkps.length > 0) {
+                setLookups(ArrayUtils.concatenate(lkps, defaults));
+            } else {
+                setLookups(defaults);
+            }
+        }
+    }
 }

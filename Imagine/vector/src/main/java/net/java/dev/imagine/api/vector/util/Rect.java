@@ -17,7 +17,7 @@ import java.io.Serializable;
  * @author Tim Boudreau
  */
 public final class Rect implements Serializable {
-    private static long serialVersionUID = 5210124L;
+    private static long serialVersionUID = 5_210_124L;
     public final double x, y;
     public final Size size;
     /** Creates a new instance of Rect */
@@ -41,6 +41,7 @@ public final class Rect implements Serializable {
         return new Pt (x, y);
     }
 
+    @Override
     public boolean equals (Object o) {
         boolean result = o instanceof Rect;
         if (result) {
@@ -50,6 +51,7 @@ public final class Rect implements Serializable {
         return result;
     }
 
+    @Override
     public int hashCode() {
         return size.hashCode() + ((int)(x * y));
     }

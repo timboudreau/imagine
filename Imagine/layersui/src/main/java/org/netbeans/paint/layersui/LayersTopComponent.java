@@ -53,6 +53,7 @@ import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Picture;
 import net.java.dev.imagine.spi.image.LayerImplementation;
+import org.netbeans.paint.api.components.FontManagingPanelUI;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
@@ -466,6 +467,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         private final Thumbnail thumbnail;
 
         public LayerPanel(final Layer layer) {
+            setUI(new FontManagingPanelUI());
             assert layer != null : "Layer null";
             this.layer = layer;
             add(thumbnail = new Thumbnail());

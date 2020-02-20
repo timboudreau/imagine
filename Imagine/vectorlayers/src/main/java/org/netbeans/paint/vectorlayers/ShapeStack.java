@@ -21,7 +21,7 @@ import net.java.dev.imagine.api.vector.Aggregate;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.painting.VectorRepaintHandle;
-import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Proxy;
 import net.java.dev.imagine.api.vector.Vector;

@@ -17,6 +17,7 @@ import java.awt.geom.Point2D;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Transformable;
+import org.imagine.utils.java2d.GraphicsUtils;
 
 /**
  *
@@ -56,16 +57,18 @@ public final class GradientPaintWrapper implements Primitive, PaintWrapper, Attr
     }
 
     public GradientPaint toGradientPaint() {
-        GradientPaint result = new GradientPaint(x1, y1, new Color(color1),
-                x2, y2, new Color(color2));
+        GradientPaint result = new GradientPaint(x1, y1, new Color(color1, true),
+                x2, y2, new Color(color2, true));
 
         return result;
     }
 
+    @Override
     public void paint(Graphics2D g) {
         g.setPaint(toPaint());
     }
 
+    @Override
     public Paint toPaint() {
         return toGradientPaint();
     }
@@ -89,8 +92,9 @@ public final class GradientPaintWrapper implements Primitive, PaintWrapper, Attr
                 .append(',').append(c.getBlue());
     }
 
+    @Override
     public Color toColor() {
-        return color1();
+        return GraphicsUtils.average(color1(), color2());
     }
 
     public Color color1() {
@@ -101,11 +105,13 @@ public final class GradientPaintWrapper implements Primitive, PaintWrapper, Attr
         return new Color(color2);
     }
 
+    @Override
     public GradientPaintWrapper copy() {
         return new GradientPaintWrapper(color1, color2, x1,
                 y1, x2, y2, cyclic);
     }
 
+    @Override
     public PaintWrapper createScaledInstance(AffineTransform xform) {
         float[] pts = new float[]{
             x1, y1, x2, y1,};
@@ -114,6 +120,7 @@ public final class GradientPaintWrapper implements Primitive, PaintWrapper, Attr
                 pts[1], pts[2], pts[3], cyclic);
     }
 
+    @Override
     public GradientPaint get() {
         return toGradientPaint();
     }
@@ -135,40 +142,31 @@ public final class GradientPaintWrapper implements Primitive, PaintWrapper, Attr
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
-        }
-        if (obj == null) {
+        } else if (obj == null) {
             return false;
-        }
-        if (getClass() != obj.getClass()) {
+        } else if (!(obj instanceof GradientPaintWrapper)) {
             return false;
         }
         final GradientPaintWrapper other = (GradientPaintWrapper) obj;
-        if (this.color1 != other.color1) {
-            return false;
-        }
-        if (this.color2 != other.color2) {
-            return false;
-        }
-        if (Float.floatToIntBits(this.x1) != Float.floatToIntBits(other.x1)) {
-            return false;
-        }
-        if (Float.floatToIntBits(this.y1) != Float.floatToIntBits(other.y1)) {
-            return false;
-        }
-        if (Float.floatToIntBits(this.x2) != Float.floatToIntBits(other.x2)) {
-            return false;
-        }
-        if (Float.floatToIntBits(this.y2) != Float.floatToIntBits(other.y2)) {
-            return false;
-        }
         if (this.cyclic != other.cyclic) {
             return false;
+        } else if (this.color1 != other.color1) {
+            return false;
+        } else if (this.color2 != other.color2) {
+            return false;
+        } else if (Float.floatToIntBits(this.x1) != Float.floatToIntBits(other.x1)) {
+            return false;
+        } else if (Float.floatToIntBits(this.y1) != Float.floatToIntBits(other.y1)) {
+            return false;
+        } else if (Float.floatToIntBits(this.x2) != Float.floatToIntBits(other.x2)) {
+            return false;
+        } else {
+            return Float.floatToIntBits(this.y2) == Float.floatToIntBits(other.y2);
         }
-        return true;
     }
 
     @Override
-    public void applyScale(AffineTransform xform) {
+    public void applyTransform(AffineTransform xform) {
         Point2D.Float a = new Point2D.Float(x1, y1);
         Point2D.Float b = new Point2D.Float(x2, y2);
         xform.transform(a, a);

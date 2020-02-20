@@ -34,12 +34,10 @@
         <dependency>
             <artifactId>org-openide-util</artifactId>
             <groupId>org.netbeans.api</groupId>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
             <artifactId>org-openide-util-lookup</artifactId>
             <groupId>org.netbeans.api</groupId>
-            <version>${netbeans.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -48,7 +46,10 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>effectsapi</artifactId>
-            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>utils</artifactId>
         </dependency>
     </dependencies>
     <build>
@@ -56,9 +57,8 @@
             <plugin>
                 <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <version>4.3</version>
                 <configuration>
-       	       	    <moduleType>regular</moduleType>
+       	       	    <moduleType>normal</moduleType>
                 </configuration>
             </plugin>
         </plugins>

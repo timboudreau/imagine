@@ -5,14 +5,18 @@
  */
 package org.imagine.vector.editor.ui;
 
+import com.mastfrog.util.collections.ArrayUtils;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
+import java.util.Arrays;
 import net.java.dev.imagine.spi.image.LayerImplementation;
-import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.support.AbstractLayerImplementation;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
+import org.openide.util.lookup.ProxyLookup;
 
 /**
  *
@@ -20,27 +24,44 @@ import org.openide.util.lookup.Lookups;
  */
 final class VectorLayer extends AbstractLayerImplementation {
 
-    private RepaintHandle target;
-    private final Shapes shapes = new Shapes();
+    private final RepaintHandle repainter;
+    private final Shapes shapes = new Shapes(true);
     private final VectorSurface surface;
+    private final ToolWidgetSupplier widgetHooks = new ToolWidgetSupplier(this);
+    private MPL lkp;
 
     VectorLayer(String name, RepaintHandle handle, Dimension size, VectorLayerFactory factory) {
         super(factory, true, name);
-        target = handle;
+        repainter = handle;
         addRepaintHandle(handle);
-        surface = new VectorSurface(shapes, this, getMasterRepaintHandle());
+        surface = new VectorSurface(shapes, getMasterRepaintHandle());
     }
 
     VectorLayer(VectorLayer layer, boolean deepCopy) {
         super(layer.getFactory(), layer.isResolutionIndependent(), layer.getName());
-        target = layer.target;
-        addRepaintHandle(layer.target);
-        surface = new VectorSurface(shapes, this, getMasterRepaintHandle());
+        repainter = layer.repainter;
+        addRepaintHandle(layer.repainter);
+        surface = new VectorSurface(shapes, getMasterRepaintHandle());
+    }
+
+    void setAdditionalLookups(Lookup... lkps) {
+        if (lkp == null) {
+            getLookup();
+        }
+        lkp.setSecondaries(lkps);
+    }
+
+    public VectorSurface surface() {
+        return surface;
     }
 
     @Override
-    protected Lookup createLookup() {
-        return Lookups.fixed(this, getLayer(), shapes, surface, surface.getSurface());
+    protected MPL createLookup() {
+        return lkp != null ? lkp : (lkp = new MPL(
+                Lookups.fixed(this, getLayer(),
+                        new RepaintProxyShapes(shapes, getMasterRepaintHandle()),
+                        surface, surface.getSurface(), widgetHooks,
+                        surface.transformReceiver())));
     }
 
     @Override
@@ -50,7 +71,21 @@ final class VectorLayer extends AbstractLayerImplementation {
 
     @Override
     public void resize(int width, int height) {
-        
+        Dimension oldSize = getBounds().getSize();
+        if (width == oldSize.width && height == oldSize.height) {
+            return;
+        }
+        if (width == 0 || height == 0) {
+            return;
+        }
+        double ow = oldSize.width;
+        double oh = oldSize.height;
+        double nw = width;
+        double nh = height;
+        double xfactor = nw / ow;
+        double yfactor = nh / oh;
+        AffineTransform xform = AffineTransform.getScaleInstance(xfactor, yfactor);
+        shapes.applyTransform(xform);
     }
 
     @Override
@@ -67,4 +102,23 @@ final class VectorLayer extends AbstractLayerImplementation {
         return shapes.paint(g, bounds);
     }
 
+    static class MPL extends ProxyLookup {
+
+        private final Lookup[] defaultLookups;
+
+        public MPL(Lookup... lookups) {
+            super(lookups);
+            defaultLookups = lookups;
+        }
+
+        void setSecondaries(Lookup... lkps) {
+            if (lkps.length == 0) {
+                super.setLookups(defaultLookups);
+            } else {
+                System.out.println("SET SECONDARIES: " + Arrays.toString(lkps));
+                super.setLookups(ArrayUtils.concatenate(lkps,
+                        defaultLookups));
+            }
+        }
+    }
 }

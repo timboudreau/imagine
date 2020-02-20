@@ -1,0 +1,53 @@
+/*
+ * OvalTool.java
+ *
+ * Created on September 29, 2006, 4:05 PM
+ *
+ * To change this template, choose Tools | Template Manager
+ * and open the template in the editor.
+ */
+package org.netbeans.paint.tools;
+
+import java.awt.BasicStroke;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
+import net.java.dev.imagine.api.image.Surface;
+import org.imagine.geometry.Circle;
+import static org.netbeans.paint.tools.RectangleTool.strokeC;
+import org.imagine.editor.api.PaintingStyle;
+import org.openide.util.NbBundle;
+
+/**
+ *
+ * @author Tim Boudreau
+ */
+@ToolDef(name = "Circle", iconPath = "org/netbeans/paint/tools/resources/circle.png")
+@Tool(Surface.class)
+public class CircleTool extends RectangleTool {
+
+    public CircleTool(Surface surf) {
+        super(surf);
+    }
+
+    @Override
+    public String toString() {
+        return NbBundle.getMessage(CircleTool.class, "Circle");
+    }
+
+    @Override
+    protected void draw(Rectangle toPaint, Graphics2D g2d, PaintingStyle style) {
+        Circle circ = new Circle(toPaint.getCenterX(), toPaint.getCenterY(),
+                Math.min(toPaint.getWidth(), toPaint.getHeight()));
+        if (style.isFill()) {
+            g2d.setPaint(paintC.get().getPaint());
+            g2d.fill(circ);
+        }
+        if (style.isOutline()) {
+            g2d.setStroke(new BasicStroke(strokeC.get()));
+            g2d.setColor(outlineC.get());
+            g2d.draw(circ);
+        }
+    }
+}

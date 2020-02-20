@@ -27,7 +27,7 @@ import javax.imageio.ImageIO;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.util.Pt;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.utils.java2d.GraphicsUtils;
 
 /**
  *
@@ -70,7 +70,21 @@ public class ImageWrapper implements Primitive, Vector {
     }
 
     @Override
-    public void applyScale(AffineTransform xform) {
+    public void translate(double x, double y) {
+        this.x += x;
+        this.y += y;
+    }
+
+    public int imageWidth() {
+        return img.getWidth();
+    }
+
+    public int imageHeight() {
+        return img.getHeight();
+    }
+
+    @Override
+    public void applyTransform(AffineTransform xform) {
         Point2D.Double b = new Point2D.Double(img.getWidth(), img.getHeight());
         xform.transform(b, b);
         if (b.getX() > 0 && b.getY() > 0) {
@@ -135,10 +149,12 @@ public class ImageWrapper implements Primitive, Vector {
         y = 0;
     }
 
+    @Override
     public String toString() {
         return "ImageWrapper " + img;
     }
 
+    @Override
     public void paint(Graphics2D g) {
         g.drawRenderedImage(img, AffineTransform.getTranslateInstance(x, y));
     }
@@ -148,29 +164,35 @@ public class ImageWrapper implements Primitive, Vector {
                 img.getWidth(), img.getHeight());
     }
 
+    @Override
     public ImageWrapper copy() {
         BufferedImage nue = getBufferedImage(img, true);
         return new ImageWrapper(x, y, nue);
     }
 
+    @Override
     public Shape toShape() {
         return new Rectangle2D.Double(x, y, img.getWidth(), img.getHeight());
     }
 
+    @Override
     public Pt getLocation() {
         return new Pt((int) x, (int) y);
     }
 
+    @Override
     public void setLocation(double x, double y) {
         this.x = x;
         this.y = y;
     }
 
+    @Override
     public void clearLocation() {
         this.x = 0;
         this.y = 0;
     }
 
+    @Override
     public Vector copy(AffineTransform xform) {
         double[] pts = new double[]{
             x, y, x + img.getWidth(), y + img.getHeight(),};
@@ -203,6 +225,5 @@ public class ImageWrapper implements Primitive, Vector {
         return new Rectangle((int) Math.floor(x), (int) Math.floor(y),
                 img.getWidth(), img.getHeight());
     }
-
 
 }

@@ -19,6 +19,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.Image;
+import java.awt.LinearGradientPaint;
 import java.awt.Paint;
 import java.awt.Point;
 import java.awt.RadialGradientPaint;
@@ -33,6 +34,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
+import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
@@ -42,28 +44,35 @@ import java.awt.image.RenderedImage;
 import java.awt.image.renderable.RenderableImage;
 import java.text.AttributedCharacterIterator;
 import java.util.Map;
-import net.java.dev.imagine.api.vector.graphics.AffineTransformWrapper;
+import net.java.dev.imagine.api.vector.Primitive;
+import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.elements.Arc;
-import net.java.dev.imagine.api.vector.graphics.BasicStrokeWrapper;
 import net.java.dev.imagine.api.vector.elements.CharacterIteratorWrapper;
+import net.java.dev.imagine.api.vector.elements.CircleWrapper;
 import net.java.dev.imagine.api.vector.elements.Clear;
-import net.java.dev.imagine.api.vector.graphics.ColorWrapper;
-import net.java.dev.imagine.api.vector.graphics.FontWrapper;
-import net.java.dev.imagine.api.vector.graphics.GradientPaintWrapper;
+import net.java.dev.imagine.api.vector.elements.ImageWrapper;
 import net.java.dev.imagine.api.vector.elements.Line;
 import net.java.dev.imagine.api.vector.elements.Oval;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
 import net.java.dev.imagine.api.vector.elements.Polygon;
 import net.java.dev.imagine.api.vector.elements.Polyline;
-import net.java.dev.imagine.api.vector.Primitive;
-import net.java.dev.imagine.api.vector.elements.ImageWrapper;
 import net.java.dev.imagine.api.vector.elements.Rectangle;
 import net.java.dev.imagine.api.vector.elements.RoundRect;
 import net.java.dev.imagine.api.vector.elements.StringWrapper;
+import net.java.dev.imagine.api.vector.elements.Text;
+import net.java.dev.imagine.api.vector.elements.TriangleWrapper;
+import net.java.dev.imagine.api.vector.graphics.AffineTransformWrapper;
 import net.java.dev.imagine.api.vector.graphics.Background;
-import net.java.dev.imagine.api.vector.graphics.PaintWrapper;
+import net.java.dev.imagine.api.vector.graphics.BasicStrokeWrapper;
+import net.java.dev.imagine.api.vector.graphics.ColorWrapper;
+import net.java.dev.imagine.api.vector.graphics.FontWrapper;
+import net.java.dev.imagine.api.vector.graphics.GradientPaintWrapper;
+import net.java.dev.imagine.api.vector.graphics.LinearPaintWrapper;
 import net.java.dev.imagine.api.vector.graphics.RadialPaintWrapper;
 import net.java.dev.imagine.api.vector.graphics.TexturePaintWrapper;
+import org.imagine.geometry.Circle;
+import org.imagine.geometry.Triangle;
+import org.imagine.utils.java2d.GraphicsUtils;
 
 /**
  * A Graphics2D which wrappers another Graphics2D, and produces objects
@@ -111,25 +120,48 @@ public class VectorWrapperGraphics extends Graphics2D {
         return new Dimension(w, h);
     }
 
-    private BasicStrokeWrapper stroke() {
-        Stroke s = getStroke();
-        if (s instanceof BasicStroke) {
-            return new BasicStrokeWrapper((BasicStroke) s);
+    static Triangle toTriangle(Shape shape, boolean fill) {
+        PathIterator it = shape.getPathIterator(null);
+        int count = 0;
+        double[] scratch = new double[8];
+        double[] pts = new double[6];
+        while (!it.isDone()) {
+            int type = it.currentSegment(scratch);
+            if (count != 0 && type != PathIterator.SEG_LINETO) {
+                return null;
+            } else if (count == 0 && type != PathIterator.SEG_MOVETO) {
+                return null;
+            }
+            pts[count * 2] = scratch[0];
+            pts[(count * 2) + 1] = scratch[1];
+            count++;
+            if (count > 3) {
+                return null;
+            }
         }
-        return null;
+        return new Triangle(pts[0], pts[1], pts[2], pts[3], pts[4], pts[5]);
     }
 
-    static Primitive primitiveFor(Shape shape, boolean fill) {
+    public static Shaped primitiveFor(Shape shape, boolean fill) {
         if (shape instanceof java.awt.Rectangle) {
             java.awt.Rectangle r = (java.awt.Rectangle) shape;
             Rectangle rect = new Rectangle(r.x, r.y, r.width, r.height, fill);
             return rect;
+        } else if (shape instanceof Circle) {
+            Circle circ = (Circle) shape;
+            return new CircleWrapper(circ, fill);
         } else if (shape instanceof Rectangle2D) {
             Rectangle2D r = (Rectangle2D) shape;
             Rectangle rect = new Rectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight(), fill);
             return rect;
         } else if (shape instanceof Ellipse2D) {
             Ellipse2D ell = (Ellipse2D) shape;
+            if (ell.getWidth() == ell.getHeight()) {
+                double cx = ell.getCenterX();
+                double cy = ell.getCenterY();
+                double rad = ell.getWidth() / 2;
+                return new CircleWrapper(cx, cy, rad);
+            }
             Oval ov = new Oval(ell.getX(), ell.getY(), ell.getWidth(), ell.getHeight(), fill);
             return ov;
         } else if (shape instanceof java.awt.Polygon) {
@@ -145,11 +177,19 @@ public class VectorWrapperGraphics extends Graphics2D {
         } else if (shape instanceof Line2D) {
             Line2D line = (Line2D) shape;
             return new Line(line.getX1(), line.getY1(), line.getX2(), line.getY2());
+        } else if (shape instanceof Triangle) {
+            Triangle t = (Triangle) shape;
+            return new TriangleWrapper(t, fill);
         } else {
+            Triangle tri = toTriangle(shape, fill);
+            if (tri != null) {
+                return new TriangleWrapper(tri, fill);
+            }
             return new PathIteratorWrapper(shape.getPathIterator(null), fill);
         }
     }
 
+    @Override
     public void draw(Shape s) {
         if (!receiving) {
             push(primitiveFor(s, false));
@@ -223,6 +263,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed(r.x, r.y, r.width, r.height);
     }
 
+    @Override
     public boolean drawImage(Image img, AffineTransform xform, ImageObserver obs) {
         boolean result = other.drawImage(img, xform, obs);
         if (result) {
@@ -234,6 +275,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         return result;
     }
 
+    @Override
     public void drawImage(BufferedImage img, BufferedImageOp op, int x, int y) {
         if (!receiving) {
             push(new ImageWrapper(img, x, y));
@@ -242,6 +284,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed(x, y, img.getWidth(), img.getHeight());
     }
 
+    @Override
     public void drawRenderedImage(RenderedImage img, AffineTransform xform) {
         if (!receiving) {
             push(new ImageWrapper(img, xform.getTranslateX(), xform.getTranslateY()));
@@ -250,6 +293,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed(0, 0, img.getWidth(), img.getHeight()); //XXX won't work on scale xform
     }
 
+    @Override
     public void drawRenderableImage(RenderableImage img, AffineTransform xform) {
         if (!receiving) {
             push(new ImageWrapper(img, xform.getTranslateX(), xform.getTranslateY()));
@@ -267,38 +311,35 @@ public class VectorWrapperGraphics extends Graphics2D {
 
     public void draw(StringWrapper sw) {
         receiving = true;
-//        drawString(sw.string, sw.x, sw.y);
         sw.paint(this);
         receiving = false;
     }
 
-    private FontWrapper font() {
-        return new FontWrapper(getFont());
-    }
-
-    public void drawString(String str, int x, int y) {
-        if (!receiving) {
-            push(new StringWrapper(str, x, y));
-        }
-        other.drawString(str, x, y);
-        changed();
-    }
-
-    public void drawString(String s, float x, float y) {
-        if (!receiving) {
-            push(new StringWrapper(s, x, y));
-        }
-        other.drawString(s, x, y);
-        changed();
-    }
-
-    public void draw(CharacterIteratorWrapper w) {
+    public void draw(Text sw) {
         receiving = true;
-//        drawString(w.it, w.x, w.y);
-        w.paint(this);
+        sw.paint(this);
         receiving = false;
     }
 
+    @Override
+    public void drawString(String text, int x, int y) {
+        if (!receiving) {
+            push(new Text(text, getFont(), x, y));
+        }
+        other.drawString(text, x, y);
+        changed();
+    }
+
+    @Override
+    public void drawString(String text, float x, float y) {
+        if (!receiving) {
+            push(new Text(text, getFont(), x, y));
+        }
+        other.drawString(text, x, y);
+        changed();
+    }
+
+    @Override
     public void drawString(AttributedCharacterIterator iterator, int x, int y) {
         if (!receiving) {
             push(new CharacterIteratorWrapper(iterator, x, y));
@@ -307,6 +348,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed();
     }
 
+    @Override
     public void drawString(AttributedCharacterIterator iterator, float x, float y) {
         if (!receiving) {
             push(new CharacterIteratorWrapper(iterator, x, y));
@@ -315,6 +357,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed();
     }
 
+    @Override
     public void drawGlyphVector(GlyphVector gv, float x, float y) {
         if (!receiving) {
             push(new PathIteratorWrapper(gv, x, y));
@@ -323,31 +366,32 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed();
     }
 
+    @Override
     public void fill(Shape s) {
         if (!receiving) {
-//            push(new PathIteratorWrapper(
-//                    s.getPathIterator(
-//                    AffineTransform.getTranslateInstance(0, 0)),
-//                    true));
             push(primitiveFor(s, true));
         }
         other.fill(s);
         changed(s.getBounds());
     }
 
+    @Override
     public boolean hit(java.awt.Rectangle rect, Shape s, boolean onStroke) {
         return other.hit(rect, s, onStroke);
     }
 
+    @Override
     public GraphicsConfiguration getDeviceConfiguration() {
         return other.getDeviceConfiguration();
     }
 
+    @Override
     public void setComposite(Composite comp) {
         // XXX have a composite wrapper?
         other.setComposite(comp);
     }
 
+    @Override
     public void setPaint(Paint paint) {
         if (!receiving) {
             if (paint != null) {
@@ -357,6 +401,8 @@ public class VectorWrapperGraphics extends Graphics2D {
                     push(new RadialPaintWrapper((RadialGradientPaint) paint));
                 } else if (paint instanceof TexturePaint) {
                     push(new TexturePaintWrapper((TexturePaint) paint));
+                } else if (paint.getClass() == LinearGradientPaint.class) {
+                    push(new LinearPaintWrapper((LinearGradientPaint) paint));
                 }
             }
         }
@@ -365,6 +411,7 @@ public class VectorWrapperGraphics extends Graphics2D {
 
     float strokeWidth = 1;
 
+    @Override
     public void setStroke(Stroke s) {
         if (!receiving) {
             if (s instanceof Primitive) {
@@ -379,26 +426,32 @@ public class VectorWrapperGraphics extends Graphics2D {
         other.setStroke(s);
     }
 
+    @Override
     public void setRenderingHint(Key hintKey, Object hintValue) {
         other.setRenderingHint(hintKey, hintValue);
     }
 
+    @Override
     public Object getRenderingHint(Key hintKey) {
         return other.getRenderingHint(hintKey);
     }
 
+    @Override
     public void setRenderingHints(Map hints) {
         other.setRenderingHints(hints);
     }
 
+    @Override
     public void addRenderingHints(Map hints) {
         other.addRenderingHints(hints);
     }
 
+    @Override
     public RenderingHints getRenderingHints() {
         return other.getRenderingHints();
     }
 
+    @Override
     public void translate(int x, int y) {
         other.translate(x, y);
         if (!receiving) {
@@ -407,6 +460,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         }
     }
 
+    @Override
     public void translate(double tx, double ty) {
         other.translate(tx, ty);
         if (!receiving) {
@@ -414,6 +468,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         }
     }
 
+    @Override
     public void rotate(double theta) {
         other.rotate(theta);
         if (!receiving) {
@@ -421,6 +476,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         }
     }
 
+    @Override
     public void rotate(double theta, double x, double y) {
         other.rotate(theta, x, y);
         if (!receiving) {
@@ -428,6 +484,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         }
     }
 
+    @Override
     public void scale(double sx, double sy) {
         other.scale(sx, sy);
         if (!receiving) {
@@ -435,6 +492,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         }
     }
 
+    @Override
     public void shear(double shx, double shy) {
         other.shear(shx, shy);
         if (!receiving) {
@@ -442,6 +500,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         }
     }
 
+    @Override
     public void transform(AffineTransform tx) {
         other.transform(tx);
         if (!receiving) {
@@ -449,6 +508,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         }
     }
 
+    @Override
     public void setTransform(AffineTransform tx) {
         other.setTransform(tx);
         if (!receiving) {
@@ -459,18 +519,22 @@ public class VectorWrapperGraphics extends Graphics2D {
         }
     }
 
+    @Override
     public AffineTransform getTransform() {
         return other.getTransform();
     }
 
+    @Override
     public Paint getPaint() {
         return other.getPaint();
     }
 
+    @Override
     public Composite getComposite() {
         return other.getComposite();
     }
 
+    @Override
     public void setBackground(Color color) {
         other.setBackground(color);
         if (!receiving) {
@@ -478,31 +542,38 @@ public class VectorWrapperGraphics extends Graphics2D {
         }
     }
 
+    @Override
     public Color getBackground() {
         return other.getBackground();
     }
 
+    @Override
     public Stroke getStroke() {
         return other.getStroke();
     }
 
+    @Override
     public void clip(Shape s) {
         other.clip(s);
     }
 
+    @Override
     public FontRenderContext getFontRenderContext() {
         return other.getFontRenderContext();
     }
 
+    @Override
     public Graphics create() {
         return new VectorWrapperGraphics(handle, (Graphics2D) other.create(),
                 new Point(location), w, h);
     }
 
+    @Override
     public Color getColor() {
         return other.getColor();
     }
 
+    @Override
     public void setColor(Color c) {
         if (!receiving) {
             push(new ColorWrapper(c));
@@ -510,21 +581,25 @@ public class VectorWrapperGraphics extends Graphics2D {
         other.setColor(c);
     }
 
+    @Override
     public void setPaintMode() {
         other.setPaintMode();
     }
 
+    @Override
     public void setXORMode(Color c1) {
         other.setXORMode(c1);
     }
 
+    @Override
     public Font getFont() {
         return other.getFont();
     }
 
+    @Override
     public void setFont(Font font) {
         if (!receiving) {
-            push(new FontWrapper(font));
+            push(FontWrapper.create(font));
         }
         other.setFont(font);
     }
@@ -535,34 +610,42 @@ public class VectorWrapperGraphics extends Graphics2D {
         receiving = false;
     }
 
+    @Override
     public FontMetrics getFontMetrics(Font f) {
         return other.getFontMetrics();
     }
 
+    @Override
     public java.awt.Rectangle getClipBounds() {
         return other.getClipBounds();
     }
 
+    @Override
     public void clipRect(int x, int y, int width, int height) {
         other.clipRect(x, y, width, height);
     }
 
+    @Override
     public void setClip(int x, int y, int width, int height) {
         other.setClip(x, y, width, height);
     }
 
+    @Override
     public Shape getClip() {
         return other.getClip();
     }
 
+    @Override
     public void setClip(Shape clip) {
         other.setClip(clip);
     }
 
+    @Override
     public void copyArea(int x, int y, int width, int height, int dx, int dy) {
         other.copyArea(x, y, width, height, dx, dy);
     }
 
+    @Override
     public void drawLine(int x1, int y1, int x2, int y2) {
         if (!receiving) {
             push(new Line(x1, y1, x2, y2));
@@ -575,13 +658,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed(x, y, wid, ht);
     }
 
-    public void draw(Line line) {
-        receiving = true;
-//        drawLine(line.x1, line.y1, line.x2, line.y2);
-        line.draw(this);
-        receiving = false;
-    }
-
+    @Override
     public void fillRect(int x, int y, int width, int height) {
         if (!receiving) {
             push(new net.java.dev.imagine.api.vector.elements.Rectangle(x, y, width, height, true));
@@ -590,11 +667,13 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed(x, y, width, height);
     }
 
+    @Override
     public void clearRect(int x, int y, int width, int height) {
         other.clearRect(x, y, width, height);
         changed(x, y, width, height);
     }
 
+    @Override
     public void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
         if (!receiving) {
             push(new RoundRect(x, y, width, height, arcWidth, arcHeight, false));
@@ -603,6 +682,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed(x, y, width, height);
     }
 
+    @Override
     public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight) {
         if (!receiving) {
             push(new RoundRect(x, y, width, height, arcWidth, arcHeight, true));
@@ -611,12 +691,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed(x, y, width, height);
     }
 
-    public void draw(RoundRect rr) {
-        receiving = true;
-        rr.draw(this);
-        receiving = false;
-    }
-
+    @Override
     public void drawOval(int x, int y, int width, int height) {
         if (!receiving) {
             push(new Oval(x, y, width, height, false));
@@ -625,6 +700,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed(x, y, width, height);
     }
 
+    @Override
     public void fillOval(int x, int y, int width, int height) {
         if (!receiving) {
             push(new Oval(x, y, width, height, true));
@@ -633,18 +709,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed(x, y, width, height);
     }
 
-    public void draw(Oval o) {
-        receiving = true;
-        o.draw(this);
-        receiving = false;
-    }
-
-    public void draw(Arc arc) {
-        receiving = true;
-        arc.draw(this);
-        receiving = false;
-    }
-
+    @Override
     public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
         if (!receiving) {
             push(new Arc(x, y, width, height, startAngle, arcAngle, false));
@@ -653,6 +718,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed(x, y, width, height);
     }
 
+    @Override
     public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
         if (!receiving) {
             push(new Arc(x, y, width, height, startAngle, arcAngle, true));
@@ -661,6 +727,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed(x, y, width, height);
     }
 
+    @Override
     public void drawPolyline(int xPoints[], int yPoints[], int nPoints) {
         if (!receiving) {
             push(new Polyline(xPoints, yPoints, nPoints, false));
@@ -673,6 +740,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         handle.drawn(serializable);
     }
 
+    @Override
     public void drawPolygon(int xPoints[], int yPoints[], int nPoints) {
         if (!receiving) {
             push(new Polygon(xPoints, yPoints, nPoints, false));
@@ -683,22 +751,7 @@ public class VectorWrapperGraphics extends Graphics2D {
 
     private boolean receiving = false;
 
-    public void draw(Polygon polygon) {
-        receiving = true;
-        if (polygon.fill) {
-            fillPolygon(polygon.xpoints, polygon.ypoints, polygon.npoints);
-        } else {
-            drawPolygon(polygon.xpoints, polygon.ypoints, polygon.npoints);
-        }
-        receiving = false;
-    }
-
-    public void draw(Polyline polyline) {
-        receiving = true;
-        drawPolyline(polyline.xpoints, polyline.ypoints, polyline.npoints);
-        receiving = false;
-    }
-
+    @Override
     public void fillPolygon(int xPoints[], int yPoints[], int nPoints) {
         if (!receiving) {
             push(new Polygon(xPoints, yPoints, nPoints, true));
@@ -707,6 +760,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed(xPoints, yPoints, nPoints);
     }
 
+    @Override
     public boolean drawImage(Image img, int x, int y, ImageObserver observer) {
         if (!receiving) {
             push(new ImageWrapper(x, y, img));
@@ -718,6 +772,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         return result;
     }
 
+    @Override
     public boolean drawImage(Image img, int x, int y, int width, int height, ImageObserver observer) {
         boolean result = other.drawImage(img, x, y, width, height, observer);
         if (result) {
@@ -726,6 +781,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         return result;
     }
 
+    @Override
     public boolean drawImage(Image img, int x, int y, Color bgcolor, ImageObserver observer) {
         boolean result = other.drawImage(img, x, y, bgcolor, observer);
         if (result) {
@@ -734,6 +790,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         return result;
     }
 
+    @Override
     public boolean drawImage(Image img, int x, int y, int width, int height, Color bgcolor, ImageObserver observer) {
         boolean result = other.drawImage(img, x, y, width, height, bgcolor, observer);
         if (result) {
@@ -742,6 +799,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         return result;
     }
 
+    @Override
     public boolean drawImage(Image img, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2, ImageObserver observer) {
         boolean result = other.drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, observer);
         if (result) {
@@ -750,6 +808,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         return result;
     }
 
+    @Override
     public boolean drawImage(Image img, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2, Color bgcolor, ImageObserver observer) {
         boolean result = other.drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, bgcolor, observer);
         if (result) {
@@ -758,6 +817,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         return result;
     }
 
+    @Override
     public void dispose() {
         other.dispose();
     }
@@ -768,6 +828,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         receiving = false;
     }
 
+    @Override
     public void drawRect(int x, int y, int width, int height) {
         if (width != 0 && height != 0) {
             if (!receiving) {
@@ -785,83 +846,22 @@ public class VectorWrapperGraphics extends Graphics2D {
     }
 
     public void receive(Primitive s) {
-        other.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        other.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-        other.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        other.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-        other.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        if (s instanceof ColorWrapper) {
-            receiving = true;
-            setColor(((ColorWrapper) s).toColor());
-            receiving = false;
-        } else if (s instanceof Arc) {
-            draw((Arc) s);
-        } else if (s instanceof Line) {
-            draw((Line) s);
-        } else if (s instanceof PaintWrapper) {
-            receiving = true;
-            setPaint(((PaintWrapper) s).toPaint());
-            receiving = false;
-        } else if (s instanceof PathIteratorWrapper) {
-            receiving = true;
-            draw((PathIteratorWrapper) s);
-            receiving = false;
-        } else if (s instanceof CharacterIteratorWrapper) {
-            receiving = true;
-            draw((CharacterIteratorWrapper) s);
-            receiving = false;
-        } else if (s instanceof Oval) {
-            receiving = true;
-            draw((Oval) s);
-            receiving = false;
-        } else if (s instanceof Polygon) {
-            receiving = true;
-            draw((Polygon) s);
-            receiving = false;
-        } else if (s instanceof Polyline) {
-            receiving = true;
-            draw((Polyline) s);
-            receiving = false;
-        } else if (s instanceof RoundRect) {
-            receiving = true;
-            draw((RoundRect) s);
-            receiving = false;
-        } else if (s instanceof StringWrapper) {
-            receiving = true;
-            draw((StringWrapper) s);
-            receiving = false;
-        } else if (s instanceof BasicStrokeWrapper) {
-            receiving = true;
-            setStroke(((BasicStrokeWrapper) s).toStroke());
-            receiving = false;
-        } else if (s instanceof GradientPaintWrapper) {
-            receiving = true;
-            setPaint(((GradientPaintWrapper) s).toGradientPaint());
-            receiving = false;
-        } else if (s instanceof Line) {
-            receiving = true;
-            draw((Line) s);
-            receiving = false;
-        } else if (s instanceof Rectangle) {
-            receiving = true;
-            draw((Rectangle) s);
-            receiving = false;
-        } else if (s instanceof Clear) {
-            receiving = true;
-            draw((Clear) s);
-            receiving = false;
-        } else if (s instanceof ImageWrapper) {
-            receiving = true;
-            draw((ImageWrapper) s);
+        if (!GraphicsUtils.isNoOpGraphics(other)) {
+            other.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            other.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+            other.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            other.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+            other.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        }
+        receiving = true;
+        try {
+            s.paint(other);
+        } finally {
             receiving = false;
         }
     }
 
     public void setFontThrough(Font f) {
         other.setFont(f);
-    }
-
-    private void draw(PathIteratorWrapper pathIteratorWrapper) {
-        pathIteratorWrapper.paint(this);
     }
 }

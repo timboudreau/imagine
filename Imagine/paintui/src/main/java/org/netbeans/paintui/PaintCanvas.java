@@ -49,13 +49,14 @@ import net.dev.java.imagine.api.tool.Tool;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
-import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
-import org.netbeans.paint.api.editor.Zoom;
+import org.imagine.editor.api.Zoom;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import net.java.dev.imagine.ui.common.PositionStatusLineElementProvider;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.editor.api.AspectRatio;
+import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.WeakListeners;
@@ -87,6 +88,10 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
 
     public PaintCanvas(BufferedImage img) {
         init(new AppPicture(this, img), false);
+    }
+
+    AspectRatio aspectRatio() {
+        return picture.aspectRatio();
     }
 
     void pictureResized(int width, int height) {

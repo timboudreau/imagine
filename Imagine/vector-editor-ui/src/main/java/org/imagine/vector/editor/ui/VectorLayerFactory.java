@@ -3,7 +3,7 @@ package org.imagine.vector.editor.ui;
 import java.awt.Dimension;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.spi.image.LayerImplementation;
-import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.imagine.utils.painting.RepaintHandle;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.lookup.ServiceProvider;

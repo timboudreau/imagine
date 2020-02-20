@@ -8,6 +8,7 @@
  */
 package net.java.dev.imagine.spi.image;
 
+import org.imagine.utils.painting.RepaintHandle;
 import java.awt.Cursor;
 import java.awt.EventQueue;
 import java.lang.ref.Reference;
@@ -24,10 +25,10 @@ class RepaintHandleProxySupport implements RepaintHandle {
 
     private Reference<RepaintHandle>[] handles =
             new Reference[5];
-    private final String id;
+    private final Object owner;
 
-    RepaintHandleProxySupport(String id) {
-        this.id = id;
+    RepaintHandleProxySupport(Object owner) {
+        this.owner = owner;
     }
 
     public void add(RepaintHandle handle) {
@@ -159,6 +160,6 @@ class RepaintHandleProxySupport implements RepaintHandle {
             }
         }
         b.append(']');
-        return super.toString() + " for " + id + " with " + b;
+        return super.toString() + " for " + owner + " with " + b;
     }
 }

@@ -2,17 +2,19 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package org.netbeans.paint.api.components;
 
-import java.awt.Component;
-
 /**
+ * Interface that can be implemented on an ancestor component, to cause all
+ * descendant components that use LDPLayout to align by column.
  *
- * @author tim
+ * @author Tim Boudreau
  */
 public interface LayoutDataProvider {
-    public int getColumnPosition (int col);
+
+    public int getColumnPosition(int col);
+
     public boolean isExpanded();
-    public void doSetExpanded (boolean val);
+
+    public void doSetExpanded(boolean val);
 }

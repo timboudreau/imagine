@@ -34,7 +34,7 @@ import static net.java.dev.imagine.spi.image.PictureImplementation.POSITION_BOTT
 import static net.java.dev.imagine.spi.image.PictureImplementation.POSITION_TOP;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.netbeans.paint.api.editing.LayerFactory;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.api.util.RasterConverter;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Exceptions;

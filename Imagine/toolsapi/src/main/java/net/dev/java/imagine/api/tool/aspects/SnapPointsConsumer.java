@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.dev.java.imagine.api.tool.aspects.SnapPointsConsumer.SnapPoints;
@@ -35,9 +36,11 @@ public interface SnapPointsConsumer extends Consumer<Supplier<SnapPoints>> {
         private final List<SnapPoint> xs = new ArrayList<>();
         private final List<SnapPoint> ys = new ArrayList<>();
         private final double radius;
+        private final BiConsumer<SnapPoint, SnapPoint> notify;
 
-        SnapPoints(double radius) {
+        SnapPoints(double radius, BiConsumer<SnapPoint, SnapPoint> notify) {
             this.radius = radius;
+            this.notify = notify;
         }
 
         public Point2D snap(Point2D orig) {
@@ -54,7 +57,14 @@ public interface SnapPointsConsumer extends Consumer<Supplier<SnapPoints>> {
                 }
                 result.y = ypt.coordinate;
             }
+            if (notify != null && (xpt != null || ypt != null)) {
+                onSnap(xpt, ypt);
+            }
             return result == null ? orig : result;
+        }
+
+        void onSnap(SnapPoint xpt, SnapPoint ypt) {
+            notify.accept(xpt, ypt);
         }
 
         public SnapPoint nearestWithinRadius(Point2D p) {
@@ -101,6 +111,7 @@ public interface SnapPointsConsumer extends Consumer<Supplier<SnapPoints>> {
 
             private final Set<SnapPoint> points = new HashSet<>();
             private final double rad;
+            private BiConsumer<SnapPoint,SnapPoint> notify;
 
             Builder(double rad) {
                 if (rad < 0) {
@@ -109,9 +120,15 @@ public interface SnapPointsConsumer extends Consumer<Supplier<SnapPoints>> {
                 this.rad = rad;
             }
 
-            public void add(Point2D p2d) {
+            public Builder add(Point2D p2d) {
                 add(Axis.X, p2d.getX());
                 add(Axis.Y, p2d.getY());
+                return this;
+            }
+
+            public Builder notifying(BiConsumer<SnapPoint,SnapPoint> notify) {
+                this.notify = notify;
+                return this;
             }
 
             public void add(Axis axis, double coord) {
@@ -123,7 +140,7 @@ public interface SnapPointsConsumer extends Consumer<Supplier<SnapPoints>> {
             }
 
             public SnapPoints build() {
-                SnapPoints sp = new SnapPoints(rad);
+                SnapPoints sp = new SnapPoints(rad, notify);
                 for (SnapPoint s : points) {
                     switch (s.axis) {
                         case X:

@@ -18,11 +18,16 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.Rectangle;
+import static java.awt.RenderingHints.KEY_ANTIALIASING;
+import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
+import static java.awt.RenderingHints.VALUE_ANTIALIAS_ON;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
@@ -36,8 +41,6 @@ import java.beans.PropertyChangeListener;
 import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
-import java.util.Map;
-import java.util.WeakHashMap;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.BoundedRangeModel;
@@ -54,7 +57,6 @@ import javax.swing.border.BevelBorder;
 import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.SliderUI;
 
 /**
@@ -88,10 +90,9 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         }
     }
     Border raised = BorderFactory.createBevelBorder(BevelBorder.RAISED);
-    private static Map<BoundedRangeModel, Reference<JSlider>> mdls2sliders = new WeakHashMap<>();
     private static PopupSliderUI instance = null;
 
-    public static ComponentUI createUI(JComponent b) {
+    public static SliderUI createUI(JComponent b) {
         if (instance == null) {
             // Stateless UI, there never more than one
             instance = new PopupSliderUI();
@@ -99,10 +100,8 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         return instance;
     }
 
-    private static JSlider findSlider(BoundedRangeModel mdl) {
-        Reference<JSlider> r = mdls2sliders.get(mdl);
-
-        return r.get();
+    public static void attach(JSlider slider) {
+        slider.setUI(createUI(slider));
     }
 
     @Override
@@ -114,10 +113,10 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         js.addChangeListener(this);
         js.setOrientation(JSlider.VERTICAL);
         c.setFocusable(true);
-        mdls2sliders.put(((JSlider) c).getModel(), new WeakReference(c));
         c.addPropertyChangeListener("model", this);
         c.setFont(UIManager.getFont("controlFont"));
         c.addFocusListener(this);
+        initBorder(c);
     }
 
     private void initBorder(JComponent c) {
@@ -133,16 +132,31 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         c.removeKeyListener(this);
         ((JSlider) c).removeChangeListener(this);
         c.setBorder(null);
-        mdls2sliders.remove(((JSlider) c).getModel());
         c.removePropertyChangeListener(this);
         c.removeFocusListener(this);
     }
     private static final int FOCUS_GAP = 2;
 
     @Override
-    public void paint(Graphics g, JComponent c) {
-        Rectangle clip = new Rectangle(0, 0, c.getWidth(), c.getHeight());
+    public int getBaseline(JComponent c, int width, int height) {
+        float fontSize = c.getFont().getSize2D();
+        Integer bl = (Integer) c.getClientProperty("slBase-" + fontSize);
+        if (bl != null) {
+            return bl;
+        }
+        FontMetrics fm = c.getFontMetrics(c.getFont());
+        int txtY = c.getInsets().top + fm.getAscent() + 4;
+        c.putClientProperty("slBase-" + fontSize, txtY);
+        return txtY;
+    }
 
+    @Override
+    public void paint(Graphics g, JComponent c) {
+        Graphics2D gr = (Graphics2D) g;
+        gr.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
+        gr.setRenderingHint(KEY_TEXT_ANTIALIASING, VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+
+        Rectangle clip = new Rectangle(0, 0, c.getWidth(), c.getHeight());
         clip = clip.intersection(g.getClipBounds());
         g.setClip(clip);
         JSlider js = (JSlider) c;
@@ -348,10 +362,12 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
             return;
         }
         JSlider js = (JSlider) e.getSource();
-        if (sliderInPopup == null) {
-            return;
-        }
-        boolean horiz = sliderInPopup.getOrientation() == JSlider.HORIZONTAL;
+//        if (sliderInPopup == null) {
+//            return;
+//        }
+
+        boolean horiz = sliderInPopup == null ? js.getOrientation() == JSlider.HORIZONTAL
+                : sliderInPopup.getOrientation() == JSlider.HORIZONTAL;
         int key = e.getKeyCode();
 
         if (key == KeyEvent.VK_ENTER || key == KeyEvent.VK_SPACE) {
@@ -393,25 +409,33 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
     public void keyReleased(KeyEvent e) {
     }
 
+    @Override
     public void focusGained(FocusEvent e) {
         e.getComponent().repaint();
     }
 
+    @Override
     public void focusLost(FocusEvent e) {
         e.getComponent().repaint();
     }
 
+    @Override
     public void stateChanged(ChangeEvent e) {
         JSlider js = (JSlider) e.getSource();
         js.repaint();
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (evt.getSource() instanceof JSlider) {
-            if ("model".equals(evt.getPropertyName())) {
-                JSlider js = (JSlider) evt.getSource();
-
-                mdls2sliders.put(js.getModel(), new WeakReference(js));
+            switch (evt.getPropertyName()) {
+                case "value":
+                case "minimum":
+                case "maximum":
+                case "background":
+                case "foreground":
+                case "font":
+                    ((JSlider) evt.getSource()).repaint();
             }
         } else if (evt.getSource() instanceof KeyboardFocusManager) {
             if ("activeWindow".equals(evt.getPropertyName())) {
@@ -429,6 +453,7 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         }
     }
 
+    @Override
     public void mousePressed(MouseEvent e) {
         Component js = (Component) e.getSource();
 
@@ -438,15 +463,16 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         }
     }
 
+    @Override
     public void mouseDragged(MouseEvent e) {
         if (popupOwner != null && sliderInPopup.isShowing()) {
             boolean horiz = sliderInPopup.getOrientation() == JSlider.HORIZONTAL;
-
             uiOf(sliderInPopup).dragTo(horiz ? e.getX()
                     : e.getY(), sliderInPopup);
         }
     }
 
+    @Override
     public void mouseReleased(MouseEvent e) {
         if (currPopup != null) {
             uiOf(sliderInPopup).clearDetent();
@@ -455,6 +481,8 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         }
     }
 
+    @Override
     public void mouseMoved(MouseEvent e) {
+        // do nothing
     }
 }

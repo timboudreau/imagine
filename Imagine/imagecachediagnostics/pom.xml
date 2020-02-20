@@ -22,7 +22,6 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-windows</artifactId>
-            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.swinglabs</groupId>
@@ -31,12 +30,10 @@
         <dependency>
             <artifactId>org-openide-awt</artifactId>
             <groupId>org.netbeans.api</groupId>
-            <type>jar</type>
         </dependency>
         <dependency>
             <artifactId>org-openide-util</artifactId>
             <groupId>org.netbeans.api</groupId>
-            <type>jar</type>
         </dependency>
     </dependencies>
     <build>
@@ -44,7 +41,9 @@
             <plugin>
                 <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <version>4.3</version>
+                <configuration>
+                    <moduleType>regular</moduleType>
+                </configuration>
             </plugin>
         </plugins>
     </build>

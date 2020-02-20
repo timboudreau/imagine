@@ -12,5 +12,6 @@ package net.java.dev.imagine.api.vector;
  */
 public interface Copyable extends Primitive {
 
+    @Override
     Copyable copy();
 }

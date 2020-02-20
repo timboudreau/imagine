@@ -36,13 +36,13 @@ import net.dev.java.imagine.api.tool.aspects.SnapPointsConsumer.SnapPoints;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Vector;
-import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import net.java.dev.imagine.api.vector.painting.VectorWrapperGraphics;
 import net.java.dev.imagine.api.vector.util.Pt;
-import org.netbeans.paint.api.util.GraphicsUtils;
-import org.netbeans.paint.api.util.LazyGraphics;
-import org.netbeans.paint.api.util.LazyGraphics.GraphicsProvider;
+import org.imagine.utils.java2d.GraphicsUtils;
+import org.imagine.utils.java2d.LazyGraphics;
+import org.imagine.utils.java2d.GraphicsProvider;
 import org.openide.util.Pair;
 
 /**

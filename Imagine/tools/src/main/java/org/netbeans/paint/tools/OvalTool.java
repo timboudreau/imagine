@@ -9,12 +9,14 @@
 
 package org.netbeans.paint.tools;
 
+import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Surface;
-import org.netbeans.paint.tools.fills.PaintingStyle;
+import static org.netbeans.paint.tools.RectangleTool.strokeC;
+import org.imagine.editor.api.PaintingStyle;
 import org.openide.util.NbBundle;
 
 /**
@@ -32,7 +34,7 @@ public class OvalTool extends RectangleTool {
 
     @Override
     public String toString() {
-        return NbBundle.getMessage (RectangleTool.class, "Oval");
+        return NbBundle.getMessage (OvalTool.class, "Oval");
     }
 
     @Override
@@ -42,6 +44,7 @@ public class OvalTool extends RectangleTool {
             g2d.fillOval(toPaint.x, toPaint.y, toPaint.width, toPaint.height);
         }
         if (style.isOutline()) {
+            g2d.setStroke(new BasicStroke(strokeC.get()));
             g2d.setColor (outlineC.get());
             g2d.drawOval(toPaint.x, toPaint.y, toPaint.width, toPaint.height);
         }

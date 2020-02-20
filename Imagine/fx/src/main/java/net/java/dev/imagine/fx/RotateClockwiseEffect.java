@@ -24,5 +24,4 @@ public class RotateClockwiseEffect extends AbstractOpEffect {
     protected BufferedImageOp getOp(Dimension size) {
         return new AffineTransformFilter(AffineTransform.getRotateInstance(Math.toRadians(270), size.width / 2, size.height / 2));
     }
-            
 }

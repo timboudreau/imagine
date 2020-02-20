@@ -40,11 +40,11 @@ import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoableEdit;
 import net.dev.java.imagine.api.selection.Selection;
 import net.dev.java.imagine.api.tool.Tool;
-import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import net.dev.java.imagine.api.tool.aspects.NonPaintingTool;
 import net.java.dev.imagine.effects.api.EffectReceiver;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.misc.image.ByteNIOBufferedImage;
 import org.netbeans.paint.misc.image.ImageHolder;
 import org.openide.ErrorManager;
@@ -262,7 +262,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     public Graphics2D getGraphics() {
         unhibernateImmediately();
         Point p = getLocation();
-        Graphics2D result = new WrapperGraphics(this, img.createGraphics(), p, img.getWidth(),
+        Graphics2D result = GraphicsUtils.wrap(this, img.createGraphics(), p, img.getWidth(),
                 img.getHeight());
         Shape sel = getSelection();
         if (sel != null) {

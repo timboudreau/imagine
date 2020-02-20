@@ -5,6 +5,9 @@
 
 package org.netbeans.paint.api.components;
 
+import java.awt.Component;
+import javax.swing.SwingUtilities;
+
 /**
  * An interface implemented by an ancestor component that allows nested panels
  * to all align their columns.  Usage:  Create a panel, set its layout to 
@@ -45,4 +48,21 @@ public interface SharedLayoutData {
      * @param state
      */
     public void expanded (LayoutDataProvider p, boolean state);
+
+    static SharedLayoutData find(Component c) {
+        SharedLayoutData data = (SharedLayoutData) SwingUtilities.getAncestorOfClass(SharedLayoutData.class, c);
+        if (data != null) {
+            Component comp = (Component) data;
+            while (comp != null) {
+                SharedLayoutData nue = (SharedLayoutData) SwingUtilities.getAncestorOfClass(SharedLayoutData.class, comp);
+                if (nue != null) {
+                    data = nue;
+                    comp = (Component) nue;
+                } else {
+                    comp = null;
+                }
+            }
+        }
+        return data;
+    }
 }

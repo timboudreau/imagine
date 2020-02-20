@@ -67,5 +67,9 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>paintapi</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>image-editor-api</artifactId>
+        </dependency>
     </dependencies>
 </project>

@@ -11,12 +11,30 @@
     <packaging>nbm</packaging>
     <name>Effects API</name>
     <properties>
-        <maven.test.skip>true</maven.test.skip>
+        <!--<maven.test.skip>true</maven.test.skip>-->
     </properties>
     <dependencies>
+        <!-- 
+                XXX move the effects action and processor out of here to its
+                own - effects ui - module, and these next three deps can
+                be removed
+                        -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>toolcustomizers</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>toolsapi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-dialogs</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-api-annotations-common</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
@@ -57,9 +75,8 @@
             <plugin>
                 <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <version>4.3</version>
                 <configuration>
-                    <moduleType>regular</moduleType>
+                    <moduleType>autoload</moduleType>
                     <publicPackages>
                         <publicPackage>net.java.dev.imagine.effects.api</publicPackage>
                         <publicPackage>net.java.dev.imagine.effects.spi</publicPackage>

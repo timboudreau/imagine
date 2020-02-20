@@ -37,14 +37,17 @@ public class InvertSelectionAction extends GenericContextSensitiveAction<Selecta
     }
 
     @Override
-    protected boolean checkEnabled(Collection<? extends Selectable> coll, Class clazz) {
+    protected <T> boolean checkEnabled(Collection<? extends T> coll, Class<T> clazz) {
+        if (clazz != Selectable.class) {
+            return true;
+        }
         boolean result = super.checkEnabled(coll, clazz);
         if (result) {
             Collection<? extends Selection> sel = Utilities.actionsGlobalContext().lookupAll(Selection.class);
             result &= !sel.isEmpty();
             if (result) {
-                for (Selectable s : coll) {
-                    if (!s.canInvertSelection()) {
+                for (T s : coll) {
+                    if (!((Selectable)s).canInvertSelection()) {
                         result = false;
                     }
                 }

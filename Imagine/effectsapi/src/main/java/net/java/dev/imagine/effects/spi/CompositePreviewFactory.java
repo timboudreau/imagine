@@ -17,7 +17,7 @@ import org.openide.util.lookup.ServiceProvider;
  *
  * @author Tim Boudreau
  */
-@ServiceProvider(service=PreviewFactory.class)
+@ServiceProvider(service = PreviewFactory.class, position = 10)
 public class CompositePreviewFactory extends PreviewFactory<ImageSource> {
 
     public CompositePreviewFactory() {
@@ -41,5 +41,5 @@ public class CompositePreviewFactory extends PreviewFactory<ImageSource> {
         g.dispose();
         return nue;
     }
-    
+
 }

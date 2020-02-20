@@ -46,26 +46,32 @@ public final class Background implements Attribute<Color>, Primitive, PaintWrapp
         return "Background(" + red + "," + green + "," + blue + "," + alpha + ")";
     }
 
+    @Override
     public void paint(Graphics2D g) {
         g.setBackground(toColor());
     }
 
+    @Override
     public Background copy() {
         return new Background(red, green, blue, alpha);
     }
 
+    @Override
     public Paint toPaint() {
         return toColor();
     }
 
+    @Override
     public Color toColor() {
         return new Color(red, green, blue, alpha);
     }
 
+    @Override
     public PaintWrapper createScaledInstance(AffineTransform xform) {
         return (PaintWrapper) copy();
     }
 
+    @Override
     public Color get() {
         return toColor();
     }
@@ -84,26 +90,19 @@ public final class Background implements Attribute<Color>, Primitive, PaintWrapp
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
-        }
-        if (obj == null) {
+        } else if (obj == null) {
             return false;
-        }
-        if (getClass() != obj.getClass()) {
+        } else if (getClass() != obj.getClass()) {
             return false;
         }
         final Background other = (Background) obj;
         if (this.red != other.red) {
             return false;
-        }
-        if (this.green != other.green) {
+        } else if (this.green != other.green) {
+            return false;
+        } else if (this.blue != other.blue) {
             return false;
         }
-        if (this.blue != other.blue) {
-            return false;
-        }
-        if (this.alpha != other.alpha) {
-            return false;
-        }
-        return true;
+        return this.alpha == other.alpha;
     }
 }

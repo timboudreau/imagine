@@ -42,10 +42,38 @@ public interface Primitive extends Serializable {
      */
     public Primitive copy();
 
+    /**
+     * Determin if an object of the passed type can be obtained from the
+     * <code>as(type)</code> method.
+     *
+     * @param type The type
+     * @return True if the query will succed
+     */
+    default boolean is(Class<?> type) {
+        return as(type) != null;
+    }
+
+    /**
+     * For looking up this object as a certain type, or nested objects within
+     * it, or some transformation of this object.
+     *
+     * @param <T> The type
+     * @param type The type
+     * @return An object of type T or null
+     */
     default <T> T as(Class<T> type) {
         return type.isInstance(this) ? type.cast(this) : null;
     }
 
+    /**
+     * Call the passed consumer with this object (or an object embedded in it or
+     * a transform of it) as the passed type, if one can be obtained.
+     *
+     * @param <T> The type
+     * @param type The type
+     * @param c A consumer
+     * @return this, for call-chaining purposes
+     */
     default <T> Primitive as(Class<T> type, Consumer<T> c) {
         if (type.isInstance(this)) {
             c.accept(type.cast(this));
@@ -53,6 +81,16 @@ public interface Primitive extends Serializable {
         return this;
     }
 
+    /**
+     * Call the passed consumer with this object (or an object embedded in it or
+     * a transform of it) as the passed type, if one can be obtained.
+     *
+     * @param <T> The type
+     * @param type The type
+     * @param c A consumer
+     * @param orElse Runnable to call if no such object could be obtained
+     * @return this, for call-chaining purposes
+     */
     default <T> Primitive as(Class<T> type, Consumer<T> c, Runnable orElse) {
         if (type.isInstance(this)) {
             c.accept(type.cast(this));

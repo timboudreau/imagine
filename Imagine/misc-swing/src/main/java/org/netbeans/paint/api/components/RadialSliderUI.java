@@ -1,16 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.netbeans.paint.api.components;
 
 import java.awt.BasicStroke;
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -31,6 +24,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
@@ -38,16 +32,11 @@ import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.BoundedRangeModel;
-import javax.swing.JButton;
-import org.netbeans.paint.geom.Circle;
-import org.netbeans.paint.geom.Quadrant;
+import org.imagine.geometry.Circle;
+import org.imagine.geometry.Quadrant;
 import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.UIManager;
-import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.SliderUI;
@@ -112,56 +101,9 @@ public class RadialSliderUI extends SliderUI {
         super.update(g, c);
     }
 
-    public static void main(String[] args) {
-        UIManager.put("control", new Color(80, 40, 40));
-        UIManager.put("controlShadow", new Color(120, 60, 50));
-        UIManager.put("Slider.foreground", new Color(255, 255, 180));
-        UIManager.put("textText", new Color(255, 255, 180));
-        UIManager.put("text", new Color(80, 40, 40));
-        UIManager.put("white", new Color(80, 40, 40));
-        UIManager.put("Tree.line", new Color(220, 150, 80));
-
-        JFrame jf = new JFrame();
-        jf.getContentPane().setLayout(new BorderLayout());
-        JPanel pnl = new JPanel(new FlowLayout());
-        jf.getContentPane().add(pnl, BorderLayout.CENTER);
-        JLabel lbl = new JLabel("Slider!"); // NOI18N
-        pnl.add(lbl);
-        JSlider slider = new JSlider(0, 360, 80);
-
-        RadialSliderUI.attach(slider);
-        RadialSliderUI.setSmallCaptions(slider);
-        RadialSliderUI.setStringConverter(slider, new StringConverter() {
-            @Override
-            public String valueToString(JSlider sl) {
-                return valueToString(sl.getValue());
-            }
-
-            @Override
-            public int maxChars() {
-                return 7;
-            }
-
-            @Override
-            public String valueToString(int val) {
-                return val + "\u00B0";
-            }
-        });
-
-        pnl.add(slider);
-        JSlider other = new JSlider(0, 360, 90);
-        other.getModel().addChangeListener(ev -> {
-            slider.setValue(other.getValue());
-        });
-        pnl.add(other);
-        JButton b = new JButton("Reset");
-        pnl.add(b);
-        b.addActionListener(ae -> {
-            slider.setValue(0);
-        });
-        jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        jf.pack();
-        jf.setVisible(true);
+    @Override
+    public int getBaseline(JComponent c, int width, int height) {
+        return height / 2;
     }
 
     private static Insets insets(JComponent c) {
@@ -410,6 +352,8 @@ public class RadialSliderUI extends SliderUI {
             SliderState state = state(slider);
             if (state.isDragging()) {
                 state.setLastDragPoint(slider, e.getPoint());
+                slider.setCursor(Cursors.forComponent(slider)
+                        .cursorPerpendicularTo(state.dragAngle()));
                 e.consume();
             }
         }
@@ -427,13 +371,17 @@ public class RadialSliderUI extends SliderUI {
 
         @Override
         public void mouseMoved(MouseEvent e) {
-            JSlider sl = (JSlider) e.getSource();
-            SliderState state = state(sl);
+            JSlider slider = (JSlider) e.getSource();
+            SliderState state = state(slider);
             Point p = e.getPoint();
-            if (state.isHit(sl, p)) {
-                sl.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+            if (state.isHit(slider, p)) {
+                Cursor cursor = Cursors.forComponent(slider)
+                        .cursorPerpendicularTo(
+                                state.angle);
+                slider.setCursor(cursor);
+//                sl.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
             } else {
-                sl.setCursor(Cursor.getDefaultCursor());
+                slider.setCursor(Cursor.getDefaultCursor());
             }
             e.consume();
         }
@@ -452,6 +400,22 @@ public class RadialSliderUI extends SliderUI {
 
         @Override
         public void keyTyped(KeyEvent e) {
+        }
+
+        @Override
+        public void mouseWheelMoved(MouseWheelEvent e) {
+            JSlider slider = (JSlider) e.getSource();
+            int val = slider.getValue();
+            int min = slider.getMinimum();
+            int max = slider.getMaximum();
+            val += e.getUnitsToScroll();
+            while (val < 0) {
+                val = max + val;
+            }
+            while (val > max) {
+                val -= (max - min);
+            }
+            slider.setValue(val);
         }
 
         @Override
@@ -750,6 +714,62 @@ public class RadialSliderUI extends SliderUI {
             }
             return circle.angleOf(lastDragPoint.x, lastDragPoint.y);
         }
-
     }
+    /*
+    public static void main(String[] args) {
+        UIManager.put("control", new Color(80, 40, 40));
+        UIManager.put("controlShadow", new Color(120, 60, 50));
+        UIManager.put("Slider.foreground", new Color(255, 255, 180));
+        UIManager.put("textText", new Color(255, 255, 180));
+        UIManager.put("text", new Color(80, 40, 40));
+        UIManager.put("white", new Color(80, 40, 40));
+        UIManager.put("Tree.line", new Color(220, 150, 80));
+
+        JFrame jf = new JFrame();
+        jf.getContentPane().setLayout(new BorderLayout());
+        JPanel pnl = new JPanel(new FlowLayout());
+        jf.getContentPane().add(pnl, BorderLayout.CENTER);
+        JLabel lbl = new JLabel("Slider!"); // NOI18N
+        pnl.add(lbl);
+        JSlider slider = new JSlider(0, 360, 80);
+
+        RadialSliderUI.attach(slider);
+
+        slider.setBackground(Color.black);
+        slider.setForeground(Color.WHITE);
+
+        RadialSliderUI.setSmallCaptions(slider);
+        RadialSliderUI.setStringConverter(slider, new StringConverter() {
+            @Override
+            public String valueToString(JSlider sl) {
+                return valueToString(sl.getValue());
+            }
+
+            @Override
+            public int maxChars() {
+                return 7;
+            }
+
+            @Override
+            public String valueToString(int val) {
+                return val + "\u00B0";
+            }
+        });
+
+        pnl.add(slider);
+        JSlider other = new JSlider(0, 360, 90);
+        other.getModel().addChangeListener(ev -> {
+            slider.setValue(other.getValue());
+        });
+        pnl.add(other);
+        JButton b = new JButton("Reset");
+        pnl.add(b);
+        b.addActionListener(ae -> {
+            slider.setValue(0);
+        });
+        jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        jf.pack();
+        jf.setVisible(true);
+    }
+     */
 }

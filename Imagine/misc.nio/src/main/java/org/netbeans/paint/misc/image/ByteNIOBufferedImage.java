@@ -29,6 +29,8 @@ import java.awt.image.RasterFormatException;
 import java.awt.image.WritableRaster;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.netbeans.paint.misc.nio.CacheManager;
 
 /**
@@ -40,12 +42,18 @@ public class ByteNIOBufferedImage extends BufferedImage implements DisposableIma
 
     public ByteNIOBufferedImage(int width, int height) {
         super(new CCM(), new ByteNIORaster(0, 0, width, height, 0, 0, null),
-                false, new java.util.Hashtable());
+                false, null);
 //        System.err.println("Created a new NIO image " + width + "x" + height);
         disposer = (NIODataBufferByte) getRaster().getDataBuffer();
     }
 
     public final Runnable disposer;
+    private final AtomicBoolean disposed = new AtomicBoolean();
+    private final AtomicInteger referenceCount = new AtomicInteger();
+
+    public Runnable disposer() {
+        return new DisposerImpl(referenceCount, disposed, disposer);
+    }
 
     public ByteNIOBufferedImage(BufferedImage other) {
         this(other.getWidth(), other.getHeight());
@@ -159,7 +167,6 @@ public class ByteNIOBufferedImage extends BufferedImage implements DisposableIma
 
     public void dispose() {
         NIODataBufferByte buf = (NIODataBufferByte) getRaster().getDataBuffer();
-
         CacheManager.dispose(buf);
     }
 

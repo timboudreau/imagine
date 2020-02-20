@@ -11,12 +11,14 @@ import java.awt.MultipleGradientPaint.ColorSpaceType;
 import java.awt.MultipleGradientPaint.CycleMethod;
 import java.awt.Paint;
 import java.awt.RadialGradientPaint;
+import java.awt.Transparency;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Transformable;
+import org.imagine.utils.java2d.GraphicsUtils;
 
 /**
  *
@@ -24,16 +26,16 @@ import net.java.dev.imagine.api.vector.Transformable;
  */
 public class RadialPaintWrapper implements Primitive, PaintWrapper, Attribute<RadialGradientPaint>, Transformable {
 
-    private final double centerX;
-    private final double centerY;
-    private final double focusX;
-    private final double focusY;
-    private final float[] fractions;
-    private final int[] colors;
-    private final int cycleMethod;
-    private final int colorSpaceType;
-    private final int xpar;
-    private final float radius;
+    private double centerX;
+    private double centerY;
+    private double focusX;
+    private double focusY;
+    private float[] fractions;
+    private int[] colors;
+    private int cycleMethod;
+    private int colorSpaceType;
+    private int xpar;
+    private float radius;
     private double[] transform;
 
     public RadialPaintWrapper(double centerX, double centerY, double focusX, double focusY, float[] fractions, int[] colors, int cycleMethod, int colorSpaceType, int xpar, float radius, double[] transform) {
@@ -73,14 +75,14 @@ public class RadialPaintWrapper implements Primitive, PaintWrapper, Attribute<Ra
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("RadialPaintWrapper(");
-        sb.append ('r').append(radius).append(' ');
+        sb.append('r').append(radius).append(' ');
         sb.append(" center ").append(centerX).append(',').append(centerY);
         sb.append(" focus ").append(focusX).append(',').append(focusY);
         sb.append(' ').append(CycleMethod.values()[cycleMethod]);
         for (int i = 0; i < colors.length; i++) {
             sb.append(' ').append(" @").append(fractions[i])
                     .append(" <");
-            GradientPaintWrapper.rgb(new Color(colors[i]), sb);
+            GradientPaintWrapper.rgb(new Color(colors[i], true), sb);
             sb.append('>');
         }
         return sb.append(')').toString();
@@ -90,10 +92,10 @@ public class RadialPaintWrapper implements Primitive, PaintWrapper, Attribute<Ra
         return new AffineTransform(this.transform);
     }
 
-    private Color[] colors() {
+    public Color[] colors() {
         Color[] result = new Color[this.colors.length];
         for (int i = 0; i < result.length; i++) {
-            result[i] = new Color(colors[i]);
+            result[i] = new Color(colors[i], true);
         }
         return result;
     }
@@ -120,22 +122,15 @@ public class RadialPaintWrapper implements Primitive, PaintWrapper, Attribute<Ra
 
     @Override
     public Color toColor() {
-        return new Color(colors[0]); // XXX huh?
+        return GraphicsUtils.average(colors());
     }
 
     @Override
-    public PaintWrapper createScaledInstance(AffineTransform xform) {
-        Point2D.Double scratch = new Point2D.Double(centerX, centerY);
-        xform.transform(scratch, scratch);
-        double cx = scratch.x;
-        double cy = scratch.y;
-        scratch.setLocation(focusX, focusY);
-        xform.transform(scratch, scratch);
-        double fx = scratch.x;
-        double fy = scratch.y;
-        AffineTransform xf = transform();
-        xf.concatenate(xform);
-        return new RadialPaintWrapper(cx, cy, fx, fy, fractions, colors,
+    public RadialPaintWrapper createScaledInstance(AffineTransform xform) {
+        double[] pts = new double[]{centerX, centerY, focusX, focusY};
+        xform.transform(pts, 0, pts, 0, 2);
+        return new RadialPaintWrapper(pts[0], pts[1], pts[2], pts[3],
+                Arrays.copyOf(fractions, fractions.length), Arrays.copyOf(colors, colors.length),
                 cycleMethod, colorSpaceType, xpar, radius, transform);
     }
 
@@ -170,52 +165,39 @@ public class RadialPaintWrapper implements Primitive, PaintWrapper, Attribute<Ra
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
-        }
-        if (obj == null) {
+        } else if (obj == null) {
             return false;
-        }
-        if (getClass() != obj.getClass()) {
+        } else if (getClass() != obj.getClass()) {
             return false;
         }
         final RadialPaintWrapper other = (RadialPaintWrapper) obj;
-        if (Double.doubleToLongBits(this.centerX) != Double.doubleToLongBits(other.centerX)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(this.centerY) != Double.doubleToLongBits(other.centerY)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(this.focusX) != Double.doubleToLongBits(other.focusX)) {
-            return false;
-        }
-        if (Double.doubleToLongBits(this.focusY) != Double.doubleToLongBits(other.focusY)) {
-            return false;
-        }
         if (this.cycleMethod != other.cycleMethod) {
             return false;
-        }
-        if (this.colorSpaceType != other.colorSpaceType) {
+        } else if (this.colorSpaceType != other.colorSpaceType) {
             return false;
-        }
-        if (this.xpar != other.xpar) {
+        } else if (this.xpar != other.xpar) {
             return false;
-        }
-        if (Float.floatToIntBits(this.radius) != Float.floatToIntBits(other.radius)) {
+        } else if (Float.floatToIntBits(this.radius) != Float.floatToIntBits(other.radius)) {
             return false;
-        }
-        if (!Arrays.equals(this.fractions, other.fractions)) {
+        } else if (Double.doubleToLongBits(this.centerX) != Double.doubleToLongBits(other.centerX)) {
             return false;
-        }
-        if (!Arrays.equals(this.colors, other.colors)) {
+        } else if (Double.doubleToLongBits(this.centerY) != Double.doubleToLongBits(other.centerY)) {
             return false;
-        }
-        if (!Arrays.equals(this.transform, other.transform)) {
+        } else if (Double.doubleToLongBits(this.focusX) != Double.doubleToLongBits(other.focusX)) {
             return false;
+        } else if (Double.doubleToLongBits(this.focusY) != Double.doubleToLongBits(other.focusY)) {
+            return false;
+        } else if (!Arrays.equals(this.fractions, other.fractions)) {
+            return false;
+        } else if (!Arrays.equals(this.colors, other.colors)) {
+            return false;
+        } else {
+            return Arrays.equals(this.transform, other.transform);
         }
-        return true;
     }
 
     @Override
-    public void applyScale(AffineTransform xform) {
+    public void applyTransform(AffineTransform xform) {
         AffineTransform curr = transform();
         curr.concatenate(xform);
         curr.getMatrix(transform);
@@ -223,6 +205,9 @@ public class RadialPaintWrapper implements Primitive, PaintWrapper, Attribute<Ra
 
     @Override
     public RadialPaintWrapper copy(AffineTransform transform) {
+        if (transform.isIdentity()) {
+            return copy();
+        }
         double[] newTransform = new double[this.transform.length];
         float[] newFractions = Arrays.copyOf(fractions, fractions.length);
         int[] newColors = Arrays.copyOf(colors, colors.length);
@@ -234,5 +219,172 @@ public class RadialPaintWrapper implements Primitive, PaintWrapper, Attribute<Ra
                 radius, newTransform);
     }
 
+    public double getCenterX() {
+        return centerX;
+    }
 
+    public void setCenterX(double centerX) {
+        this.centerX = centerX;
+    }
+
+    public double getCenterY() {
+        return centerY;
+    }
+
+    public void setCenterY(double centerY) {
+        this.centerY = centerY;
+    }
+
+    public double getFocusX() {
+        return focusX;
+    }
+
+    public void setFocusX(double focusX) {
+        this.focusX = focusX;
+    }
+
+    public double getFocusY() {
+        return focusY;
+    }
+
+    public void setFocusY(double focusY) {
+        this.focusY = focusY;
+    }
+
+    public float[] getFractions() {
+        return Arrays.copyOf(fractions, fractions.length);
+    }
+
+    public void setFractions(float[] fractions) {
+        checkFractions(fractions);
+        this.fractions = fractions;
+    }
+
+    public int[] getColors() {
+        return colors;
+    }
+
+    private void checkFractions(float[] fractions) {
+        if (fractions == null) {
+            throw new IllegalArgumentException("Null fractions array");
+        }
+        float last = Float.MIN_VALUE;
+        for (int i = 0; i < fractions.length; i++) {
+            if (fractions[i] <= last) {
+                throw new IllegalArgumentException("Fractions out of order at "
+                        + i + " in " + Arrays.toString(fractions));
+            }
+            if (fractions[i] < 0 || fractions[i] > 1) {
+                throw new IllegalArgumentException("Fractions must be between "
+                        + "0.0 and 1.0 but found " + fractions[i] + " at "
+                        + i);
+            }
+            last = fractions[i];
+        }
+    }
+
+    public void setColorsAndFractions(int[] colors, float[] fractions) {
+        if (fractions.length != colors.length) {
+            throw new IllegalArgumentException("Colors and fractions are not the same");
+        }
+        checkFractions(fractions);
+        this.colors = Arrays.copyOf(colors, colors.length);
+        this.fractions = Arrays.copyOf(fractions, fractions.length);
+    }
+
+    public void setColorsAndFractions(Color[] colors, float[] fractions) {
+        if (fractions.length != colors.length) {
+            throw new IllegalArgumentException("Colors and fractions are not the same");
+        }
+        checkFractions(fractions);
+        int[] newColors = new int[colors.length];
+        for (int i = 0; i < newColors.length; i++) {
+            if (colors[i] == null) {
+                throw new IllegalArgumentException("Null color in array at " + i);
+            }
+            newColors[i] = colors[i].getRGB();
+        }
+        this.colors = newColors;
+        this.fractions = Arrays.copyOf(fractions, fractions.length);
+    }
+
+    public void setColors(int[] colors) {
+        if (fractions.length != colors.length) {
+            throw new IllegalArgumentException("Colors and fractions are not the same");
+        }
+        this.colors = colors;
+    }
+
+    public int getCycleMethod() {
+        return cycleMethod;
+    }
+
+    public void setCycleMethod(int cycleMethod) {
+        if (cycleMethod < 0 || cycleMethod > CycleMethod.values().length) {
+            throw new IllegalArgumentException("Invalid CycleMethod ordinal " + cycleMethod);
+        }
+        this.cycleMethod = cycleMethod;
+    }
+
+    public void setCycleMethod(CycleMethod method) {
+        if (method == null) {
+            throw new IllegalArgumentException("Null cycle method");
+        }
+        this.cycleMethod = method.ordinal();
+    }
+
+    public CycleMethod cycleMethod() {
+        return CycleMethod.values()[cycleMethod];
+    }
+
+    public ColorSpaceType colorSpaceType() {
+        return ColorSpaceType.values()[colorSpaceType];
+    }
+
+    public void setColorSpaceType(ColorSpaceType type) {
+        if (type == null) {
+            throw new IllegalArgumentException("Null color space type");
+        }
+        colorSpaceType = type.ordinal();
+    }
+
+    public int getColorSpaceType() {
+        return colorSpaceType;
+    }
+
+    public void setColorSpaceType(int colorSpaceType) {
+        this.colorSpaceType = colorSpaceType;
+    }
+
+    public int getTransparency() {
+        return xpar;
+    }
+
+    public void setTransparency(int xpar) {
+        switch (xpar) {
+            case Transparency.BITMASK:
+            case Transparency.OPAQUE:
+            case Transparency.TRANSLUCENT:
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid transparency " + xpar);
+        }
+        this.xpar = xpar;
+    }
+
+    public float getRadius() {
+        return radius;
+    }
+
+    public void setRadius(float radius) {
+        this.radius = radius;
+    }
+
+    public double[] getTransform() {
+        return transform;
+    }
+
+    public void setTransform(double[] transform) {
+        this.transform = transform;
+    }
 }

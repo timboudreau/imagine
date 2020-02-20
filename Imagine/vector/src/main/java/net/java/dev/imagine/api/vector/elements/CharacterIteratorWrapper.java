@@ -19,7 +19,7 @@ import net.java.dev.imagine.api.vector.Primitive;
  */
 public final class CharacterIteratorWrapper implements Primitive {
 
-    private static long serialVersionUID = 203942L;
+    private static final long serialVersionUID = 203_942L;
     public final AttributedCharacterIterator it;
     public final double x;
     public final double y;
@@ -37,10 +37,12 @@ public final class CharacterIteratorWrapper implements Primitive {
                 + ", " + y + ": " + it;
     }
 
+    @Override
     public void paint(Graphics2D g) {
         g.drawString(it, (int) x, (int) y);
     }
 
+    @Override
     public Primitive copy() {
         return new CharacterIteratorWrapper(it, x, y);
     }

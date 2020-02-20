@@ -14,11 +14,14 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
+import static java.lang.Double.doubleToLongBits;
+import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
+import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 
 /**
@@ -27,7 +30,7 @@ import net.java.dev.imagine.api.vector.util.Pt;
  */
 public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokable {
 
-    public long serialVersionUID = 39201L;
+    public long serialVersionUID = 39_201L;
     public double aw;
     public double ah;
     public double x;
@@ -46,6 +49,12 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
         this.fill = fill;
     }
 
+    @Override
+    public void translate(double x, double y) {
+        this.x += x;
+        this.y += y;
+    }
+
     public double getArcHeight() {
         return ah;
     }
@@ -62,16 +71,50 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
         this.aw = Math.abs(val);
     }
 
+    public double x() {
+        return x;
+    }
+
+    public double y() {
+        return y;
+    }
+
+    public double width() {
+        return w;
+    }
+
+    public double height() {
+        return h;
+    }
+
+    public void setX(double x) {
+        this.x = x;
+    }
+
+    public void setY(double y) {
+        this.y = y;
+    }
+
+    public void setWidth(double w) {
+        this.w = w;
+    }
+
+    public void setHeight(double h) {
+        this.h = h;
+    }
+
     @Override
     public String toString() {
         return "RoundRect " + x + ", " + y + ", " + w
                 + ", " + h + " fill: " + fill;
     }
 
+    @Override
     public Shape toShape() {
         return new RoundRectangle2D.Double(x, y, w, h, aw, ah);
     }
 
+    @Override
     public void paint(Graphics2D g) {
         if (fill) {
             fill(g);
@@ -93,10 +136,12 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
 //        xy[7] = y + halfw;
 //    }
 //
+    @Override
     public RoundRect copy() {
         return new RoundRect(x, y, w, h, aw, ah, fill);
     }
 
+    @Override
     public void getBounds(Rectangle2D.Double r) {
         double wid = w;
         double hi = h;
@@ -118,35 +163,43 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
         r.setRect(xx, yy, ww, hh);
     }
 
+    @Override
     public int getControlPointCount() {
         return 4;
     }
 
+    @Override
     public void fill(Graphics2D g) {
         g.fill(toShape());
     }
 
+    @Override
     public boolean isFill() {
         return fill;
     }
 
+    @Override
     public void draw(Graphics2D g) {
         g.draw(toShape());
     }
 
+    @Override
     public Pt getLocation() {
         return new Pt(x, y);
     }
 
+    @Override
     public void setLocation(double x, double y) {
         this.x = x;
         this.y = y;
     }
 
+    @Override
     public void clearLocation() {
         setLocation(0D, 0D);
     }
 
+    @Override
     public Vector copy(AffineTransform transform) {
         double[] pts = new double[]{
             x, y, x + w, y + h,};
@@ -155,23 +208,39 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
                 pts[3] - pts[1], aw, ah, fill);
     }
 
+    @Override
     public int[] getVirtualControlPointIndices() {
         return EMPTY_INT;
     }
 
+    @Override
     public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (o == null) {
+            return false;
+        }
         boolean result = o instanceof RoundRect;
         if (result) {
             RoundRect r = (RoundRect) o;
-            result = r.h == h && r.w == w && r.x == x && r.y == y;
+            result = r.h == h && r.w == w && r.x == x && r.y == y
+                    && r.ah == ah && r.aw == aw;
         }
         return result;
     }
 
+    @Override
     public int hashCode() {
-        return getClass().hashCode() + ((int) ((x * y) + (w * h)));
+        long bits = 2_701 * ((doubleToLongBits(x) * 83)
+                + (doubleToLongBits(y) * 431)
+                + (doubleToLongBits(w) * 5)
+                + (doubleToLongBits(h) * 971)
+                + (doubleToLongBits(aw) * 5_843)
+                + (doubleToLongBits(ah) * 7_451));
+        return (((int) bits) ^ ((int) (bits >> 32)));
     }
 
+    @Override
     public void getControlPoints(double[] xy) {
         xy[0] = x;
         xy[1] = y;
@@ -186,6 +255,14 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
         xy[7] = y;
     }
 
+    @Override
+    public ControlPointKind[] getControlPointKinds() {
+        ControlPointKind[] kinds = new ControlPointKind[4];
+        Arrays.fill(kinds, ControlPointKind.PHYSICAL_POINT);
+        return kinds;
+    }
+
+    @Override
     public void setControlPointLocation(int pointIndex, Pt pt) {
         switch (pointIndex) {
             case 0:
@@ -227,7 +304,7 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
     }
 
     @Override
-    public void applyScale(AffineTransform xform) {
+    public void applyTransform(AffineTransform xform) {
         Point2D.Double a = new Point2D.Double(x, y);
         Point2D.Double b = new Point2D.Double(x + w, y + h);
         xform.transform(a, a);

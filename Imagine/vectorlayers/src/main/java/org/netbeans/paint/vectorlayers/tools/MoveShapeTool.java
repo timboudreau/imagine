@@ -40,6 +40,7 @@ import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.aggregate.PaintedPrimitive;
 import net.java.dev.imagine.api.vector.design.ControlPoint;
+import net.java.dev.imagine.api.vector.design.ControlPointController;
 import net.java.dev.imagine.api.vector.design.ControlPointFactory;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
 import net.java.dev.imagine.api.vector.util.Pt;
@@ -54,14 +55,14 @@ import org.openide.util.Lookup;
 @ToolDef(name = "MoveShape", iconPath = "net/java/dev/imagine/api/tool/unknown.png",
         displayNameBundle = "net.dev.java.imagine.vectorlayers.tools.Bundle")
 @Tool(name = "MoveShape", value = ShapeStack.class)
-public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, */ PaintParticipant, MouseListener, ControlPoint.Controller, Attachable {
+public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, */ PaintParticipant, MouseListener, ControlPointController, Attachable {
 
     public MoveShapeTool(ShapeStack stack) {
         this.stack = stack;
     }
 
-    private ShapeStack stack;
-    private Layer layer;
+    ShapeStack stack;
+    Layer layer;
 
     public void attach(Lookup.Provider p) {
         this.layer = p.getLookup().lookup(Layer.class);
@@ -132,7 +133,7 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
         }
     }
 
-    private Primitive shape;
+    Primitive shape;
 
     private void setSelectedShape(Primitive p) {
         if (this.shape != p) {
@@ -141,7 +142,7 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
         }
     }
 
-    private Repainter repainter;
+    Repainter repainter;
 
     public void attachRepainter(Repainter repainter) {
         this.repainter = repainter;
@@ -252,7 +253,7 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
     public Size getControlPointSize() {
         return SIZE;
     }
-    private ControlPoint cpoint;
+    ControlPoint cpoint;
 
     private void showPopup(MouseEvent e) {
         Point point = e.getPoint();

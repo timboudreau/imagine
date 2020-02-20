@@ -60,7 +60,7 @@ final class NumberCustomizer2<T extends Number> implements Customizer<T> {
         this.conv = conv;
         Preferences prefs = NbPreferences.forModule(NumberCustomizer2.class);
         String prefsKeyBase = type.getSimpleName() + "_" + name;
-        T lastValue = conv.load(prefs, prefsKeyBase, defaultValue);
+        T lastValue = conv.load(prefs, prefsKeyBase, defaultValue, start);
         Mnemonics.setLocalizedText(lbl, name);
         lbl.setLabelFor(slider);
         slider.setOrientation(JSlider.HORIZONTAL);
@@ -221,7 +221,10 @@ final class NumberCustomizer2<T extends Number> implements Customizer<T> {
 
         T toType(Number num);
 
-        default T load(Preferences prefs, String name, T defaultValue) {
+        default T load(Preferences prefs, String name, T defaultValue, T start) {
+            if (defaultValue == null) {
+                defaultValue = start;
+            }
             int val = prefs.getInt("cust_" + name, toInt(toType(defaultValue)));
             return fromInt(val);
         }
@@ -482,8 +485,8 @@ final class NumberCustomizer2<T extends Number> implements Customizer<T> {
         }
 
         @Override
-        public T load(Preferences prefs, String name, T defaultValue) {
-            return delegate.load(prefs, name, defaultValue);
+        public T load(Preferences prefs, String name, T defaultValue, T start) {
+            return delegate.load(prefs, name, defaultValue, start);
         }
 
         @Override

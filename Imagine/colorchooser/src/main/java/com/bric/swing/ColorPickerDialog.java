@@ -12,10 +12,9 @@
 */
 package com.bric.swing;
 
-import javax.swing.JComponent;
+import com.sun.glass.events.KeyEvent;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -23,10 +22,12 @@ import java.awt.Dialog;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.AbstractAction;
 import javax.swing.JButton;
+import static javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
+import javax.swing.KeyStroke;
 
 /** This wraps a <code>ColorPicker</code> in a simple dialog with "OK" and "Cancel" options.
  * <P>(This object is used by the static calls in <code>ColorPicker</code> to show a dialog.)
@@ -54,13 +55,29 @@ class ColorPickerDialog extends JDialog {
 	public ColorPickerDialog(Frame owner, Color color,boolean includeOpacity) {
 		super(owner);
 		initialize(owner,color,includeOpacity);
+                initActions();
 	}
 
 	public ColorPickerDialog(Dialog owner, Color color,boolean includeOpacity) {
 		super(owner);
 		initialize(owner,color,includeOpacity);
+                initActions();
 	}
-	
+        
+        private void initActions() {
+                getRootPane().setDefaultButton(ok);
+                getRootPane().getActionMap()
+                        .put("cancel", new AbstractAction() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                cancel.doClick();
+                            }
+
+                        });
+                getRootPane().getInputMap(WHEN_IN_FOCUSED_WINDOW)
+                        .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false), "cancel");
+        }
+
 	private void initialize(Component owner,Color color,boolean includeOpacity) {
 		cp = new ColorPicker(true,includeOpacity);
 		setModal(true);

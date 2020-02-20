@@ -33,14 +33,14 @@ import org.openide.util.Utilities;
  * @author Tim Boudreau
  */
 public final class Sensor <T> {
-    static final Map <Lookup, Map <Class, Sensor>> sensors =
-            new ConcurrentHashMap <Lookup, Map <Class, Sensor>> ();
+    static final Map <Lookup, Map <Class<?>, Sensor<?>>> sensors =
+            new ConcurrentHashMap <Lookup, Map <Class<?>, Sensor<?>>> ();
 
     private Lookup.Result <T> result;
     private Lookup lkp;
     private final Class targetClass;
-    Set <WeakReference <Notifiable<T>>> toNotify =
-            new HashSet <WeakReference <Notifiable<T>>> ();
+    Set <WeakReference <Notifiable>> toNotify =
+            new HashSet <WeakReference <Notifiable>> ();
 
     Sensor(Class <T> targetClass, Lookup lkp) {
         this.targetClass = targetClass;
@@ -73,15 +73,15 @@ public final class Sensor <T> {
         return sensor;
     }
 
-    public static <T> void register (Lookup lkp, Class <T> clazz, Notifiable<T> n) {
-        Map <Class, Sensor> m = sensors.get(lkp);
+    public static <T> void register (Lookup lkp, Class <T> clazz, Notifiable n) {
+        Map <Class<?>, Sensor<?>> m = sensors.get(lkp);
         Sensor <T> sensor;
         if (m == null) {
-            m = new ConcurrentHashMap <Class, Sensor>();
+            m = new ConcurrentHashMap <>();
             sensors.put (lkp, m);
             sensor = null;
         } else {
-            sensor = m.get(clazz);
+            sensor = (Sensor<T>) m.get(clazz);
         }
         if (sensor == null) {
             sensor = create (clazz, lkp);
@@ -90,15 +90,15 @@ public final class Sensor <T> {
         sensor.doRegister (n);
     }
 
-    public static <T> void registerOnDefaultLookup (Class<T> clazz, Notifiable<T> n) {
+    public static <T> void registerOnDefaultLookup (Class<T> clazz, Notifiable n) {
         register (Lookup.getDefault(), clazz, n);
     }
 
-    public static <T> void registerOnGlobalActionContextLookup (Class<T> clazz, Notifiable<T> n) {
+    public static <T> void registerOnGlobalActionContextLookup (Class<T> clazz, Notifiable n) {
         register (Utilities.actionsGlobalContext(), clazz, n);
     }
 
-    void doRegister (Notifiable <T> n) {
+    void doRegister (Notifiable  n) {
         int size = toNotify.size();
         toNotify.add (new WeakReference(n));
         if (size == 0) {
@@ -106,8 +106,8 @@ public final class Sensor <T> {
         }
     }
 
-    void doUnregister (Notifiable <T> n) {
-        for (Iterator <WeakReference<Notifiable<T>>> i = toNotify.iterator(); i.hasNext();) {
+    void doUnregister (Notifiable n) {
+        for (Iterator <WeakReference<Notifiable>> i = toNotify.iterator(); i.hasNext();) {
             if (i.next().get() == n) {
                 i.remove();
             }
@@ -129,7 +129,7 @@ public final class Sensor <T> {
     }
 
     private void scan() {
-        for (Iterator <WeakReference<Notifiable<T>>> i = toNotify.iterator(); i.hasNext();) {
+        for (Iterator <WeakReference<Notifiable>> i = toNotify.iterator(); i.hasNext();) {
             if (i.next().get() == null) {
                 i.remove();
             }
@@ -142,8 +142,11 @@ public final class Sensor <T> {
     private static void scanAll() {
         for (Iterator <Lookup> lit=sensors.keySet().iterator(); lit.hasNext();) {
             Lookup l = lit.next();
-            Map <Class, Sensor> m = sensors.get (l);
-            for (Iterator <Class> mit = m.keySet().iterator(); mit.hasNext();) {
+            Map <Class<?>, Sensor<?>> m = sensors.get (l);
+            for (Map.Entry<Class<?>, Sensor<?>> e : m.entrySet()) {
+
+            }
+            for (Iterator <Class<?>> mit = m.keySet().iterator(); mit.hasNext();) {
                 Class clazz = mit.next();
                 Sensor s = m.get (clazz);
                 for (Iterator <Reference<Notifiable>> i = s.toNotify.iterator(); i.hasNext();) {
@@ -180,7 +183,7 @@ public final class Sensor <T> {
                 Collection <Reference<Notifiable>> toNotify = e.getKey().toNotify;
                 for (Iterator <Reference<Notifiable>> i = toNotify.iterator(); i.hasNext();) {
                     Notifiable n = i.next().get();
-                    Class targetClass = e.getKey().targetClass;
+                    Class<?> targetClass = e.getKey().targetClass;
                     if (n == null) {
                         i.remove();
                     } else {
@@ -214,9 +217,9 @@ public final class Sensor <T> {
     }
 
     private void removeNotify() {
-        Map <Class, Sensor> m = sensors.get (lkp);
+        Map <Class<?>, Sensor<?>> m = sensors.get (lkp);
         if (m != null) {
-            Sensor <T> sensor = m.remove (targetClass);
+            Sensor <?> sensor = m.remove (targetClass);
             assert sensor == this;
             if (m.isEmpty()) {
                 sensors.remove (lkp);
@@ -229,7 +232,7 @@ public final class Sensor <T> {
         }
     }
 
-    public interface Notifiable <T> {
-        public void notify (Collection <T> coll, Class target);
+    public interface Notifiable {
+        public <T> void notify (Collection <? extends T> coll, Class<T> target);
     }
 }

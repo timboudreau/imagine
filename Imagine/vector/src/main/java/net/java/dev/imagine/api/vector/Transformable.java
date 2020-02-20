@@ -13,22 +13,33 @@ import java.awt.geom.AffineTransform;
  */
 public interface Transformable extends Primitive {
 
-    void applyScale(AffineTransform xform);
+    void applyTransform(AffineTransform xform);
+
+    default boolean canApplyTransform(AffineTransform xform) {
+        return true;
+    }
 
     default void applyScale(double scale) {
-        applyScale(AffineTransform.getScaleInstance(scale, scale));
+        applyTransform(AffineTransform.getScaleInstance(scale, scale));
     }
 
     default void applyScale(double scaleX, double scaleY) {
-        applyScale(AffineTransform.getScaleInstance(scaleX, scaleY));
+        applyTransform(AffineTransform.getScaleInstance(scaleX, scaleY));
     }
 
     /**
-     * Create a duplicate of this object whose coordinates have
-     * been transformed by the passed AffineTransform.
+     * Create a duplicate of this object whose coordinates have been transformed
+     * by the passed AffineTransform.
      */
-    Transformable copy (AffineTransform transform);
+    Transformable copy(AffineTransform transform);
 
     @Override
     Transformable copy();
+
+    default void translate(double x, double y) {
+        if (x == 0D && y == 0D) {
+            return;
+        }
+        applyTransform(AffineTransform.getTranslateInstance(x, y));
+    }
 }

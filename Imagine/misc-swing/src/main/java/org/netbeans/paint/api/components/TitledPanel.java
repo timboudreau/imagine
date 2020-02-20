@@ -107,6 +107,7 @@ public abstract class TitledPanel extends JPanel implements LayoutDataProvider {
         return center;
     }
 
+    @Override
     public boolean isExpanded() {
         return expanded;
     }

@@ -1,10 +1,14 @@
 package net.java.dev.imagine.api.toolcustomizers;
 
+import org.imagine.utils.TimedExpirationMap;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.LinearGradientPaint;
+import java.awt.RadialGradientPaint;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.AffineTransform;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,10 +21,13 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.java.dev.imagine.toolcustomizers.AffineTransformCustomizer;
 import net.java.dev.imagine.toolcustomizers.BooleanCustomizer;
 import net.java.dev.imagine.toolcustomizers.ColorCustomizer;
 import net.java.dev.imagine.toolcustomizers.EnumCustomizer;
 import net.java.dev.imagine.toolcustomizers.FontCustomizer;
+import net.java.dev.imagine.toolcustomizers.LinearGradientPaintCustomizer;
+import net.java.dev.imagine.toolcustomizers.RadialGradientPaintCustomizer;
 import net.java.dev.imagine.toolcustomizers.TextCustomizer;
 import org.netbeans.paint.api.components.LDPLayout;
 import org.openide.util.Lookup;
@@ -51,7 +58,7 @@ public final class Customizers {
     private Customizers() {
     }
 
-    private static final Map<Class, Map<String, Customizer>> map = new HashMap<Class, Map<String, Customizer>>();
+    private static final Map<Class, Map<String, Customizer<?>>> map = new HashMap<Class, Map<String, Customizer<?>>>();
 
     /**
      * Get a customizer for a number type. The type may be anything that extends
@@ -138,10 +145,10 @@ public final class Customizers {
             start = end;
             end = hold;
         }
-        Map<String, Customizer> m = map.get(type);
+        Map<String, Customizer<?>> m = map.get(type);
         Customizer<T> result = null;
         if (m != null) {
-            result = m.get(name);
+            result = (Customizer<T>) m.get(name);
         } else {
             m = new TimedExpirationMap<>();
             map.put(type, m);
@@ -164,35 +171,45 @@ public final class Customizers {
      * this type.
      */
     public synchronized static <T> Customizer<T> getCustomizer(Class<T> type, String name) {
+        return getCustomizer(type, name, null);
+    }
+
+    public synchronized static <T> Customizer<T> getCustomizer(Class<T> type, String name, T existingValue) {
         if (Number.class.isAssignableFrom(type)) {
             if (type == Float.class) {
-                return (Customizer<T>) getCustomizer(Float.class, name, Float.MIN_VALUE, Float.MAX_VALUE - 1);
+                Float val = existingValue instanceof Number ? ((Number) existingValue).floatValue() : null;
+                return (Customizer<T>) getCustomizer(Float.class, name, 0F, 1F, val);
             } else if (type == Double.class) {
-                return (Customizer<T>) getCustomizer(Double.class, name, Double.MIN_VALUE, Double.MAX_VALUE - 1);
+                Double val = existingValue instanceof Number ? ((Number) existingValue).doubleValue() : null;
+                return (Customizer<T>) getCustomizer(Double.class, name, 0D, 1D, val);
             } else if (type == Integer.class) {
-                return (Customizer<T>) getCustomizer(Integer.class, name, Integer.MIN_VALUE, Integer.MAX_VALUE - 1);
+                Integer val = existingValue instanceof Number ? ((Number) existingValue).intValue() : null;
+                return (Customizer<T>) getCustomizer(Integer.class, name, 0, 255, val);
             } else if (type == Long.class) {
-                return (Customizer<T>) getCustomizer(Long.class, name, Long.MIN_VALUE, Long.MAX_VALUE - 1);
+                Long val = existingValue instanceof Number ? ((Number) existingValue).longValue() : null;
+                return (Customizer<T>) getCustomizer(Long.class, name, 0L, 1024L, val);
             } else if (type == Short.class) {
-                return (Customizer<T>) getCustomizer(Short.class, name, Short.MIN_VALUE, (short) (Short.MAX_VALUE - 1));
+                Short val = existingValue instanceof Number ? ((Number) existingValue).shortValue() : null;
+                return (Customizer<T>) getCustomizer(Short.class, name, (short) 0, (short) (Short.MAX_VALUE - 1), val);
             } else if (type == Byte.class) {
-                return (Customizer<T>) getCustomizer(Byte.class, name, Byte.MIN_VALUE, (byte) (Byte.MAX_VALUE - 1));
+                Byte val = existingValue instanceof Number ? ((Number) existingValue).byteValue() : null;
+                return (Customizer<T>) getCustomizer(Byte.class, name, Byte.MIN_VALUE, (byte) (Byte.MAX_VALUE - 1), val);
             }
         }
         if (Enum.class.isAssignableFrom(type)) {
-            return (Customizer<T>) new OldEnumCustomizer(name, type);
+            return (Customizer<T>) new OldEnumCustomizer(name, type, (Enum<?>) existingValue);
         }
-        Map<String, Customizer> m = map.get(type);
+        Map<String, Customizer<?>> m = map.get(type);
         boolean created = false;
         if (m == null) {
-            m = new HashMap<String, Customizer>();
+            m = new HashMap<String, Customizer<?>>();
             map.put(type, m);
             created = true;
         }
 //        Customizer<T> result = m.get(name);
         Customizer<T> result = null; //stealing componnents from other customizers
         if (result == null) {
-            result = createCustomizer(type, name);
+            result = createCustomizer(type, name, existingValue);
             created = true;
             if (result != null) {
                 m.put(name, result);
@@ -204,7 +221,7 @@ public final class Customizers {
         return result;
     }
 
-    private static <T> Customizer<T> createCustomizer(Class<T> type, String name) {
+    private static <T> Customizer<T> createCustomizer(Class<T> type, String name, T existingValue) {
         Customizer<T> result = null;
         if (Enum.class.isAssignableFrom(type)) {
             result = new EnumCustomizer(name, type);
@@ -216,10 +233,16 @@ public final class Customizers {
             result = (Customizer<T>) new FontCustomizer(name);
         } else if (type == Color.class) {
             result = (Customizer<T>) new ColorCustomizer(name);
+        } else if (type == AffineTransform.class) {
+            result = (Customizer<T>) new AffineTransformCustomizer(name, (AffineTransform) existingValue);
+        } else if (type == LinearGradientPaint.class) {
+            result = (Customizer<T>) new LinearGradientPaintCustomizer(name, (LinearGradientPaint) existingValue);
+        } else if (type == RadialGradientPaint.class) {
+            result = (Customizer<T>) new RadialGradientPaintCustomizer(name, (RadialGradientPaint) existingValue);
         } else {
             CustomizerFactory fac = findFactory(type);
             if (fac != null) {
-                result = fac.getCustomizer(type, name, new Object[0]);
+                result = fac.getCustomizer(type, name, new Object[]{existingValue});
             }
         }
         return result;
@@ -248,9 +271,16 @@ public final class Customizers {
         }
 
         OldEnumCustomizer(String name, Class<T> type) {
+            this(name, type, null);
+        }
+
+        OldEnumCustomizer(String name, Class<T> type, T value) {
             this.type = type;
             this.name = name;
             mdl = new DefaultComboBoxModel(type.getEnumConstants());
+            if (value != null) {
+                mdl.setSelectedItem(value);
+            }
         }
 
         public JComponent getComponent() {

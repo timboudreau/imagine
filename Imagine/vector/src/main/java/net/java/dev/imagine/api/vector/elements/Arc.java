@@ -13,11 +13,14 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import static java.lang.Double.doubleToLongBits;
+import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
+import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 
 /**
@@ -26,7 +29,7 @@ import net.java.dev.imagine.api.vector.util.Pt;
  */
 public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vector {
 
-    private static long serialVersionUID = 2394L;
+    private static final long serialVersionUID = 2_394L;
     public double x;
     public double y;
     public double width;
@@ -49,7 +52,13 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
     }
 
     @Override
-    public void applyScale(AffineTransform xform) {
+    public void translate(double x, double y) {
+        this.x += x;
+        this.y += y;
+    }
+
+    @Override
+    public void applyTransform(AffineTransform xform) {
         Point2D.Double a = new Point2D.Double(x, y);
         Point2D.Double b = new Point2D.Double(x + width, y + height);
         xform.transform(a, a);
@@ -76,6 +85,7 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
         this.startAngle = startAngle;
     }
 
+    @Override
     public String toString() {
         return "Arc: " + x + ", " + y + ", "
                 + width + ", " + height + ": "
@@ -83,16 +93,24 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
                 + " fill:" + fill;
     }
 
+    @Override
     public Arc2D.Double toShape() {
         return new Arc2D.Double(x, y, width, height, startAngle, arcAngle,
                 fill ? Arc2D.OPEN : Arc2D.CHORD); //XXX PIE?
     }
 
+    @Override
     public boolean isFill() {
         return fill;
     }
 
+    @Override
     public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (o == null) {
+            return false;
+        }
         boolean result = o instanceof Arc;
         if (result) {
             Arc a = (Arc) o;
@@ -103,11 +121,18 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
         return result;
     }
 
+    @Override
     public int hashCode() {
-        return (int) arcAngle + (int) x + (int) y
-                + (int) height + (int) startAngle + (int) width;
+        long bits = 2_701 * ((doubleToLongBits(x) * 83)
+                + (doubleToLongBits(y) * 431)
+                + (doubleToLongBits(width) * 5)
+                + (doubleToLongBits(height) * 971)
+                + (doubleToLongBits(startAngle) * 5_843)
+                + (doubleToLongBits(arcAngle) * 7_451));
+        return (((int) bits) ^ ((int) (bits >> 32)));
     }
 
+    @Override
     public void paint(Graphics2D g) {
         if (fill) {
             fill(g);
@@ -116,6 +141,7 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
         }
     }
 
+    @Override
     public void getControlPoints(double[] xy) {
         xy[0] = this.x;
         xy[1] = this.y;
@@ -123,36 +149,44 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
         xy[3] = xy[1] + this.height;
     }
 
+    @Override
     public int getControlPointCount() {
         return 2;
     }
 
+    @Override
     public void draw(Graphics2D g) {
         g.draw(toShape());
     }
 
+    @Override
     public void fill(Graphics2D g) {
         g.fill(toShape());
     }
 
+    @Override
     public Arc copy() {
         return new Arc(x, y, width, height, startAngle, arcAngle, fill);
     }
 
+    @Override
     public Pt getLocation() {
         return new Pt(x, y);
     }
 
+    @Override
     public void setLocation(double x, double y) {
         this.x = x;
         this.y = y;
     }
 
+    @Override
     public void clearLocation() {
         x = 0;
         y = 0;
     }
 
+    @Override
     public Arc copy(AffineTransform transform) {
         double[] pts = new double[]{
             x, y, x + width, y + height};
@@ -161,10 +195,12 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
                 startAngle, arcAngle, fill);
     }
 
+    @Override
     public int[] getVirtualControlPointIndices() {
         return EMPTY_INT;
     }
 
+    @Override
     public void getBounds(Rectangle2D.Double dest) {
         dest.x = x;
         dest.y = y;
@@ -172,6 +208,14 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
         dest.height = height;
     }
 
+    @Override
+    public ControlPointKind[] getControlPointKinds() {
+        ControlPointKind[] kinds = new ControlPointKind[2];
+        Arrays.fill(kinds, ControlPointKind.PHYSICAL_POINT);
+        return kinds;
+    }
+
+    @Override
     public void setControlPointLocation(int pointIndex, Pt location) {
         switch (pointIndex) {
             case 0:

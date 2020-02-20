@@ -21,9 +21,9 @@ import net.dev.java.imagine.api.selection.Selection;
 import net.dev.java.imagine.api.tool.Tool;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.spi.image.LayerImplementation;
-import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 

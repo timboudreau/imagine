@@ -54,6 +54,7 @@ public interface Vector extends Primitive, Transformable, Shaped {
      * Create a duplicate of this object whose coordinates have been transformed
      * by the passed AffineTransform.
      */
+    @Override
     Vector copy(AffineTransform transform);
 
     default PathIteratorWrapper toPaths() {
@@ -68,7 +69,9 @@ public interface Vector extends Primitive, Transformable, Shaped {
     @Override
     public Vector copy();
 
+    @Override
     void getBounds(Rectangle2D.Double dest);
 
+    @Override
     Rectangle getBounds();
 }

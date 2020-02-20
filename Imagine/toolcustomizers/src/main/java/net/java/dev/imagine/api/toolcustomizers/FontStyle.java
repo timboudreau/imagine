@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package net.java.dev.imagine.api.toolcustomizers;
 
 import java.awt.Font;
@@ -14,12 +9,12 @@ import org.openide.util.NbBundle;
  */
 public enum FontStyle {
     PLAIN, BOLD, ITALIC, BOLD_ITALIC;
-    
+
     public int toFontConstant() {
         switch (this) {
             case PLAIN :
                 return Font.PLAIN;
-            case BOLD : 
+            case BOLD :
                 return Font.BOLD;
             case ITALIC :
                 return Font.ITALIC;
@@ -29,7 +24,7 @@ public enum FontStyle {
                 throw new AssertionError (toString());
         }
     }
-    
+
     public FontStyle fromFontConstant(int val) {
         switch (val) {
             case Font.BOLD : return BOLD;
@@ -39,7 +34,7 @@ public enum FontStyle {
                 return PLAIN;
         }
     }
-    
+
     @Override
     public String toString() {
         return NbBundle.getMessage (FontStyle.class, name());

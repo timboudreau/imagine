@@ -11,7 +11,7 @@ import org.openide.util.lookup.ServiceProvider;
  *
  * @author Tim Boudreau
  */
-@ServiceProvider(service=PreviewFactory.class)
+@ServiceProvider(service=PreviewFactory.class, position = 100)
 public class BufferedImageOpPreviewFactory extends PreviewFactory<ImageSource> {
 
     public BufferedImageOpPreviewFactory() {

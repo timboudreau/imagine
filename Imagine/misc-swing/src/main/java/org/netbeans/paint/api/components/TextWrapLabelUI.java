@@ -18,6 +18,25 @@ import javax.swing.plaf.LabelUI;
  * @author Tim Boudreau
  */
 public class TextWrapLabelUI extends LabelUI {
+    
+    private static TextWrapLabelUI INSTANCE;
+    
+    private TextWrapLabelUI instance() {
+        if (INSTANCE == null) {
+            INSTANCE = new TextWrapLabelUI();
+        }
+        return INSTANCE;
+    }
+
+    public static JLabel createLabel() {
+        JLabel result = new JLabel();
+        attach(result);
+        return result;
+    }
+
+    public static void attach(JLabel label) {
+        label.setUI(INSTANCE);
+    }
 
     @Override
     public Dimension getMinimumSize(JComponent c) {

@@ -1,5 +1,6 @@
 package net.java.dev.imagine.spi.image;
 
+import org.imagine.utils.painting.RepaintHandle;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -29,7 +30,7 @@ public abstract class PictureImplementation implements Hibernator {
     public static final int POSITION_TOP = Picture.POSITION_TOP;
     protected final Picture picture;
     private final RepaintHandleProxySupport proxy =
-            new RepaintHandleProxySupport(toString());
+            new RepaintHandleProxySupport(this);
 
     static {
         LayerImplementation.init();

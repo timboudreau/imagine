@@ -7,7 +7,6 @@ import java.awt.Insets;
 import java.awt.LayoutManager;
 import java.util.LinkedList;
 import java.util.Objects;
-import javax.swing.SwingUtilities;
 
 /**
  * A layout manager which gets data a shared ancestor about grid column
@@ -18,6 +17,8 @@ import javax.swing.SwingUtilities;
  */
 public final class LDPLayout implements LayoutManager {
 
+    private static final int MIN_ROW_HEIGHT = 24;
+    private static final int DEFAULT_GAP = 5;
     private final int gap;
     private final LinkedList<Reentry> reentry = new LinkedList<>();
 
@@ -26,9 +27,8 @@ public final class LDPLayout implements LayoutManager {
     }
 
     public LDPLayout() {
-        this(5);
+        this(DEFAULT_GAP);
     }
-
 
     public int getColumnPosition(Container parent, int index) {
         Reentry r = new Reentry(parent, index);
@@ -90,24 +90,26 @@ public final class LDPLayout implements LayoutManager {
             if (this.index != other.index) {
                 return false;
             }
-            if (!Objects.equals(this.parent, other.parent)) {
-                return false;
-            }
-            return true;
+            return Objects.equals(this.parent, other.parent);
         }
-
     }
 
+    @Override
     public void addLayoutComponent(String name, Component comp) {
+        // do nothing
     }
 
+    @Override
     public void removeLayoutComponent(Component comp) {
+        // do nothing
     }
 
+    @Override
     public Dimension preferredLayoutSize(Container parent) {
         return layoutSize(parent, false);
     }
 
+    @Override
     public Dimension minimumLayoutSize(Container parent) {
         return layoutSize(parent, true);
     }
@@ -117,49 +119,71 @@ public final class LDPLayout implements LayoutManager {
         Component[] comps = parent.getComponents();
         int x = ins.left + ins.right;
         int y = ins.top + ins.bottom;
-        SharedLayoutData data = (SharedLayoutData) SwingUtilities.getAncestorOfClass(SharedLayoutData.class, parent);
+        SharedLayoutData data = SharedLayoutData.find(parent);
+        int h = MIN_ROW_HEIGHT;
         if (data == null) {
             for (Component c : comps) {
                 Dimension d = isMin ? c.getMinimumSize() : c.getPreferredSize();
                 x += d.width + gap;
-                y = Math.max(y, d.height);
+                h = Math.max(h, d.height);
             }
         } else {
             for (int i = 0; i < comps.length; i++) {
                 int colpos = data.xPosForColumn(i);
                 Dimension d = comps[i].getPreferredSize();
                 x = colpos + d.width + gap;
+                h = Math.max(h, d.height);
             }
         }
-        y = Math.max(30, y);
-        return new Dimension(x, y);
+        return new Dimension(x, y + h);
     }
 
+    @Override
     public void layoutContainer(Container parent) {
         Insets ins = parent.getInsets();
         Component[] comps = parent.getComponents();
         int x = ins.left;
         int y = ins.top;
-        SharedLayoutData data = (SharedLayoutData) SwingUtilities.getAncestorOfClass(SharedLayoutData.class, parent);
-        int h = 0;
+        SharedLayoutData data = SharedLayoutData.find(parent);
+        int h = MIN_ROW_HEIGHT;
+        int maxBaseline = 0;
         for (Component c : comps) {
             Dimension d = c.getPreferredSize();
+            int baseline = c.getBaseline(d.width, d.height);
+            maxBaseline = Math.max(maxBaseline, baseline);
             h = Math.max(h, d.height);
         }
-        h = Math.max(30, h);
         if (data == null) {
             for (int i = 0; i < comps.length; i++) {
                 Component c = comps[i];
                 Dimension d = c.getPreferredSize();
-                c.setBounds(x, y, d.width, h);
+                int baseline = c.getBaseline(d.width, d.height);
+                if (baseline < 0) {
+                    c.setBounds(x, y, d.width, h);
+                } else {
+                    int localY = y;
+                    if (baseline != maxBaseline) {
+                        localY += maxBaseline - baseline;
+                    }
+                    c.setBounds(x, localY, d.width, d.height);
+                }
                 x += d.width + gap;
             }
         } else {
             for (int i = 0; i < comps.length; i++) {
+                Component c = comps[i];
                 int colpos = data.xPosForColumn(i);
                 Dimension d = comps[i].getPreferredSize();
-                Component c = comps[i];
-                c.setBounds(colpos, y, d.width, h);
+                int baseline = c.getBaseline(d.width, d.height);
+                if (baseline < 0) {
+                    c.setBounds(colpos, y, d.width, h);
+                } else {
+                    int localY = y;
+                    if (baseline != maxBaseline) {
+                        localY += maxBaseline - baseline;
+                    }
+                    c.setBounds(colpos, localY, d.width, d.height);
+                }
             }
         }
     }

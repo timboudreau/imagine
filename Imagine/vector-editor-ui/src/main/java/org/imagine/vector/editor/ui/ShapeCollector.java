@@ -22,6 +22,7 @@ import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.elements.Clear;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
 import net.java.dev.imagine.api.vector.elements.StringWrapper;
+import net.java.dev.imagine.api.vector.elements.Text;
 import net.java.dev.imagine.api.vector.graphics.AffineTransformWrapper;
 import net.java.dev.imagine.api.vector.graphics.Background;
 import net.java.dev.imagine.api.vector.graphics.BasicStrokeWrapper;
@@ -29,10 +30,12 @@ import net.java.dev.imagine.api.vector.graphics.ColorWrapper;
 import net.java.dev.imagine.api.vector.graphics.FontWrapper;
 import net.java.dev.imagine.api.vector.graphics.PaintWrapper;
 import net.java.dev.imagine.api.vector.painting.VectorRepaintHandle;
-import org.netbeans.paint.api.util.GraphicsUtils;
-import org.netbeans.paint.api.util.Holder;
+import org.imagine.utils.java2d.GraphicsUtils;
+import org.imagine.utils.Holder;
 
 /**
+ * Collects all operations performed on the fake Graphics2D and coalesces
+ * combinations of setting the paint/color, transform, background, etc.
  *
  * @author Tim Boudreau
  */
@@ -41,17 +44,18 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
     private final Holder<Background> clear = Holder.of(new Background(Color.BLACK));
     private final Holder<PaintWrapper> bg = Holder.create();
     private final Holder<PaintWrapper> fg = Holder.create();
-    private final Holder<FontWrapper> font = Holder.of(new FontWrapper(new Font("SansSerif", Font.PLAIN, 12)));
+    private final Holder<FontWrapper> font = Holder.of(FontWrapper.create(new Font("SansSerif", Font.PLAIN, 12)));
     private final Holder<BasicStrokeWrapper> stroke = Holder.create();
     private final Holder<AffineTransformWrapper> xform = Holder.create();
 
     private PaintWrapper lastPaint;
+    private final List<Entry> entries = new ArrayList<>();
+    private Rectangle bounds = new Rectangle();
     private Primitive lastTarget;
 
     @Override
     public void accept(Primitive t) {
         t.as(Attribute.class, attr -> {
-            System.out.println("  attr " + attr);
             t.as(Background.class, bg -> {
                 clear.set(bg);
             }).as(ColorWrapper.class, cw -> {
@@ -64,6 +68,8 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
                 xform.set(atw);
             }).as(FontWrapper.class, fnt -> {
                 font.set(fnt);
+            }).as(Text.class, txt -> {
+                font.set(txt.font());
             });
         });
         t.as(Fillable.class, fill -> {
@@ -78,23 +84,32 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
                 }
             }
             if (f) {
-                outputFill(t);
+                emitFill(t);
             } else {
-                outputDraw(t);
+                emitDraw(t);
             }
         }, () -> {
-            t.as(Vector.class, v -> {
+            t.as(Text.class, tx -> {
                 if (lastPaint != null) {
-                    fg.set(lastPaint);
+                    bg.set(lastPaint);
                     lastPaint = null;
                 }
-                outputDraw(t);
+                font.set(tx.font());
+                emitFill(tx);
             }, () -> {
-                t.as(StringWrapper.class, sw -> {
-                    outputString(sw);
+                t.as(Vector.class, v -> {
+                    if (lastPaint != null) {
+                        fg.set(lastPaint);
+                        lastPaint = null;
+                    }
+                    emitDraw(t);
                 }, () -> {
-                    t.as(Volume.class, vol -> {
-                        outputFill(vol);
+                    t.as(StringWrapper.class, sw -> {
+                        emitString(sw);
+                    }, () -> {
+                        t.as(Volume.class, vol -> {
+                            emitFill(vol);
+                        });
                     });
                 });
             });
@@ -102,9 +117,7 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
     }
 
     void replay(Shapes shapes) {
-        System.out.println("\n\n----------------------");
         entries.forEach((e) -> e.addTo(shapes));
-        System.out.println("\n-------------------------");
     }
 
     boolean isEmpty() {
@@ -115,7 +128,6 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
         return bounds;
     }
 
-    private Rectangle bounds = new Rectangle();
     @Override
     public void repaintArea(int x, int y, int w, int h) {
         bounds.add(new Rectangle(x, y, w, h));
@@ -159,6 +171,7 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
             this.fill = fill;
         }
 
+        @Override
         public String toString() {
             StringBuilder sb = new StringBuilder(target.getClass().getSimpleName())
                     .append('(');
@@ -189,7 +202,6 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
         }
 
         void addTo(Shapes s) {
-            System.out.println(" * " + this);
             if (target instanceof Clear) {
                 s.add(target, clear.isSet() ? clear.get().toPaint() : null,
                         null, null, false, true);
@@ -215,9 +227,7 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
         last.draw = true;
     }
 
-    private List<Entry> entries = new ArrayList<>();
-
-    void outputFill(Primitive target) {
+    void emitFill(Primitive target) {
         if (target.equals(lastTarget)) {
             addFillToLastTarget();
         } else {
@@ -228,7 +238,7 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
         }
     }
 
-    void outputDraw(Primitive target) {
+    void emitDraw(Primitive target) {
         if (target.equals(lastTarget)) {
             addDrawToLastTarget();
         } else {
@@ -239,15 +249,15 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
         }
     }
 
-    void outputString(StringWrapper sw) {
+    void emitString(StringWrapper sw) {
         Font f = font.get().get();
         GraphicsUtils.newBufferedImage(1, 1, g -> {
             FontRenderContext frc = g.getFontRenderContext();
             GlyphVector gv = f.createGlyphVector(frc, sw.getText());
             PathIteratorWrapper iw = new PathIteratorWrapper(gv, (float) sw.x,
                     (float) sw.y);
-            outputFill(iw);
-        });
+            emitFill(iw);
+        }).flush();
     }
 
 }

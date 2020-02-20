@@ -10,7 +10,7 @@ import java.awt.Graphics2D;
 import java.awt.TexturePaint;
 import java.awt.image.BufferedImage;
 import net.java.dev.imagine.api.vector.graphics.TexturePaintWrapper;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.misc.image.ByteNIOBufferedImage;
 
 /**

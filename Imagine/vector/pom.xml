@@ -17,13 +17,21 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>paintapi</artifactId>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-util</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.mastfrog</groupId>
-            <artifactId>util-collections</artifactId>
-            <version>2.6.8</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>geometry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>mastfrog-utils</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
     <build>
@@ -34,7 +42,6 @@
                 <configuration>
                     <publicPackages>
                         <publicPackage>net.java.dev.imagine.api.vector.*</publicPackage>
-                        <publicPackage>org.netbeans.api.annotations.common</publicPackage>
                     </publicPackages>
                 </configuration>
             </plugin>

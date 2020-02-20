@@ -14,6 +14,7 @@ import net.dev.java.imagine.api.tool.aspects.LookupContentsContributor;
 import org.openide.util.Lookup;
 import org.openide.util.Lookup.Provider;
 import org.openide.util.lookup.Lookups;
+import org.openide.util.lookup.ProxyLookup;
 
 /**
  * Provides the functionality of a Tool.  A single logical Tool (one name,
@@ -58,6 +59,10 @@ public abstract class ToolImplementation<T> implements Attachable, LookupContent
         //do nothing
     }
 
+    protected Lookup additionalLookup() {
+        return Lookup.EMPTY;
+    }
+
     /**
      * Get this Tool's lookup, which contains any listeners or other
      * relevant objects which can interoperate with the selected layer.
@@ -82,6 +87,10 @@ public abstract class ToolImplementation<T> implements Attachable, LookupContent
                         s.add(new MouseWheelListenerProxy(this));
                     }
                     lkp = Lookups.fixed(s.toArray(new Object[s.size()]));
+                    Lookup addtl = additionalLookup();
+                    if (addtl != Lookup.EMPTY) {
+                        lkp = new ProxyLookup(lkp, addtl);
+                    }
                 }
             }
         }

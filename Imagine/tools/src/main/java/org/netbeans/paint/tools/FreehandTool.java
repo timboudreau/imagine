@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.netbeans.paint.tools;
 
 import java.awt.BasicStroke;
@@ -22,24 +17,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Surface;
-import org.netbeans.paint.geom.Circle;
+import org.imagine.geometry.Circle;
 import org.netbeans.paint.tools.FreehandTool.ShapeState.Hit;
 import static org.netbeans.paint.tools.MultiStateTool.zoomFactor;
-import org.netbeans.paint.tools.fills.PaintingStyle;
+import org.imagine.editor.api.PaintingStyle;
 
 /**
  *
  * @author Tim Boudreau
  */
-@ToolDef(name = "Freehand", iconPath = "org/netbeans/paint/tools/resources/move.png")
+@ToolDef(name = "Freehand", iconPath = "org/netbeans/paint/tools/resources/freehand.png")
 @Tool(Surface.class)
 public class FreehandTool extends MultiStateTool {
 
-    private Repainter repainter;
     private ShapeState currentState;
     private static final double pointRadius = 7;
 

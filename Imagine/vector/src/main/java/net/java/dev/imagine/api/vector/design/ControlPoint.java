@@ -6,107 +6,49 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.vector.design;
 
-import java.awt.Toolkit;
-import java.awt.geom.Rectangle2D;
+import java.awt.geom.Point2D;
+import java.util.Set;
 import net.java.dev.imagine.api.vector.Adjustable;
-import net.java.dev.imagine.api.vector.Mutable;
-import net.java.dev.imagine.api.vector.util.Pt;
-import net.java.dev.imagine.api.vector.util.Size;
 
 /**
  *
  * @author Tim Boudreau
  */
-public final class ControlPoint <T extends Adjustable> {
-    private final T primitive;
-    private final ControlPoint.Controller controller;
-    private int index;
-    private boolean virtual;
-    private final double[] vals;
-    public ControlPoint(T primitive, Controller controller, int index, boolean virtual) {
-        this.primitive = primitive;
-        this.index = index;
-        this.controller = controller;
-        this.virtual = virtual;
-        vals = new double[primitive.getControlPointCount() * 2];
+public interface ControlPoint extends Comparable<ControlPoint> {
+
+    ControlPointKind kind();
+
+    int index();
+
+    Adjustable getPrimitive();
+
+    Point2D.Double location();
+
+    boolean isValid();
+
+    boolean move(double dx, double dy);
+
+    double getX();
+
+    double getY();
+
+    boolean set(double dx, double dy);
+
+    boolean delete();
+
+    boolean canDelete();
+
+    boolean isVirtual();
+
+    boolean hit(double hx, double hy);
+
+    @Override
+    public default int compareTo(ControlPoint o) {
+        return o == this ? 0 : Integer.compare(index(), o.index());
     }
 
-    public T getPrimitive() {
-        return primitive;
-    }
-    
-    private void upd() {
-        primitive.getControlPoints(vals);
-    }
+    Set<ControlPointKind> availableControlPointKinds();
 
-    public double getX() {
-        upd();
-        int offset = index * 2;
-        return vals [offset];
-    }
-
-    public double getY() {
-        upd();
-        int offset = (index * 2) + 1;
-        return vals [offset];
-    }
-
-    public void move (double dx, double dy) {
-        if (dx != 0 && dy != 0) {
-            upd();
-            double x = vals [index * 2];
-            double y = vals [(index * 2) + 1];
-            x += dx;
-            y += dy;
-            primitive.setControlPointLocation(index, new Pt (x, y));
-            change();
-        }
-    }
-
-    public void set (double dx, double dy) {
-        primitive.setControlPointLocation(index, new Pt (dx, dy));
-        change();
-    }
-
-    public void delete() {
-        if (!isVirtual() && primitive instanceof Mutable) {
-            if (!((Mutable) primitive).delete (index)) {
-                Toolkit.getDefaultToolkit().beep();
-            }
-        }
-    }
-
-    private void change() {
-        controller.changed(this);
-    }
-
-    public boolean canDelete() {
-        return !isVirtual() && primitive instanceof Mutable;
-    }
-
-    public boolean isVirtual() {
-        return virtual;
-    }
-
-    public boolean hit (double hx, double hy) {
-        Size s = controller.getControlPointSize();
-        upd();
-        double x = vals [index * 2];
-        double y = vals [(index * 2) + 1];
-        double halfx = s.w / 2;
-        double halfy = s.h / 2;
-        return new Rectangle2D.Double (x - halfx, y - halfy, s.w, s.h).contains (hx, hy);
-    }
-
-    public interface Controller {
-        public void changed (ControlPoint pt);
-        public Size getControlPointSize();
-    }
-
-    public static abstract class State {
-        public abstract void restore(Adjustable target);
-    }
 }

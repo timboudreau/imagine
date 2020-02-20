@@ -56,6 +56,10 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>toolsapi</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>utils</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

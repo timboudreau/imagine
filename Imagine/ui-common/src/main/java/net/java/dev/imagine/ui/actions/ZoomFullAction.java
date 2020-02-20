@@ -10,7 +10,7 @@
 package net.java.dev.imagine.ui.actions;
 import javax.swing.ImageIcon;
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
-import org.netbeans.paint.api.editor.Zoom;
+import org.imagine.editor.api.Zoom;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;

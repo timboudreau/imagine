@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.JToggleButton;
@@ -19,6 +20,7 @@ import net.dev.java.imagine.api.tool.Tool;
 import net.dev.java.imagine.spi.tool.Tools;
 import org.openide.filesystems.FileObject;
 import org.openide.util.ContextAwareAction;
+import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
@@ -34,7 +36,7 @@ public final class ToolAction implements Action, ContextAwareAction, Presenter.M
 
     private final String name;
     private final PropertyChangeSupport supp = new PropertyChangeSupport(this);
-    private final Map<String, Object> pairs = new HashMap<String, Object>();
+    private Map<String, Object> pairs;
     private final Lookup lkp;
     public static final String TOOL_NAME_ATTRIBUTE = "toolName";
 
@@ -46,7 +48,7 @@ public final class ToolAction implements Action, ContextAwareAction, Presenter.M
     public ToolAction(String name) {
         this(name, Utilities.actionsGlobalContext());
     }
-    
+
     private final LookupListener ll = new LookupListener() {
         @Override
         public void resultChanged(LookupEvent le) {
@@ -141,8 +143,25 @@ public final class ToolAction implements Action, ContextAwareAction, Presenter.M
     @Override
     public Action createContextAwareInstance(Lookup lkp) {
         ToolAction result = new ToolAction(name, lkp);
-        result.pairs.putAll(pairs);
+        if (pairs != null && !pairs.isEmpty()) {
+            result.pairs.putAll(pairs);
+        }
         return result;
+    }
+
+    private Icon icon;
+    private Icon disabledIcon;
+
+    private Icon disabledIcon() {
+        Icon icon = icon();
+        if (disabledIcon == null && icon.getIconHeight() > 0 && icon.getIconWidth() > 0) {
+            disabledIcon = ImageUtilities.createDisabledIcon(icon);
+        }
+        return disabledIcon;
+    }
+
+    private Icon icon() {
+        return icon == null ? icon = tool().getIcon() : icon;
     }
 
     @Override
@@ -152,9 +171,9 @@ public final class ToolAction implements Action, ContextAwareAction, Presenter.M
             if (Action.NAME.equals(key)) {
                 return tool.getDisplayName();
             } else if (Action.LARGE_ICON_KEY.equals(key)) {
-                return tool.getIcon();
+                return icon();
             } else if (Action.SMALL_ICON.equals(key)) {
-                return tool.getIcon();
+                return icon();
             } else if (Action.SHORT_DESCRIPTION.equals(key)) {
                 return tool.getDisplayName();
             } else if (Action.ACTION_COMMAND_KEY.equals(key)) {
@@ -163,12 +182,15 @@ public final class ToolAction implements Action, ContextAwareAction, Presenter.M
                 return SelectedTool.getDefault().isToolSelected(name);
             }
         }
-        return pairs.get(key);
+        return pairs == null ? null : pairs.get(key);
     }
 
     @Override
     public void putValue(String key, Object value) {
         Object old = getValue(key);
+        if (pairs == null) {
+            pairs = new HashMap<>(3);
+        }
         pairs.put(key, value);
         supp.firePropertyChange(key, old, value);
     }
@@ -198,6 +220,10 @@ public final class ToolAction implements Action, ContextAwareAction, Presenter.M
             if (lastEnabled != result) {
                 lastEnabled = result;
                 supp.firePropertyChange("enabled", lastEnabled, result);
+                Icon ic = icon();
+                Icon dis = disabledIcon();
+//                supp.firePropertyChange(SMALL_ICON, lastEnabled ? ic : dis, result ? ic : dis);
+//                supp.firePropertyChange(LARGE_ICON_KEY, lastEnabled ? ic : dis, result ? ic : dis);
             }
             return lastEnabled = result;
         } finally {
@@ -220,6 +246,7 @@ public final class ToolAction implements Action, ContextAwareAction, Presenter.M
         JToggleButton result = new JToggleButton(this);
         result.setText("");
         result.setBorderPainted(false);
+        result.setDisabledIcon(disabledIcon());
 //        result.setContentAreaFilled(false);
         return result;
     }

@@ -14,12 +14,15 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
+import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
+import org.imagine.geometry.Circle;
 
 /**
  *
@@ -27,7 +30,7 @@ import net.java.dev.imagine.api.vector.util.Pt;
  */
 public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
 
-    public long serialVersionUID = 232354194L;
+    public long serialVersionUID = 232_354_194L;
     public double x, y, width, height;
     public boolean fill;
 
@@ -39,17 +42,60 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
         this.fill = fill;
     }
 
+    public double x() {
+        return x;
+    }
+
+    public double y() {
+        return y;
+    }
+
+    public double width() {
+        return width;
+    }
+
+    public double height() {
+        return height;
+    }
+
+    public void setX(double x) {
+        this.x = x;
+    }
+
+    public void setY(double y) {
+        this.y = y;
+    }
+
+    public void setWidth(double w) {
+        this.width = w;
+    }
+
+    public void setHeight(double h) {
+        this.height = h;
+    }
+
+    @Override
+    public void translate(double x, double y) {
+        this.x += x;
+        this.y += y;
+    }
+
+    @Override
     public String toString() {
         return "Oval " + x + ", " + y + ", " + width
                 + ", " + height + " fill: " + fill;
     }
 
+    @Override
     public Shape toShape() {
+        if (width == height) {
+            return new Circle(x + (width / 2D), y + (height / 2D), width / 2D);
+        }
         return new Ellipse2D.Double(x, y, width, height);
     }
 
     @Override
-    public void applyScale(AffineTransform xform) {
+    public void applyTransform(AffineTransform xform) {
         Point2D.Double a = new Point2D.Double(x, y);
         Point2D.Double b = new Point2D.Double(x + width, y + height);
         xform.transform(a, a);
@@ -60,6 +106,7 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
         height = b.y - a.y;
     }
 
+    @Override
     public void paint(Graphics2D g) {
         if (fill) {
             fill(g);
@@ -68,6 +115,7 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
         }
     }
 
+    @Override
     public void getBounds(Rectangle2D.Double r) {
         double wid = width;
         double hi = height;
@@ -89,52 +137,49 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
         r.setRect(xx, yy, ww, hh);
     }
 
+    @Override
     public boolean isFill() {
         return fill;
     }
 
+    @Override
     public int getControlPointCount() {
         return 4;
     }
 
+    @Override
     public void draw(Graphics2D g) {
         g.draw(toShape());
     }
 
+    @Override
     public void fill(Graphics2D g) {
         g.fill(toShape());
     }
 
+    @Override
     public Oval copy() {
         return new Oval(x, y, width, height, fill);
     }
 
-//    public void getControlPoints(double[] xp) {
-//        double halfh = height / 2;
-//        double halfw = width / 2;
-//        xp[0] = x + halfw;
-//        xp[1] = y;
-//        xp[2] = x + width;
-//        xp[3] = y + halfh;
-//        xp[4] = x + halfw;
-//        xp[5] = y + height;
-//        xp[6] = x;
-//        xp[7] = y + halfh;
-//    }
+    @Override
     public Pt getLocation() {
         return new Pt(x, y);
     }
 
+    @Override
     public void setLocation(double x, double y) {
         this.x = x;
         this.y = y;
     }
 
+    @Override
     public void clearLocation() {
         x = 0D;
         y = 0D;
     }
 
+    @Override
     public Vector copy(AffineTransform xform) {
         double[] pts = new double[]{
             x, y, x + width, y + height,};
@@ -143,12 +188,18 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
                 pts[2] - pts[0], pts[3] - pts[1], fill);
     }
 
+    @Override
     public int[] getVirtualControlPointIndices() {
         return EMPTY_INT;
     }
 
     @Override
     public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (o == null) {
+            return false;
+        }
         boolean result = o instanceof Oval;
         if (result) {
             Oval v = (Oval) o;
@@ -157,10 +208,17 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
         return result;
     }
 
+    @Override
     public int hashCode() {
-        return (int) ((width * height) + x + (y * width));
+        long bits = java.lang.Double.doubleToLongBits(x)
+                * 13;
+        bits += java.lang.Double.doubleToLongBits(y) * 431;
+        bits += java.lang.Double.doubleToLongBits(width) * 5;
+        bits += java.lang.Double.doubleToLongBits(height) * 971;
+        return (((int) bits) ^ ((int) (bits >> 32)));
     }
 
+    @Override
     public void getControlPoints(double[] xy) {
         assert xy.length >= 8 : "Array too small";
         xy[0] = x;
@@ -176,6 +234,14 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
         xy[7] = y;
     }
 
+    @Override
+    public ControlPointKind[] getControlPointKinds() {
+        ControlPointKind[] kinds = new ControlPointKind[4];
+        Arrays.fill(kinds, ControlPointKind.PHYSICAL_POINT);
+        return kinds;
+    }
+
+    @Override
     public void setControlPointLocation(int pointIndex, Pt pt) {
         switch (pointIndex) {
             case 0:
@@ -206,7 +272,6 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
 
     private void renormalize() {
         if (width < 0) {
-            double ww = width;
             x += width;
             width *= -1;
         }
@@ -222,33 +287,4 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
         getBounds(bds);
         return bds.getBounds();
     }
-
-
-//    public void setControlPointLocation(int pointIndex, Pt pt) {
-//        switch (pointIndex) {
-//            case 0 :
-//                y = pt.y;
-//                break;
-//            case 1 :
-//                x = pt.x;
-//                break;
-//            case 3 :
-//                double oldy = y;
-//                height = pt.y - y;
-//                if (height < 0) {
-//                    y = -height;
-//                    height = oldy - y;
-//                }
-//                break;
-//            case 2 :
-//                double oldx = x;
-//                width = pt.x - x;
-//                if (width < 0) {
-//                    x = -width;
-//                    width = oldx - x;
-//                }
-//                break;
-//                
-//        }
-//    }
 }

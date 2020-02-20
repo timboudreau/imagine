@@ -8,19 +8,18 @@
  */
 package net.java.dev.imagine.toolcustomizers;
 
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import net.java.dev.imagine.api.toolcustomizers.AbstractCustomizer;
+import org.netbeans.paint.api.components.FontCellRenderer;
 import org.netbeans.paint.api.components.FontComboBoxModel;
 import org.netbeans.paint.api.components.Fonts;
 import org.openide.util.NbBundle;
@@ -71,6 +70,7 @@ public final class FontCustomizer extends AbstractCustomizer<Font> implements Ac
     }
 
     private boolean initialized;
+
     /**
      * Creates a new instance of FontCustomizer
      */
@@ -105,14 +105,14 @@ public final class FontCustomizer extends AbstractCustomizer<Font> implements Ac
         JLabel fontLabel = new JLabel(NbBundle.getMessage(FontCustomizer.class,
                 "FONT_FACE")); //NOI18N
         if (fontSelectBox == null) {
-            fontSelectBox = new JComboBox();
+            fontSelectBox = new JComboBox<Font>();
             fontSelectBox.addActionListener(this);
             Font[] f = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
-            DefaultComboBoxModel fontsModel = new FontComboBoxModel();
+            ComboBoxModel<Font> fontsModel = new FontComboBoxModel();
             fontSelectBox.setModel(fontsModel);
             Font val = loadValue();
             fontSelectBox.setSelectedItem(val == null ? f[0] : val);
-            fontSelectBox.setRenderer(new FontRenderer());
+            fontSelectBox.setRenderer(FontCellRenderer.instance());
             fontSelectBox.setMinimumSize(new Dimension(100, 20));
         }
         if (styleLabel == null) {
@@ -142,42 +142,6 @@ public final class FontCustomizer extends AbstractCustomizer<Font> implements Ac
     public void actionPerformed(ActionEvent e) {
         if (initialized) {
             change();
-        }
-    }
-
-    private static final class FontRenderer extends DefaultListCellRenderer {
-
-        public void propertyChange(String s, Object a, Object b) {
-            //performance - do nothing
-        }
-
-        @Override
-        public void repaint(int x, int y, int w, int h) {
-        }
-
-        @Override
-        public void validate() {
-        }
-
-        @Override
-        public void invalidate() {
-        }
-
-        @Override
-        public void revalidate() {
-        }
-
-        @Override
-        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-            Component retValue = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            if (value != null) {
-                Font f = (Font) value;
-                retValue.setFont(f);
-                setText(f.getName());
-            } else {
-                setText("");
-            }
-            return retValue;
         }
     }
 

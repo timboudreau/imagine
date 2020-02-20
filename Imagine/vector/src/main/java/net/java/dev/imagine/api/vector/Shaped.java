@@ -18,5 +18,6 @@ public interface Shaped extends Copyable {
 
     Rectangle getBounds();
 
+    @Override
     Shaped copy();
 }

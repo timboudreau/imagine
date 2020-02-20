@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mode version="2.3">
-    <name unique="layersMode" />
+<mode version="2.4">
+    <name unique="layersMode"  />
   <kind type="view" />
-  <state type="joined" />
+  <state type="joined"  />
   <constraints>
     <path orientation="horizontal" number="60" weight="0.7"/>
     <path orientation="vertical" number="40" weight="0.7"/>
-    <path orientation="horizontal" number="80" weight="0.35661462612982747"/>
-    <path orientation="vertical" number="80" weight="0.25"/>
+    <path orientation="horizontal" number="80" weight="0.457560175870035"/>
+    <path orientation="vertical" number="82" weight="0.23634204275534443"/>
   </constraints>
   <bounds x="0" y="0" width="0" height="0" />
   <frame state="0"/>

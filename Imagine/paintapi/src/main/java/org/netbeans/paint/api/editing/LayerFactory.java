@@ -11,7 +11,7 @@ package org.netbeans.paint.api.editing;
 import java.awt.Dimension;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.spi.image.LayerImplementation;
-import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.imagine.utils.painting.RepaintHandle;
 import org.netbeans.paint.api.util.RasterConverter;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;

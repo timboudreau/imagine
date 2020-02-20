@@ -26,10 +26,10 @@ import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.effects.api.EffectReceiver;
 import net.java.dev.imagine.effects.spi.ImageSource;
 import net.java.dev.imagine.spi.image.LayerImplementation;
-import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.support.AbstractLayerImplementation;
 import org.netbeans.paint.api.editing.LayerFactory;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 

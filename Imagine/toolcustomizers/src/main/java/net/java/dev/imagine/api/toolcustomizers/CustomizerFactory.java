@@ -23,5 +23,5 @@ import net.dev.java.imagine.api.tool.aspects.Customizer;
  */
 public interface CustomizerFactory {
     public <T> Customizer<T> getCustomizer (Class<T> type, String name, Object... args);
-    public boolean supportsType (Class type);
+    public boolean supportsType (Class<?> type);
 }

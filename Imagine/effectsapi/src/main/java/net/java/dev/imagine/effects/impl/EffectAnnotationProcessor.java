@@ -137,14 +137,13 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
             LayerBuilder.File effectsDir = b.folder(net.java.dev.imagine.effects.api.Effect.EFFECT_FOLDER);
             effectsDir.bundlevalue("displayName", "net.java.dev.imagine.effects.api.Bundle", "effects");
             b = effectsDir.write();
-            System.err.println("OUT TYPE IS " + outType);
             LayerBuilder.File effectFile = b.file(net.java.dev.imagine.effects.api.Effect.EFFECT_FOLDER + '/' + name + ".instance");
             effectFile.bundlevalue("displayName", bundleName, name);
             effectFile.boolvalue(EffectDriver.CAN_PREVIEW_ATTRIBUTE, effect.canPreview());
             effectFile.stringvalue(EffectDriver.STUB_CLASS_ATTRIBUTE, type.asType().toString());
             effectFile.stringvalue(EffectDriver.OUTPUT_CLASS_ATTRIBUTE, outType.toString());
             effectFile.stringvalue(EffectDriver.PARAM_CLASS_ATTRIBUTE, paramType.toString());
-            effectFile.stringvalue("instanceClass", net.java.dev.imagine.effects.api.Effect.class.toString());
+            effectFile.stringvalue("instanceClass", net.java.dev.imagine.effects.api.Effect.class.getName());
             effectFile.methodvalue("instanceCreate", EffectDriver.class.getName(), "fromFileObject");
             if (effect.position() != -1) {
                 effectFile.intvalue("position", effect.position());

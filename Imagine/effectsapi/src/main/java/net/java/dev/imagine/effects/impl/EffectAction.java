@@ -62,9 +62,11 @@ public class EffectAction implements Action, ContextAwareAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        Action a = createContextAwareInstance(Utilities.actionsGlobalContext());
-        if (a.isEnabled()) {
-            a.actionPerformed(e);
+        if (isEnabled()) {
+            Action a = createContextAwareInstance(Utilities.actionsGlobalContext());
+            if (a.isEnabled()) {
+                a.actionPerformed(e);
+            }
         } else {
             StatusDisplayer.getDefault().setStatusText(getValue(NAME) + " not enabled");
         }
@@ -72,10 +74,10 @@ public class EffectAction implements Action, ContextAwareAction {
 
     @Override
     public Action createContextAwareInstance(Lookup lkp) {
-        return new EffectAction(name, lkp);
+        return new EffectAction2(effect(), lkp);
     }
 
-    private final Map<String, Object> pairs = new HashMap<String, Object>();
+    private final Map<String, Object> pairs = new HashMap<String, Object>(5);
 
     @Override
     public Object getValue(String key) {

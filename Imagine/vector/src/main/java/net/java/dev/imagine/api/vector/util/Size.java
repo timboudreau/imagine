@@ -10,6 +10,7 @@
 package net.java.dev.imagine.api.vector.util;
 
 import java.io.Serializable;
+import static java.lang.Double.doubleToLongBits;
 
 /**
  * Immutable equivalent of a Dimension
@@ -24,7 +25,13 @@ public final class Size implements Serializable {
         this.h = h;
     }
 
+    @Override
     public boolean equals (Object o) {
+        if (o == this) {
+            return true;
+        } else if (o == null) {
+            return false;
+        }
         boolean result = o instanceof Size;
         if (result) {
             Size s = (Size) o;
@@ -33,7 +40,11 @@ public final class Size implements Serializable {
         return result;
     }
 
+    @Override
     public int hashCode() {
-        return (int) (w * h * 1000);
+//        return (int) (w * h * 1_000);
+        long result = (doubleToLongBits(w) * 65357)
+                + (doubleToLongBits(h) + 7);
+        return (int) (result ^ (result << 32));
     }
 }

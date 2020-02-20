@@ -55,10 +55,12 @@ import java.awt.image.BufferedImage;
  * @author  Tim Boudreau
  */
 final class ContinuousPalette extends Palette {
-    public static final int SMALL_SPEC_WIDTH = 128;
-    public static final int SMALL_SPEC_HEIGHT = 64;
-    public static final int LARGE_SPEC_WIDTH = 200;
-    public static final int LARGE_SPEC_HEIGHT = 100;
+    public static final int SMALL_SPEC_WIDTH = 256;
+    public static final int SMALL_SPEC_HEIGHT = 128;
+    public static final int LARGE_SPEC_WIDTH = SMALL_SPEC_WIDTH
+            + (SMALL_SPEC_WIDTH / 2);
+    public static final int LARGE_SPEC_HEIGHT = SMALL_SPEC_HEIGHT
+            + (SMALL_SPEC_HEIGHT / 2);
     public static final int SPEC_IMAGE_COUNT = 8;
     
     private BufferedImage img = null;

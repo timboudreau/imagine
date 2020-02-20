@@ -84,10 +84,13 @@ public class ImCopyAction extends GenericContextSensitiveAction<Picture> {
     }
 
     @Override
-    protected boolean checkEnabled(Collection<? extends Picture> coll, Class clazz) {
+    protected <T> boolean checkEnabled(Collection<? extends T> coll, Class<T> clazz) {
+        if (clazz != Picture.class) {
+            return true;
+        }
         boolean result = super.checkEnabled(coll, clazz);
         if (result) {
-            Picture p = coll.iterator().next();
+            Picture p = (Picture) coll.iterator().next();
             result = !p.getLayers().isEmpty() && p.getActiveLayer() != null;
         }
         return result;

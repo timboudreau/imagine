@@ -42,7 +42,7 @@ import net.dev.java.imagine.spi.effects.EffectRecipient;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Surface;
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.DialogDescriptor;
 import org.openide.DialogDisplayer;
 import org.openide.util.Lookup;
@@ -97,24 +97,27 @@ public class EffectsMenu extends JMenu {
         }
 
         @Override
-        protected boolean checkEnabled(Collection<? extends EffectRecipient> coll, Class clazz) {
+        protected <T> boolean checkEnabled(Collection<? extends T> coll, Class<T> clazz) {
             boolean result = false;
-            for (EffectRecipient r : coll) {
-                boolean can = r.canApplyEffects();
-                switch (effect.type()) {
-                    case COMPOSITE :
-                        result |= can && r.canApplyComposite();
-                        break;
-                    case BUFFERED_IMAGE_OP :
-                        result |= can && r.canApplyBufferedImageOp();
-                        break;
-                    default :
-                        throw new AssertionError(effect.type());
+            if (EffectRecipient.class == clazz) {
+                for (T obj : coll) {
+                    EffectRecipient r = (EffectRecipient) obj;
+                    boolean can = r.canApplyEffects();
+                    switch (effect.type()) {
+                        case COMPOSITE:
+                            result |= can && r.canApplyComposite();
+                            break;
+                        case BUFFERED_IMAGE_OP:
+                            result |= can && r.canApplyBufferedImageOp();
+                            break;
+                        default:
+                            throw new AssertionError(effect.type());
+                    }
                 }
             }
             return result;
         }
-        
+
         @Override
         protected void performAction(EffectRecipient recipient) {
 	    Effect.Applicator applicator = effect.getApplicator();

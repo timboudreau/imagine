@@ -55,7 +55,7 @@ import javax.swing.UIManager;
  */
 class PredefinedPalette extends Palette {
     NamedColor[] colors;
-    private int swatchSize = 12;
+    private int swatchSize = 16;
     private int gap = 1;
     private static final Rectangle scratch = new Rectangle();
     private String name;

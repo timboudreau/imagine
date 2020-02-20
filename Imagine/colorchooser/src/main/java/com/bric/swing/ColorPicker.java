@@ -17,8 +17,6 @@ import java.awt.*;
 
 import javax.swing.*;
 import java.awt.event.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,6 +54,7 @@ public class ColorPicker extends JPanel {
 	
 	/** This demonstrates how to customize a small <code>ColorPicker</code> component.
 	 */
+        /*
 	public static void main(String[] args) {
 		final JFrame demo = new JFrame("Demo");
 		final JWindow palette = new JWindow(demo);
@@ -189,6 +188,7 @@ public class ColorPicker extends JPanel {
 		
 		demo.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
+        */
 
         public static Color showDialog (Container owner, Color originalColor) {
             if (owner instanceof Window) {
@@ -253,6 +253,7 @@ public class ColorPicker extends JPanel {
                     title);
 		d.pack();
 		d.setVisible(true);
+                d.dispose();
 		return d.getColor();
 	}
 

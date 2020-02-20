@@ -12,24 +12,23 @@ import org.openide.util.Lookup;
 import org.openide.util.Parameters;
 
 /**
- * An effect which can be applied to an image layer of some sort.
- * An effect has a parameter type (the values which can be customized to 
- * tune its output), and an output type (typically a BufferedImageOp or
- * Composite).  Effects have visual attributes such as a name, display name,
- * help context, etc.
+ * An effect which can be applied to an image layer of some sort. An effect has
+ * a parameter type (the values which can be customized to tune its output), and
+ * an output type (typically a BufferedImageOp or Composite). Effects have
+ * visual attributes such as a name, display name, help context, etc.
  * <p/>
  * The typical usage pattern is:
  * <ul>
  * <li>Get an instance of effect</li>
- * <li>Find an EffectReceiver parameterized on the effect's output type, in
- * the layer (or other Lookup.Provider) you want to apply the effect to</li>
+ * <li>Find an EffectReceiver parameterized on the effect's output type, in the
+ * layer (or other Lookup.Provider) you want to apply the effect to</li>
  * <li>Call createInitialParam to get the default input parameter (for example,
  * a hue value for an effect which adjusts hue).</li>
  * <li>Possibly show a customizer which operates on the initial param type</li>
- * <li>Pass the (possibly modified) parameter and the parameter to the 
- * EffectReceiver to apply the effect (this might mean applying a BufferedImageOp
- * to an image, or storing the effect name and the parameter to apply the 
- * effect on the fly during rendering).
+ * <li>Pass the (possibly modified) parameter and the parameter to the
+ * EffectReceiver to apply the effect (this might mean applying a
+ * BufferedImageOp to an image, or storing the effect name and the parameter to
+ * apply the effect on the fly during rendering).
  *
  * @author Tim Boudreau
  */
@@ -49,7 +48,7 @@ public final class Effect<ParamType, OutputType> {
     public Class<ParamType> parameterType() {
         return impl.parameterType();
     }
-    
+
     public boolean canApply(Lookup.Provider layer) {
         for (EffectReceiver e : layer.getLookup().lookupAll(EffectReceiver.class)) {
             if (canApply(e)) {
@@ -84,9 +83,16 @@ public final class Effect<ParamType, OutputType> {
     public OutputType create(ParamType r) {
         return impl.create(r);
     }
-    
+
     public Class<OutputType> outputType() {
         return impl.outputType();
+    }
+
+    public <T> T get(Class<T> type) {
+        if (type == EffectImplementation.class) {
+            return null;
+        }
+        return impl.get(type);
     }
 
     public Preview<?, ParamType, ?> createPreview(Lookup.Provider layer) {
@@ -131,7 +137,7 @@ public final class Effect<ParamType, OutputType> {
 
             @Override
             public <T, R> Effect<T, R> createEffect(EffectDescriptor descriptor, EffectImplementation<T, R> impl) {
-                return new Effect<T, R>(descriptor, impl);
+                return new Effect<>(descriptor, impl);
             }
         };
     }
@@ -178,7 +184,7 @@ public final class Effect<ParamType, OutputType> {
         }
         return null;
     }
-    
+
     private static final class PosComparator implements Comparator<FileObject> {
 
         @Override
@@ -187,10 +193,10 @@ public final class Effect<ParamType, OutputType> {
             Object b = t1.getAttribute("position");
             return toInt(a).compareTo(toInt(b));
         }
-        
+
         private Integer toInt(Object o) {
             return o instanceof Number ? ((Number) o).intValue() : 0;
         }
-        
+
     }
 }

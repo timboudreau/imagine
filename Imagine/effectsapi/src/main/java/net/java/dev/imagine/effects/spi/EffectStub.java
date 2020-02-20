@@ -9,9 +9,11 @@ import org.openide.util.Lookup;
  */
 public interface EffectStub<ParamType, OutputType> {
 
-    public abstract ParamType createInitialParam();
+    ParamType createInitialParam();
 
-    public abstract OutputType create(ParamType r);
+    OutputType create(ParamType r);
 
-    public Preview<?, ParamType, OutputType> createPreview(Lookup.Provider layer);
+    default Preview<?, ParamType, OutputType> createPreview(Lookup.Provider layer) {
+        return null;
+    }
 }

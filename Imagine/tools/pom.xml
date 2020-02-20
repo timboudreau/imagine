@@ -18,8 +18,15 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-awt</artifactId>
-            <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>image-editor-api</artifactId>
+        </dependency>        
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>utils</artifactId>
+        </dependency>        
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>paintapi</artifactId>
@@ -62,6 +69,10 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>geometry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>toolsapi</artifactId>
         </dependency>
     </dependencies>
@@ -70,9 +81,8 @@
             <plugin>
                 <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <version>4.3</version>
                 <configuration>
-                    <moduleType>regular</moduleType>
+                    <moduleType>normal</moduleType>
                     <publicPackages>
                         <publicPackage>org.netbeans.paint.tools.actions</publicPackage>
                     </publicPackages>

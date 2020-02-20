@@ -12,6 +12,7 @@ import net.java.dev.imagine.api.vector.Proxy;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
+import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.elements.Arc;
 import net.java.dev.imagine.api.vector.elements.ImageWrapper;
 import net.java.dev.imagine.api.vector.elements.Line;
@@ -61,7 +62,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         return at;
     }
 
-    public void applyScale(AffineTransform xform) {
+    public void applyTransform(AffineTransform xform) {
         this.xform.concatenate(xform);
     }
 
@@ -91,6 +92,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         return new Pt((int) d[0], (int) d[1]);
     }
 
+    @Override
     public void paint(Graphics2D g) {
         Graphics2D g2 = (Graphics2D) g.create();
         AffineTransform currXform = g2.getTransform();
@@ -100,6 +102,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         g2.dispose();
     }
 
+    @Override
     public Primitive getProxiedPrimitive() {
         return primitive;
     }
@@ -132,6 +135,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         xform.transform(xy, 0, xy, 0, ct);
     }
 
+    @Override
     public boolean equals(Object o) {
         boolean result = o instanceof TransformedPrimitive;
         if (result) {
@@ -142,6 +146,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         return result;
     }
 
+    @Override
     public int hashCode() {
         return xform.hashCode() * primitive.hashCode() * 3;
     }
@@ -158,12 +163,20 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         xform.setToIdentity();
     }
 
+    @Override
     public String toString() {
         return super.toString() + " for " + primitive + " XFORM " + xform;
     }
 
     public int[] getVirtualControlPointIndices() {
         return ((Adjustable) primitive).getVirtualControlPointIndices();
+    }
+
+    public ControlPointKind[] getControlPointKinds() {
+        if (primitive instanceof Adjustable) {
+            return ((Adjustable) primitive).getControlPointKinds();
+        }
+        return new ControlPointKind[0];
     }
 
     public Primitive toIdentityPrimitive() {
@@ -258,16 +271,17 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
     //that it will be equivalent to the object it wraps.
     private static final class Vo extends TransformedPrimitive implements Volume {
 
-        public Vo(Primitive primitive) {
+        Vo(Primitive primitive) {
             super(primitive, true);
             assert primitive instanceof Volume;
         }
 
-        public Vo(Primitive primitive, AffineTransform xform) {
+        Vo(Primitive primitive, AffineTransform xform) {
             super(primitive, xform);
             assert primitive instanceof Volume;
         }
 
+        @Override
         public Vo copy() {
             return new Vo(this.primitive, (AffineTransform) xform.clone());
         }
@@ -275,37 +289,40 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
 
     private static final class Ve extends TransformedPrimitive implements Vector {
 
-        public Ve(Primitive primitive) {
+        Ve(Primitive primitive) {
             super(primitive, true);
             assert primitive instanceof Vector;
         }
 
-        public Ve(Primitive primitive, AffineTransform xform) {
+        Ve(Primitive primitive, AffineTransform xform) {
             super(primitive, xform);
             assert primitive instanceof Vector;
         }
 
+        @Override
         public Ve copy() {
             return new Ve(this.primitive, (AffineTransform) xform.clone());
         }
+
     }
 
     static class SAV extends TransformedPrimitive implements Strokable, Adjustable, Vector {
 
-        public SAV(Primitive primitive) {
+        SAV(Primitive primitive) {
             super(primitive, true);
             assert primitive instanceof Strokable;
             assert primitive instanceof Adjustable;
             assert primitive instanceof Vector;
         }
 
-        public SAV(Primitive primitive, AffineTransform xform) {
+        SAV(Primitive primitive, AffineTransform xform) {
             super(primitive, xform);
             assert primitive instanceof Strokable;
             assert primitive instanceof Adjustable;
             assert primitive instanceof Vector;
         }
 
+        @Override
         public SAV copy() {
             return new SAV(this.primitive, (AffineTransform) xform.clone());
         }
@@ -313,7 +330,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
 
     private static final class SAVVM extends TransformedPrimitive implements Strokable, Adjustable, Vector, Volume, Mutable {
 
-        public SAVVM(Primitive primitive) {
+        SAVVM(Primitive primitive) {
             super(primitive, true);
             assert primitive instanceof Strokable;
             assert primitive instanceof Adjustable;
@@ -321,7 +338,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             assert primitive instanceof Volume;
         }
 
-        public SAVVM(Primitive primitive, AffineTransform xform) {
+        SAVVM(Primitive primitive, AffineTransform xform) {
             super(primitive, xform);
             assert primitive instanceof Strokable;
             assert primitive instanceof Adjustable;
@@ -329,6 +346,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             assert primitive instanceof Volume;
         }
 
+        @Override
         public SAVVM copy() {
             return new SAVVM(this.primitive, (AffineTransform) xform.clone());
         }
@@ -337,7 +355,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
 
     private static final class SAVF extends TransformedPrimitive implements Strokable, Adjustable, Volume, Fillable {
 
-        public SAVF(Primitive primitive) {
+        SAVF(Primitive primitive) {
             super(primitive, true);
             assert primitive instanceof Strokable;
             assert primitive instanceof Adjustable;
@@ -345,10 +363,11 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             assert primitive instanceof Fillable;
         }
 
-        public SAVF(Primitive primitive, AffineTransform xform) {
+        SAVF(Primitive primitive, AffineTransform xform) {
             super(primitive, xform);
         }
 
+        @Override
         public SAVF copy() {
             return new SAVF(this.primitive, (AffineTransform) xform.clone());
         }
@@ -356,7 +375,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
 
     private static final class SAVFV extends TransformedPrimitive implements Strokable, Adjustable, Volume, Fillable, Vector {
 
-        public SAVFV(Primitive primitive) {
+        SAVFV(Primitive primitive) {
             super(primitive, true);
             assert primitive instanceof Strokable;
             assert primitive instanceof Adjustable;
@@ -365,7 +384,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             assert primitive instanceof Vector;
         }
 
-        public SAVFV(Primitive primitive, AffineTransform xform) {
+        SAVFV(Primitive primitive, AffineTransform xform) {
             super(primitive, xform);
             assert primitive instanceof Strokable;
             assert primitive instanceof Adjustable;
@@ -374,6 +393,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             assert primitive instanceof Vector;
         }
 
+        @Override
         public SAVFV copy() {
             return new SAVFV(this.primitive, (AffineTransform) xform.clone());
         }
@@ -382,7 +402,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
 
     private static final class SAVFVM extends TransformedPrimitive implements Strokable, Adjustable, Volume, Fillable, Vector, Mutable {
 
-        public SAVFVM(Primitive primitive) {
+        SAVFVM(Primitive primitive) {
             super(primitive, true);
             assert primitive instanceof Strokable;
             assert primitive instanceof Adjustable;
@@ -391,7 +411,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             assert primitive instanceof Vector;
         }
 
-        public SAVFVM(Primitive primitive, AffineTransform xform) {
+        SAVFVM(Primitive primitive, AffineTransform xform) {
             super(primitive, xform);
             assert primitive instanceof Strokable;
             assert primitive instanceof Adjustable;
@@ -400,6 +420,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             assert primitive instanceof Vector;
         }
 
+        @Override
         public SAVFVM copy() {
             return new SAVFVM(this.primitive, (AffineTransform) xform.clone());
         }

@@ -33,4 +33,7 @@ public class ParameterFactory {
         }
         return new Parameter[0];
     }
+
+    private ParameterFactory() {
+    }
 }

@@ -25,16 +25,16 @@ import org.openide.util.lookup.ServiceProvider;
 
 /**
  * This class serves to give us a persistent selection context;  NetBeans'
- * default context sensitivity is very aggressive - selection depends 
- * completely on what component has focus.  
+ * default context sensitivity is very aggressive - selection depends
+ * completely on what component has focus.
  * <p>
  * Our application is one where components <i>combine</i> context - the
  * selected tool along with the current image editor, etc.  So this class
  * gives us a lookup which merges the default, component-sensitive lookup
- * with other, more persistent lookups, to form a unified "selection context" 
+ * with other, more persistent lookups, to form a unified "selection context"
  * for the application.
  * <p>
- * So what really will be in this lookup?  Well, it proxies 
+ * So what really will be in this lookup?  Well, it proxies
  * Utilities.actionsGlobalContext, so anything a TopComponent (top level
  * component in a tab in the main window) will be there when that component
  * is focused.
@@ -43,7 +43,7 @@ import org.openide.util.lookup.ServiceProvider;
  * own Lookups into this one - for example, when the selected tool changes,
  * because the user selected a menu item or pressed a button provided by
  * the ToolsUI module, whatever Tool the user selected will appear, and the
- * previously selected Tool, if any, will disappear.  So any UI that is 
+ * previously selected Tool, if any, will disappear.  So any UI that is
  * interested in what tool is active needs to simply listen for changes in
  * the presence or absence of Tool.class:
  * <pre>
@@ -60,7 +60,7 @@ import org.openide.util.lookup.ServiceProvider;
  * <li>Zoom.class - the object for adjusting the zoom of the active editor</li>
  * <li>UndoRedo.Manager - a NetBeans subclass of UndoManager which supports
  *    listening for undoable edits being added/removed</li>
- * <li>PaintTopComponent.class - this class is not visible outside the 
+ * <li>PaintTopComponent.class - this class is not visible outside the
  *    PaintUI module, but some actions it itself provides use it directly
  * </ul>
  * <p>
@@ -75,60 +75,51 @@ import org.openide.util.lookup.ServiceProvider;
  */
 @ServiceProvider(service = ContextGlobalProvider.class, supersedes="org.netbeans.modules.openide.windows.GlobalActionContextImpl", position=Integer.MIN_VALUE)
 public final class ApplicationContext implements ContextGlobalProvider {
-    private final MutableProxyLookup proxy = new MutableProxyLookup();    
-    private static ApplicationContext INSTANCE;
+    private final MutableProxyLookup proxy = new MutableProxyLookup();
     private final Lookup.Result lookupsLookup;
-    
+    private final LookupListener listener;
+
     /** Creates a new instance of ApplicationContext */
     public ApplicationContext() {
-	lookupsLookup = Lookup.getDefault().lookup (new 
+	lookupsLookup = Lookup.getDefault().lookup (new
 		Lookup.Template(SelectionContextContributor.class));
-	
+
 	// Note the listener below will only really be called if
-	// a module providing a lookup we are proxying is 
+	// a module providing a lookup we are proxying is
 	// installed/uninstalled
-	LookupListener ll = new LookupListener() {
-	    public void resultChanged (LookupEvent evt) {
-		updateLookups (
-		    ((Lookup.Result) evt.getSource()).allInstances());
-	    }
-	};
-	
-	lookupsLookup.addLookupListener(ll);
+	listener = (LookupEvent evt) -> {
+            updateLookups (
+                    ((Lookup.Result) evt.getSource()).allInstances());
+        };
+
+	lookupsLookup.addLookupListener(listener);
         lookupsLookup.allInstances();
-	ll.resultChanged (new LookupEvent (lookupsLookup));
+	listener.resultChanged (new LookupEvent (lookupsLookup));
     }
-    
+
     private void updateLookups (Collection allContributors) {
-	SelectionContextContributor[] p = (SelectionContextContributor[]) 
+	SelectionContextContributor[] p = (SelectionContextContributor[])
 	    allContributors.toArray(new SelectionContextContributor[
             allContributors.size()]);
-	
+
 	Lookup[] lkp = new Lookup[p.length];
 	for (int i=0; i < p.length; i++) {
 	    lkp[i] = p[i].getLookup();
 	}
 	proxy.changeLookups (lkp);
     }
-    
-    private static ApplicationContext getContext() {
-	if (INSTANCE == null) {
-	    //XXX I think we can use a weak reference here...
-	    INSTANCE = new ApplicationContext();
-	}
-	return INSTANCE;
-    }
-    
+
+    @Override
     public Lookup createGlobalContext() {
         return proxy;
     }
-    
+
     private static final class MutableProxyLookup extends ProxyLookup {
        void changeLookups (Lookup[] lkp) {
             super.setLookups(lkp);
 	}
     }
-    
+
     static {
 	//ImageIO init - needs to be in a class loaded early
 	ImageIO.setUseCache(false);

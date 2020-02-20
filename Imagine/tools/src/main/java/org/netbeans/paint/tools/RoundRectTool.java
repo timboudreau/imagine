@@ -20,7 +20,7 @@ import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Constants;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
-import org.netbeans.paint.tools.fills.PaintingStyle;
+import org.imagine.editor.api.PaintingStyle;
 import org.openide.util.NbBundle;
 
 /**

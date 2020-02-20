@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -38,17 +39,18 @@ import net.java.dev.imagine.layers.text.widget.api.Text;
 import net.java.dev.imagine.layers.text.widget.api.TextItems;
 import net.java.dev.imagine.layers.text.widget.api.TextItems.TextItemsSupport;
 import net.java.dev.imagine.spi.image.LayerImplementation;
-import net.java.dev.imagine.spi.image.RepaintHandle;
+import org.imagine.utils.painting.RepaintHandle;
 import org.netbeans.api.visual.layout.Layout;
 import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.widget.Widget;
-import org.netbeans.paint.api.components.FontCellRenderer;
 import org.netbeans.paint.api.components.FontComboBoxModel;
 import org.netbeans.paint.api.components.PopupSliderUI;
 import org.netbeans.paint.api.components.Fonts;
-import org.netbeans.paint.api.util.GraphicsUtils;
+import org.imagine.utils.java2d.GraphicsUtils;
+import org.netbeans.paintui.widgetlayers.SetterResult;
+import org.netbeans.paintui.widgetlayers.WidgetController;
 import org.netbeans.paintui.widgetlayers.WidgetLayer;
-import org.netbeans.paintui.widgetlayers.WidgetLayer.WidgetFactory;
+import org.netbeans.paintui.widgetlayers.WidgetFactory;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 import org.openide.util.Parameters;
@@ -224,7 +226,7 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
 
     final class WF implements WidgetFactory, ChangeListener {
 
-        private final Widget container;
+        final Widget container;
         private boolean attached;
         private Layout oldLayout;
 
@@ -234,7 +236,7 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
         }
 
         @Override
-        public void attach() {
+        public void attach(Consumer<Lookup[]> addtlLookupConsumer) {
             System.out.println("Widget factory attach to " + container);
             attached = true;
             oldLayout = container.getLayout();
@@ -307,7 +309,7 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
             sync();
         }
 
-        private Text find(Point p) {
+        Text find(Point p) {
             for (Widget w : container.getChildren()) {
                 if (w instanceof TextWidget) {
                     Point widgetLocal = w.convertSceneToLocal(p);
@@ -464,13 +466,12 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
         @Override
         public JComponent getComponent() {
             JPanel pnl = new JPanel(new FlowLayout()); //XXX just for now
-            final JComboBox box = new JComboBox(new FontComboBoxModel());
-            box.setRenderer(new FontCellRenderer());
+            final JComboBox<Font> box = FontComboBoxModel.newFontComboBox();
             box.setSelectedItem(font.deriveFont(Font.PLAIN, 12));
             pnl.add(box);
-            final JSlider slider = new JSlider(4, 200);
+            final JSlider slider = new JSlider(4, 200, 50);
             slider.setValue(font.getSize());
-            slider.setUI(new PopupSliderUI());
+            PopupSliderUI.attach(slider);
             pnl.add(slider);
             final JCheckBox bold = new JCheckBox(NbBundle.getMessage(CP.class, "BOLD")); //NOI18N
             final JCheckBox italic = new JCheckBox(NbBundle.getMessage(CP.class, "ITALIC")); //NOI18N
