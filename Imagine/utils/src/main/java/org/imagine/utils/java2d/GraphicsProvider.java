@@ -17,6 +17,7 @@ public interface GraphicsProvider extends Supplier<Graphics> {
      */
     public Graphics2D getGraphics();
 
+    @Override
     default Graphics2D get() {
         return getGraphics();
     }

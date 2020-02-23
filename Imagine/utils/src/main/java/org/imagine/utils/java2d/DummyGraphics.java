@@ -131,6 +131,7 @@ final class DummyGraphics extends Graphics2D {
     public void fill(Shape s) {
     }
 
+    @Override
     public boolean hit(Rectangle rect, Shape s, boolean onStroke) {
         return s.intersects(rect);
     }

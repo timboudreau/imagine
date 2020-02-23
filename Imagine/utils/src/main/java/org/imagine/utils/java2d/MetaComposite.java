@@ -19,7 +19,7 @@ final class MetaComposite implements Composite {
 
     private final Composite[] composites;
 
-    public MetaComposite(Composite... composites) {
+    MetaComposite(Composite... composites) {
         this.composites = composites;
     }
 

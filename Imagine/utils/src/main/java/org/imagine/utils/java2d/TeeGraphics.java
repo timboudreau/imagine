@@ -40,7 +40,7 @@ final class TeeGraphics extends Graphics2D {
     private final Graphics2D b;
     private final Runnable onDispose;
 
-    public TeeGraphics(Graphics2D a, Graphics2D b, Runnable onDispose) {
+    TeeGraphics(Graphics2D a, Graphics2D b, Runnable onDispose) {
         this.a = a;
         this.b = b;
         this.onDispose = onDispose;

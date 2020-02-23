@@ -11,6 +11,7 @@ import java.awt.EventQueue;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import javax.swing.JPopupMenu;
 import net.java.dev.imagine.api.vector.design.ControlPoint;
 import org.imagine.editor.api.Zoom;
@@ -120,6 +121,15 @@ class ControlPointWidget extends Widget implements Dependency {
             });
         }
         return result;
+    }
+
+    @Override
+    protected Graphics2D getGraphics() {
+        Graphics2D g = super.getGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+        return g;
     }
 
     @Override

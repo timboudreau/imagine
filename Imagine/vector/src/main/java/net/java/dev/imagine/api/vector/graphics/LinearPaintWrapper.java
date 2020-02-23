@@ -9,6 +9,7 @@ import java.awt.Paint;
 import java.awt.Transparency;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import static java.lang.Double.doubleToLongBits;
 import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
@@ -140,18 +141,17 @@ public class LinearPaintWrapper implements Primitive, PaintWrapper, Attribute<Li
 
     @Override
     public int hashCode() {
-        int hash = 3;
-        hash = 83 * hash + (int) (Double.doubleToLongBits(this.centerX) ^ (Double.doubleToLongBits(this.centerX) >>> 32));
-        hash = 83 * hash + (int) (Double.doubleToLongBits(this.centerY) ^ (Double.doubleToLongBits(this.centerY) >>> 32));
-        hash = 83 * hash + (int) (Double.doubleToLongBits(this.focusX) ^ (Double.doubleToLongBits(this.focusX) >>> 32));
-        hash = 83 * hash + (int) (Double.doubleToLongBits(this.focusY) ^ (Double.doubleToLongBits(this.focusY) >>> 32));
-        hash = 83 * hash + Arrays.hashCode(this.fractions);
-        hash = 83 * hash + Arrays.hashCode(this.colors);
-        hash = 83 * hash + this.cycleMethod;
-        hash = 83 * hash + this.colorSpaceType;
-        hash = 83 * hash + this.xpar;
-        hash = 83 * hash + Arrays.hashCode(this.transform);
-        return hash;
+        long hash = 83 * ((93979 * doubleToLongBits(centerX))
+                + (7 * doubleToLongBits(centerY))
+                + (829 * doubleToLongBits(focusX))
+                + (64151 * doubleToLongBits(focusY)))
+                + (5 * Arrays.hashCode(this.fractions))
+                + (433 * Arrays.hashCode(this.colors))
+                + (3323 * Arrays.hashCode(this.transform));
+        hash = (83 * hash + this.cycleMethod)
+                + (83 * hash + colorSpaceType)
+                + (83 * hash + xpar);
+        return (((int) hash) ^ ((int) (hash >> 32)));
     }
 
     @Override
@@ -164,26 +164,26 @@ public class LinearPaintWrapper implements Primitive, PaintWrapper, Attribute<Li
             return false;
         }
         final LinearPaintWrapper other = (LinearPaintWrapper) obj;
-        if (this.cycleMethod != other.cycleMethod) {
+        if (cycleMethod != other.cycleMethod) {
             return false;
-        } else if (this.colorSpaceType != other.colorSpaceType) {
+        } else if (colorSpaceType != other.colorSpaceType) {
             return false;
-        } else if (this.xpar != other.xpar) {
+        } else if (xpar != other.xpar) {
             return false;
-        } else if (Double.doubleToLongBits(this.centerX) != Double.doubleToLongBits(other.centerX)) {
+        } else if (centerX != other.centerX && Double.doubleToLongBits(centerX) != Double.doubleToLongBits(other.centerX)) {
             return false;
-        } else if (Double.doubleToLongBits(this.centerY) != Double.doubleToLongBits(other.centerY)) {
+        } else if (centerY != other.centerY && Double.doubleToLongBits(centerY) != Double.doubleToLongBits(other.centerY)) {
             return false;
-        } else if (Double.doubleToLongBits(this.focusX) != Double.doubleToLongBits(other.focusX)) {
+        } else if (focusX != other.focusX && Double.doubleToLongBits(focusX) != Double.doubleToLongBits(other.focusX)) {
             return false;
-        } else if (Double.doubleToLongBits(this.focusY) != Double.doubleToLongBits(other.focusY)) {
+        } else if (focusY != other.focusY && Double.doubleToLongBits(focusY) != Double.doubleToLongBits(other.focusY)) {
             return false;
-        } else if (!Arrays.equals(this.fractions, other.fractions)) {
+        } else if (!Arrays.equals(fractions, other.fractions)) {
             return false;
-        } else if (!Arrays.equals(this.colors, other.colors)) {
+        } else if (!Arrays.equals(colors, other.colors)) {
             return false;
         } else {
-            return Arrays.equals(this.transform, other.transform);
+            return Arrays.equals(transform, other.transform);
         }
     }
 

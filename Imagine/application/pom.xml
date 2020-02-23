@@ -103,6 +103,10 @@
         -->
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>awt-ext</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>colorchooser</artifactId>
         </dependency>
         <dependency>

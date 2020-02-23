@@ -450,6 +450,14 @@ public class Circle implements Shape {
         return (int) (biasUp ? Math.ceil(val) : Math.floor(val));
     }
 
+    public void getBounds(Rectangle into) {
+        int x = toInt(centerX - radius, false);
+        int y = toInt(centerY - radius, false);
+        int x2 = toInt(centerX + radius, true);
+        int y2 = toInt(centerY + radius, true);
+        into.setBounds(x, y, x2 - x, y2 - y);
+    }
+
     @Override
     public Rectangle getBounds() {
         int x = toInt(centerX - radius, false);

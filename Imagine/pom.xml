@@ -135,6 +135,7 @@
         <module>mastfrog-utils</module>
         <module>geometry</module>
         <module>inspectors</module>
+        <module>awt-ext</module>
     </modules>
     <repositories>
         <repository>
@@ -196,6 +197,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>imagecachediagnostics</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>awt-ext</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

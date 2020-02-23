@@ -5,7 +5,6 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import org.imagine.utils.java2d.GraphicsUtils;
 
 /**
  *
@@ -15,7 +14,7 @@ public final class DoubleBuffer {
 
     private final Supplier<Graphics2D> graphics;
     private final Supplier<Dimension> dim;
-    private AtomicReference<BufferedImage> cache = new AtomicReference<>();
+    private final AtomicReference<BufferedImage> cache = new AtomicReference<>();
 
     DoubleBuffer(Supplier<Graphics2D> graphics, Supplier<Dimension> dim) {
         this.graphics = graphics;
