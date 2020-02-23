@@ -135,7 +135,7 @@
         <module>mastfrog-utils</module>
         <module>geometry</module>
         <module>inspectors</module>
-        <module>awt-ext</module>
+        <module>gradients</module>
     </modules>
     <repositories>
         <repository>
