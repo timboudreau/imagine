@@ -104,7 +104,7 @@ final class InstanceCache<B, P extends B, K> {
     }
 
     private int tick;
-    private static int TICK_PERIOD = 120;
+    private static int TICK_PERIOD = 32000;
 
     private void periodicCheck(int tick) {
         if (tick++ % TICK_PERIOD == 0) {

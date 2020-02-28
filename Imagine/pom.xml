@@ -136,6 +136,7 @@
         <module>geometry</module>
         <module>inspectors</module>
         <module>gradients</module>
+        <module>borrowed</module>
     </modules>
     <repositories>
         <repository>
@@ -191,6 +192,11 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>borrowed</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>branding</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -201,7 +207,7 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>awt-ext</artifactId>
+                <artifactId>gradients</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

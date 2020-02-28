@@ -16,7 +16,9 @@ package org.netbeans.paint.tools.brushes.tips;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.geom.Ellipse2D;
 import javax.swing.JComponent;
+import org.imagine.editor.api.PaintingStyle;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import org.netbeans.paint.tools.spi.BrushTip;
 
@@ -35,5 +37,17 @@ public class FunkyBrushTip implements BrushTip, Customizable {
     public JComponent getCustomizer() {
         //XXX customize offsets
 	return null;
+    }
+
+    @Override
+    public boolean canEmit() {
+        return true;
+    }
+
+    @Override
+    public void emit(Point p, int size, ShapeEmitter em) {
+        int half = size / 2;
+        Ellipse2D ell = new Ellipse2D.Float(p.x - half, p.y - half, p.x + size, p.y + size);
+        em.emit(ell, PaintingStyle.OUTLINE);
     }
 }

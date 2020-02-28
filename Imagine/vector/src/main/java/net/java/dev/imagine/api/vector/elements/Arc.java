@@ -51,6 +51,23 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
         this.fill = fill;
     }
 
+    public Runnable restorableSnapshot() {
+        double ox = x;
+        double oy = y;
+        double ow = width;
+        double oh = height;
+        double sa = startAngle;
+        double aa = arcAngle;
+        return () -> {
+            x = ox;
+            y = oy;
+            width = ow;
+            height = oh;
+            startAngle = sa;
+            arcAngle = aa;
+        };
+    }
+
     @Override
     public void translate(double x, double y) {
         this.x += x;
@@ -201,11 +218,8 @@ public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vecto
     }
 
     @Override
-    public void getBounds(Rectangle2D.Double dest) {
-        dest.x = x;
-        dest.y = y;
-        dest.width = width;
-        dest.height = height;
+    public void getBounds(Rectangle2D dest) {
+        dest.setFrame(x, y, width, height);
     }
 
     @Override

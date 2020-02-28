@@ -8,27 +8,39 @@
  */
 package org.netbeans.paint.tools.fills;
 
-import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.GradientPaint;
-import java.awt.Graphics2D;
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
+import java.awt.Paint;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import net.java.dev.colorchooser.ColorChooser;
-import org.imagine.editor.api.AspectRatio;
-import org.netbeans.paint.api.components.points.PointSelector;
-import org.netbeans.paint.api.components.points.PointSelectorMode;
-import org.openide.util.NbBundle;
-import org.openide.util.Utilities;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.java.dev.imagine.api.toolcustomizers.Customizers;
+import org.netbeans.paint.api.components.explorer.Customizable;
+import org.netbeans.paint.tools.spi.Fill;
 
 /**
  *
  * @author Timothy Boudreau
  */
-public class GradientFill extends BaseFill {
+public class GradientFill implements Fill, Customizable {
+
+    private final Customizer<GradientPaint> paintCustomizer;
+
+    public GradientFill() {
+        this.paintCustomizer = Customizers.getCustomizer(GradientPaint.class, "Gradient");
+    }
+
+    @Override
+    public Paint getPaint() {
+        return paintCustomizer.get();
+    }
+
+    @Override
+    public JComponent getCustomizer() {
+        return paintCustomizer.getComponent();
+    }
+
+    /*extends BaseFill {
+
+
 
     protected ColorChooser ch = null;
     private final Point2D.Float first = new Point2D.Float(0, 0);
@@ -87,4 +99,5 @@ public class GradientFill extends BaseFill {
         return new GradientPaint(first.x, first.y, a,
                 second.x, second.y, b, true);
     }
+     */
 }

@@ -16,6 +16,8 @@ import net.java.dev.imagine.api.vector.design.ControlPointController;
 import net.java.dev.imagine.api.vector.design.ControlPointFactory;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
+import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
+import org.imagine.vector.editor.ui.spi.ShapeElement;
 
 /**
  * Provides control points for a ShapeEntry which tolerates the shape instance
@@ -26,11 +28,11 @@ import net.java.dev.imagine.api.vector.util.Pt;
  */
 final class ShapeElementControlPointFactory extends ControlPointFactory {
 
-    public ControlPoint[] getControlPoints(ShapeEntry entry, ControlPointController ctrllr) {
+    public ShapeControlPoint[] getControlPoints(ShapeEntry entry, ControlPointController ctrllr) {
         ControlPointSupplier supp = new ControlPointSupplier(entry, ctrllr);
         Adjustable adj = entry.item().as(Adjustable.class);
         int cpCount = adj == null ? 0 : adj.getControlPointCount();
-        ControlPoint[] result = new ControlPoint[cpCount];
+        ShapeControlPoint[] result = new ShapeControlPoint[cpCount];
         for (int i = 0; i < result.length; i++) {
             result[i] = new DelegatingControlPoint(entry,
                     supp.forIndex(i), i);
@@ -97,7 +99,7 @@ final class ShapeElementControlPointFactory extends ControlPointFactory {
         return super.getControlPoints(p, c);
     }
 
-    private static class DelegatingControlPoint implements ControlPoint {
+    private static class DelegatingControlPoint implements ShapeControlPoint {
 
         private final ShapeEntry origin;
         private final Supplier<ControlPoint> supp;
@@ -107,6 +109,11 @@ final class ShapeElementControlPointFactory extends ControlPointFactory {
             this.origin = origin;
             this.supp = supp;
             this.index = index;
+        }
+
+        @Override
+        public ShapeElement owner() {
+            return origin;
         }
 
         @Override
@@ -230,7 +237,7 @@ final class ShapeElementControlPointFactory extends ControlPointFactory {
         }
     }
 
-    static final class InvalidControlPoint implements ControlPoint {
+    static final class InvalidControlPoint implements ShapeControlPoint {
 
         private final ShapeEntry origin;
 
@@ -239,6 +246,10 @@ final class ShapeElementControlPointFactory extends ControlPointFactory {
         public InvalidControlPoint(ShapeEntry origin, int index) {
             this.origin = origin;
             this.index = index;
+        }
+
+        public ShapeElement owner() {
+            return origin;
         }
 
         @Override
@@ -264,6 +275,10 @@ final class ShapeElementControlPointFactory extends ControlPointFactory {
                 DelegatingControlPoint del = (DelegatingControlPoint) o;
                 return del.index == index
                         && origin.id() == del.origin.id();
+            } else if (o instanceof InvalidControlPoint) {
+                InvalidControlPoint inv = (InvalidControlPoint) o;
+                return inv.index == index
+                        && origin.id() == inv.origin.id();
             }
             return false;
         }

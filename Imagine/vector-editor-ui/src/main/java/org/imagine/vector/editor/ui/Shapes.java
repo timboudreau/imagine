@@ -13,27 +13,27 @@ import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javax.swing.event.UndoableEditEvent;
-import javax.swing.undo.CannotRedoException;
-import javax.swing.undo.CannotUndoException;
-import javax.swing.undo.UndoableEdit;
-import net.dev.java.imagine.api.tool.aspects.SnapPointsConsumer.SnapPoints;
+import net.dev.java.imagine.api.tool.aspects.snap.SnapPoint;
+import net.dev.java.imagine.api.tool.aspects.snap.SnapPoints;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
 import net.java.dev.imagine.api.vector.painting.VectorWrapperGraphics;
-import net.java.dev.imagine.ui.common.UndoMgr;
+import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.vector.editor.ui.spi.HitTester;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.imagine.vector.editor.ui.tools.CSGOperation;
-import org.openide.util.Utilities;
+import org.imagine.vector.editor.ui.undo.AbstractShapeEdit;
+import org.imagine.vector.editor.ui.undo.UndoRedoHookable;
 
 /**
  * The underlying collection of shapes.
@@ -47,7 +47,7 @@ public class Shapes implements HitTester, ShapesCollection {
     public Shapes(boolean log) {
         shapes = log ? new LoggingList(20) : new ArrayList<>(20);
     }
-    
+
     public Shapes() {
         this(false);
     }
@@ -57,6 +57,53 @@ public class Shapes implements HitTester, ShapesCollection {
         for (ShapeEntry se : orig.shapes) {
             shapes.add(se.copy());
         }
+    }
+
+    @Override
+    public ShapeElement get(int index) {
+        return shapes.get(index);
+    }
+
+    @Override
+    public int size() {
+        return shapes.size();
+    }
+
+    @Override
+    public void addToBounds(Rectangle2D b) {
+        for (ShapeEntry se : shapes) {
+            se.addToBounds(b);
+        }
+    }
+
+    @Override
+    public UndoRedoHookable geometryEdit(String name, Runnable r) {
+        r.run();
+        onChange();
+        return AbstractShapeEdit.noOp();
+    }
+
+    @Override
+    public void getBounds(Rectangle2D into) {
+        for (ShapeEntry se : shapes) {
+            se.vect.addToBounds(into);
+        }
+    }
+
+    public Runnable contentsSnapshot() {
+        List<ShapeEntry> l = new ArrayList<>(shapes);
+        return () -> {
+            shapes.clear();
+            shapes.addAll(l);
+            onChange();
+        };
+    }
+
+    @Override
+    public UndoRedoHookable contentsEdit(String name, Runnable r) {
+        r.run();
+        onChange();
+        return AbstractShapeEdit.noOp();
     }
 
     public Iterator<ShapeElement> iterator() {
@@ -89,7 +136,7 @@ public class Shapes implements HitTester, ShapesCollection {
         return true;
     }
 
-    public boolean csg(CSGOperation op, ShapeElement lead, List<? extends ShapeElement> elements, BiConsumer<Set<ShapeElement>, ShapeElement> removedAndAdded) {
+    public boolean csg(CSGOperation op, ShapeElement lead, List<? extends ShapeElement> elements, BiConsumer<? super Set<? extends ShapeElement>, ? super ShapeElement> removedAndAdded) {
         List<Shape> shapes = new ArrayList<>();
         if (elements.isEmpty()) {
             System.out.println("nothing to csg");
@@ -118,8 +165,23 @@ public class Shapes implements HitTester, ShapesCollection {
         Shaped shaped = VectorWrapperGraphics.primitiveFor(nue, true);
         replaceShape(lead, shaped);
         Set<ShapeElement> s = new HashSet<>(elements);
+        for (ShapeElement s1 : s) {
+            if (s1 != lead) {
+                int ix = indexOf(s1);
+                if (ix >= 0) {
+                    this.shapes.remove(ix);
+                }
+            }
+        }
         removedAndAdded.accept(s, lead);
         return true;
+    }
+
+    @Override
+    public Set<? extends ShapeElement> absent(Collection<? extends ShapeElement> from) {
+        Set<? extends ShapeElement> all = new LinkedHashSet<>(shapes);
+        all.removeAll(from);
+        return all;
     }
 
     public boolean contains(ShapeElement el) {
@@ -127,7 +189,8 @@ public class Shapes implements HitTester, ShapesCollection {
     }
 
     public List<? extends ShapeElement> possiblyOverlapping(ShapeElement el) {
-        Rectangle bds = el.getBounds();
+        Rectangle2D bds = new Rectangle2D.Double();
+        el.addToBounds(bds);
         List<ShapeElement> result = new ArrayList<>(7);
         for (ShapeEntry e : shapes) {
             if (e == el) {
@@ -166,6 +229,7 @@ public class Shapes implements HitTester, ShapesCollection {
     }
 
     @Override
+    @SuppressWarnings("element-type-mismatch")
     public ShapeEntry[] replaceShape(ShapeElement entry, Shaped... replacements) {
         int ix = indexOf(entry);
         if (ix < 0) {
@@ -270,7 +334,7 @@ public class Shapes implements HitTester, ShapesCollection {
             return e;
         }
         ShapeEntry en = new ShapeEntry(el.item(), el.fill(),
-            el.outline(), el.stroke(), el.isFill(), el.isDraw());
+                el.outline(), el.stroke(), el.isFill(), el.isDraw());
         return en;
     }
 
@@ -295,7 +359,7 @@ public class Shapes implements HitTester, ShapesCollection {
         return !Objects.equals(a, b);
     }
 
-    private int indexOf(ShapeElement el) {
+    public int indexOf(ShapeElement el) {
         int ix = shapes.indexOf(el);
         if (ix < 0) {
             ShapeElement el2 = Wrapper.find(el, ShapeEntry.class);
@@ -335,7 +399,7 @@ public class Shapes implements HitTester, ShapesCollection {
         int ix = indexOf(el);
         if (ix < 0) {
             throw new IllegalArgumentException("Not present "
-                + el + " in " + shapes);
+                    + el + " in " + shapes);
         } else {
             ShapeEntry en = shapes.get(ix);
             ShapeEntry dup = en.duplicate();
@@ -346,109 +410,17 @@ public class Shapes implements HitTester, ShapesCollection {
     }
 
     @Override
-    public void edit(String name, ShapeElement el, Runnable r) {
+    public UndoRedoHookable edit(String name, ShapeElement el, Runnable r) {
         int ix = indexOf(el);
         if (ix < 0) {
             throw new IllegalArgumentException("Not present: " + el
-                + " in " + shapes);
+                    + " in " + shapes);
         } else {
             el = shapes.get(ix);
         }
-
-        UndoMgr undoer = Utilities.actionsGlobalContext().lookup(UndoMgr.class);
-        ShapeElement copy = undoer == null ? null : el.copy();
-        try {
-            r.run();
-        } finally {
-            onChange();
-            if (undoer != null && isChanged((ShapeEntry) copy, (ShapeEntry) el)) {
-                ShapeElement changed = el.copy();
-                OneShapeUndoableEdit edit = new OneShapeUndoableEdit(name, ix,
-                        this, (ShapeEntry) copy, (ShapeEntry) changed);
-                undoer.undoableEditHappened(new UndoableEditEvent(this, edit));
-            }
-        }
-    }
-
-    static class OneShapeUndoableEdit implements UndoableEdit {
-
-        private final String name;
-        private final int index;
-        private Shapes shapes;
-        private ShapeEntry orig;
-        private ShapeEntry changed;
-        private boolean undone;
-
-        public OneShapeUndoableEdit(String name, int index, Shapes shapes, ShapeEntry orig, ShapeEntry changed) {
-            this.name = name;
-            this.index = index;
-            this.shapes = shapes;
-            this.orig = orig;
-            this.changed = changed;
-        }
-
-        @Override
-        public void undo() throws CannotUndoException {
-            if (!canUndo()) {
-                throw new CannotUndoException();
-            }
-            shapes.shapes.set(index, orig.copy());
-        }
-
-        @Override
-        public boolean canUndo() {
-            return !undone;
-        }
-
-        @Override
-        public void redo() throws CannotRedoException {
-            if (!canRedo()) {
-                throw new CannotRedoException();
-            }
-            shapes.shapes.set(index, changed.copy());
-        }
-
-        @Override
-        public boolean canRedo() {
-            return undone && shapes != null && changed != null;
-        }
-
-        @Override
-        public void die() {
-            shapes = null;
-            changed = null;
-            orig = null;
-        }
-
-        @Override
-        public boolean addEdit(UndoableEdit anEdit) {
-            return false;
-        }
-
-        @Override
-        public boolean replaceEdit(UndoableEdit anEdit) {
-            return false;
-        }
-
-        @Override
-        public boolean isSignificant() {
-            return true;
-        }
-
-        @Override
-        public String getPresentationName() {
-            return name;
-        }
-
-        @Override
-        public String getUndoPresentationName() {
-            return name;
-        }
-
-        @Override
-        public String getRedoPresentationName() {
-            return name;
-        }
+        r.run();
+        onChange();
+        return AbstractShapeEdit.noOp();
     }
 
     @Override
@@ -495,6 +467,7 @@ public class Shapes implements HitTester, ShapesCollection {
 
     @Override
     public boolean paint(Graphics2D g, Rectangle bounds) {
+        GraphicsUtils.setHighQualityRenderingHints(g);
         int max = shapes.size() - 1;
         boolean result = false;
         for (int i = max; i >= 0; i--) {
@@ -506,11 +479,11 @@ public class Shapes implements HitTester, ShapesCollection {
 
     @Override
     public Rectangle getBounds() {
-        Rectangle result = new Rectangle();
+        Rectangle2D.Double result = new Rectangle.Double();
         for (ShapeEntry se : shapes) {
-            result.add(se.getBounds());
+            se.addToBounds(result);
         }
-        return result;
+        return result.getBounds();
     }
 
     void onChange() {
@@ -518,6 +491,22 @@ public class Shapes implements HitTester, ShapesCollection {
     }
 
     private SnapPoints pts;
+
+    public Supplier<SnapPoints> snapPoints(double radius, BiConsumer<SnapPoint, SnapPoint> onSnap) {
+        return () -> {
+            SnapPoints result = pts;
+            if (result != null) {
+                return result;
+            }
+            SnapPoints.Builder b = SnapPoints.builder(radius);
+            for (ShapeEntry se : shapes) {
+                se.addTo(b);
+            }
+            return pts = b
+                    .notifying(onSnap)
+                    .build();
+        };
+    }
 
     public Supplier<SnapPoints> snapPoints(double radius) {
         return () -> {
@@ -558,6 +547,7 @@ public class Shapes implements HitTester, ShapesCollection {
     }
 
     class LoggingList extends ArrayList<ShapeEntry> {
+
         LoggingList() {
 
         }
@@ -576,7 +566,7 @@ public class Shapes implements HitTester, ShapesCollection {
         public boolean remove(Object o) {
             ShapeElement se = (ShapeElement) o;
             System.out.println("REM by IDENT " + se.id() + " - " + System.identityHashCode(o) + " - " + se);
-            return super.remove(o); 
+            return super.remove(o);
         }
 
         @Override

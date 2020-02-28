@@ -4,7 +4,9 @@ import java.awt.Component;
 import javax.swing.JPanel;
 import net.java.dev.imagine.api.vector.elements.Oval;
 import org.imagine.inspectors.spi.InspectorFactory;
+import org.imagine.vector.editor.ui.Shapes;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
+import org.imagine.vector.editor.ui.spi.ShapesCollection;
 import static org.netbeans.paint.api.components.number.StandardNumericConstraints.DOUBLE;
 import org.netbeans.paint.api.components.VerticalFlowLayout;
 import org.netbeans.paint.api.components.number.NamedNumberEditor;
@@ -25,13 +27,14 @@ public class OvalInspector extends InspectorFactory<Oval> {
 
     @Override
     public Component get(Oval obj, Lookup lookup, int item, int of) {
+        ShapesCollection shapes = lookup.lookup(Shapes.class);
         ShapeElement shape = lookup.lookup(ShapeElement.class);
         JPanel pnl = new JPanel(new VerticalFlowLayout());
         NumericConstraint con = DOUBLE.withMaximum(10000D).withMinimum(-2000D);
-        pnl.add(new NamedNumberEditor(Bundle.x(), con, obj::x, shape.wrap(obj::setX)));
-        pnl.add(new NamedNumberEditor(Bundle.y(), con, obj::y, shape.wrap(obj::setY)));
-        pnl.add(new NamedNumberEditor(Bundle.width(), con, obj::width, shape.wrap(obj::setWidth)));
-        pnl.add(new NamedNumberEditor(Bundle.height(), con, obj::height, shape.wrap(obj::setHeight)));
+        pnl.add(new NamedNumberEditor(Bundle.x(), con, obj::x, shapes.wrapInEdit("X", shape, obj::setX)));
+        pnl.add(new NamedNumberEditor(Bundle.y(), con, obj::y, shapes.wrapInEdit("Y", shape, obj::setY)));
+        pnl.add(new NamedNumberEditor(Bundle.width(), con, obj::width, shapes.wrapInEdit("Width", shape, obj::setWidth)));
+        pnl.add(new NamedNumberEditor(Bundle.height(), con, obj::height, shapes.wrapInEdit("Height", shape, obj::setHeight)));
         return pnl;
     }
 }

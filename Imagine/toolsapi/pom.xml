@@ -24,6 +24,10 @@
             <artifactId>org-openide-util</artifactId>
         </dependency>
         <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>mastfrog-utils</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util-ui</artifactId>
         </dependency>        
@@ -75,11 +79,11 @@
             <plugin>
                 <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <version>4.3</version>
                 <configuration>
                     <publicPackages>
                         <publicPackage>net.dev.java.imagine.api.tool</publicPackage>
                         <publicPackage>net.dev.java.imagine.api.tool.aspects</publicPackage>
+                        <publicPackage>net.dev.java.imagine.api.tool.aspects.snap</publicPackage>
                         <publicPackage>net.dev.java.imagine.spi.tool</publicPackage>
                     </publicPackages>
                 </configuration>

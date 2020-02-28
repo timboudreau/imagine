@@ -6,7 +6,6 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.toolcustomizers;
 
 import java.awt.Color;
@@ -15,54 +14,91 @@ import java.awt.event.ActionListener;
 import java.util.prefs.Preferences;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
+import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
+import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import net.java.dev.colorchooser.ColorChooser;
-import net.java.dev.imagine.api.toolcustomizers.AbstractCustomizer;
+import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.openide.util.NbPreferences;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class ColorCustomizer extends AbstractCustomizer <Color> implements ActionListener {
+public class ColorCustomizer extends ListenableCustomizerSupport<Color>
+        implements ActionListener, ListenableCustomizer<Color> {
 
-    public ColorCustomizer(String name) {
-        super (name);
-    }
+    private int red;
+    private int green;
+    private int blue;
+    private int alpha;
+    private final String name;
 
-    protected JComponent[] createComponents() {
-        JLabel lbl = new JLabel (getName());
-        ColorChooser chooser = new ColorChooser();
+    public ColorCustomizer(String name, Color existingValue) {
+        this.name = name;
         Preferences p = NbPreferences.forModule(ColorCustomizer.class);
-        int red = p.getInt(getName() + ".red", 0); //NOI18N
-        int green = p.getInt(getName() + ".green", 0); //NOI18N
-        int blue = p.getInt(getName() + ".blue", 0); //NOI18N
-        int alpha = p.getInt(getName() + ".alpha", 255); //NOI18N
-        Color color = new Color (red, green, blue, alpha);
-        chooser.setColor (color);
-        chooser.addActionListener(this);
-        lbl.setLabelFor(chooser);
-        return new JComponent[] { lbl, chooser };
+        if (existingValue == null) {
+            red = p.getInt(name + ".red", 128); //NOI18N
+            green = p.getInt(name + ".green", 128); //NOI18N
+            blue = p.getInt(name + ".blue", 230); //NOI18N
+            alpha = p.getInt(name + ".alpha", 255); //NOI18N
+        } else {
+            red = existingValue.getRed();
+            green = existingValue.getGreen();
+            blue = existingValue.getBlue();
+            alpha = existingValue.getAlpha();
+        }
     }
 
-    public void actionPerformed(ActionEvent e) {
-        change();
-    }
-
-    public Color getValue() {
-        return ((ColorChooser) getComponents()[1]).getColor();
-    }
-    
     @Override
-    protected void saveValue(Color value) {
-        int red = value.getRed();
-        int green = value.getGreen();
-        int blue = value.getBlue();
-        int alpha = value.getAlpha();
-        Preferences p = NbPreferences.forModule(ColorCustomizer.class);
-        p.putInt(getName() + ".red", red); //NOI18N
-        p.putInt(getName() + ".green", green); //NOI18N
-        p.putInt(getName() + ".blue", blue); //NOI18N
-        p.putInt(getName() + ".alpha", alpha); //NOI18N
+    public String getName() {
+        return name;
     }
-    
+
+    @Override
+    public JComponent getComponent() {
+        JLabel lbl = new JLabel(getName());
+        ColorChooser chooser = new ColorChooser();
+        Color color = new Color(red, green, blue, alpha);
+        chooser.setColor(color);
+        lbl.setLabelFor(chooser);
+        JPanel slp = new SharedLayoutPanel();
+        slp.add(lbl);
+        slp.add(chooser);
+        chooser.addActionListener(this);
+        return slp;
+    }
+
+    @Override
+    protected void onAfterFire() {
+        saveValue(get());
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        ColorChooser ch = (ColorChooser) e.getSource();
+        Color c = ch.getColor();
+        red = c.getRed();
+        green = c.getGreen();
+        blue = c.getBlue();
+        alpha = c.getAlpha();
+        fire();
+    }
+
+    public Color get() {
+        return new Color(red, green, blue, alpha);
+    }
+
+    protected void saveValue(Color value) {
+        int r = value.getRed();
+        int g = value.getGreen();
+        int b = value.getBlue();
+        int a = value.getAlpha();
+        Preferences p = NbPreferences.forModule(ColorCustomizer.class);
+        p.putInt(getName() + ".red", r); //NOI18N
+        p.putInt(getName() + ".green", g); //NOI18N
+        p.putInt(getName() + ".blue", b); //NOI18N
+        p.putInt(getName() + ".alpha", a); //NOI18N
+    }
+
 }

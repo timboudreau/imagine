@@ -45,18 +45,18 @@ public class Triangle implements Shape, Iterable<Point2D.Float>, Comparable<Tria
         Point2D.Float b = new EqPoint(bx, by);
         Point2D.Float c = new EqPoint(cx, cy);
         points = new Point2D.Float[]{a, b, c};
-        Arrays.sort(points, (Point2D.Float p1, Point2D.Float p2) -> {
-            float ta;
-            float tb;
-            if (a.y > b.y) {
-                ta = a.y;
-                tb = b.y;
-            } else {
-                ta = a.x;
-                tb = b.x;
-            }
-            return ta == tb ? 0 : ta > tb ? 1 : -1;
-        });
+//        Arrays.sort(points, (Point2D.Float p1, Point2D.Float p2) -> {
+//            float ta;
+//            float tb;
+//            if (a.y > b.y) {
+//                ta = a.y;
+//                tb = b.y;
+//            } else {
+//                ta = a.x;
+//                tb = b.x;
+//            }
+//            return ta == tb ? 0 : ta > tb ? 1 : -1;
+//        });
     }
 
     public static Triangle isoceles(double centerX, double centerY, double distanceToCenter) {

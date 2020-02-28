@@ -30,6 +30,7 @@ import static java.awt.Transparency.TRANSLUCENT;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.imagine.utils.painting.RepaintHandle;
@@ -65,6 +66,8 @@ public final class GraphicsUtils {
         HQ_HINTS.put(KEY_FRACTIONALMETRICS, VALUE_FRACTIONALMETRICS_ON);
         HQ_HINTS.put(KEY_ALPHA_INTERPOLATION, VALUE_ALPHA_INTERPOLATION_QUALITY);
         HQ_HINTS.put(KEY_COLOR_RENDERING, VALUE_COLOR_RENDER_QUALITY);
+        // Note: Do not turn on the general render quality hint
+        // or painting on Linux gets very glitchy
     }
 
     /**
@@ -107,7 +110,7 @@ public final class GraphicsUtils {
      * @param g A graphics
      */
     public static void setHighQualityRenderingHints(Graphics2D g) {
-        g.setRenderingHints(HQ_HINTS);
+        g.setRenderingHints(new HashMap<>(HQ_HINTS));
     }
 
     /**

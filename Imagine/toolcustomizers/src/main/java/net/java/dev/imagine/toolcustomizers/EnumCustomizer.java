@@ -8,6 +8,7 @@ package net.java.dev.imagine.toolcustomizers;
 import javax.swing.ButtonGroup;
 import javax.swing.JComponent;
 import javax.swing.JRadioButton;
+import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.AbstractCustomizer;
 import org.openide.awt.Mnemonics;
 import org.openide.util.NbPreferences;
@@ -16,7 +17,7 @@ import org.openide.util.NbPreferences;
  *
  * @author Tim Boudreau
  */
-public class EnumCustomizer<T extends Enum<T>> extends AbstractCustomizer<T> {
+public class EnumCustomizer<T extends Enum<T>> extends AbstractCustomizer<T> implements ListenableCustomizer<T> {
 
     private final Class<T> type;
     T value;
@@ -68,6 +69,8 @@ public class EnumCustomizer<T extends Enum<T>> extends AbstractCustomizer<T> {
             Mnemonics.setLocalizedText(b, v.toString());
             b.addActionListener(ae -> {
                 value = v;
+                change();
+                fire();
             });
             grp.add(b);
             result[i] = b;

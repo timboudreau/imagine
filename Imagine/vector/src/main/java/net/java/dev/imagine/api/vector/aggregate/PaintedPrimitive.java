@@ -31,6 +31,7 @@ import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Mutable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Proxy;
+import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Transformable;
 import net.java.dev.imagine.api.vector.Vector;
@@ -544,6 +545,15 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         public Vo copy() {
             return new Vo(p, super.copyAttrs());
         }
+
+        @Override
+        public Runnable restorableSnapshot() {
+            if (p instanceof Shaped) {
+                return ((Shaped) p).restorableSnapshot();
+            }
+            return () -> {
+            };
+        }
     }
 
     private static final class Ve extends PaintedPrimitive implements Vector {
@@ -567,6 +577,15 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         public Ve copy(AffineTransform transform) {
             Vector v = ((Vector) p).copy(transform);
             return new Ve(v, copyAttrs());
+        }
+
+        @Override
+        public Runnable restorableSnapshot() {
+            if (p instanceof Shaped) {
+                return ((Shaped) p).restorableSnapshot();
+            }
+            return () -> {
+            };
         }
     }
 
@@ -595,6 +614,15 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         public SAV copy(AffineTransform transform) {
             Vector v = ((Vector) p).copy(transform);
             return new SAV(v, copyAttrs());
+        }
+
+        @Override
+        public Runnable restorableSnapshot() {
+            if (p instanceof Shaped) {
+                return ((Shaped) p).restorableSnapshot();
+            }
+            return () -> {
+            };
         }
     }
 
@@ -628,6 +656,15 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
             Vector v = ((Vector) p).copy(transform);
             return new SAVVM(v, copyAttrs());
         }
+
+        @Override
+        public Runnable restorableSnapshot() {
+            if (p instanceof Shaped) {
+                return ((Shaped) p).restorableSnapshot();
+            }
+            return () -> {
+            };
+        }
     }
 
     private static final class SAVF extends PaintedPrimitive implements Strokable, Adjustable, Volume, Fillable {
@@ -657,6 +694,15 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         public SAVF copy(AffineTransform transform) {
             Vector v = ((Vector) p).copy(transform);
             return new SAVF(v, copyAttrs());
+        }
+
+        @Override
+        public Runnable restorableSnapshot() {
+            if (p instanceof Shaped) {
+                return ((Shaped) p).restorableSnapshot();
+            }
+            return () -> {
+            };
         }
     }
 
@@ -689,6 +735,15 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         public SAVFV copy(AffineTransform transform) {
             Vector v = ((Vector) p).copy(transform);
             return new SAVFV(v, copyAttrs());
+        }
+
+        @Override
+        public Runnable restorableSnapshot() {
+            if (p instanceof Shaped) {
+                return ((Shaped) p).restorableSnapshot();
+            }
+            return () -> {
+            };
         }
 
     }
@@ -724,6 +779,15 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         public SAVFVM copy(AffineTransform transform) {
             Vector v = ((Vector) p).copy(transform);
             return new SAVFVM(v, copyAttrs());
+        }
+
+        @Override
+        public Runnable restorableSnapshot() {
+            if (p instanceof Shaped) {
+                return ((Shaped) p).restorableSnapshot();
+            }
+            return () -> {
+            };
         }
     }
 

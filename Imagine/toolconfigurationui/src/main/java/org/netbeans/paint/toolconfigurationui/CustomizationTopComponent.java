@@ -33,7 +33,7 @@ import org.openide.windows.TopComponent;
 @TopComponent.Description(preferredID = "customizers",
         //iconBase="SET/PATH/TO/ICON/HERE",
         persistenceType = TopComponent.PERSISTENCE_ALWAYS)
-//@TopComponent.Registration(mode = "customizers", openAtStartup = true)
+@TopComponent.Registration(mode = "customizers", openAtStartup = true)
 @ActionID(category = "Window", id = "org.netbeans.paint.toolconfigurationui.CustomizationTopComponent")
 @ActionReference(path = "Menu/Window", position = 10)
 @TopComponent.OpenActionRegistration(displayName = "#CTL_CustomizationAction",

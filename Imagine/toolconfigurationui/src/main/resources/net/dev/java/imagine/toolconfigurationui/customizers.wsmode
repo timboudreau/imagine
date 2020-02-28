@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mode version="2.4">
-  <module name="org.imagine.toolconfigurationui" spec="1.1" />
-  <name unique="customizers"/>
+    <name unique="customizers"  />
     <kind type="view" />
     <state type="joined"  />
     <constraints>
-        <path orientation="horizontal" number="60" weight="0.8"/>
-        <path orientation="vertical" number="10" weight="0.8"/>
-        <path orientation="horizontal" number="80" weight="0.35"/>
-        <path orientation="vertical" number="11" weight="0.8"/>
+        <path orientation="horizontal" number="60" weight="0.7"/>
+        <path orientation="vertical" number="40" weight="0.7"/>
+        <path orientation="horizontal" number="80" weight="0.457560175870035"/>
+        <path orientation="vertical" number="81" weight="0.23634204275534443"/>
     </constraints>
     <bounds x="0" y="0" width="0" height="0" />
     <frame state="0"/>
     <active-tc  id="customizers" />
-    <empty-behavior permanent="false"/>
+    <empty-behavior permanent="true"/>
 </mode>

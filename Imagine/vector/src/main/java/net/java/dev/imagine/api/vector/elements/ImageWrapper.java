@@ -69,6 +69,17 @@ public class ImageWrapper implements Primitive, Vector {
         this.y = y;
     }
 
+    public Runnable restorableSnapshot() {
+        BufferedImage oim = img;
+        double ox = x;
+        double oy = y;
+        return () -> {
+            x = ox;
+            y = oy;
+            img = oim;
+        };
+    }
+
     @Override
     public void translate(double x, double y) {
         this.x += x;
@@ -213,11 +224,8 @@ public class ImageWrapper implements Primitive, Vector {
     }
 
     @Override
-    public void getBounds(Rectangle2D.Double dest) {
-        dest.x = x;
-        dest.y = y;
-        dest.width = img.getWidth();
-        dest.height = img.getHeight();
+    public void getBounds(Rectangle2D dest) {
+        dest.setFrame(x, y, img.getWidth(), img.getHeight());
     }
 
     @Override

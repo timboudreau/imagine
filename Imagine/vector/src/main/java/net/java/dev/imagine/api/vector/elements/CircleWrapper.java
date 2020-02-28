@@ -53,6 +53,17 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
         this.fill = fill;
     }
 
+    public Runnable restorableSnapshot() {
+        double cx = centerX;
+        double cy = centerY;
+        double rad = radius;
+        return () -> {
+            centerX = cx;
+            centerY = cy;
+            radius = rad;
+        };
+    }
+
     public double centerX() {
         return centerX;
     }
@@ -136,8 +147,13 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
     }
 
     @Override
-    public void getBounds(Rectangle2D.Double dest) {
+    public void getBounds(Rectangle2D dest) {
         dest.setFrame(toShape().getBounds2D());
+    }
+
+    @Override
+    public void addToBounds(Rectangle2D bds) {
+        bds.add(toShape().getBounds2D());
     }
 
     @Override
@@ -250,11 +266,11 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
 
     @Override
     public boolean canApplyTransform(AffineTransform xform) {
-        switch(xform.getType()) {
-            case AffineTransform.TYPE_GENERAL_ROTATION :
-            case AffineTransform.TYPE_QUADRANT_ROTATION :
+        switch (xform.getType()) {
+            case AffineTransform.TYPE_GENERAL_ROTATION:
+            case AffineTransform.TYPE_QUADRANT_ROTATION:
                 return false;
-            default :
+            default:
                 return true;
         }
     }

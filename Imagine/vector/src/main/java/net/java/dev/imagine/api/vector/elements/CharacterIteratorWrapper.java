@@ -20,15 +20,26 @@ import net.java.dev.imagine.api.vector.Primitive;
 public final class CharacterIteratorWrapper implements Primitive {
 
     private static final long serialVersionUID = 203_942L;
-    public final AttributedCharacterIterator it;
-    public final double x;
-    public final double y;
+    public AttributedCharacterIterator it;
+    public double x;
+    public double y;
 
     public CharacterIteratorWrapper(AttributedCharacterIterator it, double x, double y) {
         assert it instanceof Serializable;
         this.it = it;
         this.x = x;
         this.y = y;
+    }
+
+    public Runnable restorableSnapshot() {
+        double ox = x;
+        double oy = y;
+        AttributedCharacterIterator oit = it;
+        return () -> {
+            it = oit;
+            x = ox;
+            y = oy;
+        };
     }
 
     @Override

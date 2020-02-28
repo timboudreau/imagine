@@ -24,6 +24,8 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.WindowConstants;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
+import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import org.imagine.editor.api.AspectRatio;
 import org.netbeans.paint.api.components.PopupSliderUI;
 import org.netbeans.paint.api.components.fractions.FractionsAndColorsEditor;
@@ -39,7 +41,9 @@ import org.openide.util.Utilities;
  *
  * @author Tim Boudreau
  */
-public class RadialGradientPaintCustomizer implements Customizer<RadialGradientPaint>, PointSelectorBackgroundPainter {
+public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<RadialGradientPaint>
+        implements Customizer<RadialGradientPaint>, PointSelectorBackgroundPainter,
+        ListenableCustomizer<RadialGradientPaint> {
 
     private final String name;
     private final PaintParams params = new PaintParams();
@@ -77,6 +81,15 @@ public class RadialGradientPaintCustomizer implements Customizer<RadialGradientP
         Preferences prefs = NbPreferences.forModule(RadialGradientPaintCustomizer.class);
         String nm = name == null ? "rgpDefault" : name;
         params.store(nm, prefs);
+    }
+
+    @Override
+    protected void onAfterFire() {
+        store();
+    }
+
+    private void changed() {
+        fire();
     }
 
     @Override
@@ -210,32 +223,32 @@ public class RadialGradientPaintCustomizer implements Customizer<RadialGradientP
             Point2D p = (Point2D) evt.getNewValue();
             params.targetPoint.setLocation(p);
             ps.repaint();
-            store();
+            changed();
         });
         ps.addPropertyChangeListener("focusPoint", evt -> {
             Point2D p = (Point2D) evt.getNewValue();
             params.focusPoint.setLocation(p);
             ps.repaint();
-            store();
+            changed();
         });
 
         colorSpaceCombo.addActionListener(ae -> {
             params.colorSpaceType = (ColorSpaceType) colorSpaceCombo.getSelectedItem();
             ps.repaint();
-            store();
+            changed();
         });
 
         cycleCombo.addActionListener(ae -> {
             params.cycleMethod = (CycleMethod) cycleCombo.getSelectedItem();
             ps.repaint();
-            store();
+            changed();
         });
 
         radius.addChangeListener(e -> {
             Number n = (Number) radius.getValue();
             params.radius = n.floatValue();
             ps.repaint();
-            store();
+            changed();
         });
 
         fAndC.addChangeListener(e -> {
@@ -243,7 +256,7 @@ public class RadialGradientPaintCustomizer implements Customizer<RadialGradientP
                 params.colors = cols;
                 params.fractions = fracs;
                 ps.repaint();
-                store();
+                changed();
             });
         });
 

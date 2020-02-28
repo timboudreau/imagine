@@ -42,6 +42,19 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
         this.fill = fill;
     }
 
+    public Runnable restorableSnapshot() {
+        double ox = x;
+        double oy = y;
+        double ow = width;
+        double oh = height;
+        return () -> {
+            x = ox;
+            y = oy;
+            height = oh;
+            width = ow;
+        };
+    }
+
     public double x() {
         return x;
     }
@@ -116,7 +129,13 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
     }
 
     @Override
-    public void getBounds(Rectangle2D.Double r) {
+    public void addToBounds(Rectangle2D bds) {
+        bds.add(x, y);
+        bds.add(x + width, y + height);
+    }
+
+    @Override
+    public void getBounds(Rectangle2D r) {
         double wid = width;
         double hi = height;
         double xx, yy, ww, hh;

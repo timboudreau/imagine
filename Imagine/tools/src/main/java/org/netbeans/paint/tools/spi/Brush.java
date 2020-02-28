@@ -11,8 +11,11 @@ package org.netbeans.paint.tools.spi;
 
 import java.awt.Component;
 import java.awt.Graphics2D;
+import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Shape;
+import org.imagine.editor.api.PaintingStyle;
 
 /**
  * Place .instance files for Brush implementations in the 
@@ -30,4 +33,12 @@ public interface Brush {
     public Component getCustomizer();
     public boolean isAntialiased();
     public Rectangle paint (Graphics2D g, Point loc, int modifiers);
+
+    public boolean canEmit();
+
+    public void emit(Point p, BrushGeometryEmitter emitter);
+
+    interface BrushGeometryEmitter {
+        void emit(Shape shape, Paint paint, PaintingStyle style);
+    }
 }

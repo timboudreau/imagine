@@ -31,8 +31,10 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.dev.java.imagine.api.tool.Tool;
-import net.dev.java.imagine.api.tool.aspects.SnapPointsConsumer;
-import net.dev.java.imagine.api.tool.aspects.SnapPointsConsumer.SnapPoints;
+import net.dev.java.imagine.api.tool.aspects.snap.Axis;
+import net.dev.java.imagine.api.tool.aspects.snap.SnapPoints;
+import net.dev.java.imagine.api.tool.aspects.snap.SnapPointsConsumer;
+import net.dev.java.imagine.api.tool.aspects.snap.SnapPoints;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Vector;
@@ -244,7 +246,7 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             if (cached != null) {
                 return cached;
             }
-            SnapPointsConsumer.SnapPoints.Builder b
+            SnapPoints.Builder b
                     = SnapPoints.builder(5);
             for (Primitive p : stack.primitives) {
                 addTo(p, b);
@@ -259,7 +261,7 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
 
     private double[] pts = new double[8];
 
-    private void addTo(Primitive vect, SnapPointsConsumer.SnapPoints.Builder bldr) {
+    private void addTo(Primitive vect, SnapPoints.Builder bldr) {
         if (vect instanceof Adjustable) {
             Adjustable adj = (Adjustable) vect;
             int cpCount = adj.getControlPointCount();
@@ -268,8 +270,8 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             for (int i = 0; i < cpCount * 2; i += 2) {
                 int ptIx = i / 2;
                 if (Arrays.binarySearch(virt, ptIx) < 0) {
-                    bldr.add(SnapPointsConsumer.Axis.X, pts[i]);
-                    bldr.add(SnapPointsConsumer.Axis.Y, pts[i + 1]);
+                    bldr.add(Axis.X, pts[i]);
+                    bldr.add(Axis.Y, pts[i + 1]);
                 }
             }
         }

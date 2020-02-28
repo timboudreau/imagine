@@ -56,7 +56,7 @@ public final class Surface implements EffectRecipient { //XXX should implement t
     public void applyComposite (Composite composite, Shape clip) {
         impl.applyComposite(composite, clip);
     }
-    
+
     public void applyBufferedImageOp (BufferedImageOp op, Shape clip) {
         impl.applyBufferedImageOp(op, clip);
     }
@@ -88,7 +88,11 @@ public final class Surface implements EffectRecipient { //XXX should implement t
     public void setTool (Tool tool) {
         impl.setTool (tool);
     }
-    
+
+    public ToolCommitPreference toolCommitPreference() {
+        return impl.toolCommitPreference();
+    }
+
     /**
      * Get a BufferedImage of the contents, for tools such as smudge tools
      * which harvest pixel data.
@@ -99,7 +103,7 @@ public final class Surface implements EffectRecipient { //XXX should implement t
      * This method may return null, in which case a tool might offer to convert
      * the layer to a raster layer which can supply an image.  The default
      * implementation returns null.
-     * 
+     *
      * @return An image
      */
     public BufferedImage getImage() {

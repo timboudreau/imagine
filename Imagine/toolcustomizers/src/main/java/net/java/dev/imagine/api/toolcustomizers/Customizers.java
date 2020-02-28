@@ -4,6 +4,7 @@ import org.imagine.utils.TimedExpirationMap;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.GradientPaint;
 import java.awt.LinearGradientPaint;
 import java.awt.RadialGradientPaint;
 import java.awt.event.ActionEvent;
@@ -26,6 +27,7 @@ import net.java.dev.imagine.toolcustomizers.BooleanCustomizer;
 import net.java.dev.imagine.toolcustomizers.ColorCustomizer;
 import net.java.dev.imagine.toolcustomizers.EnumCustomizer;
 import net.java.dev.imagine.toolcustomizers.FontCustomizer;
+import net.java.dev.imagine.toolcustomizers.GradientPaintCustomizer;
 import net.java.dev.imagine.toolcustomizers.LinearGradientPaintCustomizer;
 import net.java.dev.imagine.toolcustomizers.RadialGradientPaintCustomizer;
 import net.java.dev.imagine.toolcustomizers.TextCustomizer;
@@ -202,7 +204,7 @@ public final class Customizers {
         Map<String, Customizer<?>> m = map.get(type);
         boolean created = false;
         if (m == null) {
-            m = new HashMap<String, Customizer<?>>();
+            m = new HashMap<>();
             map.put(type, m);
             created = true;
         }
@@ -226,13 +228,15 @@ public final class Customizers {
         if (Enum.class.isAssignableFrom(type)) {
             result = new EnumCustomizer(name, type);
         } else if (type == String.class) {
-            result = (Customizer<T>) new TextCustomizer(name);
+            result = (Customizer<T>) new TextCustomizer(name, (String) existingValue);
         } else if (type == Boolean.class) {
-            result = (Customizer<T>) new BooleanCustomizer(name);
+            result = (Customizer<T>) new BooleanCustomizer(name, (Boolean) existingValue);
         } else if (type == Font.class) {
-            result = (Customizer<T>) new FontCustomizer(name);
+            result = (Customizer<T>) new FontCustomizer(name, (Font) existingValue);
         } else if (type == Color.class) {
-            result = (Customizer<T>) new ColorCustomizer(name);
+            result = (Customizer<T>) new ColorCustomizer(name, (Color) existingValue);
+        } else if (type == GradientPaint.class) {
+            result = (Customizer<T>) new GradientPaintCustomizer(name, (GradientPaint) existingValue);
         } else if (type == AffineTransform.class) {
             result = (Customizer<T>) new AffineTransformCustomizer(name, (AffineTransform) existingValue);
         } else if (type == LinearGradientPaint.class) {

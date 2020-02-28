@@ -37,6 +37,15 @@ public class Text implements Primitive, Vector {
         this.font = FontWrapper.create(font);
     }
 
+    public Runnable restorableSnapshot() {
+        Runnable tr = text.restorableSnapshot();
+        Runnable fr = font.restorableSnapshot();
+        return () -> {
+            tr.run();
+            fr.run();
+        };
+    }
+
     public FontWrapper font() {
         return font;
     }
@@ -176,7 +185,12 @@ public class Text implements Primitive, Vector {
     }
 
     @Override
-    public void getBounds(Rectangle2D.Double dest) {
+    public void addToBounds(Rectangle2D bds) {
+        bds.add(toShape().getBounds2D());
+    }
+
+    @Override
+    public void getBounds(Rectangle2D dest) {
         Shape shape = toShape();
         if (shape == null) {
             new Exception("Got null shape").printStackTrace();

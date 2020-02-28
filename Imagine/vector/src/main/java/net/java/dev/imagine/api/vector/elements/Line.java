@@ -41,6 +41,19 @@ public class Line implements Strokable, Adjustable, Vector {
         this.y2 = y2;
     }
 
+    public Runnable restorableSnapshot() {
+        double ox1 = x1;
+        double oy1 = y1;
+        double ox2 = x2;
+        double oy2 = y2;
+        return () -> {
+            x1 = ox1;
+            y1 = oy1;
+            x2 = ox2;
+            y2 = oy2;
+        };
+    }
+
     @Override
     public void translate(double x, double y) {
         this.x1 += x;
@@ -146,25 +159,14 @@ public class Line implements Strokable, Adjustable, Vector {
     }
 
     @Override
-    public void getBounds(Rectangle2D.Double r) {
-        double wid = x2 - x1;
-        double hi = y2 - y1;
-        double x, y, w, h;
-        if (wid < 0) {
-            wid = -wid;
-            x = x2;
-        } else {
-            x = x1;
-        }
-        w = wid;
-        if (hi < 0) {
-            hi = -hi;
-            y = y2;
-        } else {
-            y = y1;
-        }
-        h = hi;
-        r.setRect(x, y, w, h);
+    public void getBounds(Rectangle2D r) {
+        r.setFrameFromDiagonal(x1, y1, x2, y2);
+    }
+
+    @Override
+    public void addToBounds(Rectangle2D bds) {
+        bds.add(x1, y1);
+        bds.add(x2, y2);
     }
 
     @Override

@@ -58,14 +58,6 @@ public class DoubleMoveAction extends WidgetAction.LockedAdapter {
         scaleTransform.concatenate(xform);
         return scaleTransform;
     }
-    static AffineTransform xsceneToLocal(Widget widget) {
-        Point2D.Double widgetPoint = toPoint2D(widget.convertLocalToScene(zeros));
-        double zoom = widget.getScene().getZoomFactor();
-        AffineTransform scaleTransform = AffineTransform.getScaleInstance(zoom, zoom);
-        AffineTransform xform = AffineTransform.getTranslateInstance(widgetPoint.x, widgetPoint.y);
-        scaleTransform.concatenate(xform);
-        return scaleTransform;
-    }
 
     static AffineTransform localToScene(Widget widget) {
         try {

@@ -99,8 +99,8 @@ public class TextInspector extends InspectorFactory<Text> {
         sub = new SharedLayoutPanel();
         JLabel fontSizeLabel = new JLabel();
         Mnemonics.setLocalizedText(fontSizeLabel, Bundle.fontSize());
-        NumericConstraint fontConstraints = StandardNumericConstraints.DOUBLE_NON_NEGATIVE
-                .withMaximum(200F).withStep(0.5F);
+        NumericConstraint fontConstraints = StandardNumericConstraints.FLOAT_NON_NEGATIVE
+                .withMaximum(300F).withStep(0.5F).withMinimum(4F);
         NumberModel num = NumberModel.ofFloat(fontConstraints, obj::fontSize, (float val) -> {
             coll.edit("Change Font Size", shape, () -> {
                 obj.setFontSize(val);

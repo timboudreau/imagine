@@ -24,6 +24,7 @@ import java.awt.Insets;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.Collection;
+import java.util.prefs.Preferences;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -40,6 +41,7 @@ import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
+import org.openide.util.NbPreferences;
 import org.openide.util.Utilities;
 
 public final class NewCanvasAction extends org.openide.util.actions.CallableSystemAction {
@@ -121,7 +123,8 @@ public final class NewCanvasAction extends org.openide.util.actions.CallableSyst
         if (f == null) {
             return;
         }
-        final ImageSizePanel pnl = new ImageSizePanel(f.supportsBackgroundStyles());
+        Dimension last = loadLastSize();
+        final ImageSizePanel pnl = new ImageSizePanel(f.supportsBackgroundStyles(), last);
         String ttl = NbBundle.getMessage(ResizeAction.class, "TTL_NewImage");
         //This code really should use DialogDisplayer, but is not due
         //to a bug in the window system
@@ -129,8 +132,28 @@ public final class NewCanvasAction extends org.openide.util.actions.CallableSyst
                 ttl, JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
                 null, null, null);
         if (result == JOptionPane.OK_OPTION) {
-            f.openNew(pnl.getDimension(), pnl.getBackgroundStyle());
+            Dimension d = pnl.getDimension();
+            if (d.width == 0 || d.height == 0) {
+                return;
+            }
+            f.openNew(d, pnl.getBackgroundStyle());
+            if (d.width != last.width || d.height != last.height) {
+                saveLastSize(d);
+            }
         }
+    }
+
+    private Dimension loadLastSize() {
+        Preferences prefs = NbPreferences.forModule(NewCanvasAction.class);
+        int w = prefs.getInt("editor-width", 1280);
+        int h = prefs.getInt("editor-height", 1024);
+        return new Dimension(w, h);
+    }
+
+    private void saveLastSize(Dimension dim) {
+        Preferences prefs = NbPreferences.forModule(NewCanvasAction.class);
+        prefs.putInt("editor-width", Math.max(8, dim.width));
+        prefs.putInt("editor-height", Math.max(8, dim.height));
     }
 
     public String getName() {

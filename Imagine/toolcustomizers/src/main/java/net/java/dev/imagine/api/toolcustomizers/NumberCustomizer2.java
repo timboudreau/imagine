@@ -20,6 +20,8 @@ import javax.swing.JSlider;
 import javax.swing.WindowConstants;
 import javax.swing.plaf.SliderUI;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
+import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import org.netbeans.paint.api.components.LDPLayout;
 import org.netbeans.paint.api.components.PopupSliderUI;
 import org.netbeans.paint.api.components.RadialSliderUI;
@@ -33,7 +35,8 @@ import org.openide.util.NbPreferences;
  *
  * @author Tim Boudreau
  */
-final class NumberCustomizer2<T extends Number> implements Customizer<T> {
+final class NumberCustomizer2<T extends Number> extends ListenableCustomizerSupport<T>
+        implements Customizer<T>, ListenableCustomizer<T> {
 
     private final Class<T> type;
     private final String name;
@@ -70,6 +73,7 @@ final class NumberCustomizer2<T extends Number> implements Customizer<T> {
         slider.addChangeListener(ce -> {
             T val = conv.fromInt(slider.getValue());
             conv.save(prefs, prefsKeyBase, val);
+            fire();
         });
     }
 

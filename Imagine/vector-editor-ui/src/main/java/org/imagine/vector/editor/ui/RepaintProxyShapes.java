@@ -5,6 +5,7 @@
  */
 package org.imagine.vector.editor.ui;
 
+import org.imagine.vector.editor.ui.undo.SingleShapeEdit;
 import com.mastfrog.abstractions.Wrapper;
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
@@ -12,22 +13,32 @@ import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
+import java.util.function.Supplier;
+import net.dev.java.imagine.api.tool.aspects.snap.SnapPoint;
+import net.dev.java.imagine.api.tool.aspects.snap.SnapPoints;
+import net.dev.java.imagine.api.tool.aspects.snap.SnapPointsConsumer;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.design.ControlPoint;
 import org.imagine.editor.api.PaintingStyle;
-import org.imagine.utils.ConvertList.Converter;
 import org.imagine.utils.painting.RepaintHandle;
+import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
 import org.imagine.vector.editor.ui.tools.CSGOperation;
+import org.imagine.vector.editor.ui.undo.ContentsEdit;
+import org.imagine.vector.editor.ui.undo.GeometryEdit;
+import org.imagine.vector.editor.ui.undo.UndoRedoHookable;
 
 /**
  * Wraps the actual shape model and triggers repaints on modification and
@@ -59,6 +70,42 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
     }
 
     @Override
+    public boolean contains(ShapeElement el) {
+        return shapes.contains(unwrap(el));
+    }
+
+    @Override
+    public ShapeElement get(int index) {
+        return wrap(shapes.get(index));
+    }
+
+    @Override
+    public int indexOf(ShapeElement el) {
+        return shapes.indexOf(unwrap(el));
+    }
+
+    @Override
+    public int size() {
+        return shapes.size();
+    }
+
+    @Override
+    public void addToBounds(Rectangle2D b) {
+        shapes.addToBounds(b);
+    }
+
+    @Override
+    public UndoRedoHookable contentsEdit(String name, Runnable r) {
+        Rectangle2D.Double bds = new Rectangle2D.Double();
+        getBounds(bds);
+        return ContentsEdit.addEdit(name, this, handle, () -> {
+            r.run();
+            addToBounds(bds);
+            handle.repaintArea(bds);
+        });
+    }
+
+    @Override
     public ShapeElement duplicate(ShapeElement el) {
         return wrap(shapes.duplicate(el));
     }
@@ -74,29 +121,10 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
         return false;
     }
 
-    Converter<WrapperShapeEntry, ShapeEntry> converter = new Converter<WrapperShapeEntry, ShapeEntry>() {
-        @Override
-        public WrapperShapeEntry convert(ShapeEntry r) {
-            return new WrapperShapeEntry(r);
-        }
-
-        @Override
-        public ShapeEntry unconvert(WrapperShapeEntry t) {
-            return t.entry;
-        }
-    };
-
     @Override
-    public List<ShapeElement> shapesAtPoint(double x, double y) {
+    public List<? extends ShapeElement> shapesAtPoint(double x, double y) {
         List<? extends ShapeElement> l = shapes.shapesAtPoint(x, y);
-        if (l.isEmpty()) {
-            return Collections.emptyList();
-        }
-        List<ShapeElement> result = new ArrayList<>(l.size());
-        for (ShapeElement e : l) {
-            result.add(new WrapperShapeEntry((ShapeEntry) e));
-        }
-        return result;
+        return wrap(l);
     }
 
     private ShapeEntry unwrap(ShapeElement el) {
@@ -119,27 +147,38 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
         return result;
     }
 
-    private ShapeEntry[] unwrap(ShapeElement[] els) {
-        ShapeEntry[] result = new ShapeEntry[els.length];
-        for (int i = 0; i < els.length; i++) {
-            ShapeEntry en = unwrap(els[i]);
-            assert en != null : "Unknown at  " + i + ": " + els[i];
-            result[i] = en;
-        }
-        return result;
+    @Override
+    public Supplier<SnapPoints> snapPoints(double radius, BiConsumer<SnapPoint, SnapPoint> onSnap) {
+        return shapes.snapPoints(radius);
     }
 
     @Override
-    public boolean csg(CSGOperation op, ShapeElement lead, List<? extends ShapeElement> elements, BiConsumer<Set<ShapeElement>, ShapeElement> removedAndAdded) {
-        Rectangle bds = new Rectangle(lead.getBounds());
+    public UndoRedoHookable geometryEdit(String name, Runnable r) {
+        return GeometryEdit.createEditAdder(name, this, handle, adder -> {
+            r.run();
+            adder.run();
+        });
+    }
+
+    @Override
+    public void getBounds(Rectangle2D into) {
+        shapes.getBounds(into);
+    }
+
+    @Override
+    public boolean csg(CSGOperation op, ShapeElement lead, List<? extends ShapeElement> elements, BiConsumer<? super Set<? extends ShapeElement>, ? super ShapeElement> removedAndAdded) {
+        Rectangle2D.Double bds = new Rectangle2D.Double();
+        lead.addToBounds(bds);
         for (ShapeElement se : elements) {
-            bds.add(se.getBounds());
+            se.addToBounds(bds);
         }
+        SingleShapeEdit.includeContentsSnapshotInCurrentEdit();
         return shapes.csg(op, unwrap(lead), unwrap(elements), (rem, add) -> {
             if (add != null) {
-                bds.add(add.getBounds());
+                add.addToBounds(bds);
                 handle.repaintArea(bds);
             }
+            removedAndAdded.accept(wrap(rem), wrap(add));
         });
     }
 
@@ -160,7 +199,6 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
 
     @Override
     public ShapesCollection applyTransform(AffineTransform xform) {
-        // XXX undo support
         shapes.applyTransform(xform);
         return this;
     }
@@ -176,12 +214,26 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
     }
 
     @Override
-    public void edit(String name, ShapeElement el, Runnable r) {
-        Rectangle oldBounds = el.getBounds();
-        shapes.edit(name, unwrap(el), () -> {
+    public Runnable contentsSnapshot() {
+        Runnable r = shapes.contentsSnapshot();
+        Rectangle bds = getBounds();
+        return () -> {
+            bds.add(getBounds());
             r.run();
-            oldBounds.add(el.getBounds());
-            handle.repaintArea(oldBounds);
+            handle.repaintArea(bds);
+        };
+    }
+
+    @Override
+    public UndoRedoHookable edit(String name, ShapeElement el, Runnable editPerformer) {
+        Rectangle oldBounds = el.getBounds();
+        return SingleShapeEdit.maybeAddEdit(name, el, this, handle, (Runnable editAdder) -> {
+            shapes.edit(name, unwrap(el), () -> {
+                editPerformer.run();
+                oldBounds.add(el.getBounds());
+                handle.repaintArea(oldBounds);
+                editAdder.run();
+            });
         });
     }
 
@@ -215,8 +267,6 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
         return new It(shapes.iterator());
     }
 
-    // XXX add calls to UNWRAP on passed objects
-    // or everything will be broken
     @Override
     public boolean toBack(ShapeElement en) {
         ShapeEntry e = unwrap(en);
@@ -246,6 +296,9 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
     }
 
     private List<WrapperShapeEntry> wrap(List<? extends ShapeElement> l) {
+        if (l == null || l.isEmpty()) {
+            return Collections.emptyList();
+        }
         List<WrapperShapeEntry> result = new ArrayList(l.size());
         for (ShapeElement sh : l) {
             result.add(wrap(sh));
@@ -253,7 +306,26 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
         return result;
     }
 
+    private Set<WrapperShapeEntry> wrap(Set<? extends ShapeElement> l) {
+        if (l == null || l.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<WrapperShapeEntry> result = new HashSet<>(l.size());
+        for (ShapeElement sh : l) {
+            result.add(wrap(sh));
+        }
+        return result;
+    }
+
+    @Override
+    public Set<? extends ShapeElement> absent(Collection<? extends ShapeElement> from) {
+        return wrap(shapes.absent(from));
+    }
+
     private WrapperShapeEntry[] wrap(ShapeElement[] l) {
+        if (l == null || l.length == 0) {
+            return new WrapperShapeEntry[0];
+        }
         WrapperShapeEntry[] result = new WrapperShapeEntry[l.length];
         for (int i = 0; i < result.length; i++) {
             result[i] = wrap(unwrap(l[i]));
@@ -299,6 +371,26 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
 
         public WrapperShapeEntry(ShapeEntry entry) {
             this.entry = entry;
+        }
+
+        @Override
+        public int getControlPointCount() {
+            return entry.getControlPointCount();
+        }
+
+        @Override
+        public void addToBounds(Rectangle2D r) {
+            entry.addToBounds(r);
+        }
+
+        @Override
+        public Runnable restorableSnapshot() {
+            return entry.restorableSnapshot();
+        }
+
+        @Override
+        public Runnable geometrySnapshot() {
+            return entry.geometrySnapshot();
         }
 
         @Override
@@ -361,7 +453,7 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
         }
 
         @Override
-        public ControlPoint[] controlPoints(double size, Consumer<ControlPoint> c) {
+        public ShapeControlPoint[] controlPoints(double size, Consumer<ControlPoint> c) {
             Rectangle bds = getBounds();
             return entry.controlPoints(size, (cp) -> {
                 c.accept(cp);
@@ -395,6 +487,28 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
         @Override
         public boolean paint(Graphics2D g, Rectangle clip) {
             return entry.paint(g, clip);
+        }
+
+        @Override
+        public boolean isNameSet() {
+            return entry.isNameSet();
+        }
+
+        @Override
+        public void setName(String name) {
+            entry.setName(name);
+        }
+
+        @Override
+        public String getName() {
+            return entry.getName();
+        }
+
+        @Override
+        public void setShape(Shape shape) {
+            wrapMutation(() -> {
+                entry.setShape(shape);
+            });
         }
 
         @Override

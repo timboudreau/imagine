@@ -25,9 +25,9 @@ import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
+import static java.awt.geom.PathIterator.SEG_CLOSE;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.geom.Rectangle2D.Double;
 import java.io.Serializable;
 import static java.lang.Double.doubleToLongBits;
 import java.util.ArrayList;
@@ -59,9 +59,10 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
 
     private Segment[] segments;
 
-    /**
-     * Creates a new instance of PathIteratorWrapper2
-     */
+    public PathIteratorWrapper(Shape shape) {
+        this(shape.getPathIterator(null));
+    }
+
     public PathIteratorWrapper(PathIterator it) {
         this(it, false);
     }
@@ -184,6 +185,61 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             return new Segment(this);
         }
 
+        void minMax(double[] xyMinMax) {
+            if (data == null) {
+                return;
+            }
+            assert xyMinMax.length == 4;
+            for (int i = 0; i < data.length; i += 2) {
+                xyMinMax[0] = Math.min(xyMinMax[0], data[i]);
+                xyMinMax[1] = Math.min(xyMinMax[1], data[i + 1]);
+                xyMinMax[2] = Math.max(xyMinMax[0], data[i]);
+                xyMinMax[3] = Math.max(xyMinMax[1], data[i + 1]);
+            }
+        }
+
+        void minLocation(double[] xy) {
+            if (data != null) {
+                for (int i = 0; i < data.length; i += 2) {
+                    xy[0] = Math.min(xy[0], data[i]);
+                    xy[1] = Math.min(xy[1], data[i + 1]);
+                }
+            }
+        }
+
+        void maxLocation(double[] xy) {
+            if (data != null) {
+                for (int i = 0; i < data.length; i += 2) {
+                    xy[0] = Math.max(xy[0], data[i]);
+                    xy[1] = Math.max(xy[1], data[i + 1]);
+                }
+            }
+        }
+
+        void get(float[] into) {
+            if (data == null) {
+                return;
+            }
+            if (into.length < data.length) {
+                throw new IllegalArgumentException("Array size too small - " + into.length
+                        + " for " + data.length + " elements");
+            }
+            for (int i = 0; i < data.length; i++) {
+                into[i] = Math.round(data[i]);
+            }
+        }
+
+        void get(double[] into) {
+            if (data == null) {
+                return;
+            }
+            if (into.length < data.length) {
+                throw new IllegalArgumentException("Array size too small - " + into.length
+                        + " for " + data.length + " elements");
+            }
+            System.arraycopy(data, 0, into, 0, data.length);
+        }
+
         public void transform(AffineTransform xform) {
             if (data != null) {
                 xform.transform(data, 0, data, 0, data.length);
@@ -196,6 +252,14 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             }
             return new Point2D.Double(data[data.length - 2],
                     data[data.length - 1]);
+        }
+
+        public double physicalX() {
+            return data == null ? 0 : data[data.length - 2];
+        }
+
+        public double physicalY() {
+            return data == null ? 0 : data[data.length - 1];
         }
 
         public double[] primaryPoint() {
@@ -310,6 +374,14 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             return getPointCount() > 1;
         }
 
+        void addToBounds(Rectangle2D bounds) {
+            if (data != null) {
+                for (int i = 0; i < data.length; i += 2) {
+                    bounds.add(data[i], data[i + 1]);
+                }
+            }
+        }
+
         void translate(double dx, double dy) {
             if (data != null) {
                 for (int i = 0; i < data.length; i += 2) {
@@ -388,6 +460,34 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             }
             return (((int) bits) ^ ((int) (bits >> 32)));
         }
+
+        private void applyTransform(AffineTransform xform) {
+            if (data != null) {
+                xform.transform(data, 0, data, 0, data.length / 2);
+            }
+        }
+
+        private void applyTo(Path2D.Double result) {
+            switch (type) {
+                case PathIterator.SEG_CLOSE:
+                    result.closePath();
+                    break;
+                case PathIterator.SEG_MOVETO:
+                    result.moveTo(data[0], data[1]);
+                    break;
+                case PathIterator.SEG_LINETO:
+                    result.lineTo(data[0], data[1]);
+                    break;
+                case PathIterator.SEG_CUBICTO:
+                    result.curveTo(data[0], data[1], data[2], data[3], data[4], data[5]);
+                    break;
+                case PathIterator.SEG_QUADTO:
+                    result.quadTo(data[0], data[1], data[2], data[3]);
+                    break;
+                default:
+                    throw new AssertionError(type);
+            }
+        }
     }
 
     @Override
@@ -464,12 +564,19 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
     @Override
     public Pt getLocation() {
         //XXX optimize
-        java.awt.Rectangle r = toShape().getBounds();
-        return new Pt(r.getLocation());
+        double[] min = new double[]{Double.MAX_VALUE, Double.MAX_VALUE};
+        for (Segment seg : segments) {
+            seg.minLocation(min);
+        }
+        return new Pt(min[0] == Double.MAX_VALUE ? 0 : min[0],
+                min[1] == Double.MAX_VALUE ? 0 : min[1]);
     }
 
     @Override
     public void setLocation(double x, double y) {
+        if (x == 0D && y == 0D) {
+            return;
+        }
         Pt old = getLocation();
         double offx = x - old.x;
         double offy = y - old.y;
@@ -517,8 +624,11 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         if (xform.isIdentity()) {
             return;
         }
-        unpack(xform.createTransformedShape(toShape())
-                .getPathIterator(null));
+        for (Segment seg : segments) {
+            seg.applyTransform(xform);
+        }
+//        unpack(xform.createTransformedShape(toShape())
+//                .getPathIterator(null));
     }
 
     @Override
@@ -565,9 +675,37 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
     }
 
     @Override
-    public void getBounds(Double dest) {
-        //XXX optimize
-        dest.setRect(toShape().getBounds2D());
+    public void addToBounds(Rectangle2D bds) {
+        double[] minMax = new double[]{
+            Double.MAX_VALUE, Double.MAX_VALUE,
+            Double.MIN_VALUE, Double.MIN_VALUE
+        };
+        for (Segment seg : segments) {
+            seg.minMax(minMax);
+        }
+        if (minMax[0] != Double.MAX_VALUE && minMax[1] != Double.MAX_VALUE) {
+            bds.add(minMax[0], minMax[1]);
+        }
+        if (minMax[2] != Double.MIN_VALUE && minMax[3] != Double.MIN_VALUE) {
+            bds.add(minMax[2], minMax[3]);
+        }
+    }
+
+    @Override
+    public void getBounds(Rectangle2D dest) {
+        double[] minMax = new double[]{
+            Double.MAX_VALUE, Double.MAX_VALUE,
+            Double.MIN_VALUE, Double.MIN_VALUE
+        };
+        for (Segment seg : segments) {
+            seg.minMax(minMax);
+        }
+        if (minMax[0] != Double.MAX_VALUE && minMax[1] != Double.MAX_VALUE) {
+            dest.add(minMax[0], minMax[1]);
+        }
+        if (minMax[2] != Double.MIN_VALUE && minMax[3] != Double.MIN_VALUE) {
+            dest.add(minMax[2], minMax[3]);
+        }
     }
 
     public synchronized boolean movePathElement(int elementIndex, double offsetX, double offsetY) {
@@ -578,7 +716,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         if (seg.data != null && seg.data.length > 0) {
             for (int i = 0; i < seg.data.length; i += 2) {
                 seg.data[i] += offsetX;
-                seg.data[i + 1] = seg.data[i] + offsetY;
+                seg.data[i + 1] += offsetY;
             }
             return true;
         }
@@ -727,51 +865,36 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         }
     }
 
-    private int leastPossibleSegmentForPointIndex(int pointIndex) {
-        if (pointIndex == 0) {
-            return 0;
-        }
-        // first segement is always a single point;
-        // assuming every point after it is 3-point cubic,
-        // divide and we have our starting point, and add
-        // the one back in for the 0th point we would have
-        // caught above
-        return ((pointIndex - 1) / 3) + 1;
-    }
-
     public synchronized void setControlPointLocation(int pointIndex, double x, double y) {
-        int ct = 0;
-        for (int i = leastPossibleSegmentForPointIndex(pointIndex); i < segments.length; i++) {
-            Segment seg = segments[i];
-            int pc = seg.getPointCount();
-            if (pc != 0 && pointIndex >= ct && pointIndex < ct + pc) {
-                int offset = pointIndex - ct;
-                seg.data[offset * 2] = x;
-                seg.data[(offset * 2) + 1] = y;
-                break;
+        if (pointIndex == 0) {
+            if (segments.length > 0) {
+                Segment seg = segments[0];
+                int ix = seg.primaryPointIndexInternal();
+                seg.data[ix] = x;
+                seg.data[ix + 1] = y;
+                return;
+            } else {
+                return;
             }
-            ct += seg.getPointCount();
         }
-        /*
         int cursor = 0;
-        for (Segment seg : segments) {
-            int ct = seg.getPointCount();
-            if (ct == 0) {
+        for (int i = 0; i < segments.length; i++) {
+            Segment seg = segments[i];
+            int currentPointCount = seg.getPointCount();
+            if (currentPointCount == 0) {
                 continue;
             }
             if (pointIndex == cursor) {
                 seg.data[0] = x;
                 seg.data[1] = y;
                 return;
-            } else if (pointIndex < cursor + ct) {
-                int offset = (pointIndex - ct) * 2;
+            } else if (pointIndex > cursor && pointIndex < cursor + currentPointCount) {
+                int offset = (pointIndex - cursor) * 2;
                 seg.data[offset] = x;
                 seg.data[offset + 1] = y;
             }
-            cursor += ct;
+            cursor += currentPointCount;
         }
-
-         */
     }
 
     private int entryIndexFor(int pointIndex) {
@@ -792,10 +915,14 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
     }
 
     private int validatePointIndex(int pointIndex) {
-        if (pointIndex < 0 || pointIndex >= segments.length) {
+        if (pointIndex < 0) {
             throw new IllegalArgumentException(
-                    "No point at index " + pointIndex + " - " + segments.length
-                    + " present in " + this);
+                    "Negative point index " + pointIndex);
+        }
+        int ct = getControlPointCount();
+        if (pointIndex >= ct) {
+            throw new IllegalArgumentException("Point index > count " + ct
+                    + ": " + pointIndex);
         }
         return pointIndex;
     }
@@ -882,7 +1009,23 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
     }
 
     public synchronized boolean isExplicitlyClosed() {
-        return segments.length > 0 && segments[segments.length - 1].type == PathIterator.SEG_CLOSE;
+        return segments.length > 0
+                && segments[segments.length - 1].type == SEG_CLOSE;
+    }
+
+    public synchronized boolean isMultipleSegments() {
+        int closeCount = 0;
+        int lastCloseIndex = -1;
+        for (int i = 0; i < segments.length; i++) {
+            if (segments[i].type == SEG_CLOSE) {
+                lastCloseIndex = i;
+                closeCount++;
+                if (closeCount > 1) {
+                    return true;
+                }
+            }
+        }
+        return lastCloseIndex < segments.length - 1;
     }
 
     public synchronized PathIteratorWrapper addLineTo(double x, double y, boolean insertAtNearest) {
@@ -894,7 +1037,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             return;
         }
         int prevIndex = segments.length - 1;
-        while (prevIndex > 0 && segments[prevIndex].type == PathIterator.SEG_CLOSE) {
+        while (prevIndex > 0 && segments[prevIndex].type == SEG_CLOSE) {
             prevIndex--;
         }
         Segment prev = segments[prevIndex];
@@ -1166,10 +1309,141 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         return sb.toString();
     }
 
-    @Override
-    public java.awt.Rectangle getBounds() {
+    public int simplify() {
         Rectangle2D.Double bds = new Rectangle2D.Double();
         getBounds(bds);
-        return bds.getBounds();
+        double diag = Point2D.distance(bds.x, bds.y, bds.x + bds.width, bds.y + bds.height);
+        return simplify(diag * 0.05);
     }
+
+    public int simplify(double tolerance) {
+        if (segments.length < 3) {
+            return 0;
+        }
+        Path2D.Double result = new Path2D.Double();
+        segments[0].applyTo(result);
+        int lastType = segments[0].type;
+        double lastX = segments[0].physicalX();
+        double lastY = segments[0].physicalY();
+        int elided = 0;
+        for (int i = 1; i < segments.length; i++) {
+            Segment s = segments[i];
+            if (lastType == s.type) {
+                double lx = s.physicalX();
+                double ly = s.physicalY();
+                if (Point2D.distance(lastX, lastY, lx, ly) <= tolerance) {
+                    elided++;
+                } else {
+                    s.applyTo(result);
+                }
+            } else {
+                s.applyTo(result);
+            }
+            lastType = s.type;
+        }
+        return elided;
+    }
+
+    @Override
+    public java.awt.Rectangle getBounds() {
+        java.awt.Rectangle r = new java.awt.Rectangle();
+        for (Segment seg : segments) {
+            seg.addToBounds(r);
+        }
+        return r;
+    }
+
+    public PathIterator getPathIterator() {
+        return new PI();
+    }
+
+    public PathIterator getPathIterator(AffineTransform x) {
+        if (x == null) {
+            return getPathIterator();
+        }
+        return new XPI(x);
+    }
+
+    class PI implements PathIterator {
+
+        private int cursor = 0;
+
+        @Override
+        public int getWindingRule() {
+            return PathIterator.WIND_NON_ZERO;
+        }
+
+        @Override
+        public boolean isDone() {
+            return cursor >= segments.length;
+        }
+
+        @Override
+        public void next() {
+            cursor++;
+        }
+
+        @Override
+        public int currentSegment(float[] coords) {
+            int result = segments[cursor].type;
+            if (result != SEG_CLOSE) {
+                segments[cursor].get(coords);
+            }
+            return result;
+        }
+
+        @Override
+        public int currentSegment(double[] coords) {
+            int result = segments[cursor].type;
+            if (result != SEG_CLOSE) {
+                segments[cursor].get(coords);
+            }
+            return result;
+        }
+    }
+
+    class XPI implements PathIterator {
+
+        private int cursor = 0;
+        private final AffineTransform xform;
+
+        public XPI(AffineTransform xform) {
+            this.xform = xform;
+        }
+
+        @Override
+        public int getWindingRule() {
+            return PathIterator.WIND_NON_ZERO;
+        }
+
+        @Override
+        public boolean isDone() {
+            return cursor >= segments.length;
+        }
+
+        @Override
+        public void next() {
+            cursor++;
+        }
+
+        @Override
+        public int currentSegment(float[] coords) {
+            int result = segments[cursor].type;
+            if (result != SEG_CLOSE) {
+                segments[cursor].get(coords);
+                xform.transform(coords, 0, coords, 0, segments[cursor].getPointCount());
+            }
+            return result;
+        }
+
+        @Override
+        public int currentSegment(double[] coords) {
+            int result = segments[cursor].type;
+            if (result != SEG_CLOSE) {
+                segments[cursor].get(coords);
+            }
+            return result;
+        }
+    }
+
 }

@@ -40,6 +40,17 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
     public int style;
     public AffineTransform transform;
 
+    public Runnable restorableSnapshot() {
+        String s = name;
+        float sz = size;
+        int st = style;
+        return () -> {
+            name = s;
+            size = sz;
+            style = st;
+        };
+    }
+
     private FontWrapper(Font f) {
         name = f.getName();
         size = f.getSize2D();

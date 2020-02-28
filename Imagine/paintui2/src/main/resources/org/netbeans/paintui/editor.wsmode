@@ -11,16 +11,19 @@ The Original Code is NetBeans. The Initial Developer of the Original
 Code is Sun Microsystems, Inc. Portions Copyright 1997-2005 Sun
 Microsystems, Inc. All Rights Reserved.
 -->
-
 <!DOCTYPE mode PUBLIC
           "-//NetBeans//DTD Mode Properties 2.0//EN"
           "http://www.netbeans.org/dtds/mode-properties2_0.dtd">
 
-<mode version="2.0">
-    <name unique="editor" />
+<mode version="2.4">
+    <name unique="editor"  />
     <kind type="editor" />
-    <state type="joined" />
+    <state type="joined"  />
     <constraints>
+        <path orientation="vertical" number="0" weight="0.7" />
+        <path orientation="horizontal" number="0" weight="0.5" />
     </constraints>
-    <empty-behavior permanent="true" />
+    <bounds x="0" y="0" width="0" height="0" />
+    <frame state="0"/>
+    <empty-behavior permanent="true"/>
 </mode>

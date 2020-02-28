@@ -46,6 +46,19 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
         this.fill = fill;
     }
 
+    public Runnable restorableSnapshot() {
+        double ox = x;
+        double oy = y;
+        double ow = w;
+        double oh = h;
+        return () -> {
+            x = ox;
+            y = oy;
+            h = oh;
+            w = ow;
+        };
+    }
+
     @Override
     public void translate(double x, double y) {
         this.x += x;
@@ -147,7 +160,13 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
     }
 
     @Override
-    public void getBounds(Rectangle2D.Double r) {
+    public void addToBounds(Rectangle2D bds) {
+        bds.add(x, y);
+        bds.add(x + w, y + h);
+    }
+
+    @Override
+    public void getBounds(Rectangle2D r) {
         r.setRect(x, y, w, h);
     }
 

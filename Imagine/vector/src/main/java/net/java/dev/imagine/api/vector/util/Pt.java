@@ -6,7 +6,6 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.vector.util;
 
 import java.awt.geom.Point2D;
@@ -17,27 +16,29 @@ import java.io.Serializable;
  *
  * @author Tim Boudreau
  */
-public final class Pt implements Serializable{
+public final class Pt implements Serializable {
+
     public final double x;
     public final double y;
-    public static final Pt ORIGIN = new Pt (0,0);
+    public static final Pt ORIGIN = new Pt(0, 0);
+
     public Pt(double x, double y) {
         this.x = x;
         this.y = y;
     }
-    
+
     public Pt(Point2D point) {
-        this (point.getX(), point.getY());
+        this(point.getX(), point.getY());
     }
 
-    public Rect center (final Size size) {
+    public Rect center(final Size size) {
         double halfx = size.w / 2;
         double halfy = size.h / 2;
-        return new Rect (x - halfx, y - halfy, size.w, size.h);
+        return new Rect(x - halfx, y - halfy, size.w, size.h);
     }
 
     @Override
-    public boolean equals (Object o) {
+    public boolean equals(Object o) {
         boolean result = o instanceof Pt;
         if (result) {
             Pt p = (Pt) o;
@@ -54,5 +55,9 @@ public final class Pt implements Serializable{
     @Override
     public String toString() {
         return "Pt<" + x + ',' + y + '>';
-     }
+    }
+
+    public Point2D toPoint2D() {
+        return new Point2D.Double(x, y);
+    }
 }

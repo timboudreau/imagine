@@ -11,6 +11,7 @@ import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import net.java.dev.imagine.api.vector.Shaped;
@@ -26,21 +27,21 @@ public interface ShapeElement {
 
     /**
      * Get a unique id for this shape.
+     *
      * @return The id
      */
     long id();
 
     /**
-     * Create a new element which is a copy of this one
-     * with a new ID.
+     * Create a new element which is a copy of this one with a new ID.
      *
      * @return A copy
      */
     ShapeElement duplicate();
 
     /**
-     * Create a copy of this shape that share the same ID
-     * (so it is effectively the same object for undo purposes).
+     * Create a copy of this shape that share the same ID (so it is effectively
+     * the same object for undo purposes).
      *
      * @return A copy
      */
@@ -62,7 +63,17 @@ public interface ShapeElement {
 
     void toPaths();
 
-    ControlPoint[] controlPoints(double size, Consumer<ControlPoint> c);
+    void setName(String name);
+
+    String getName();
+
+    ShapeControlPoint[] controlPoints(double size, Consumer<ControlPoint> c);
+
+    void addToBounds(Rectangle2D r);
+
+    boolean isNameSet();
+
+    int getControlPointCount();
 
     void changed();
 
@@ -102,4 +113,8 @@ public interface ShapeElement {
     public Paint getFill();
 
     public Paint getDraw();
+
+    Runnable restorableSnapshot();
+
+    Runnable geometrySnapshot();
 }

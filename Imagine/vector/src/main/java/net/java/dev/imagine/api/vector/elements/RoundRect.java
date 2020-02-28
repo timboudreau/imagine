@@ -49,6 +49,23 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
         this.fill = fill;
     }
 
+    public Runnable restorableSnapshot() {
+        double ox = x;
+        double oy = y;
+        double ow = w;
+        double oh = h;
+        double oaw = aw;
+        double oah = ah;
+        return () -> {
+            x = ox;
+            y = oy;
+            h = oh;
+            w = ow;
+            aw = oaw;
+            ah = oah;
+        };
+    }
+
     @Override
     public void translate(double x, double y) {
         this.x += x;
@@ -142,7 +159,13 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
     }
 
     @Override
-    public void getBounds(Rectangle2D.Double r) {
+    public void addToBounds(Rectangle2D bds) {
+        bds.add(x, y);
+        bds.add(x + w, y + h);
+    }
+
+    @Override
+    public void getBounds(Rectangle2D r) {
         double wid = w;
         double hi = h;
         double xx, yy, ww, hh;

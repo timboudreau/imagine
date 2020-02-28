@@ -21,6 +21,7 @@ import java.awt.image.BufferedImageOp;
 import net.dev.java.imagine.api.tool.Tool;
 import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.api.image.Surface;
+import net.java.dev.imagine.api.image.ToolCommitPreference;
 import org.netbeans.paint.api.util.Movable;
 
 /**
@@ -116,6 +117,17 @@ public abstract class SurfaceImplementation implements Movable {
      *  if full quality painting is desired
      */
     public abstract boolean paint (Graphics2D g, Rectangle r);
+
+    /**
+     * Overridable by surfaces which collect geometry, and you don't want
+     * to record a thousand overlapping circles because the user dragged
+     * the mouse once.
+     *
+     * @return The preference for how tools should interact with this surface
+     */
+    public ToolCommitPreference toolCommitPreference() {
+        return ToolCommitPreference.JUST_PAINT;
+    }
     
     /**
      * Get a BufferedImage of the contents, for tools such as smudge tools

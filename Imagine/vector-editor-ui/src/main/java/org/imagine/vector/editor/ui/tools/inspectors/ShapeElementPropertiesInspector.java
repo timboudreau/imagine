@@ -6,10 +6,14 @@ import java.awt.GradientPaint;
 import java.awt.LinearGradientPaint;
 import java.awt.Paint;
 import java.awt.RadialGradientPaint;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.inspectors.spi.InspectorFactory;
@@ -63,6 +67,10 @@ public class ShapeElementPropertiesInspector extends InspectorFactory<ShapeEleme
         sub.add(styleBox);
         pnl.add(sub);
 
+        // Customizer weakly references listeners
+        List<Consumer<?>> consumers = new ArrayList<>();
+        pnl.putClientProperty("_cul", consumers);
+
         if (style.isFill()) {
 
             Paint fill = obj.getFill();
@@ -77,10 +85,10 @@ public class ShapeElementPropertiesInspector extends InspectorFactory<ShapeEleme
                 comp = cus == null ? null : cus.getComponent();
             } else if (fill instanceof RadialGradientPaint) {
                 cus = Customizers.getCustomizer(RadialGradientPaint.class, obj.toString(), (RadialGradientPaint) fill);
-                comp = cus == null ? null  : cus.getComponent();
+                comp = cus == null ? null : cus.getComponent();
             } else if (fill instanceof LinearGradientPaint) {
                 cus = Customizers.getCustomizer(LinearGradientPaint.class, obj.toString(), (LinearGradientPaint) fill);
-                comp = cus == null ? null  : cus.getComponent();
+                comp = cus == null ? null : cus.getComponent();
             }
             if (comp != null) {
                 JLabel olbl = new JLabel();
@@ -88,25 +96,33 @@ public class ShapeElementPropertiesInspector extends InspectorFactory<ShapeEleme
                 pnl.add(olbl);
                 olbl.setLabelFor(comp);
                 pnl.add(comp);
+                if (cus instanceof ListenableCustomizer<?>) {
+                    ListenableCustomizer<? extends Paint> c = (ListenableCustomizer<? extends Paint>) cus;
+                    Consumer<Paint> fillConsumer = newPaint -> {
+                        obj.setFill(newPaint);
+                    };
+                    consumers.add(fillConsumer);
+                    c.listen(fillConsumer);
+                }
             }
         }
         if (style.isOutline()) {
-            Paint draw = obj.getFill();
+            Paint draw = obj.getDraw();
             // XXX need a way to listen
             Customizer<? extends Paint> cus = null;
             Component comp = null;
             if (draw instanceof Color) {
                 cus = Customizers.getCustomizer(Color.class, obj.toString(), (Color) draw);
-                comp = cus == null ? null  : cus.getComponent();
+                comp = cus == null ? null : cus.getComponent();
             } else if (draw instanceof GradientPaint) {
                 cus = Customizers.getCustomizer(GradientPaint.class, obj.toString(), (GradientPaint) draw);
-                comp = cus == null ? null  : cus.getComponent();
+                comp = cus == null ? null : cus.getComponent();
             } else if (draw instanceof RadialGradientPaint) {
                 cus = Customizers.getCustomizer(RadialGradientPaint.class, obj.toString(), (RadialGradientPaint) draw);
-                comp = cus == null ? null  : cus.getComponent();
+                comp = cus == null ? null : cus.getComponent();
             } else if (draw instanceof LinearGradientPaint) {
                 cus = Customizers.getCustomizer(LinearGradientPaint.class, obj.toString(), (LinearGradientPaint) draw);
-                comp = cus == null ? null  : cus.getComponent();
+                comp = cus == null ? null : cus.getComponent();
             }
             if (comp != null) {
                 JLabel olbl = new JLabel();
@@ -114,6 +130,14 @@ public class ShapeElementPropertiesInspector extends InspectorFactory<ShapeEleme
                 pnl.add(olbl);
                 olbl.setLabelFor(comp);
                 pnl.add(comp);
+                if (cus instanceof ListenableCustomizer<?>) {
+                    ListenableCustomizer<? extends Paint> c = (ListenableCustomizer<? extends Paint>) cus;
+                    Consumer<Paint> fillConsumer = newPaint -> {
+                        obj.setDraw(newPaint);
+                    };
+                    consumers.add(fillConsumer);
+                    c.listen(fillConsumer);
+                }
             }
         }
         return pnl;

@@ -4,7 +4,6 @@ import com.mastfrog.function.DoubleBiConsumer;
 import java.awt.Point;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.util.Arrays;
 import org.netbeans.api.visual.widget.Widget;
 
 /**
@@ -20,7 +19,6 @@ class DMA implements DoubleMoveProvider {
     @Override
     public void movementStarted(Widget widget) {
         Point loc = widget.getLocation();
-        System.out.println("set pref loc to " + loc);
         TranslateHandler th = widget.getLookup().lookup(TranslateHandler.class);
         if (th != null) {
             th.onStart(loc);
@@ -52,7 +50,6 @@ class DMA implements DoubleMoveProvider {
         xform.transform(vals, 0, vals, 0, 2);
         double offX = vals[2] - vals[0];
         double offY = vals[3] - vals[1];
-        System.out.println("MOVE to " + lastLocation.getX() + ", " + lastLocation.getY() + " translated to " + Arrays.toString(vals) + " offsets " + offX + ", " + offY);
         c.accept(offX, offY);
     }
 

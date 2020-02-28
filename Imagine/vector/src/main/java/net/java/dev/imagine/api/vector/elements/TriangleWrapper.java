@@ -56,6 +56,23 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
         this.fill = fill;
     }
 
+    public Runnable restorableSnapshot() {
+        double oax = ax;
+        double oay = ay;
+        double obx = bx;
+        double oby = by;
+        double ocx = cx;
+        double ocy = cy;
+        return () -> {
+            ax = oax;
+            ay = oay;
+            bx = obx;
+            by = oby;
+            cx = ocx;
+            cy = ocy;
+        };
+    }
+
     public double ax() {
         return ax;
     }
@@ -178,13 +195,24 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
     }
 
     @Override
-    public void getBounds(Rectangle2D.Double dest) {
-        dest.x = Math.min(ax, Math.min(bx, cx));
-        dest.y = Math.min(ay, Math.min(by, cy));
-        double mx = Math.max(ax, Math.max(bx, cx));
-        double my = Math.max(ay, Math.max(by, cy));
-        dest.width = mx - dest.x;
-        dest.height = my - dest.y;
+    public void addToBounds(Rectangle2D bds) {
+        double minX = Math.min(ax, Math.min(bx, cx));
+        double minY = Math.min(ay, Math.min(by, cy));
+        double maxX = Math.max(ax, Math.max(bx, cx));
+        double maxY = Math.max(ay, Math.max(by, cy));
+        bds.add(minX, minY);
+        bds.add(maxX, maxY);
+    }
+
+    @Override
+    public void getBounds(Rectangle2D dest) {
+        double minX = Math.min(ax, Math.min(bx, cx));
+        double minY = Math.min(ay, Math.min(by, cy));
+        double maxX = Math.max(ax, Math.max(bx, cx));
+        double maxY = Math.max(ay, Math.max(by, cy));
+        double width = maxX - minX;
+        double height = maxY - minY;
+        dest.setFrame(minX, minY, width, height);
     }
 
     @Override

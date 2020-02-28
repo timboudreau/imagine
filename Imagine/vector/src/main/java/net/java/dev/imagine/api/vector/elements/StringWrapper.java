@@ -35,6 +35,17 @@ public class StringWrapper implements Vector {
         assert string != null;
     }
 
+    public Runnable restorableSnapshot() {
+        double ox = x;
+        double oy = y;
+        String s = string;
+        return () -> {
+            x = ox;
+            y = oy;
+            string = s;
+        };
+    }
+
     @Override
     public String toString() {
         return "StringWrapper '" + string + "' @ "
@@ -121,7 +132,7 @@ public class StringWrapper implements Vector {
     }
 
     @Override
-    public void getBounds(Rectangle2D.Double r) {
+    public void getBounds(Rectangle2D r) {
         //XXX fixme
         r.setRect(x, y, 1_000, 20);
     }

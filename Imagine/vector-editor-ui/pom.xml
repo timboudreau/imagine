@@ -53,6 +53,10 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>gradients</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>mastfrog-utils</artifactId>
         </dependency>
         <dependency>

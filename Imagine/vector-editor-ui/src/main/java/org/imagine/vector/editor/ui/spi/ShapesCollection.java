@@ -11,12 +11,20 @@ import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.DoubleConsumer;
+import java.util.function.Supplier;
+import net.dev.java.imagine.api.tool.aspects.snap.SnapPoint;
+import net.dev.java.imagine.api.tool.aspects.snap.SnapPoints;
+import net.dev.java.imagine.api.tool.aspects.snap.SnapPointsConsumer;
 import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.api.vector.Shaped;
 import org.imagine.vector.editor.ui.tools.CSGOperation;
+import org.imagine.vector.editor.ui.undo.UndoRedoHookable;
 
 /**
  *
@@ -35,7 +43,52 @@ public interface ShapesCollection extends Hibernator, Iterable<ShapeElement> {
 
     ShapesCollection clip(Shape shape);
 
-    void edit(String name, ShapeElement el, Runnable r);
+    /**
+     * Initiate an edit of one shape.
+     *
+     * @param name The presentation name of the edit (for undo)
+     * @param el The element to be edited
+     * @param r A runnable which will perform the edit
+     */
+    UndoRedoHookable edit(String name, ShapeElement el, Runnable r);
+
+    Supplier<SnapPoints> snapPoints(double radius, BiConsumer<SnapPoint, SnapPoint> onSnap);
+
+    /**
+     * Initiate an edit of the geometry of multiple shapes (e.g., applying an
+     * Affine Transform to all shapes or a collection thereof).
+     *
+     * @param name The presentation name of the edit
+     * @param r A runnable which will perform the edit
+     */
+    UndoRedoHookable geometryEdit(String name, Runnable r);
+
+    UndoRedoHookable contentsEdit(String name, Runnable r);
+
+    void addToBounds(Rectangle2D b);
+
+    public Runnable contentsSnapshot();
+
+    /**
+     * Wrap a DoubleConsumer in a call not edit a particular shape, such than if
+     * the DoubleConsumer is called, the change it makes can be recorded as an
+     * edit.
+     *
+     * @param name The presentation name of the edit (for undo)
+     * @param target The shape to be edited
+     * @param orig The setter on the shape
+     * @return A DoubleConsumer that proxies the setter, and notifies for
+     * repaints or creates undo events as needed
+     */
+    default DoubleConsumer wrapInEdit(String name, ShapeElement target, DoubleConsumer orig) {
+        return val -> {
+            edit(name, target, () -> {
+                target.wrap(orig).accept(val);
+            });
+        };
+    }
+
+    void getBounds(Rectangle2D into);
 
     Rectangle getBounds();
 
@@ -49,7 +102,9 @@ public interface ShapesCollection extends Hibernator, Iterable<ShapeElement> {
 
     List<? extends ShapeElement> shapesAtPoint(double x, double y);
 
-    boolean csg(CSGOperation op, ShapeElement lead, List<? extends ShapeElement> elements, BiConsumer<Set<ShapeElement>, ShapeElement> removedAndAdded);
+    boolean csg(CSGOperation op, ShapeElement lead,
+            List<? extends ShapeElement> elements,
+            BiConsumer<? super Set<? extends ShapeElement>, ? super ShapeElement> removedAndAdded);
 
     boolean toFront(ShapeElement en);
 
@@ -58,4 +113,14 @@ public interface ShapesCollection extends Hibernator, Iterable<ShapeElement> {
     List<? extends ShapeElement> possiblyOverlapping(ShapeElement el);
 
     ShapeElement duplicate(ShapeElement el);
+
+    int size();
+
+    ShapeElement get(int index);
+
+    int indexOf(ShapeElement el);
+
+    boolean contains(ShapeElement el);
+
+    Set<? extends ShapeElement> absent(Collection<? extends ShapeElement> from);
 }

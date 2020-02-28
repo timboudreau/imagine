@@ -117,7 +117,7 @@ final class PictureScene extends Scene implements WidgetController {
         mainLayer.setBorder(BorderFactory.createEmptyBorder());
         addChild(mainLayer);
         setBorder(BorderFactory.createEmptyBorder());
-        addChild(gridWidget);
+//        addChild(gridWidget);
         addChild(selectionLayer);
         selectionLayer.attachToSelection();
     }
@@ -250,14 +250,6 @@ final class PictureScene extends Scene implements WidgetController {
         return zoom;
     }
 
-//    public BufferedImage toImage() {
-//        Dimension d = picture.getSize();
-//        BufferedImage result = new BufferedImage(d.width, d.height,
-//                GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
-//        picture.paint((Graphics2D) result.createGraphics(), null, true);
-//        return result;
-//    }
-//
     public BufferedImage toImage() {
         //XXX handle zoom, etc.
         Dimension d = picture.getSize();

@@ -433,7 +433,7 @@ public final class PaintTopComponent extends TopComponent implements
         active = false;
         stopListening();
         System.out.println("deactivated, set active tool null");
-        setActiveTool(null);
+//        setActiveTool(null);
 //        for (TopComponent tc : layerTopComponents) {
 //            tc.close();
 //        }
@@ -444,7 +444,7 @@ public final class PaintTopComponent extends TopComponent implements
     protected void componentShowing() {
         PI p = canvas.getPicture();
         final int layerCount = p.getLayers().size();
-        if (p.hibernated()) {
+//        if (p.hibernated()) {
             p.wakeup(false, new Runnable() {
                 int ct = 0;
                 ProgressHandle h;
@@ -474,7 +474,7 @@ public final class PaintTopComponent extends TopComponent implements
                     }
                 }
             });
-        }
+//        }
     }
 
     @Override

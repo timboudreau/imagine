@@ -45,6 +45,22 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
         this.fill = fill;
     }
 
+    public synchronized Runnable restorableSnapshot() {
+        int[] xp = Arrays.copyOf(xpoints, xpoints.length);
+        int[] yp = Arrays.copyOf(ypoints, ypoints.length);
+        int np = npoints;
+        return () -> {
+            if (np != npoints) {
+                npoints = np;
+                xpoints = xp;
+                ypoints = yp;
+            } else {
+                System.arraycopy(xp, 0, xpoints, 0, xp.length);
+                System.arraycopy(yp, 0, ypoints, 0, yp.length);
+            }
+        };
+    }
+
     @Override
     public void translate(double x, double y) {
         int xx = (int) x;
@@ -127,7 +143,29 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
     }
 
     @Override
-    public void getBounds(Rectangle2D.Double r) {
+    public void addToBounds(Rectangle2D bds) {
+        if (npoints == 0) {
+            return;
+        }
+        int minX = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int maxY = Integer.MIN_VALUE;
+        for (int i = 0; i < npoints; i++) {
+            minX = Math.min(minX, xpoints[i]);
+            minY = Math.min(minY, ypoints[i]);
+            maxX = Math.max(maxX, xpoints[i]);
+            maxY = Math.max(maxY, ypoints[i]);
+        }
+        bds.add(minX, minY);
+        bds.add(maxX, maxY);
+    }
+
+    @Override
+    public void getBounds(Rectangle2D r) {
+        if (npoints == 0) {
+            return;
+        }
         int minX = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE;
         int minY = Integer.MAX_VALUE;

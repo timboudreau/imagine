@@ -44,8 +44,7 @@ final class ControlPointImpl implements ControlPoint {
         return "Cp("
                 + index
                 + " "
-                + Integer.toString(System.identityHashCode(primitive))
-                ;
+                + Integer.toString(System.identityHashCode(primitive));
     }
 
     @Override
@@ -144,11 +143,11 @@ final class ControlPointImpl implements ControlPoint {
     }
 
     @Override
-    public boolean set(double dx, double dy) {
+    public boolean set(double newX, double newY) {
         if (!isValid()) {
             return false;
         }
-        primitive.setControlPointLocation(index, new Pt(dx, dy));
+        primitive.setControlPointLocation(index, new Pt(newX, newY));
         change();
         return true;
     }

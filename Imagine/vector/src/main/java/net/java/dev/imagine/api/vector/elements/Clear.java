@@ -34,6 +34,19 @@ public final class Clear implements Volume, Primitive, Transformable {
         this.height = h;
     }
 
+    public Runnable restorableSnapshot() {
+        int ox = x;
+        int oy = y;
+        int ow = width;
+        int oh = height;
+        return () -> {
+            x = ox;
+            y = oy;
+            width = ow;
+            height = oh;
+        };
+    }
+
     @Override
     public void translate(double x, double y) {
         this.x += (int) x;
@@ -51,8 +64,14 @@ public final class Clear implements Volume, Primitive, Transformable {
     }
 
     @Override
-    public void getBounds(Rectangle2D.Double r) {
+    public void getBounds(Rectangle2D r) {
         r.setRect(x, y, width, height);
+    }
+
+    @Override
+    public void addToBounds(Rectangle2D bds) {
+        bds.add(x, y);
+        bds.add(x + width, y + height);
     }
 
     @Override

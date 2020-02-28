@@ -23,6 +23,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
+import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import org.imagine.editor.api.AspectRatio;
 import org.netbeans.paint.api.components.fractions.FractionsAndColorsEditor;
 import org.netbeans.paint.api.components.points.PointSelector;
@@ -37,7 +39,10 @@ import org.openide.util.Utilities;
  *
  * @author Tim Boudreau
  */
-public class LinearGradientPaintCustomizer implements Customizer<LinearGradientPaint>, PointSelectorBackgroundPainter {
+public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<LinearGradientPaint>
+        implements Customizer<LinearGradientPaint>,
+        PointSelectorBackgroundPainter,
+        ListenableCustomizer<LinearGradientPaint> {
 
     private final String name;
     private final PaintParams params = new PaintParams();
@@ -74,6 +79,15 @@ public class LinearGradientPaintCustomizer implements Customizer<LinearGradientP
         Preferences prefs = NbPreferences.forModule(LinearGradientPaintCustomizer.class);
         String nm = name == null ? "rgpDefault" : name;
         params.store(nm, prefs);
+    }
+
+    @Override
+    protected void onAfterFire() {
+        store();
+    }
+
+    private void changed() {
+        fire();
     }
 
     @Override
@@ -194,25 +208,25 @@ public class LinearGradientPaintCustomizer implements Customizer<LinearGradientP
             Point2D p = (Point2D) evt.getNewValue();
             params.targetPoint.setLocation(p);
             ps.repaint();
-            store();
+            changed();
         });
         ps.addPropertyChangeListener("focusPoint", evt -> {
             Point2D p = (Point2D) evt.getNewValue();
             params.focusPoint.setLocation(p);
             ps.repaint();
-            store();
+            changed();
         });
 
         colorSpaceCombo.addActionListener(ae -> {
             params.colorSpaceType = (ColorSpaceType) colorSpaceCombo.getSelectedItem();
             ps.repaint();
-            store();
+            changed();
         });
 
         cycleCombo.addActionListener(ae -> {
             params.cycleMethod = (CycleMethod) cycleCombo.getSelectedItem();
             ps.repaint();
-            store();
+            changed();
         });
 
         fAndC.addChangeListener(e -> {
@@ -220,7 +234,7 @@ public class LinearGradientPaintCustomizer implements Customizer<LinearGradientP
                 params.colors = cols;
                 params.fractions = fracs;
                 ps.repaint();
-                store();
+                changed();
             });
         });
 

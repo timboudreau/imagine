@@ -9,6 +9,7 @@ import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Mutable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Proxy;
+import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
@@ -285,6 +286,15 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         public Vo copy() {
             return new Vo(this.primitive, (AffineTransform) xform.clone());
         }
+
+        @Override
+        public Runnable restorableSnapshot() {
+            if (primitive instanceof Shaped) {
+                return ((Shaped) primitive).restorableSnapshot();
+            }
+            return () -> {
+            };
+        }
     }
 
     private static final class Ve extends TransformedPrimitive implements Vector {
@@ -304,6 +314,14 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             return new Ve(this.primitive, (AffineTransform) xform.clone());
         }
 
+        @Override
+        public Runnable restorableSnapshot() {
+            if (primitive instanceof Shaped) {
+                return ((Shaped) primitive).restorableSnapshot();
+            }
+            return () -> {
+            };
+        }
     }
 
     static class SAV extends TransformedPrimitive implements Strokable, Adjustable, Vector {
@@ -325,6 +343,15 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         @Override
         public SAV copy() {
             return new SAV(this.primitive, (AffineTransform) xform.clone());
+        }
+
+        @Override
+        public Runnable restorableSnapshot() {
+            if (primitive instanceof Shaped) {
+                return ((Shaped) primitive).restorableSnapshot();
+            }
+            return () -> {
+            };
         }
     }
 
@@ -351,6 +378,14 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             return new SAVVM(this.primitive, (AffineTransform) xform.clone());
         }
 
+        @Override
+        public Runnable restorableSnapshot() {
+            if (primitive instanceof Shaped) {
+                return ((Shaped) primitive).restorableSnapshot();
+            }
+            return () -> {
+            };
+        }
     }
 
     private static final class SAVF extends TransformedPrimitive implements Strokable, Adjustable, Volume, Fillable {
@@ -370,6 +405,15 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         @Override
         public SAVF copy() {
             return new SAVF(this.primitive, (AffineTransform) xform.clone());
+        }
+
+        @Override
+        public Runnable restorableSnapshot() {
+            if (primitive instanceof Shaped) {
+                return ((Shaped) primitive).restorableSnapshot();
+            }
+            return () -> {
+            };
         }
     }
 
@@ -398,6 +442,15 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             return new SAVFV(this.primitive, (AffineTransform) xform.clone());
         }
 
+        @Override
+        public Runnable restorableSnapshot() {
+            if (primitive instanceof Shaped) {
+                return ((Shaped) primitive).restorableSnapshot();
+            }
+            return () -> {
+            };
+        }
+
     }
 
     private static final class SAVFVM extends TransformedPrimitive implements Strokable, Adjustable, Volume, Fillable, Vector, Mutable {
@@ -423,6 +476,15 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         @Override
         public SAVFVM copy() {
             return new SAVFVM(this.primitive, (AffineTransform) xform.clone());
+        }
+
+        @Override
+        public Runnable restorableSnapshot() {
+            if (primitive instanceof Shaped) {
+                return ((Shaped) primitive).restorableSnapshot();
+            }
+            return () -> {
+            };
         }
     }
 

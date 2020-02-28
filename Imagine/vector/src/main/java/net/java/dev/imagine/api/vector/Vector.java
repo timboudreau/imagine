@@ -11,7 +11,6 @@ package net.java.dev.imagine.api.vector;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
 import net.java.dev.imagine.api.vector.util.Pt;
 
@@ -68,9 +67,6 @@ public interface Vector extends Primitive, Transformable, Shaped {
 
     @Override
     public Vector copy();
-
-    @Override
-    void getBounds(Rectangle2D.Double dest);
 
     @Override
     Rectangle getBounds();

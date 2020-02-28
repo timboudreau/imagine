@@ -15,20 +15,19 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImageOp;
 import java.util.function.BiConsumer;
-import javax.swing.event.UndoableEditEvent;
 import javax.swing.undo.AbstractUndoableEdit;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import net.dev.java.imagine.api.tool.Tool;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
-import net.dev.java.imagine.api.tool.aspects.SnapPointsConsumer;
+import net.dev.java.imagine.api.tool.aspects.snap.SnapPointsConsumer;
+import net.java.dev.imagine.api.image.ToolCommitPreference;
 import net.java.dev.imagine.effects.api.EffectReceiver;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
-import net.java.dev.imagine.ui.common.UndoMgr;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.vector.editor.ui.spi.WidgetSupplier;
-import org.openide.util.Utilities;
+import org.imagine.vector.editor.ui.undo.ContentsEdit;
 
 /**
  *
@@ -57,8 +56,8 @@ public class VectorSurface extends SurfaceImplementation {
         this.onPositionChange = onPositionChange;
     }
 
-
     private final ER er = new ER();
+
     EffectReceiver<AffineTransform> transformReceiver() {
         return er;
     }
@@ -71,22 +70,21 @@ public class VectorSurface extends SurfaceImplementation {
 
         @Override
         protected boolean onApply(AffineTransform effect) {
-            Shapes snapshot = shapes.applyTransform(effect);
-            UndoMgr mgr = Utilities.actionsGlobalContext()
-                    .lookup(UndoMgr.class);
-            if (mgr != null) {
-                ShapesUndoableEdit edit = new ShapesUndoableEdit(
-                        "Transform", shapes, handle, snapshot);
-                mgr.undoableEditHappened(new UndoableEditEvent(this, edit));
-            }
-            return snapshot != shapes;
+            shapes.geometryEdit("Transform", () -> {
+                shapes.applyTransform(effect);
+            });
+            return true;
         }
 
         @Override
         public Dimension getSize() {
             return shapes.getBounds().getSize();
         }
+    }
 
+    @Override
+    public ToolCommitPreference toolCommitPreference() {
+        return ToolCommitPreference.COLLECT_GEOMETRY;
     }
 
     @Override
@@ -173,18 +171,12 @@ public class VectorSurface extends SurfaceImplementation {
         if (engine != null) {
             try {
                 if (engine.hasItems()) {
-                    Shapes snapshot = shapes.snapshot();
-                    Rectangle rect = engine.finish(shapes);
-                    if (!rect.isEmpty()) {
-                        handle.repaintArea(rect);
-                    }
-                    UndoMgr mgr = Utilities.actionsGlobalContext()
-                            .lookup(UndoMgr.class);
-                    if (mgr != null) {
-                        ShapesUndoableEdit edit = new ShapesUndoableEdit(
-                                engine.opName, shapes, handle, snapshot);
-                        mgr.undoableEditHappened(new UndoableEditEvent(this, edit));
-                    }
+                    ContentsEdit.addEdit(engine.opName, shapes, handle, () -> {
+                        Rectangle rect = engine.finish(shapes);
+                        if (!rect.isEmpty()) {
+                            handle.repaintArea(rect);
+                        }
+                    });
                 }
             } finally {
                 engine = null;

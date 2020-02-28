@@ -31,7 +31,6 @@ import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Constants;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
-import net.java.dev.imagine.api.toolcustomizers.FontStyle;
 import org.netbeans.paint.tools.fills.FillCustomizer;
 import org.netbeans.paint.tools.spi.Fill;
 import org.openide.util.Lookup;
@@ -50,8 +49,6 @@ public class TextTool implements KeyListener, MouseListener, MouseMotionListener
     private final Surface surface;
     final Customizer<Fill> fillC;
     final Customizer<String> textC;
-    final Customizer<Float> sizeC;
-    final Customizer<FontStyle> styleC;
     final Customizer<Font> fontC;
 
     public TextTool(Surface surface) {
@@ -59,10 +56,6 @@ public class TextTool implements KeyListener, MouseListener, MouseMotionListener
         fillC = FillCustomizer.getDefault();
         textC = Customizers.getCustomizer(String.class, Constants.TEXT);
         assert textC != null : "Null text customizer";
-        sizeC = Customizers.getCustomizer(Float.class, Constants.FONT_SIZE, 4F, 320F);
-        assert sizeC != null : "Null size customizer";
-        styleC = Customizers.getCustomizer(FontStyle.class, Constants.FONT_STYLE);
-        assert styleC != null : "Null font style customizer";
         fontC = Customizers.getCustomizer(Font.class, Constants.FONT);
         assert fontC != null : "Null font family customizer";
     }
@@ -207,15 +200,13 @@ public class TextTool implements KeyListener, MouseListener, MouseMotionListener
         this.repainter = repainter;
     }
 
+    @Override
     public Customizer getCustomizer() {
-        return new AggregateCustomizer("foo", textC, fontC, sizeC, styleC, fillC); //NOI18N
+        return new AggregateCustomizer("textTool", textC, fontC, fillC); //NOI18N
     }
 
     private Font getFont() {
-        Font f = fontC.get();
-        float fontSize = sizeC.get();
-        int style = styleC.get().toFontConstant();
-        return f.deriveFont(style, fontSize);
+        return fontC.get();
     }
 
     @Override

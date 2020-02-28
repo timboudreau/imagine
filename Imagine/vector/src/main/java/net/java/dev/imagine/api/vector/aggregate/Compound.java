@@ -22,6 +22,7 @@ import net.java.dev.imagine.api.vector.Aggregate;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Mutable;
 import net.java.dev.imagine.api.vector.Primitive;
+import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Transformable;
 import net.java.dev.imagine.api.vector.Vector;
@@ -43,6 +44,21 @@ public class Compound implements Primitive, Strokable, Vector, Volume, Adjustabl
     public Compound(double x, double y) {
         this.x = x;
         this.y = y;
+    }
+
+    @Override
+    public Runnable restorableSnapshot() {
+        List<Runnable> all = new ArrayList<>(contents.size());
+        for (Primitive p : contents) {
+            if (p instanceof Shaped) {
+                all.add(((Shaped) p).restorableSnapshot());
+            }
+        }
+        return () -> {
+            for (Runnable r : all) {
+                r.run();
+            }
+        };
     }
 
     public void add(Primitive primitive) {
@@ -155,7 +171,7 @@ public class Compound implements Primitive, Strokable, Vector, Volume, Adjustabl
     }
 
     @Override
-    public void getBounds(Rectangle2D.Double r) {
+    public void getBounds(Rectangle2D r) {
         Rectangle2D.Double scratch = null;
         for (Primitive p : contents) {
             if (p instanceof Volume) {
@@ -169,13 +185,13 @@ public class Compound implements Primitive, Strokable, Vector, Volume, Adjustabl
             }
         }
         if (scratch == null) {
-            r.width = 0;
-            r.height = 0;
-            r.x = x;
-            r.y = y;
+            r.setFrame(x, y, 0,0);
         } else {
-            r.x += x;
-            r.y += y;
+            double xx1 = r.getX() + r.getWidth();
+            double yy1 = r.getHeight() + r.getY();
+            double xx = r.getX() + x;
+            double yy = r.getY() + y;
+            r.setFrame(xx, yy, xx1-xx, yy1-yy);
         }
     }
 

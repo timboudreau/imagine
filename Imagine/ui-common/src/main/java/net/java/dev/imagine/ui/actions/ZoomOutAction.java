@@ -10,11 +10,13 @@
  * Code is Sun Microsystems, Inc. Portions Copyright 1997-2005 Sun
  * Microsystems, Inc. All Rights Reserved.
  */
-
 package net.java.dev.imagine.ui.actions;
 
+import java.util.Collection;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
+import static net.java.dev.imagine.ui.actions.ZoomInAction.MAX_ZOOM;
+import static net.java.dev.imagine.ui.actions.ZoomInAction.prev;
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
 import org.imagine.editor.api.Zoom;
 import org.openide.util.ImageUtilities;
@@ -26,38 +28,48 @@ import org.openide.util.Utilities;
  *
  * @author Timothy Boudreau
  */
-public class ZoomOutAction extends GenericContextSensitiveAction <Zoom> {
-    private static final String ICON_BASE=
-	    "net/java/dev/imagine/ui/actions/zoomOut.png";
-	    
+public class ZoomOutAction extends GenericContextSensitiveAction<Zoom> {
+
+    private static final String ICON_BASE
+            = "net/java/dev/imagine/ui/actions/zoomOut.png";
+
     public ZoomOutAction() {
-	super (Utilities.actionsGlobalContext(), Zoom.class); //NOI18N
-	setIcon(new ImageIcon (
-            ImageUtilities.loadImage (ICON_BASE)));
-        putValue(Action.NAME, NbBundle.getMessage(ZoomOutAction.class, 
+        super(Utilities.actionsGlobalContext(), Zoom.class); //NOI18N
+        setIcon(new ImageIcon(
+                ImageUtilities.loadImage(ICON_BASE)));
+        putValue(Action.NAME, NbBundle.getMessage(ZoomOutAction.class,
                 "ACT_ZoomOut"));
     }
-    
+
     public ZoomOutAction(Lookup lookup) {
-        super (lookup);
+        super(lookup);
     }
 
+    private float nextZoom(float zoom) {
+        return prev(zoom);
+    }
+
+    @Override
     public void performAction(Zoom zoom) {
-	float f = zoom.getZoom();
-	if (f <= 1f) {
-	    f -= 0.1f;
-	} else {
-	    f -= 1;
-	}
-	f = Math.max (0, f);
-	zoom.setZoom(f);
+        assert zoom != null;
+        float f = zoom.getZoom();
+        zoom.setZoom(nextZoom(f));
     }
-    
-    protected boolean shouldEnable (Object target) {
-	if (target != null) {
-	    Zoom zoom = (Zoom) target;
-	    return zoom.getZoom() > 0.1f;
-	}
-         return false;
+
+    @Override
+    protected <T> boolean checkEnabled(Collection<? extends T> coll, Class<T> clazz) {
+        if (coll.isEmpty()) {
+            return false;
+        }
+        if (clazz != Zoom.class) {
+            return true;
+        }
+        Zoom zoom = (Zoom) coll.iterator().next();
+        return canZoom(zoom);
     }
+
+    private boolean canZoom(Zoom zoom) {
+        return zoom.getZoom() < MAX_ZOOM;
+    }
+
 }

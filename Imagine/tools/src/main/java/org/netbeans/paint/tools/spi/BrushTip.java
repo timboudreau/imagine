@@ -16,6 +16,8 @@ package org.netbeans.paint.tools.spi;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Shape;
+import org.imagine.editor.api.PaintingStyle;
 
 /**
  * An interface to enable plugging in different "tips" on the standard brush.
@@ -30,5 +32,18 @@ public interface BrushTip {
      * @param size The brush size set in the customizer;  interpret as desired.
      */
     public Rectangle draw(Graphics2D g, Point p, int size);
+
+    default void emit(Point p, int size, ShapeEmitter em) {
+        
+    }
+
+    default boolean canEmit() {
+        return false;
+    }
+
+
+    public interface ShapeEmitter {
+        void emit(Shape shape, PaintingStyle style);
+    }
     
 }

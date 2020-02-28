@@ -137,7 +137,7 @@ public enum ControlPointKind {
             return false;
         }
         // Fetch ALL of the control points into an array
-        double[] pts = new double[count];
+        double[] pts = new double[count * 2];
         path.getControlPoints(pts);
         // Get the current coordinates
         double x = pts[index * 2];

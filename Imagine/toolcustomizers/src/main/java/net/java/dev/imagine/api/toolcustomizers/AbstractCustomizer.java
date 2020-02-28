@@ -13,7 +13,7 @@ import java.awt.EventQueue;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
-import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.openide.util.ChangeSupport;
 
@@ -22,7 +22,7 @@ import org.openide.util.ChangeSupport;
  *
  * @author Tim Boudreau
  */
-public abstract class AbstractCustomizer <T extends Object> implements Customizer <T> {
+public abstract class AbstractCustomizer <T extends Object> extends ListenableCustomizerSupport <T> {
     private final String name;
     private JPanel component;
     public AbstractCustomizer(String name) {
