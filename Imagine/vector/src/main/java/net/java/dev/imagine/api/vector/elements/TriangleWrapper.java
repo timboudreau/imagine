@@ -1,13 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.java.dev.imagine.api.vector.elements;
 
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Adjustable;
@@ -17,6 +13,8 @@ import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
+import org.imagine.geometry.Circle;
+import org.imagine.geometry.TriangleDouble;
 import org.imagine.geometry.Triangle;
 
 /**
@@ -47,6 +45,20 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
     }
 
     public TriangleWrapper(Triangle t, boolean fill) {
+        ax = t.ax();
+        ay = t.ay();
+        bx = t.bx();
+        by = t.by();
+        cx = t.cx();
+        cy = t.cy();
+        this.fill = fill;
+    }
+
+    public TriangleWrapper(TriangleDouble t) {
+        this(t, true);
+    }
+
+    public TriangleWrapper(TriangleDouble t, boolean fill) {
         ax = t.ax();
         ay = t.ay();
         bx = t.bx();
@@ -132,10 +144,10 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
     }
 
     public TriangleWrapper[] tesselate() {
-        Triangle[] result = toShape().tesselate();
-        TriangleWrapper[] res = new TriangleWrapper[result.length];
-        for (int i = 0; i < result.length; i++) {
-            res[i] = new TriangleWrapper(result[i], fill);
+        TriangleDouble[] triangles = toShape().tesselate();
+        TriangleWrapper[] res = new TriangleWrapper[triangles.length];
+        for (int i = 0; i < triangles.length; i++) {
+            res[i] = new TriangleWrapper(triangles[i], fill);
         }
         return res;
     }
@@ -158,8 +170,8 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
     }
 
     @Override
-    public Triangle toShape() {
-        return new Triangle(ax, ay, bx, by, cx, cy);
+    public TriangleDouble toShape() {
+        return new TriangleDouble(ax, ay, bx, by, cx, cy);
     }
 
     @Override
@@ -200,8 +212,12 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
         double minY = Math.min(ay, Math.min(by, cy));
         double maxX = Math.max(ax, Math.max(bx, cx));
         double maxY = Math.max(ay, Math.max(by, cy));
-        bds.add(minX, minY);
-        bds.add(maxX, maxY);
+        if (bds.isEmpty()) {
+            bds.setFrameFromDiagonal(minX, minY, maxX, maxY);
+        } else {
+            bds.add(minX, minY);
+            bds.add(maxX, maxY);
+        }
     }
 
     @Override
@@ -346,6 +362,27 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
             return true;
         }
         return Arrays.equals(pointsSorted(), other.pointsSorted());
+    }
+
+    public double[] angles() {
+        Circle circle = new Circle(ax, ay, Point2D.distance(ax, ay, bx, by));
+        double[] result = new double[3];
+        result[0] = circle.angleOf(bx, by);
+        circle.setCenterAndRadius(bx, by, Point2D.distance(bx, by, cx, cy));
+        result[1] = circle.angleOf(cx, cy);
+        circle.setCenterAndRadius(cx, cy, Point2D.distance(cx, cy, ax, ay));
+        result[2] = circle.angleOf(ax, ay);
+        return result;
+    }
+
+    @Override
+    public void collectAngles(AngleCollector c) {
+        Circle circle = new Circle(ax, ay, Point2D.distance(ax, ay, bx, by));
+        c.angle(circle.angleOf(bx, by), 0, 1);
+        circle.setCenterAndRadius(bx, by, Point2D.distance(bx, by, cx, cy));
+        c.angle(circle.angleOf(cx, cy), 1, 2);
+        circle.setCenterAndRadius(cx, cy, Point2D.distance(cx, cy, ax, ay));
+        c.angle(circle.angleOf(ax, ay), 2, 0);
     }
 
     public double[] toDoubleArray() {

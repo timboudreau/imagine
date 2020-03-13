@@ -19,7 +19,7 @@ import org.imagine.awt.key.PaintKey;
 import org.imagine.awt.key.TexturePaintKey;
 import org.imagine.awt.key.TexturedPaintWrapperKey;
 import org.imagine.awt.spi.PaintKeyFactory;
-import org.imagine.awt.io.KeyReader;
+import org.imagine.io.KeyReader;
 
 /**
  *

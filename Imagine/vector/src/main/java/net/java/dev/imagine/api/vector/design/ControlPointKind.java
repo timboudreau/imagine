@@ -20,7 +20,9 @@ import org.openide.util.NbBundle.Messages;
     "CUBIC_CURVE_DESTINATION=Cubic Curve Endpoint",
     "RADIUS=Radius",
     "EDGE_HANDLE=Edge Handle",
-    "OTHER=Other"
+    "TEXT_BASELINE=Text Baseline",
+    "OTHER=Other",
+    "CHARACTER_POSITION=Character Position"
 })
 public enum ControlPointKind {
 
@@ -33,6 +35,8 @@ public enum ControlPointKind {
     QUADRATIC_CONTROL_POINT,
     RADIUS,
     EDGE_HANDLE,
+    TEXT_BASELINE,
+    CHARACTER_POSITION,
     OTHER;
 
     public boolean isPathComponent() {
@@ -113,29 +117,36 @@ public enum ControlPointKind {
     }
 
     public boolean changeType(PathIteratorWrapper path, int index) {
+        System.out.println("Change type " + index);
         if (!isQuadratic() || isInitial() || isControlPoint()) {
             // If not quadratic, this point is not part of a path
 
             // If the initial point, that has to be SEG_MOVETO or
             // trying to render the shape will throw an exception
-
             // We don't allow replacing a control point, since it is
             // not a real point - you have to do this on the physical
             // point
+            System.out.println("Wrong kind for type change " + this
+                    + " at " + index);
             return false;
         }
+        System.out.println("type ok");
         int count = path.getControlPointCount();
         // The model is out of date with the UI - bail out
         if (index >= count) {
+            System.out.println("index " + index + " >= count " + count);
             return false;
         }
+        System.out.println("index ok");
         // Figure out what kind the current point currently is
         ControlPointKind[] kinds = path.getControlPointKinds();
         ControlPointKind oldKind = kinds[index];
         if (oldKind == this) {
+            System.out.println("  old kind = this, fail " + this);
             // Should not happen
             return false;
         }
+        System.out.println("Change oldKind " + oldKind + " to " + this);
         // Fetch ALL of the control points into an array
         double[] pts = new double[count * 2];
         path.getControlPoints(pts);
@@ -156,7 +167,8 @@ public enum ControlPointKind {
                         path.setToLineTo(index, x, y);
                         return true;
                 }
-            case QUADRATIC_CONTROL_POINT:
+            // XXX is this supposed to fall through?
+            case QUADRATIC_CURVE_DESTINATION:
                 switch (this) {
                     case CUBIC_CONTROL_POINT:
                         // here we need to synthesize a control point
@@ -197,11 +209,11 @@ public enum ControlPointKind {
                 double angleToPreviousPoint = circ.angleOf(prevX, prevY);
                 double[] halfWayToPrecedingPoint = circ.positionOf(angleToPreviousPoint, dist / 2);
                 switch (this) {
-                    case QUADRATIC_CONTROL_POINT:
+                    case QUADRATIC_CURVE_DESTINATION:
                         // For quadratic we have everything we need
                         path.setToQuadTo(index, halfWayToPrecedingPoint[0], halfWayToPrecedingPoint[1], x, y);
                         return true;
-                    case CUBIC_CONTROL_POINT:
+                    case CUBIC_CURVE_DESTINATION:
                         // For cubic, we are starting from a single point and need
                         // to synthese two control points, so do the same thing for
                         // the next concrete point, or wrap around to the first point.
@@ -237,6 +249,7 @@ public enum ControlPointKind {
                         return true;
                 }
         }
+        System.out.println("Fallthrough " + oldKind + " -> " + this);
         return false;
     }
 
@@ -304,6 +317,10 @@ public enum ControlPointKind {
                 return Bundle.LINE_TO_DESTINATION();
             case QUADRATIC_CURVE_DESTINATION:
                 return Bundle.QUADRATIC_CURVE_DESTINATION();
+            case TEXT_BASELINE:
+                return Bundle.TEXT_BASELINE();
+            case CHARACTER_POSITION:
+                return Bundle.CHARACTER_POSITION();
             default:
                 throw new AssertionError(this);
         }

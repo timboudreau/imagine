@@ -23,6 +23,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import static java.lang.System.identityHashCode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,6 +38,7 @@ import net.dev.java.imagine.api.selection.Universe;
 import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.effects.spi.ImageSource;
 import net.java.dev.imagine.spi.image.LayerImplementation;
+import org.imagine.editor.api.Zoom;
 import org.imagine.utils.painting.RepaintHandle;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.imagine.utils.java2d.GraphicsUtils;
@@ -95,11 +97,19 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
         surface = new RasterSurfaceImpl(getMasterRepaintHandle(), img, selection, this::isVisible);
         surface.addPropertyChangeListener(pcl);
     }
-    
+
+    @Override
+    public String toString() {
+        return "RasterLayer(" + Long.toString(identityHashCode(this), 36)
+                + " " + bounds.x + "," + bounds.y + "," + bounds.width
+                + ", " + bounds.height + ", ";
+    }
+
     class UV implements Universe<Rectangle> {
+
         @Override
         public Rectangle getAll() {
-            return new Rectangle (getBounds());
+            return new Rectangle(getBounds());
         }
     }
 
@@ -117,28 +127,30 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
         }
     }
 
+    @Override
     public LayerImplementation clone(boolean userCopy, boolean deepCopy) {
         return new RasterLayerImpl(getLookup().lookup(LayerFactory.class),
                 this, userCopy);
     }
 
-    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignoreVisibility) {
+    @Override
+    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignoreVisibility, Zoom zoom) {
         if (!visible && !ignoreVisibility) {
             return false;
         }
         if (bounds != null) {
-            return surface.paint(g, bounds);
+            return surface.paint(g, bounds, zoom);
         }
         Composite comp = null;
         if (opacity != 1.0f) {
             comp = (g).getComposite();
-            (g).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
                     opacity));
         }
         boolean result;
-        result = surface.paint(g, null);
+        result = surface.paint(g, null, zoom);
         if (opacity != 1.0f) {
-            (g).setComposite(comp);
+            g.setComposite(comp);
         }
         if (showSelection) {
             selection.paint(g, bounds);
@@ -276,7 +288,7 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
 
     @Override
     protected Lookup createLookup() {
-        Graphics2D lazyGraphics = LazyGraphics.create(new GraphicsProvider(){
+        Graphics2D lazyGraphics = LazyGraphics.create(new GraphicsProvider() {
 
             @Override
             public Graphics2D getGraphics() {
@@ -288,11 +300,10 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
                 //do nothing
             }
         }, true);
-        
 
         Lookup a = Lookups.fixed(this, surface.getSurface(), layer, selection, lazyGraphics,
                 surface.bufferedImageOpReceiver, surface.compositeReceiver,
-                new ImgSrc());
+                new ImgSrc(), RasterLayerSave.INSTANCE);
         InstanceContent c = new InstanceContent();
         ImgConverter conv = new ImgConverter();
         c.add(conv, conv);
@@ -320,9 +331,9 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
             g.dispose();
             return nue;
         }
-        
+
     }
-    
+
     class ImgConverter implements InstanceContent.Convertor<ImgConverter, BufferedImage> {
 
         @Override
@@ -344,7 +355,7 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
         public String displayName(ImgConverter t) {
             return getName();
         }
-        
+
     }
 
     public void setCursor(Cursor cursor) {

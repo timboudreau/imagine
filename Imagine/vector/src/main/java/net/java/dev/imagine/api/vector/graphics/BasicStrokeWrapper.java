@@ -31,6 +31,50 @@ public final class BasicStrokeWrapper implements Primitive, Attribute<BasicStrok
     public byte endCap;
     public byte lineJoin;
 
+    public BasicStrokeWrapper(float miterLimit, float[] dashArray, float dashPhase, float lineWidth, byte endCap, byte lineJoin) {
+        this.miterLimit = miterLimit;
+        this.dashArray = dashArray;
+        this.dashPhase = dashPhase;
+        this.lineWidth = lineWidth;
+        switch (endCap) {
+            case BasicStroke.CAP_BUTT:
+            case BasicStroke.CAP_ROUND:
+            case BasicStroke.CAP_SQUARE:
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown end cap value " + endCap);
+        }
+        this.endCap = endCap;
+        switch (lineJoin) {
+            case BasicStroke.JOIN_MITER:
+                if (miterLimit < 1) {
+                    throw new IllegalArgumentException("Miter limit must be > 1 for"
+                            + " JOIN_MITER");
+                }
+            case BasicStroke.JOIN_BEVEL:
+            case BasicStroke.JOIN_ROUND:
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown line join value " + endCap);
+        }
+        if (dashArray != null) {
+            if (dashArray.length == 0) {
+                throw new IllegalArgumentException("Dash array present but 0-length");
+            }
+            boolean foundNonZero = false;
+            for (int i = 0; i < dashArray.length; i++) {
+                if (dashArray[i] != 0) {
+                    foundNonZero = true;
+                    break;
+                }
+            }
+            if (!foundNonZero) {
+                throw new IllegalArgumentException("Dash array is all zeros: " + Arrays.toString(dashArray));
+            }
+        }
+        this.lineJoin = lineJoin;
+    }
+
     public BasicStrokeWrapper(BasicStroke stroke) {
         this.dashArray = stroke.getDashArray();
         this.dashPhase = stroke.getDashPhase();
@@ -59,8 +103,12 @@ public final class BasicStrokeWrapper implements Primitive, Attribute<BasicStrok
     }
 
     public BasicStroke toStroke() {
-        return new BasicStroke(lineWidth, endCap, lineJoin, miterLimit,
-                dashArray, dashPhase);
+        try {
+            return new BasicStroke(lineWidth, endCap, lineJoin, miterLimit,
+                    dashArray, dashPhase);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(this.toString(), ex);
+        }
     }
 
     @Override

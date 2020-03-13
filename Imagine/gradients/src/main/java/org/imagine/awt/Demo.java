@@ -72,7 +72,7 @@ public class Demo {
             for (int i = 0; i < angles.length; i++) {
                 angles[i] = randomAngle();
             }
-            addMouseListener(new MouseAdapter(){
+            addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     if (!e.isPopupTrigger() && e.getClickCount() == 2) {
@@ -86,10 +86,11 @@ public class Demo {
             });
         }
 
+        private Paint paint = new GradientPaint(160, 160, Color.BLUE, 620, 620, Color.ORANGE, true);
+
         private static double randomAngle() {
             return rnd.nextDouble() * 360;
         }
-        private Paint paint = new GradientPaint(160, 160, Color.BLUE, 620, 620, Color.ORANGE, true);
 
         private void updatePaint() {
             int rn = rnd.nextInt(3);
@@ -194,6 +195,7 @@ public class Demo {
         }
 
         Rectangle adj = new Rectangle();
+
         private void adjust() {
             tick++;
             Rectangle bds = new Rectangle(0, 0, getWidth(), getHeight());

@@ -51,12 +51,15 @@ final class OneLayerWidget extends Widget {
     }
 
     private WidgetFactory factory;
-
+    private boolean attached;
     void addNotify() {
         if (widgetLayer != null) {
             factory = widgetLayer.createWidgetController(this, (PictureScene) getScene());
             if (factory != null) {
+                attached = true;
                 factory.attach(lkp::lookups);
+            } else {
+                attached = false;
             }
         }
     }
@@ -66,6 +69,7 @@ final class OneLayerWidget extends Widget {
         layer.removePropertyChangeListener(pcl);
         if (factory != null) {
             factory.detach();
+            attached = false;
             factory = null;
         }
     }
@@ -108,7 +112,8 @@ final class OneLayerWidget extends Widget {
             g.setComposite(comp);
         }
         try {
-            layer.paint(g, layer.getBounds(), false, false);
+//            layer.paint(g, layer.getBounds(), false, false, ((PictureScene)getScene()).getZoom());
+            layer.paint(g, null, false, false, ((PictureScene)getScene()).getZoom());
         } finally {
             if (old != null) {
                 g.setComposite(old);
@@ -116,8 +121,11 @@ final class OneLayerWidget extends Widget {
         }
     }
 
+    @Override
     public String toString() {
-        return "Widget for " + layer + " at " + getPreferredBounds() + " " + getPreferredLocation();
+        return "Widget for " + layer + " at " 
+                + getPreferredBounds() + " "
+                + getPreferredLocation();
     }
 
     private final class PCL implements PropertyChangeListener {
@@ -144,6 +152,7 @@ final class OneLayerWidget extends Widget {
             repaintArea(layer.getBounds());
         }
 
+        @Override
         public void repaintArea(Rectangle r) {
             repaintArea(r.x, r.y, r.width, r.height);
         }

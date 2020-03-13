@@ -44,6 +44,7 @@ import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import net.dev.java.imagine.api.tool.aspects.NonPaintingTool;
 import net.java.dev.imagine.effects.api.EffectReceiver;
+import org.imagine.editor.api.Zoom;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.misc.image.ByteNIOBufferedImage;
 import org.netbeans.paint.misc.image.ImageHolder;
@@ -112,7 +113,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
 
     RasterSurfaceImpl(Dimension size, RepaintHandle handle, Picture picture, Selection<Shape> selection, BooleanSupplier isVisible) {
         this(handle, picture.getSize(), selection, isVisible);
-        picture.paint((Graphics2D) img.getGraphics(), null, false);
+        picture.paint((Graphics2D) img.getGraphics(), null, false, Zoom.ONE_TO_ONE);
         this.selection = selection;
     }
 
@@ -319,7 +320,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         return true;
     }
 
-    public boolean paint(Graphics2D g2d, Rectangle r) {
+    public boolean paint(Graphics2D g2d, Rectangle r, Zoom zoom) {
         if (img instanceof ByteNIOBufferedImage) {
             return false;
         }

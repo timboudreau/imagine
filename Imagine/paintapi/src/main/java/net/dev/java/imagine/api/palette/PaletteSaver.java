@@ -3,21 +3,21 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package net.dev.java.imagine.api.palette;
 
-import java.util.function.Consumer;
+import com.mastfrog.function.TriConsumer;
+import java.util.function.BiConsumer;
 
 /**
  *
  * @author Tim Boudreau
  */
-public final class PaletteSaver<T> implements Consumer<T> {
+public final class PaletteSaver<T> implements BiConsumer<T, BiConsumer<Throwable, String>>, TriConsumer<String, T, BiConsumer<Throwable, String>> {
 
-    private final Consumer<T> saver;
+    private final TriConsumer<String, T, BiConsumer<Throwable, String>> saver;
     private final String displayName;
 
-    public PaletteSaver(Consumer<T> saver, String displayName) {
+    PaletteSaver(TriConsumer<String, T, BiConsumer<Throwable, String>> saver, String displayName) {
         this.saver = saver;
         this.displayName = displayName;
     }
@@ -27,8 +27,13 @@ public final class PaletteSaver<T> implements Consumer<T> {
     }
 
     @Override
-    public void accept(T t) {
-        saver.accept(t);
+    public void accept(T t, BiConsumer<Throwable, String> c) {
+        saver.apply(null, t, c);
+    }
+
+    @Override
+    public void apply(String name, T t, BiConsumer<Throwable, String> c) {
+        saver.apply(name, t, c);
     }
 
 }

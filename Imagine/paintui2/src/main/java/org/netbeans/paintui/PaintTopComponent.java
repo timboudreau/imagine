@@ -57,6 +57,8 @@ import org.netbeans.api.progress.ProgressHandleFactory;
 import org.netbeans.paint.api.components.FileChooserUtils;
 import org.netbeans.paintui.PictureScene.PI;
 import net.java.dev.imagine.ui.actions.spi.Selectable;
+import org.netbeans.api.visual.widget.Scene;
+import org.netbeans.api.visual.widget.Scene.SceneListener;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.StatusDisplayer;
@@ -69,6 +71,7 @@ import org.openide.util.Lookup;
 import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
 import org.openide.util.NbBundle;
+import org.openide.util.NbBundle.Messages;
 import org.openide.util.Utilities;
 import org.openide.windows.TopComponent;
 
@@ -76,6 +79,57 @@ import org.openide.windows.TopComponent;
  *
  * @author Timothy Boudreau
  */
+@Messages({
+    // XXX pasted in from bundle file - a number of these are probably
+    // unused, or if used, are used from other modules and should be moved
+    // there
+    "# {0} - formatName",
+    "UnsavedImageNameFormat=Image {0}",
+    "# {0} - fileName",
+    "MSG_SaveFailed=Could not write to file {0}",
+    "# {0} - fileName",
+    "MSG_Overwrite={0} exists.  Overwrite?",
+    "# {0} - fileName",
+    "MSG_Saved=Saved image to {0}",
+    "LBL_CreateSelection=Create Selection",
+    "LBL_ClearSelection=Clear Selection",
+    "LBL_ChangeSelection=Change Selection",
+    "bounds=Bounds",
+    "visible=Visible",
+    "opacity=Opacity",
+    "size=Size",
+    "name=Name",
+    "# {0} - changed",
+    "LBL_Change=Change {0}",
+    "MSG_ADD_NEW_LAYER=Add New Layer",
+    "# {0} - layerName",
+    "MSG_DUPLICATE_LAYER=Duplicate Layer {0}",
+    "MSG_FLATTEN_LAYERS=Flatten Layers",
+    "# {0} - layerName",
+    "LAYER_NAME=Layer {0}",
+    "# {0} - layerName",
+    "# {1} - position",
+    "MSG_MOVE_LAYER=Move {0} to Position {1}",
+    "# {0} - layerName",
+    "MSG_DELETE_LAYER=Delete Layer {0}",
+    "# {0} - layerName",
+    "MSG_ACTIVATE_LAYER=Activate Layer {0}",
+    "MSG_CLEAR_ACTIVE_LAYER=Clear active layer",
+    "MSG_UNHIBERNATING=Reloading images",
+    "# {0} - fileName",
+    "MSG_SAVED=Saved {0}",
+    "LBL_PASTED_LAYER=From Clipboard",
+    "LAYER_CLIPBOARD_NAME=Layer",
+    "# {0} - cutTarget",
+    "CUT=Cut {0}",
+    "LBL_UNKNOWN_UNDOABLE_OP=Unknown Operation",
+    "CTL_PaintAction=Image",
+    "TRANSPARENT=Transparent",
+    "WHITE=White",
+    "RASTER_IMAGES=Raster Images (png, jpg, gif, ...)",
+    "# {0} - imageCount",
+    "OPENING_IMAGES=Opening {0} images"
+})
 @TopComponent.Description(preferredID = "PaintTopComponent",
         //iconBase="SET/PATH/TO/ICON/HERE",
         persistenceType = TopComponent.PERSISTENCE_ALWAYS)
@@ -136,6 +190,7 @@ public final class PaintTopComponent extends TopComponent implements
 
     public PaintTopComponent(BufferedImage img, File origin) throws IOException {
         this(new PictureScene(img));
+        this.canvas.picture().getPicture().associateFile(origin.toPath());
         this.file = origin;
         updateActivatedNode(origin);
         init();
@@ -161,7 +216,8 @@ public final class PaintTopComponent extends TopComponent implements
         }
     }
 
-    private PaintTopComponent(PictureScene canvas) {
+    @SuppressWarnings("LeakingThisInConstructor")
+    public PaintTopComponent(PictureScene canvas) {
         this.canvas = canvas;
         String displayName = NbBundle.getMessage(
                 PaintTopComponent.class,
@@ -174,8 +230,12 @@ public final class PaintTopComponent extends TopComponent implements
         setPreferredSize(new Dimension(500, 500));
 
         setLayout(new BorderLayout());
-        JScrollPane pane = new JScrollPane(new InnerPanel(canvas.createView()));
+        InnerPanel inner = new InnerPanel(canvas.createView(), canvas);
+        canvas.addSceneListener(inner);
+        JScrollPane pane = new JScrollPane(inner);
         pane.getViewport().setScrollMode(JViewport.BLIT_SCROLL_MODE);
+        pane.getViewport().setDoubleBuffered(false);
+
         pane.setBorder(BorderFactory.createEmptyBorder());
         pane.setViewportBorder(BorderFactory.createMatteBorder(1, 0, 0, 0,
                 UIManager.getColor("controlShadow"))); //NOI18N
@@ -184,11 +244,12 @@ public final class PaintTopComponent extends TopComponent implements
         picture.addChangeListener(this);
     }
 
-    static class InnerPanel extends JComponent {
+    static class InnerPanel extends JComponent implements SceneListener {
 
         private final JComponent inner;
+        private Dimension prefSize;
 
-        InnerPanel(JComponent inner) {
+        InnerPanel(JComponent inner, Scene scene) {
             this.inner = inner;
             add(inner);
             setBorder(BorderFactory.createEmptyBorder());
@@ -196,7 +257,9 @@ public final class PaintTopComponent extends TopComponent implements
 
         @Override
         public Dimension getPreferredSize() {
-            return inner.getPreferredSize();
+            return prefSize == null
+                    ? inner.getPreferredSize() : new Dimension(prefSize);
+//            return inner.getPreferredSize();
         }
 
         @Override
@@ -211,6 +274,19 @@ public final class PaintTopComponent extends TopComponent implements
                 offY = (getHeight() - d.height) / 2;
             }
             inner.setBounds(offX, offY, d.width, d.height);
+        }
+
+        @Override
+        public void sceneRepaint() {
+        }
+
+        @Override
+        public void sceneValidating() {
+        }
+
+        @Override
+        public void sceneValidated() {
+            prefSize = inner.getPreferredSize();
         }
     }
 
@@ -269,7 +345,6 @@ public final class PaintTopComponent extends TopComponent implements
             repaint();
         }
     }
-
 
     public void pictureResized(int width, int height) {
 //        /throw new UnsupportedOperationException("Not yet implemented");
@@ -414,7 +489,6 @@ public final class PaintTopComponent extends TopComponent implements
         requestActive();
     }
 
-
     @Override
     protected void componentActivated() {
         active = true;
@@ -439,41 +513,40 @@ public final class PaintTopComponent extends TopComponent implements
 //        }
     }
 
-
     @Override
     protected void componentShowing() {
         PI p = canvas.getPicture();
         final int layerCount = p.getLayers().size();
 //        if (p.hibernated()) {
-            p.wakeup(false, new Runnable() {
-                int ct = 0;
-                ProgressHandle h;
+        p.wakeup(false, new Runnable() {
+            int ct = 0;
+            ProgressHandle h;
 
-                public void run() {
-                    if (EventQueue.isDispatchThread()) {
-                        invalidate();
-                        revalidate();
-                        repaint();
-                        return;
-                    }
-                    ct++;
-                    if (ct == 1) {
-                        h = ProgressHandleFactory.createHandle(NbBundle.getMessage(PaintTopComponent.class,
-                                "MSG_UNHIBERNATING")); //NOI18N
-                        h.start();
-                        h.switchToDeterminate(layerCount);
-                    }
-                    if (h != null) {
-                        h.progress(ct);
-                    }
-                    if (ct == layerCount - 1) {
-                        if (h != null) {
-                            h.finish();
-                        }
-                        EventQueue.invokeLater(this);
-                    }
+            public void run() {
+                if (EventQueue.isDispatchThread()) {
+                    invalidate();
+                    revalidate();
+                    repaint();
+                    return;
                 }
-            });
+                ct++;
+                if (ct == 1) {
+                    h = ProgressHandleFactory.createHandle(NbBundle.getMessage(PaintTopComponent.class,
+                            "MSG_UNHIBERNATING")); //NOI18N
+                    h.start();
+                    h.switchToDeterminate(layerCount);
+                }
+                if (h != null) {
+                    h.progress(ct);
+                }
+                if (ct == layerCount - 1) {
+                    if (h != null) {
+                        h.finish();
+                    }
+                    EventQueue.invokeLater(this);
+                }
+            }
+        });
 //        }
     }
 
@@ -491,7 +564,6 @@ public final class PaintTopComponent extends TopComponent implements
         System.out.println("set active tool " + tool);
         canvas.setActiveTool(tool);
     }
-
 
     private void startListening() {
         System.out.println("  start listening for active tool changes");

@@ -14,6 +14,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.Transferable;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import javax.swing.event.ChangeEvent;
@@ -21,6 +22,7 @@ import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
+import org.imagine.editor.api.Zoom;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.utils.ConvertList;
 import org.openide.util.ChangeSupport;
@@ -39,6 +41,7 @@ public final class Picture implements Iterable<Layer> {
     public static final int POSITION_BOTTOM = -1;
     public static final int POSITION_TOP = -2;
     final PictureImplementation impl;
+    private Path file;
 
     static {
         Layer.init();
@@ -51,7 +54,16 @@ public final class Picture implements Iterable<Layer> {
         }
         this.impl = impl;
     }
-    
+
+    public Picture associateFile(Path file) {
+        this.file = file;
+        return this;
+    }
+
+    public Path associatedFile() {
+        return file;
+    }
+
     public Iterator<Layer> iterator() {
         return getLayers().iterator();
     }
@@ -75,10 +87,10 @@ public final class Picture implements Iterable<Layer> {
 //            result.add (Accessor.layerFor(curr));
 //        }
 //        return result;
-        return new ConvertList<Layer, LayerImplementation>(Layer.class, 
+        return new ConvertList<Layer, LayerImplementation>(Layer.class,
                 LayerImplementation.class, impl.getLayers(), CVT);
     }
-    
+
     static ConvertList.Converter<Layer, LayerImplementation> CVT = new ConvertList.Converter<Layer, LayerImplementation>() {
 
         @Override
@@ -153,7 +165,7 @@ public final class Picture implements Iterable<Layer> {
             impl.removeChangeListener(implListener);
         }
     }
-    
+
     private final CL implListener = new CL();
     private final class CL implements ChangeListener {
 
@@ -161,7 +173,7 @@ public final class Picture implements Iterable<Layer> {
         public void stateChanged(ChangeEvent e) {
             supp.fireChange();
         }
-        
+
     }
 
     /**
@@ -187,7 +199,7 @@ public final class Picture implements Iterable<Layer> {
     public void flatten() {
         impl.flatten();
     }
-    
+
     /**
      * Copy the content of the current layer or all layers to the clipboard
      * in some fashion
@@ -198,7 +210,7 @@ public final class Picture implements Iterable<Layer> {
     public Transferable copy(Clipboard clipboard, boolean allLayers) {
         return impl.copy(clipboard, allLayers);
     }
-    
+
     /**
      * Cut the content of the current layer or all layers to the clipboard
      * in some fashion
@@ -209,7 +221,7 @@ public final class Picture implements Iterable<Layer> {
     public Transferable cut (Clipboard clipboard, boolean allLayers) {
         return impl.cut (clipboard, allLayers);
     }
-    
+
     /**
      * Paste the content of the clipboard into a new layer in the current image
      * @return
@@ -232,10 +244,10 @@ public final class Picture implements Iterable<Layer> {
      * @param r A bounding rectangle if painting a thumbnail image, or null
      *  if full quality painting is desired
      */
-    public boolean paint (Graphics2D g, Rectangle bounds,boolean showSelection) {
-        return impl.paint (g, bounds, showSelection);
+    public boolean paint (Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom) {
+        return impl.paint (g, bounds, showSelection, zoom);
     }
-    
+
     /**
      * Get an object that can be used to instruct the picture that its
      * UI representation should repaint some region.

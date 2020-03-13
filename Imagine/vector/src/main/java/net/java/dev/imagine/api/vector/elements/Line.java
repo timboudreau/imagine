@@ -165,8 +165,12 @@ public class Line implements Strokable, Adjustable, Vector {
 
     @Override
     public void addToBounds(Rectangle2D bds) {
-        bds.add(x1, y1);
-        bds.add(x2, y2);
+        if (bds.isEmpty()) {
+            bds.setFrameFromDiagonal(x1, y1, x2, y2);
+        } else {
+            bds.add(x1, y1);
+            bds.add(x2, y2);
+        }
     }
 
     @Override

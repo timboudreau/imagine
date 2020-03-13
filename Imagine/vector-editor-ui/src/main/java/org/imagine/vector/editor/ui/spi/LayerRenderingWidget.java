@@ -8,8 +8,6 @@ package org.imagine.vector.editor.ui.spi;
 import java.awt.Point;
 import java.util.function.Consumer;
 import org.imagine.editor.api.Zoom;
-import org.netbeans.api.visual.widget.Scene;
-import org.netbeans.api.visual.widget.Widget;
 import org.netbeans.paintui.widgetlayers.SetterResult;
 import org.openide.util.Lookup;
 
@@ -17,19 +15,15 @@ import org.openide.util.Lookup;
  *
  * @author Tim Boudreau
  */
-public abstract class LayerRenderingWidget extends Widget {
+public interface LayerRenderingWidget {
 
-    protected LayerRenderingWidget(Scene scene) {
-        super(scene);
-    }
+    SetterResult setOpacity(double opacity);
 
-    public abstract SetterResult setOpacity(double opacity);
+    SetterResult setLocation(Point location);
 
-    public abstract SetterResult setLocation(Point location);
+    void setZoom(Zoom zoom);
 
-    public abstract void setZoom(Zoom zoom);
-
-    public void setLookupConsumer(Consumer<Lookup[]> additionaLookupConsumer) {
+    default void setLookupConsumer(Consumer<Lookup[]> additionaLookupConsumer) {
         // do nothing
     }
 }

@@ -6,12 +6,8 @@
 package org.imagine.vector.editor.ui.tools;
 
 import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.Shape;
-import java.awt.Stroke;
-import java.util.Collection;
 import java.util.Set;
 import javax.swing.JComponent;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
@@ -20,14 +16,16 @@ import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
 import net.dev.java.imagine.spi.tool.ToolImplementation;
-import net.java.dev.imagine.api.vector.design.ControlPoint;
+import org.imagine.editor.api.snap.SnapPointsSupplier;
 import org.imagine.geometry.Circle;
 import org.imagine.vector.editor.ui.spi.WidgetSupplier;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
 import org.imagine.utils.Holder;
-import org.imagine.vector.editor.ui.spi.ShapeElement;
+import org.imagine.vector.editor.ui.palette.ShapesPaletteTC;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
+import org.imagine.vector.editor.ui.tools.widget.DesignWidgetManager;
+import org.imagine.vector.editor.ui.tools.widget.util.ViewL;
 import org.netbeans.paintui.widgetlayers.WidgetController;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.ProxyLookup;
@@ -54,11 +52,13 @@ public class ShapeDesignTool extends ToolImplementation<ShapesCollection>
             ViewL.detach(designToolWidget.getScene());
         }
         layerLookup.setOtherLookups();
-        widgetLookup.setOtherLookups();
+        widgetLookup.lookups();
+        ShapesPaletteTC.closePalette();
     }
 
     @Override
     public void attach(Lookup.Provider layer) {
+        ShapesPaletteTC.openPalette();
         layerLookup.setOtherLookups(layer.getLookup());
     }
 
@@ -72,18 +72,20 @@ public class ShapeDesignTool extends ToolImplementation<ShapesCollection>
         return widgetLookup;
     }
 
-    ShapeDesignToolWidget designToolWidget;
+    Widget designToolWidget;
 
     @Override
-    public Widget apply(Scene scene, WidgetController ctrllr) {
-        ViewL.attach(scene);
+    public Widget apply(Scene scene, WidgetController ctrllr, SnapPointsSupplier snapPoints) {
         if (designToolWidget == null || designToolWidget.getScene() != scene) {
             if (designToolWidget != null && designToolWidget.getParentWidget() != null) {
                 designToolWidget.removeFromParent();
             }
-            designToolWidget = new ShapeDesignToolWidget(scene, obj, layerLookup, repainter, ctrllr);
+//            designToolWidget = new ShapeDesignToolWidget(scene, obj, layerLookup, repainter, ctrllr, snapPoints);
+            DesignWidgetManager man = new DesignWidgetManager(scene, obj, widgetLookup);
+            designToolWidget = man.getMainWidget();
 
-            widgetLookup.setOtherLookups(designToolWidget.getLookup());
+            layerLookup.setOtherLookups(designToolWidget.getLookup());
+//            widgetLookup.lookups(designToolWidget.getLookup());
         }
         return designToolWidget;
     }
@@ -129,6 +131,7 @@ public class ShapeDesignTool extends ToolImplementation<ShapesCollection>
 
     @Override
     public void paint(Graphics2D g, Rectangle layerBounds, boolean commit) {
+        /*
         Collection<? extends ShapeElement> coll = widgetLookup.lookupAll(ShapeElement.class);
         Stroke stroke = null;
         if (!coll.isEmpty()) {
@@ -152,10 +155,11 @@ public class ShapeDesignTool extends ToolImplementation<ShapesCollection>
             }
             g.setPaintMode();
         }
+        */
     }
     private final Circle circ = new Circle(0, 0, 1);
 
-    private final MPL widgetLookup = new MPL();
+    private final MutableProxyLookup widgetLookup = new MutableProxyLookup();
 
     @Override
     public Customizer getCustomizer() {

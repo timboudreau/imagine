@@ -130,7 +130,6 @@ public class Demo {
             this.key = key;
             repaint();
         }));
-
     }
 
     private static JButton paintButton() {

@@ -9,7 +9,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import static java.lang.Float.floatToIntBits;
 import static java.lang.Float.intBitsToFloat;
-import org.imagine.awt.io.KeyWriter;
+import org.imagine.io.KeyWriter;
 
 /**
  * Key which incorporates the salient values from a LinearGradientPaint.

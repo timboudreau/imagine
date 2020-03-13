@@ -11,6 +11,7 @@ package net.java.dev.imagine.api.vector.graphics;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
+import java.util.Arrays;
 import java.util.Objects;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
@@ -28,7 +29,19 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
     }
 
     public static FontWrapper create(String name, int style, float size, AffineTransform transform) {
-        return new FontWrapper(name, size, style);
+        return new FontWrapper(name, size, style, transform);
+    }
+
+    public static FontWrapper create(Font f, boolean removeTranslation) {
+        if (!removeTranslation) {
+            return create(f);
+        }
+        AffineTransform xf = f.getTransform();
+        if (xf != null && !xf.isIdentity()) {
+            xf = removeTranslation(xf);
+            create(f.deriveFont(xf));
+        }
+        return create(f);
     }
 
     public static FontWrapper create(Font f) {
@@ -69,6 +82,8 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
         this.name = name;
         this.size = size;
         this.style = style;
+        this.transform = xform == null ? null : xform.isIdentity() ? null
+                : removeTranslation(xform);
     }
 
     public String getFontName() {
@@ -115,13 +130,26 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
         this.transform = xform;
     }
 
+    public static AffineTransform removeTranslation(AffineTransform xform) {
+//        double[] pts = new double[]{0, 0};
+//        xform.transform(pts, 0, pts, 0, 1);
+//        AffineTransform nue = new AffineTransform(xform);
+//        nue.preConcatenate(AffineTransform.getTranslateInstance(-pts[0], -pts[1]));
+//        return nue;
+        double x = xform.getTranslateX();
+        double y = xform.getTranslateY();
+        AffineTransform nue = new AffineTransform(xform);
+        nue.translate(-x, -y);
+        return nue;
+    }
+
     @Override
     public void applyTransform(AffineTransform xform) {
         if (xform.isIdentity()) {
             return;
         }
         if (transform != null) {
-            transform.concatenate(xform);
+            transform.concatenate(removeTranslation(xform));
         } else {
             transform = xform;
         }
@@ -155,7 +183,17 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
     public String toString() {
         return "Font: " + name + ", " + size
                 + ", " + styleToString(style)
-                + (transform != null ? transform.toString() : "");
+                + transformString();
+    }
+
+    private String transformString() {
+        if (transform == null || transform.isIdentity()) {
+            return "-identity-xform-";
+        } else {
+            double[] mx = new double[6];
+            transform.getMatrix(mx);
+            return Arrays.toString(mx);
+        }
     }
 
     private static String styleToString(int style) {
@@ -228,7 +266,11 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
         hash = 97 * hash + Objects.hashCode(this.name);
         hash = 97 * hash + Float.floatToIntBits(this.size);
         hash = 97 * hash + this.style;
-        hash = 97 * hash + Objects.hashCode(this.transform);
+        if (this.transform != null && !this.transform.isIdentity()) {
+            double[] mx = new double[6];
+            transform.getMatrix(mx);
+            hash = 97 * hash + Arrays.hashCode(mx);
+        }
         return hash;
     }
 }

@@ -8,8 +8,8 @@ package org.imagine.awt.key;
 import java.awt.Color;
 import java.io.IOException;
 import org.imagine.awt.util.IdPathBuilder;
-import org.imagine.awt.io.KeyWriter;
-import org.imagine.awt.io.KeyReader;
+import org.imagine.io.KeyWriter;
+import org.imagine.io.KeyReader;
 
 /**
  *

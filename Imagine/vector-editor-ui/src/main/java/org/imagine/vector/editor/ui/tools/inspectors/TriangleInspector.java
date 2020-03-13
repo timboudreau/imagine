@@ -42,12 +42,6 @@ public class TriangleInspector extends InspectorFactory<TriangleWrapper> {
         ShapeElement shape = lookup.lookup(ShapeElement.class);
         JPanel pnl = new JPanel(new VerticalFlowLayout());
         NumericConstraint con = DOUBLE.withMaximum(10000D).withMinimum(-2000D);
-        pnl.add(new NamedNumberEditor(Bundle.ax(), con, obj::ax, shape.wrap(obj::setAx)));
-        pnl.add(new NamedNumberEditor(Bundle.ay(), con, obj::ay, shape.wrap(obj::setAy)));
-        pnl.add(new NamedNumberEditor(Bundle.bx(), con, obj::bx, shape.wrap(obj::setBx)));
-        pnl.add(new NamedNumberEditor(Bundle.by(), con, obj::by, shape.wrap(obj::setBy)));
-        pnl.add(new NamedNumberEditor(Bundle.cx(), con, obj::cx, shape.wrap(obj::setCx)));
-        pnl.add(new NamedNumberEditor(Bundle.cy(), con, obj::cy, shape.wrap(obj::setCy)));
         JButton tesselate = new JButton();
         Mnemonics.setLocalizedText(tesselate, Bundle.tesselate());
         tesselate.addActionListener(ae -> {
@@ -58,6 +52,12 @@ public class TriangleInspector extends InspectorFactory<TriangleWrapper> {
             shape.changed();
         });
         pnl.add(tesselate);
+        pnl.add(new NamedNumberEditor(Bundle.ax(), con, obj::ax, shape.wrap(obj::setAx)));
+        pnl.add(new NamedNumberEditor(Bundle.ay(), con, obj::ay, shape.wrap(obj::setAy)));
+        pnl.add(new NamedNumberEditor(Bundle.bx(), con, obj::bx, shape.wrap(obj::setBx)));
+        pnl.add(new NamedNumberEditor(Bundle.by(), con, obj::by, shape.wrap(obj::setBy)));
+        pnl.add(new NamedNumberEditor(Bundle.cx(), con, obj::cx, shape.wrap(obj::setCx)));
+        pnl.add(new NamedNumberEditor(Bundle.cy(), con, obj::cy, shape.wrap(obj::setCy)));
 
         return pnl;
     }

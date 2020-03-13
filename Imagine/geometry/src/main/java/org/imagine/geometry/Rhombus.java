@@ -32,12 +32,14 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
 /**
+ * A rhombus implemented as a center point, two radii specifying the distances
+ * between opposing corner, and a rotation angle.
  *
  * @author Tim Boudreau
  */
 public final class Rhombus implements Shape {
 
-    private Circle circ;
+    private final Circle circ;
     private double radX;
     private double radY;
 
@@ -132,6 +134,18 @@ public final class Rhombus implements Shape {
         // test relativeCCW is inside for each
 
         return toPath().contains(x, y);
+    }
+
+    public TriangleDouble[] toTriangles(boolean longAxis) {
+        TriangleDouble[] result = new TriangleDouble[2];
+        if (getXRadius() > getYRadius() && longAxis) {
+            result[0] = new TriangleDouble(top(), bottom(), left());
+            result[1] = new TriangleDouble(top(), bottom(), right());
+        } else {
+            result[0] = new TriangleDouble(top(), left(), right());
+            result[1] = new TriangleDouble(bottom(), left(), right());
+        }
+        return result;
     }
 
     @Override

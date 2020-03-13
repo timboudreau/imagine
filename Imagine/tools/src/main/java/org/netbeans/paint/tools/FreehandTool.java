@@ -266,7 +266,7 @@ public class FreehandTool extends MultiStateTool {
             if (lastMovePoint != null) {
                 Point point = state.lastPoint();
                 if (point != null && !point.equals(lastMovePoint)) {
-                    if (bounds.contains(lastMovePoint) || bounds.contains(point)) {
+                    if (bounds == null || (bounds.contains(lastMovePoint) || bounds.contains(point))) {
                         BasicStroke stroke = new BasicStroke(inverseZoom);
                         g.setStroke(stroke);
                         g.setColor(Color.BLACK);

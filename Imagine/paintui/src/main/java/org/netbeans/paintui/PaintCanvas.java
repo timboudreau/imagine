@@ -216,7 +216,7 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
         scratchAt3.concatenate(getCurrentTransform());
         g2d.setTransform(scratchAt3);
 
-        boolean painted = picture.paint(g2d, null, true);
+        boolean painted = picture.paint(g2d, null, true, zoomImpl);
         if (tool != null) {
             PaintParticipant participant = get(tool, PaintParticipant.class);
             if (participant != null) {
@@ -274,7 +274,7 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
         Dimension d = picture.getSize();
         BufferedImage result = new BufferedImage(d.width, d.height,
                 GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
-        picture.paint((Graphics2D) result.createGraphics(), null, true);
+        picture.paint((Graphics2D) result.createGraphics(), null, true, Zoom.ONE_TO_ONE);
         return result;
     }
     private Tool tool;

@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.function.Consumer;
 import org.imagine.awt.impl.Accessor;
-import org.imagine.awt.io.KeyWriter;
+import org.imagine.io.KeyWriter;
 
 /**
  * Cache keys for different types of paints. Used for several reasons:
@@ -55,7 +55,14 @@ public abstract class PaintKey<T extends Paint> implements Serializable {
         return hash;
     }
 
-    protected abstract T toPaint();
+    /**
+     * Instantiate a raw Paint for this key. For painting purposes, use
+     * GradientManager instead, passing the key, so things like large
+     * problematic RadialPaints can be painted once and wrapped in TexturePaint.
+     *
+     * @return A paint
+     */
+    public abstract T toPaint();
 
     protected abstract int computeHashCode();
 

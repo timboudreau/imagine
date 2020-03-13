@@ -45,18 +45,6 @@ public class Triangle implements Shape, Iterable<Point2D.Float>, Comparable<Tria
         Point2D.Float b = new EqPoint(bx, by);
         Point2D.Float c = new EqPoint(cx, cy);
         points = new Point2D.Float[]{a, b, c};
-//        Arrays.sort(points, (Point2D.Float p1, Point2D.Float p2) -> {
-//            float ta;
-//            float tb;
-//            if (a.y > b.y) {
-//                ta = a.y;
-//                tb = b.y;
-//            } else {
-//                ta = a.x;
-//                tb = b.x;
-//            }
-//            return ta == tb ? 0 : ta > tb ? 1 : -1;
-//        });
     }
 
     public static Triangle isoceles(double centerX, double centerY, double distanceToCenter) {
@@ -66,6 +54,24 @@ public class Triangle implements Shape, Iterable<Point2D.Float>, Comparable<Tria
                 circ.getPosition(135),
                 circ.getPosition(225)
         );
+    }
+
+    public void setPoints(double ax, double ay, double bx, double by, double cx, double cy) {
+        points[0].x = (float) ax;
+        points[0].y = (float) ay;
+        points[1].x = (float) bx;
+        points[1].y = (float) by;
+        points[2].x = (float) cx;
+        points[2].y = (float) cy;
+    }
+
+    public void setPoints(float ax, float ay, float bx, float by, float cx, float cy) {
+        points[0].x = ax;
+        points[0].y = ay;
+        points[1].x = bx;
+        points[1].y = by;
+        points[2].x = cx;
+        points[2].y = cy;
     }
 
     public static Triangle isoceles(Point2D center, double size) {
@@ -136,12 +142,14 @@ public class Triangle implements Shape, Iterable<Point2D.Float>, Comparable<Tria
         return circle;
     }
 
+    @Override
     public boolean equals(Object o) {
         return o == this ? true : o == null ? false
                 : o instanceof Triangle
                         ? Arrays.equals(points, ((Triangle) o).points) : false;
     }
 
+    @Override
     public int hashCode() {
         return Arrays.hashCode(points);
     }
@@ -467,8 +475,8 @@ public class Triangle implements Shape, Iterable<Point2D.Float>, Comparable<Tria
     public Rectangle2D getBounds2D() {
         float minX = Float.MAX_VALUE;
         float minY = Float.MAX_VALUE;
-        float maxX = 0;
-        float maxY = 0;
+        float maxX = Float.MIN_VALUE;
+        float maxY = Float.MIN_VALUE;
         for (Point2D.Float p : points) {
             minX = Math.min(p.x, minX);
             minY = Math.min(p.y, minY);
@@ -692,8 +700,6 @@ public class Triangle implements Shape, Iterable<Point2D.Float>, Comparable<Tria
         @Override
         public int currentSegment(float[] coords) {
             if (index == 3) {
-                coords[0] = points[0].x;
-                coords[1] = points[0].y;
                 return SEG_CLOSE;
             }
             coords[0] = points[index].x;
@@ -707,8 +713,6 @@ public class Triangle implements Shape, Iterable<Point2D.Float>, Comparable<Tria
         @Override
         public int currentSegment(double[] coords) {
             if (index == 3) {
-                coords[0] = points[0].x;
-                coords[1] = points[0].y;
                 return SEG_CLOSE;
             }
             coords[0] = points[index].x;

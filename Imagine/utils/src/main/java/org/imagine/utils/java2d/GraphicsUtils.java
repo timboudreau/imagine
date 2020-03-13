@@ -1,5 +1,6 @@
 package org.imagine.utils.java2d;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Dimension;
@@ -253,6 +254,70 @@ public final class GraphicsUtils {
             result = new Color(result.getRed(), result.getGreen(), result.getBlue(), alpha);
         }
         return result;
+    }
+
+    /**
+     * Transforms a stroke.
+     *
+     * @param stroke
+     * @param xform
+     * @return
+     */
+    public static BasicStroke createTransformedStroke(BasicStroke stroke, AffineTransform xform) {
+        if (xform == null || xform.isIdentity()) {
+            return stroke;
+        }
+        int type = xform.getType();
+        switch (type) {
+            case AffineTransform.TYPE_FLIP:
+            case AffineTransform.TYPE_GENERAL_ROTATION:
+            case AffineTransform.TYPE_GENERAL_TRANSFORM:
+            case AffineTransform.TYPE_TRANSLATION:
+                return stroke;
+            default:
+                if ((type & AffineTransform.TYPE_MASK_SCALE) == 0) {
+                    return stroke;
+                }
+        }
+        // Get the scale change as a fraction, i.e. a transform of 0.5, 0.5
+        // will return pts[2]-pts[0] = 0.5
+        double[] pts = new double[]{0, 0, 1, 1};
+        xform.deltaTransform(pts, 0, pts, 0, 2);
+        double scaleFactor;
+        if (pts[0] == pts[2] && pts[1] == pts[3]) { // uniform scale
+            scaleFactor = pts[2] - pts[0];
+        } else {
+            // Scaling differently horizontally and vertically; and we
+            // are scaling a stroke which does not know horizontal and
+            // vertical.  There is no right choice here (min? max? avg?),
+            // so we just pick a strategy - in this case averaging.
+            double xFactor = pts[2] - pts[0];
+            double yFactor = pts[3] - pts[1];
+            scaleFactor = (xFactor + yFactor) / 2D;
+        }
+        // better to do the math as floating point, then reduce
+        float width = (float) (stroke.getLineWidth() * scaleFactor);
+        float[] dash = stroke.getDashArray();
+        if (dash != null) {
+            for (int i = 0; i < dash.length; i++) {
+                dash[i] = (float) (dash[i] * scaleFactor);
+            }
+        }
+        return new BasicStroke(width, stroke.getEndCap(), stroke.getLineJoin(),
+                stroke.getMiterLimit(), dash, stroke.getDashPhase());
+    }
+
+    public static AffineTransform removeTranslation(AffineTransform xform) {
+//        double[] pts = new double[]{0, 0};
+//        xform.transform(pts, 0, pts, 0, 1);
+//        AffineTransform nue = new AffineTransform(xform);
+//        nue.preConcatenate(AffineTransform.getTranslateInstance(-pts[0], -pts[1]));
+//        return nue;
+        double x = xform.getTranslateX();
+        double y = xform.getTranslateY();
+        AffineTransform nue = new AffineTransform(xform);
+        nue.translate(-x, -y);
+        return nue;
     }
 
 }

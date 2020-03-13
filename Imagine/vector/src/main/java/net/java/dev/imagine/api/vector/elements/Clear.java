@@ -34,6 +34,12 @@ public final class Clear implements Volume, Primitive, Transformable {
         this.height = h;
     }
 
+    @Override
+    public void collectSizings(SizingCollector c) {
+        c.dimension(height, true, 1, 3);
+        c.dimension(width, false, 0, 1);
+    }
+
     public Runnable restorableSnapshot() {
         int ox = x;
         int oy = y;
@@ -70,8 +76,12 @@ public final class Clear implements Volume, Primitive, Transformable {
 
     @Override
     public void addToBounds(Rectangle2D bds) {
-        bds.add(x, y);
-        bds.add(x + width, y + height);
+        if (bds.isEmpty()) {
+            bds.setFrame(x, y, width, height);
+        } else {
+            bds.add(x, y);
+            bds.add(x + width, y + height);
+        }
     }
 
     @Override

@@ -49,6 +49,7 @@ class ToolWidgetSupplier extends WidgetLayer implements BiConsumer<Tool, Tool> {
 
     }
 
+    @Override
     public void accept(Tool old, Tool nue) {
         if (lastLayer != null) {
             lastLayer.toolChanged(old, nue);

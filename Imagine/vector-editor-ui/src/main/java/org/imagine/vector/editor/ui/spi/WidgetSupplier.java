@@ -5,7 +5,8 @@
  */
 package org.imagine.vector.editor.ui.spi;
 
-import java.util.function.BiFunction;
+import com.mastfrog.function.TriFunction;
+import org.imagine.editor.api.snap.SnapPointsSupplier;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
 import org.netbeans.paintui.widgetlayers.WidgetController;
@@ -14,7 +15,7 @@ import org.netbeans.paintui.widgetlayers.WidgetController;
  *
  * @author Tim Boudreau
  */
-public interface WidgetSupplier extends BiFunction<Scene, WidgetController, Widget> {
+public interface WidgetSupplier extends TriFunction<Scene, WidgetController, SnapPointsSupplier, Widget> {
 
     default boolean takesOverPaintingScene() {
         return true;

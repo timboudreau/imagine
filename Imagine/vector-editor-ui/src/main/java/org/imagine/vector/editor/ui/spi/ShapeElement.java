@@ -17,6 +17,7 @@ import java.util.function.DoubleConsumer;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.design.ControlPoint;
 import net.java.dev.imagine.api.vector.painting.VectorWrapperGraphics;
+import org.imagine.awt.key.PaintKey;
 import org.imagine.editor.api.PaintingStyle;
 
 /**
@@ -106,13 +107,21 @@ public interface ShapeElement {
 
     public PaintingStyle getPaintingStyle();
 
+    public void setFill(PaintKey<?> fill);
+
     public void setFill(Paint fill);
+
+    public void setDraw(PaintKey<?> fill);
 
     public void setDraw(Paint draw);
 
     public Paint getFill();
 
     public Paint getDraw();
+
+    public PaintKey<?> getFillKey();
+
+    public PaintKey<?> getDrawKey();
 
     Runnable restorableSnapshot();
 

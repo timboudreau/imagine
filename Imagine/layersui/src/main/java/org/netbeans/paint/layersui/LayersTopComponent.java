@@ -53,6 +53,7 @@ import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Picture;
 import net.java.dev.imagine.spi.image.LayerImplementation;
+import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.api.components.FontManagingPanelUI;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.openide.awt.ActionID;
@@ -590,7 +591,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
 
                 g.setClip(r);
                 try {
-                    layer.paint(g, r, true, true);
+                    layer.paint(g, r, true, true, Zoom.ONE_TO_ONE);
                 } finally {
                     g.setClip(clip);
                 }

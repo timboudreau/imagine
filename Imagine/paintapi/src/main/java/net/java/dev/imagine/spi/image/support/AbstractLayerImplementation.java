@@ -13,6 +13,7 @@ import java.util.Objects;
 import javax.swing.event.SwingPropertyChangeSupport;
 import javax.swing.event.UndoableEditEvent;
 import net.java.dev.imagine.spi.image.LayerImplementation;
+import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.netbeans.paint.api.editing.UndoManager;
 import org.openide.util.NbBundle;
@@ -40,14 +41,14 @@ public abstract class AbstractLayerImplementation extends LayerImplementation {
     }
 
     @Override
-    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, boolean paintWhenVisibleFalse) {
+    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, boolean paintWhenVisibleFalse, Zoom zoom) {
         if (!istate.visible && !paintWhenVisibleFalse) {
             return false;
         }
-        return paint(g, bounds, showSelection);
+        return paint(g, bounds, showSelection, zoom);
     }
 
-    protected abstract boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection);
+    protected abstract boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom);
 
     @Override
     public final void addPropertyChangeListener(PropertyChangeListener l) {

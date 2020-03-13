@@ -15,16 +15,17 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImageOp;
 import java.util.function.BiConsumer;
-import javax.swing.undo.AbstractUndoableEdit;
-import javax.swing.undo.CannotRedoException;
-import javax.swing.undo.CannotUndoException;
 import net.dev.java.imagine.api.tool.Tool;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
-import net.dev.java.imagine.api.tool.aspects.snap.SnapPointsConsumer;
+import org.imagine.editor.api.snap.SnapPointRendering;
+import org.imagine.editor.api.snap.SnapPoints;
+import org.imagine.editor.api.snap.SnapPointsConsumer;
+import org.imagine.editor.api.snap.SnapPointsSupplier;
 import net.java.dev.imagine.api.image.ToolCommitPreference;
 import net.java.dev.imagine.effects.api.EffectReceiver;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
+import org.imagine.editor.api.Zoom;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.vector.editor.ui.spi.WidgetSupplier;
 import org.imagine.vector.editor.ui.undo.ContentsEdit;
@@ -33,7 +34,7 @@ import org.imagine.vector.editor.ui.undo.ContentsEdit;
  *
  * @author Tim Boudreau
  */
-public class VectorSurface extends SurfaceImplementation {
+public class VectorSurface extends SurfaceImplementation implements SnapPointsSupplier {
 
     private final Shapes shapes;
     private Tool tool;
@@ -42,10 +43,12 @@ public class VectorSurface extends SurfaceImplementation {
     private final Point location = new Point();
     private BiConsumer<Tool, Tool> onToolChange;
     private BiConsumer<Point, Point> onPositionChange;
+    private final SnapLinesPainter snapPainter;
 
     VectorSurface(Shapes shapes, RepaintHandle handle) {
         this.shapes = shapes;
         this.handle = handle;
+        snapPainter = new SnapLinesPainter(handle, shapes::getBounds);
     }
 
     void onToolChange(BiConsumer<Tool, Tool> c) {
@@ -60,6 +63,13 @@ public class VectorSurface extends SurfaceImplementation {
 
     EffectReceiver<AffineTransform> transformReceiver() {
         return er;
+    }
+
+    @Override
+    public SnapPoints<?> get() {
+        SnapPoints result = shapes.snapPoints(SnapPointRendering.visualSize(),
+                snapPainter).get();
+        return result;
     }
 
     class ER extends EffectReceiver<AffineTransform> {
@@ -100,7 +110,7 @@ public class VectorSurface extends SurfaceImplementation {
         if (tool != null) {
             SnapPointsConsumer c = tool.getLookup().lookup(SnapPointsConsumer.class);
             if (c != null) {
-                c.accept(shapes.snapPoints(5));
+                c.accept(this);
             }
         }
     }
@@ -124,16 +134,6 @@ public class VectorSurface extends SurfaceImplementation {
             return engine.graphics();
         }
         return GraphicsUtils.noOpGraphics();
-    }
-
-    @Override
-    public boolean canApplyComposite() {
-        return false;
-    }
-
-    @Override
-    public boolean canApplyBufferedImageOp() {
-        return false;
     }
 
     @Override
@@ -195,16 +195,22 @@ public class VectorSurface extends SurfaceImplementation {
     }
 
     @Override
-    public boolean paint(Graphics2D g, Rectangle r) {
+    public boolean paint(Graphics2D g, Rectangle r, Zoom zoom) {
         if (tool != null) {
             WidgetSupplier supp = tool.getLookup().lookup(WidgetSupplier.class);
             if (supp != null && supp.takesOverPaintingScene()) {
+//                if (r == null) {
+//                    snapPainter.paint(g, zoom);
+//                }
                 return false;
             }
             PaintParticipant pp = tool.lookup(PaintParticipant.class);
             if (pp != null) {
                 pp.paint(g, r, false);
                 return true;
+            }
+            if (snapPainter != null) {
+                snapPainter.paint(g, zoom);
             }
         }
         return false;
@@ -225,65 +231,13 @@ public class VectorSurface extends SurfaceImplementation {
         throw new UnsupportedOperationException();
     }
 
-    static class ShapesUndoableEdit extends AbstractUndoableEdit {
+    @Override
+    public boolean canApplyComposite() {
+        return false;
+    }
 
-        private final String opName;
-        private Shapes shapes;
-        private Shapes redo;
-        private Shapes undo;
-        private RepaintHandle handle;
-
-        public ShapesUndoableEdit(String opName, Shapes shapes, RepaintHandle handle, Shapes snapshot) {
-            this.opName = opName;
-            this.undo = snapshot;
-            this.shapes = shapes;
-            this.handle = handle;
-        }
-
-        @Override
-        public String getPresentationName() {
-            return opName;
-        }
-
-        @Override
-        public boolean isSignificant() {
-            return true;
-        }
-
-        @Override
-        public boolean canRedo() {
-            return redo != null;
-        }
-
-        @Override
-        public void redo() throws CannotRedoException {
-            if (redo == null) {
-                throw new CannotRedoException();
-            }
-            Rectangle repaint = shapes.restore(redo);
-            handle.repaintArea(repaint);
-        }
-
-        @Override
-        public boolean canUndo() {
-            return undo != null;
-        }
-
-        @Override
-        public void undo() throws CannotUndoException {
-            if (undo == null) {
-                throw new CannotUndoException();
-            }
-            redo = shapes.snapshot();
-            shapes.restore(shapes);
-        }
-
-        @Override
-        public void die() {
-            undo = null;
-            redo = null;
-            shapes = null;
-            handle = null;
-        }
+    @Override
+    public boolean canApplyBufferedImageOp() {
+        return false;
     }
 }

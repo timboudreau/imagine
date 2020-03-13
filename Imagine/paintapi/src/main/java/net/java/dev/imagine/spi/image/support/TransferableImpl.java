@@ -22,6 +22,7 @@ import java.util.Set;
 import net.dev.java.imagine.api.selection.Selection;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
+import org.imagine.editor.api.Zoom;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.NbBundle;
 
@@ -78,11 +79,12 @@ class TransferableImpl implements Transferable, ClipboardOwner {
                 if (clip != null) {
                     g.setClip(clip);
                 }
+                Rectangle r = new Rectangle(0, 0, d.width, d.height);
                 if (allLayers) {
-                    picture.paint(g, null, false);
+                    picture.paint(g, r, false, Zoom.ONE_TO_ONE);
                 } else {
                     if (layer.isVisible()) {
-                        layer.paint(g, null, false, false);
+                        layer.paint(g, r, false, false, Zoom.ONE_TO_ONE);
                     }
                 }
             });

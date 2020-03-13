@@ -33,6 +33,7 @@ import net.java.dev.imagine.spi.image.PictureImplementation;
 import static net.java.dev.imagine.spi.image.PictureImplementation.POSITION_BOTTOM;
 import static net.java.dev.imagine.spi.image.PictureImplementation.POSITION_TOP;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
+import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.api.util.RasterConverter;
@@ -185,7 +186,7 @@ public abstract class AbstractPictureImplementation extends PictureImplementatio
                     + "paint into");
         } else {
             undoables.inUndoableOperation(false, msg, () -> {
-                paint(surface.getGraphics(), null, true);
+                paint(surface.getGraphics(), null, true, Zoom.ONE_TO_ONE);
                 state().setLayers(nue);
             });
         }

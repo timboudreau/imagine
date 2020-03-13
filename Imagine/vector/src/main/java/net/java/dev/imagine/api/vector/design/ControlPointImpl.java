@@ -40,6 +40,7 @@ final class ControlPointImpl implements ControlPoint {
         this.kind = kind;
     }
 
+    @Override
     public String toString() {
         return "Cp("
                 + index
@@ -106,7 +107,10 @@ final class ControlPointImpl implements ControlPoint {
         if (!isValid()) {
             return false;
         }
-        if (dx != 0 && dy != 0) {
+        if (primitive.hasReadOnlyControlPoints() && primitive.isControlPointReadOnly(index)) {
+            return false;
+        }
+        if (dx != 0 || dy != 0) {
             upd();
             if (invalid) {
                 return false;
@@ -118,6 +122,8 @@ final class ControlPointImpl implements ControlPoint {
             primitive.setControlPointLocation(index, new Pt(x, y));
             change();
             return true;
+        } else {
+            upd();
         }
         return false;
     }
@@ -147,22 +153,36 @@ final class ControlPointImpl implements ControlPoint {
         if (!isValid()) {
             return false;
         }
+        if (primitive.hasReadOnlyControlPoints() && primitive.isControlPointReadOnly(index)) {
+            return false;
+        }
         primitive.setControlPointLocation(index, new Pt(newX, newY));
         change();
         return true;
     }
 
     @Override
+    public boolean isEditable() {
+        if (primitive.hasReadOnlyControlPoints() && primitive.isControlPointReadOnly(index)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     public boolean delete() {
         if (!isVirtual() && primitive instanceof Mutable) {
+            if (primitive.hasReadOnlyControlPoints() && primitive.isControlPointReadOnly(index)) {
+                return false;
+            }
             if (!((Mutable) primitive).delete(index)) {
+                System.out.println("Mutable delete " + index + " returned false");
                 Toolkit.getDefaultToolkit().beep();
             } else {
                 upd();
-                if (!invalid) {
-                    controller.deleted(this);
-                    return true;
-                }
+                System.out.println("Do delete on " + this);
+                controller.deleted(this);
+                return true;
             }
         }
         return false;
@@ -174,6 +194,9 @@ final class ControlPointImpl implements ControlPoint {
 
     @Override
     public boolean canDelete() {
+        if (primitive.hasReadOnlyControlPoints() && primitive.isControlPointReadOnly(index)) {
+            return false;
+        }
         return !isVirtual() && primitive instanceof Mutable
                 && !kind().isInitial();
     }

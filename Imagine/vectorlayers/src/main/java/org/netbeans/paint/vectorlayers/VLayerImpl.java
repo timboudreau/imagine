@@ -28,6 +28,7 @@ import net.java.dev.imagine.effects.spi.ImageSource;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.support.AbstractLayerImplementation;
+import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.Lookup;
@@ -107,7 +108,7 @@ class VLayerImpl extends AbstractLayerImplementation {
     }
 
     @Override
-    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection) {
+    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom) {
         Composite old = null;
         float opacity = getOpacity();
         if (opacity != 1.0F) {
@@ -116,7 +117,7 @@ class VLayerImpl extends AbstractLayerImplementation {
                     opacity));
         }
 
-        boolean result = surface.paint(g, bounds);
+        boolean result = surface.paint(g, bounds, zoom);
         if (old != null) {
             g.setComposite(old);
         }
@@ -185,7 +186,7 @@ class VLayerImpl extends AbstractLayerImplementation {
                 AffineTransform xform = AffineTransform.getScaleInstance((double) size.getWidth() / (double) d.getWidth(),
                         (double) size.getHeight() / (double) d.getHeight());
                 g.setTransform(xform);
-                surface.paint(g, null);
+                surface.paint(g, null, Zoom.ONE_TO_ONE);
             });
         }
     }

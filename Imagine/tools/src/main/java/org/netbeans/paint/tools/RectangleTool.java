@@ -25,13 +25,13 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Point2D;
-import java.util.function.Supplier;
 
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
-import net.dev.java.imagine.api.tool.aspects.snap.SnapPoints;
-import net.dev.java.imagine.api.tool.aspects.snap.SnapPointsConsumer;
+import org.imagine.editor.api.snap.SnapPoints;
+import org.imagine.editor.api.snap.SnapPointsConsumer;
+import org.imagine.editor.api.snap.SnapPointsSupplier;
 import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
@@ -59,7 +59,7 @@ public class RectangleTool implements PaintParticipant, MouseMotionListener, Mou
     private int draggingCorner;
     protected final Surface surface;
     private Repainter repainter;
-    private Supplier<SnapPoints> snapPoints;
+    private SnapPointsSupplier snapPoints;
 
     public RectangleTool(Surface surface) {
         this.surface = surface;
@@ -326,7 +326,7 @@ public class RectangleTool implements PaintParticipant, MouseMotionListener, Mou
     }
 
     @Override
-    public void accept(Supplier<SnapPoints> t) {
+    public void accept(SnapPointsSupplier t) {
         this.snapPoints = t;
     }
 }

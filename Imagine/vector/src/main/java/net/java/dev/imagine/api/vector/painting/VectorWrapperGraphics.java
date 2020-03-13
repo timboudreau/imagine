@@ -72,6 +72,7 @@ import net.java.dev.imagine.api.vector.graphics.RadialPaintWrapper;
 import net.java.dev.imagine.api.vector.graphics.TexturePaintWrapper;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.Triangle;
+import org.imagine.geometry.TriangleDouble;
 import org.imagine.utils.java2d.GraphicsUtils;
 
 /**
@@ -120,7 +121,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         return new Dimension(w, h);
     }
 
-    static Triangle toTriangle(Shape shape, boolean fill) {
+    static TriangleDouble toTriangle(Shape shape, boolean fill) {
         PathIterator it = shape.getPathIterator(null);
         int count = 0;
         double[] scratch = new double[8];
@@ -139,7 +140,7 @@ public class VectorWrapperGraphics extends Graphics2D {
                 return null;
             }
         }
-        return new Triangle(pts[0], pts[1], pts[2], pts[3], pts[4], pts[5]);
+        return new TriangleDouble(pts[0], pts[1], pts[2], pts[3], pts[4], pts[5]);
     }
 
     public static Shaped primitiveFor(Shape shape, boolean fill) {
@@ -178,10 +179,12 @@ public class VectorWrapperGraphics extends Graphics2D {
             Line2D line = (Line2D) shape;
             return new Line(line.getX1(), line.getY1(), line.getX2(), line.getY2());
         } else if (shape instanceof Triangle) {
-            Triangle t = (Triangle) shape;
+            return new TriangleWrapper((Triangle) shape, fill);
+        } else if (shape instanceof TriangleDouble) {
+            TriangleDouble t = (TriangleDouble) shape;
             return new TriangleWrapper(t, fill);
         } else {
-            Triangle tri = toTriangle(shape, fill);
+            TriangleDouble tri = toTriangle(shape, fill);
             if (tri != null) {
                 return new TriangleWrapper(tri, fill);
             }
@@ -268,7 +271,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         boolean result = other.drawImage(img, xform, obs);
         if (result) {
             if (!receiving) {
-                push(new ImageWrapper(xform.getTranslateX(), xform.getTranslateY(), img));
+                push(new ImageWrapper(xform, img));
             }
             changed();
         }
@@ -280,6 +283,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         if (!receiving) {
             push(new ImageWrapper(img, x, y));
         }
+        // XXX handle the op
         other.drawImage(img, op, x, y);
         changed(x, y, img.getWidth(), img.getHeight());
     }
@@ -287,7 +291,7 @@ public class VectorWrapperGraphics extends Graphics2D {
     @Override
     public void drawRenderedImage(RenderedImage img, AffineTransform xform) {
         if (!receiving) {
-            push(new ImageWrapper(img, xform.getTranslateX(), xform.getTranslateY()));
+            push(new ImageWrapper(img, xform));
         }
         other.drawRenderedImage(img, xform);
         changed(0, 0, img.getWidth(), img.getHeight()); //XXX won't work on scale xform
@@ -296,7 +300,7 @@ public class VectorWrapperGraphics extends Graphics2D {
     @Override
     public void drawRenderableImage(RenderableImage img, AffineTransform xform) {
         if (!receiving) {
-            push(new ImageWrapper(img, xform.getTranslateX(), xform.getTranslateY()));
+            push(new ImageWrapper(img, xform));
         }
         other.drawRenderableImage(img, xform);
         changed(0, 0, (int) img.getWidth(), (int) img.getHeight()); //XXX won't work on scale xform

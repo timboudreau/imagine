@@ -155,8 +155,12 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
             maxX = Math.max(maxX, xpoints[i]);
             maxY = Math.max(maxY, ypoints[i]);
         }
-        bds.add(minX, minY);
-        bds.add(maxX, maxY);
+        if (bds.isEmpty()) {
+            bds.setFrameFromDiagonal(minX, minY, maxX, maxY);
+        } else {
+            bds.add(minX, minY);
+            bds.add(maxX, maxY);
+        }
     }
 
     @Override

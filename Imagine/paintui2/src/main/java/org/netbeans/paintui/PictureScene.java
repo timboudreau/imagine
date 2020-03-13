@@ -2,7 +2,6 @@ package org.netbeans.paintui;
 
 import net.java.dev.imagine.ui.common.PositionStatusLineElementProvider;
 import net.java.dev.imagine.ui.common.BackgroundStyle;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -17,7 +16,6 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,9 +30,10 @@ import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.spi.image.LayerImplementation;
-import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
+import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.support.AbstractPictureImplementation;
+import net.java.dev.imagine.ui.common.BackgroundStyleApplier;
 import org.imagine.editor.api.AspectRatio;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.border.BorderFactory;
@@ -44,7 +43,9 @@ import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.imagine.editor.api.Zoom;
+import org.imagine.editor.api.snap.SnapPointsSupplier;
 import org.imagine.utils.java2d.GraphicsUtils;
+import org.netbeans.api.visual.widget.EventProcessingType;
 import org.netbeans.paintui.widgetlayers.WidgetController;
 import org.netbeans.paintui.widgetlayers.WidgetLayer;
 import org.openide.util.ChangeSupport;
@@ -63,14 +64,29 @@ final class PictureScene extends Scene implements WidgetController {
     private final Widget mainLayer = new LayerWidget(this);
     private final SelectionWidget selectionLayer = new SelectionWidget();
     private final GridWidget gridWidget = new GridWidget(this);
+    private final RH rh = new RH();
 
     public PictureScene() {
         this(new Dimension(640, 480), BackgroundStyle.TRANSPARENT);
     }
 
     public PictureScene(Dimension size, BackgroundStyle backgroundStyle) {
-        picture = new PI(new RH(), size, backgroundStyle);
+        this(size, backgroundStyle, true);
+    }
+
+    public PictureScene(Dimension size, BackgroundStyle backgroundStyle, boolean createInitialLayer) {
+        picture = new PI(rh, size, backgroundStyle, createInitialLayer);
+        setKeyEventProcessingType(EventProcessingType.FOCUSED_WIDGET_AND_ITS_PARENTS);
+        setCheckClipping(false);
         init(size);
+    }
+
+    PI picture() {
+        return picture;
+    }
+
+    RH rh() {
+        return rh;
     }
 
     public PictureScene(BufferedImage img) {
@@ -117,9 +133,9 @@ final class PictureScene extends Scene implements WidgetController {
         mainLayer.setBorder(BorderFactory.createEmptyBorder());
         addChild(mainLayer);
         setBorder(BorderFactory.createEmptyBorder());
+//        addChild(selectionLayer);
 //        addChild(gridWidget);
-        addChild(selectionLayer);
-        selectionLayer.attachToSelection();
+//        selectionLayer.attachToSelection();
     }
 
     @Override
@@ -137,7 +153,7 @@ final class PictureScene extends Scene implements WidgetController {
 
     @Override
     protected boolean isRepaintRequiredForRevalidating() {
-        return true;
+        return false;
     }
 
     private OneLayerWidget findWidget(LayerImplementation layer) {
@@ -250,6 +266,15 @@ final class PictureScene extends Scene implements WidgetController {
         return zoom;
     }
 
+    @Override
+    public SnapPointsSupplier snapPoints() {
+        SnapPointsSupplier supp = picture.getActiveLayer().getLookup().lookup(SnapPointsSupplier.class);
+        if (supp == null) {
+            supp = SnapPointsSupplier.NONE;
+        }
+        return supp;
+    }
+
     public BufferedImage toImage() {
         //XXX handle zoom, etc.
         Dimension d = picture.getSize();
@@ -280,51 +305,6 @@ final class PictureScene extends Scene implements WidgetController {
 
     private void selectionChange() {
         selectionLayer.repaint();
-    }
-
-    private class GridWidget extends LayerWidget {
-
-        GridWidget(Scene scene) {
-            super(scene);
-            setOpaque(false);
-        }
-
-        @Override
-        protected void paintWidget() {
-            double z = getScene().getZoomFactor();
-            if (getScene().getZoomFactor() > 4) {
-                //XXX most modern graphics pipelines do drawline very
-                //inefficiently.  Believe it or not, long-term, it would
-                //be much more efficient to build an offscreen grid image
-                //of the right size and use it with a TexturePaint to tile
-
-                Graphics2D g = getGraphics();
-                AffineTransform old = g.getTransform();
-                int skipPx = (int) Math.round(z);
-                g.setColor(Color.BLACK);
-
-                AffineTransform invertScaling = (AffineTransform) old.clone();
-                invertScaling.concatenate(AffineTransform.getScaleInstance(1D / z, 1D / z));
-
-                g.setTransform(invertScaling);
-                try {
-                    Dimension sceneSize = getScene().getBounds().getSize();
-                    double endX = Math.ceil(sceneSize.getWidth() * z);
-                    double endY = Math.ceil(sceneSize.getHeight() * z);
-                    g.setXORMode(Color.RED);
-
-                    for (int i = 0; i <= endX; i += skipPx) {
-                        g.drawLine(0, i, (int) endX, i);
-                    }
-                    for (int i = 0; i <= endY; i += skipPx) {
-                        g.drawLine(i, 0, i, (int) endY);
-                    }
-                    g.setPaintMode();
-                } finally {
-                    g.setTransform(old);
-                }
-            }
-        }
     }
 
     private class SelectionWidget extends Widget implements ChangeListener {
@@ -431,8 +411,8 @@ final class PictureScene extends Scene implements WidgetController {
 
             @Override
             public void requestCommit() {
-                System.out.println("Request commit by " + activeTool + " for layer " + layer);
-                System.out.println("Participant " + painter);
+//                System.out.println("Request commit by " + activeTool + " for layer " + layer);
+//                System.out.println("Participant " + painter);
                 if (painter != null) {
                     surface.beginUndoableOperation(activeTool.getName());
                     Graphics2D g = surface.getGraphics();
@@ -660,6 +640,10 @@ final class PictureScene extends Scene implements WidgetController {
 
     class RH implements RepaintHandle {
 
+        PictureScene scene() {
+            return PictureScene.this;
+        }
+
         @Override
         public void repaintArea(int x, int y, int w, int h) {
             repaint(mainLayer, new Rectangle(x, y, w, h));
@@ -671,35 +655,55 @@ final class PictureScene extends Scene implements WidgetController {
         }
     }
 
-    class PI extends AbstractPictureImplementation {
+    final class PI extends AbstractPictureImplementation {
 
         private AspectRatio ratio = AspectRatio.create(this::getSize);
-
+        private BackgroundStyle backgroundStyle;
         public PI(RepaintHandle handle, Dimension size, BackgroundStyle backgroundStyle) {
+            this(handle, size, backgroundStyle, true);
+        }
+
+        public PI(RepaintHandle handle, Dimension size, BackgroundStyle backgroundStyle, boolean createInitialLayer) {
             super(size);
+            this.backgroundStyle = backgroundStyle;
             addRepaintHandle(handle);
-            LayerImplementation initial = createInitialLayer(size);
-            assert initial != null;
-            add(0, initial);
-            setActiveLayer(initial);
-            if (backgroundStyle.isOpaque()) {
-                SurfaceImplementation surf = initial.getSurface();
-                if (surf != null) {
-                    Graphics2D g = surf.getGraphics();
-                    g.setColor(backgroundStyle.toColor());
-                    g.fillRect(0, 0, size.width, size.height);
-                    g.dispose();
+            if (createInitialLayer) {
+                LayerImplementation initial = createInitialLayer(size);
+                assert initial != null;
+                add(0, initial);
+                setActiveLayer(initial);
+                if (backgroundStyle.isOpaque()) {
+                    BackgroundStyleApplier applier = initial.getLookup().lookup(BackgroundStyleApplier.class);
+                    if (applier == null) {
+                        SurfaceImplementation surf = initial.getSurface();
+                        if (surf != null) {
+                            Graphics2D g = surf.getGraphics();
+                            g.setColor(backgroundStyle.toColor());
+                            g.fillRect(0, 0, size.width, size.height);
+                            g.dispose();
+                        }
+                    } else {
+                        applier.applyBackground(backgroundStyle.toColor());
+                    }
                 }
-            }
-            LayerImplementation active = getActiveLayer();
-            if (active != null) {
-                psel.activeLayerChanged(null, getActiveLayer());
+                LayerImplementation active = getActiveLayer();
+                if (active != null) {
+                    psel.activeLayerChanged(null, getActiveLayer());
+                }
             }
             initialized();
         }
 
+        public PictureScene scene() {
+            return PictureScene.this;
+        }
+
         AspectRatio aspectRatio() {
             return ratio;
+        }
+
+        BackgroundStyle backgroundStyle() {
+            return backgroundStyle;
         }
 
         public PI(RepaintHandle handle, BufferedImage img) {
@@ -810,13 +814,13 @@ final class PictureScene extends Scene implements WidgetController {
         }
 
         @Override
-        public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection) {
+        public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom) {
             if (isHibernated()) {
                 return false;
             }
             boolean result = false;
             for (LayerImplementation l : getLayers()) {
-                result |= l.paint(g, bounds, showSelection, false);
+                result |= l.paint(g, bounds, showSelection, bounds == null, zoom);
             }
             return result;
         }

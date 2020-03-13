@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import org.imagine.awt.util.IdPathBuilder;
-import org.imagine.awt.io.KeyWriter;
-import org.imagine.awt.io.KeyReader;
+import org.imagine.io.KeyWriter;
+import org.imagine.io.KeyReader;
 
 /**
  *

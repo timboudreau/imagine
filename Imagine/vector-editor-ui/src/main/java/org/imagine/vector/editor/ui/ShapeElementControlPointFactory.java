@@ -35,7 +35,7 @@ final class ShapeElementControlPointFactory extends ControlPointFactory {
         ShapeControlPoint[] result = new ShapeControlPoint[cpCount];
         for (int i = 0; i < result.length; i++) {
             result[i] = new DelegatingControlPoint(entry,
-                    supp.forIndex(i), i);
+                    supp.forIndex(i), i, result);
         }
         return result;
     }
@@ -104,16 +104,27 @@ final class ShapeElementControlPointFactory extends ControlPointFactory {
         private final ShapeEntry origin;
         private final Supplier<ControlPoint> supp;
         private final int index;
+        private final ShapeControlPoint[] family;
 
-        public DelegatingControlPoint(ShapeEntry origin, Supplier<ControlPoint> supp, int index) {
+        public DelegatingControlPoint(ShapeEntry origin, Supplier<ControlPoint> supp, int index, ShapeControlPoint[] family) {
             this.origin = origin;
             this.supp = supp;
             this.index = index;
+            this.family = family;
+        }
+
+        public ShapeControlPoint[] family() {
+            return family;
         }
 
         @Override
         public ShapeElement owner() {
             return origin;
+        }
+
+        @Override
+        public boolean isEditable() {
+            return supp.get().isEditable();
         }
 
         @Override
@@ -143,6 +154,10 @@ final class ShapeElementControlPointFactory extends ControlPointFactory {
                 InvalidControlPoint del = (InvalidControlPoint) o;
                 return del.index == index
                         && origin.id() == del.origin.id();
+            } else if (o instanceof ShapeControlPoint) {
+                ShapeControlPoint scp = (ShapeControlPoint) o;
+                return scp.owner().id() == owner().id()
+                        && scp.index() == index();
             }
             return false;
         }
@@ -248,6 +263,17 @@ final class ShapeElementControlPointFactory extends ControlPointFactory {
             this.index = index;
         }
 
+        @Override
+        public boolean isEditable() {
+            return false;
+        }
+
+        @Override
+        public ShapeControlPoint[] family() {
+            return new ShapeControlPoint[0];
+        }
+
+        @Override
         public ShapeElement owner() {
             return origin;
         }
@@ -279,6 +305,10 @@ final class ShapeElementControlPointFactory extends ControlPointFactory {
                 InvalidControlPoint inv = (InvalidControlPoint) o;
                 return inv.index == index
                         && origin.id() == inv.origin.id();
+            } else if (o instanceof ShapeControlPoint) {
+                ShapeControlPoint scp = (ShapeControlPoint) o;
+                return scp.index() == index &&
+                        scp.owner().id() == owner().id();
             }
             return false;
         }

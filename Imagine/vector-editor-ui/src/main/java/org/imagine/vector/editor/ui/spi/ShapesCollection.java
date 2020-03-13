@@ -18,11 +18,14 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.Supplier;
-import net.dev.java.imagine.api.tool.aspects.snap.SnapPoint;
-import net.dev.java.imagine.api.tool.aspects.snap.SnapPoints;
-import net.dev.java.imagine.api.tool.aspects.snap.SnapPointsConsumer;
+import org.imagine.editor.api.snap.SnapPoints;
 import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.api.vector.Shaped;
+import org.imagine.awt.key.PaintKey;
+import org.imagine.editor.api.PaintingStyle;
+import org.imagine.editor.api.Zoom;
+import org.imagine.editor.api.snap.OnSnap;
+import org.imagine.vector.editor.ui.ShapeSnapPointEntry;
 import org.imagine.vector.editor.ui.tools.CSGOperation;
 import org.imagine.vector.editor.ui.undo.UndoRedoHookable;
 
@@ -35,6 +38,10 @@ public interface ShapesCollection extends Hibernator, Iterable<ShapeElement> {
     ShapeElement add(Shaped vect, Paint bg, Paint fg, BasicStroke stroke,
             boolean draw, boolean fill);
 
+    ShapeElement add(Shaped vect, PaintKey<?> bg, PaintKey<?> fg, BasicStroke stroke, PaintingStyle style);
+
+    ShapeElement add(Shaped vect, Paint bg, Paint fg, BasicStroke stroke, PaintingStyle style);
+
     void addAll(ShapesCollection shapes, Shape clip);
 
     ShapesCollection applyTransform(AffineTransform xform);
@@ -42,6 +49,8 @@ public interface ShapesCollection extends Hibernator, Iterable<ShapeElement> {
     boolean canApplyTransform(AffineTransform xform);
 
     ShapesCollection clip(Shape shape);
+
+    ShapeElement addForeign(ShapeElement element);
 
     /**
      * Initiate an edit of one shape.
@@ -52,7 +61,8 @@ public interface ShapesCollection extends Hibernator, Iterable<ShapeElement> {
      */
     UndoRedoHookable edit(String name, ShapeElement el, Runnable r);
 
-    Supplier<SnapPoints> snapPoints(double radius, BiConsumer<SnapPoint, SnapPoint> onSnap);
+    Supplier<SnapPoints<ShapeSnapPointEntry>> snapPoints(double radius,
+            OnSnap<ShapeSnapPointEntry> onSnap);
 
     /**
      * Initiate an edit of the geometry of multiple shapes (e.g., applying an
@@ -92,7 +102,7 @@ public interface ShapesCollection extends Hibernator, Iterable<ShapeElement> {
 
     Rectangle getBounds();
 
-    boolean paint(Graphics2D g, Rectangle bounds);
+    boolean paint(Graphics2D g, Rectangle bounds, Zoom zoom);
 
     ShapesCollection snapshot();
 

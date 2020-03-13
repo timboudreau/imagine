@@ -27,14 +27,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.dev.java.imagine.api.tool.Tool;
-import net.dev.java.imagine.api.tool.aspects.snap.Axis;
-import net.dev.java.imagine.api.tool.aspects.snap.SnapPoints;
-import net.dev.java.imagine.api.tool.aspects.snap.SnapPointsConsumer;
-import net.dev.java.imagine.api.tool.aspects.snap.SnapPoints;
+import org.imagine.editor.api.snap.Axis;
+import org.imagine.editor.api.snap.SnapPointsConsumer;
+import org.imagine.editor.api.snap.SnapPoints;
+import org.imagine.editor.api.snap.SnapPointsSupplier;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Vector;
@@ -42,6 +41,8 @@ import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import net.java.dev.imagine.api.vector.painting.VectorWrapperGraphics;
 import net.java.dev.imagine.api.vector.util.Pt;
+import org.imagine.editor.api.Zoom;
+import org.imagine.editor.api.snap.SnapPointsBuilder;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.utils.java2d.LazyGraphics;
 import org.imagine.utils.java2d.GraphicsProvider;
@@ -231,13 +232,13 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         }
     }
 
-    Supplier<SnapPoints> snapPoints() {
+    SnapPointsSupplier snapPoints() {
         return snapPointSupplier;
     }
 
     private final SnSupplier snapPointSupplier = new SnSupplier();
 
-    class SnSupplier implements Supplier<SnapPoints> {
+    class SnSupplier implements SnapPointsSupplier {
 
         SnapPoints cached;
 
@@ -246,7 +247,7 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             if (cached != null) {
                 return cached;
             }
-            SnapPoints.Builder b
+            SnapPointsBuilder b
                     = SnapPoints.builder(5);
             for (Primitive p : stack.primitives) {
                 addTo(p, b);
@@ -261,7 +262,7 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
 
     private double[] pts = new double[8];
 
-    private void addTo(Primitive vect, SnapPoints.Builder bldr) {
+    private void addTo(Primitive vect, SnapPointsBuilder bldr) {
         if (vect instanceof Adjustable) {
             Adjustable adj = (Adjustable) vect;
             int cpCount = adj.getControlPointCount();
@@ -270,8 +271,8 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             for (int i = 0; i < cpCount * 2; i += 2) {
                 int ptIx = i / 2;
                 if (Arrays.binarySearch(virt, ptIx) < 0) {
-                    bldr.add(Axis.X, pts[i]);
-                    bldr.add(Axis.Y, pts[i + 1]);
+                    bldr.add(Axis.X, pts[i], null);
+                    bldr.add(Axis.Y, pts[i + 1], null);
                 }
             }
         }
@@ -415,10 +416,10 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
 //    static boolean NO_CACHE = Boolean.getBoolean("vector.no.cache");
 
     public boolean paint(Graphics2D g) {
-        return paint(g, null);
+        return paint(g, null, Zoom.ONE_TO_ONE);
     }
 
-    public boolean paint(Graphics2D g, Rectangle r) {
+    public boolean paint(Graphics2D g, Rectangle r, Zoom zoom) {
         return ops.apply(g, r, this::internalPaint);
     }
 

@@ -34,7 +34,7 @@ import org.imagine.awt.key.TexturePaintKey;
 import org.imagine.awt.key.TexturedPaintWrapperKey;
 import org.imagine.awt.key.UnknownPaintKey;
 import org.openide.util.Lookup;
-import org.imagine.awt.io.KeyReader;
+import org.imagine.io.KeyReader;
 
 /**
  * Allows for pluggable paint key factories, which allows the set of paints

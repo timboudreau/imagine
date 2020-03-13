@@ -11,11 +11,10 @@ import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.function.Consumer;
-import net.dev.java.imagine.api.tool.aspects.snap.Axis;
-import net.dev.java.imagine.api.tool.aspects.snap.SnapPoints;
-import net.dev.java.imagine.api.tool.aspects.snap.SnapPointsConsumer;
+import org.imagine.editor.api.snap.Axis;
 import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Shaped;
@@ -24,11 +23,19 @@ import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPoint;
 import net.java.dev.imagine.api.vector.design.ControlPointController;
 import net.java.dev.imagine.api.vector.design.ShapeNames;
+import net.java.dev.imagine.api.vector.elements.ImageWrapper;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
+import net.java.dev.imagine.api.vector.graphics.BasicStrokeWrapper;
 import net.java.dev.imagine.api.vector.util.Size;
 import org.imagine.awt.GradientManager;
+import org.imagine.awt.io.PaintKeyIO;
 import org.imagine.awt.key.PaintKey;
 import org.imagine.editor.api.PaintingStyle;
+import org.imagine.editor.api.snap.SnapPointsBuilder;
+import org.imagine.io.KeyReader;
+import org.imagine.io.KeyWriter;
+import org.imagine.utils.java2d.GraphicsUtils;
+import org.imagine.vector.editor.ui.io.VectorIO;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 
 /**
@@ -39,6 +46,7 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
 
     private static long IDS = 0 /* - System.currentTimeMillis() */;
     private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
+    private static final PaintKey XPAR_KEY = PaintKey.forPaint(TRANSPARENT);
     private PaintKey<?> bg;
     private PaintKey<?> fg;
     private PaintingStyle paintingStyle;
@@ -50,6 +58,73 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
     private final long id;
     private static final ShapeElementControlPointFactory CPF
             = new ShapeElementControlPointFactory();
+
+    private static final byte IO_REV = 1;
+
+    public void writeTo(VectorIO io, KeyWriter writer) throws IOException {
+        byte flags = 0;
+        if (name != null) {
+            flags |= 1;
+        }
+        if (bg != null && !bg.equals(XPAR_KEY)) {
+            flags |= 2;
+        }
+        if (fg != null && !fg.equals(XPAR_KEY)) {
+            flags |= 4;
+        }
+        if (stroke != null && !stroke.equals(new BasicStroke(1))) {
+            flags |= 8;
+        }
+        writer.writeByte(IO_REV);
+        writer.writeByte(flags);
+        writer.writeLong(id);
+        writer.writeEnum(paintingStyle);
+        if ((flags & 2) != 0) {
+            PaintKeyIO.write(writer, bg);
+        }
+        if ((flags & 4) != 0) {
+            PaintKeyIO.write(writer, fg);
+        }
+        if ((flags & 8) != 0) {
+            io.writeShape(new BasicStrokeWrapper(stroke), writer);
+        }
+        io.writeShape(vect, writer);
+        if ((flags & 1) != 0) {
+            writer.writeString(name);
+        }
+    }
+
+    public static ShapeEntry read(VectorIO io, KeyReader reader) throws IOException {
+        int rev = reader.readByte();
+        if (rev != IO_REV) {
+            throw new IOException("Unknown io revision " + rev + " expected "
+                    + IO_REV);
+        }
+        byte flags = reader.readByte();
+        long id = reader.readLong();
+        PaintingStyle style = reader.readEnum(PaintingStyle.class);
+        PaintKey<?> bg, fg;
+        bg = fg = null;
+        if ((flags & 2) != 0) {
+            bg = PaintKeyIO.read(reader);
+        }
+        if ((flags & 4) != 0) {
+            fg = PaintKeyIO.read(reader);
+        }
+        BasicStroke stroke = null;
+        if ((flags & 8) != 0) {
+            BasicStrokeWrapper strokeWrapper = (BasicStrokeWrapper) io.readShape(reader);
+            stroke = strokeWrapper.toStroke();
+        } else {
+            stroke = new BasicStroke(1);
+        }
+        Shaped shape = (Shaped) io.readShape(reader);
+        String name = null;
+        if ((flags & 1) != 0) {
+            name = reader.readString();
+        }
+        return new ShapeEntry(shape, bg, fg, style.isOutline(), style.isFill(), stroke, id, name);
+    }
 
     ShapeEntry(Shaped vector, Paint background, Paint foreground, BasicStroke stroke, boolean draw, boolean fill) {
         id = IDS++;
@@ -65,13 +140,23 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
         this.paintingStyle = PaintingStyle.forDrawAndFill(draw, fill);
     }
 
-    ShapeEntry(Shaped vector, PaintKey<?> bg, PaintKey<?> fg, boolean draw, boolean fill, BasicStroke stroke, String name) {
+    public ShapeEntry(Shaped vector, PaintKey<?> bg, PaintKey<?> fg, boolean draw, boolean fill, BasicStroke stroke, String name) {
         id = IDS++;
         this.vect = vector;
         this.bg = bg;
         this.fg = fg;
         this.stroke = stroke;
         this.paintingStyle = PaintingStyle.forDrawAndFill(draw, fill);
+        this.name = name;
+    }
+
+    public ShapeEntry(Shaped vector, PaintKey<?> bg, PaintKey<?> fg, PaintingStyle style, BasicStroke stroke, String name) {
+        id = IDS++;
+        this.vect = vector;
+        this.bg = bg;
+        this.fg = fg;
+        this.stroke = stroke;
+        this.paintingStyle = style;
         this.name = name;
     }
 
@@ -164,6 +249,26 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
     }
 
     @Override
+    public void setFill(PaintKey<?> key) {
+        bg = key;
+    }
+
+    @Override
+    public void setDraw(PaintKey<?> draw) {
+        fg = draw;
+    }
+
+    @Override
+    public PaintKey<?> getFillKey() {
+        return XPAR_KEY.equals(bg) ? null : bg;
+    }
+
+    @Override
+    public PaintKey<?> getDrawKey() {
+        return XPAR_KEY.equals(fg) ? null : fg;
+    }
+
+    @Override
     public void setDraw(Paint draw) {
         fg = draw == null ? null : PaintKey.forPaint(draw);
     }
@@ -233,7 +338,7 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
     @Override
     public ShapeControlPoint[] controlPoints(double size, Consumer<ControlPoint> c) {
         if (vect instanceof Adjustable) {
-            return CPF.getControlPoints(this, new ControlPointController() {
+            ShapeControlPoint[] result = CPF.getControlPoints(this, new ControlPointController() {
                 @Override
                 public void changed(ControlPoint pt) {
                     c.accept(pt);
@@ -245,6 +350,7 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
                     return new Size(size, size);
                 }
             });
+            return result == null ? new ShapeControlPoint[0] : result;
         }
         return new ShapeControlPoint[0];
     }
@@ -270,8 +376,8 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
     public String toString() {
         return "Sh(" + id() + " "
                 + Integer.toString(System.identityHashCode(this), 36)
-                + " " + vect.getClass().getSimpleName()
-                + paintingStyle
+                + " " + vect.getClass().getSimpleName() + " "
+                + paintingStyle + " "
                 + vect + ")";
     }
 
@@ -283,7 +389,7 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
     @Override
     public void toPaths() {
         if (!(vect instanceof PathIteratorWrapper)) {
-            vect = new PathIteratorWrapper(vect.toShape().getPathIterator(null), isFill());
+            vect = new PathIteratorWrapper(vect.toShape());
             changed();
         }
     }
@@ -315,7 +421,7 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
     @Override
     public ShapeEntry duplicate() {
         return new ShapeEntry(vect.copy(), bg, fg,
-                paintingStyle.isOutline(), paintingStyle.isFill(),
+                paintingStyle,
                 stroke, name);
     }
 
@@ -342,7 +448,7 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
         }
     }
 
-    void addTo(SnapPoints.Builder bldr) {
+    void addTo(SnapPointsBuilder<ShapeSnapPointEntry> bldr) {
         if (vect instanceof Adjustable) {
             Adjustable adj = (Adjustable) vect;
             int cpCount = adj.getControlPointCount();
@@ -352,11 +458,19 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
             for (int i = 0; i < pts.length; i += 2) {
                 int ptIx = i / 2;
                 if (Arrays.binarySearch(virt, ptIx) < 0) {
-                    bldr.add(Axis.X, pts[i]);
-                    bldr.add(Axis.Y, pts[i + 1]);
+                    ShapeSnapPointEntry sn = new ShapeSnapPointEntry(this, ptIx, -1);
+                    bldr.add(Axis.X, pts[i], sn);
+                    bldr.add(Axis.Y, pts[i + 1], sn);
                 }
             }
         }
+        vect.collectSizings((double size, boolean vertical, int cpIx1, int cpIx2) -> {
+            bldr.addDistance(Axis.forVertical(vertical), size,
+                    new ShapeSnapPointEntry(this, cpIx1, cpIx2, size));
+        });
+        vect.collectAngles((double angle, int cpIx1, int cpIx2) -> {
+            bldr.addAngle(angle, new ShapeSnapPointEntry(this, cpIx1, cpIx2, angle));
+        });
     }
 
     @Override
@@ -367,25 +481,32 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
 //            System.out.println("  does not intersect");
 //            return false;
         }
-        Stroke oldStroke = null;
-        if (stroke != null) {
-            oldStroke = g.getStroke();
-            g.setStroke(stroke);
-        }
-        if (bg != null) {
-            g.setPaint(GradientManager.getDefault().findPaint(bg));
-        }
-        if (isFill()) {
-            g.fill(sh);
-        }
-        if (fg != null) {
-            g.setPaint(GradientManager.getDefault().findPaint(fg));
-        }
-        if (isDraw()) {
-            g.draw(sh);
-        }
-        if (oldStroke != null) {
-            g.setStroke(oldStroke);
+        if (vect.is(ImageWrapper.class)) {
+            ImageWrapper w = vect.as(ImageWrapper.class);
+            System.out.println("PAINT IW " + w.img);
+            w.paint(g);
+        } else {
+            Stroke oldStroke = null;
+            if (stroke != null) {
+                oldStroke = g.getStroke();
+                AffineTransform xform = g.getTransform();
+                g.setStroke(GraphicsUtils.createTransformedStroke(stroke, xform));
+            }
+            if (bg != null) {
+                g.setPaint(GradientManager.getDefault().findPaint(bg));
+            }
+            if (isFill()) {
+                g.fill(sh);
+            }
+            if (fg != null) {
+                g.setPaint(GradientManager.getDefault().findPaint(fg));
+            }
+            if (isDraw()) {
+                g.draw(sh);
+            }
+            if (oldStroke != null) {
+                g.setStroke(oldStroke);
+            }
         }
         return true;
     }

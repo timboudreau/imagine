@@ -49,12 +49,13 @@ final class ToolWidgetLayer implements WidgetFactory, ChangeListener {
         if (nue != null) {
             WidgetSupplier widgeter = nue.getLookup().lookup(WidgetSupplier.class);
             if (widgeter != null) {
-                lastWidget = widgeter.apply(container.getScene(), controller);
+                lastWidget = widgeter.apply(container.getScene(), controller,
+                        controller.snapPoints());
                 if (lastWidget instanceof LayerRenderingWidget) {
                     LayerRenderingWidget lrw = (LayerRenderingWidget) lastWidget;
                     lrw.setZoom(controller.getZoom());
                     lrw.setOpacity(layer.getOpacity());
-                    lrw.setPreferredLocation(layer.getSurface()
+                    lastWidget.setPreferredLocation(layer.getSurface()
                             .getLocation());
                     lrw.setLookupConsumer(lookupConsumer);
                 }
@@ -66,7 +67,6 @@ final class ToolWidgetLayer implements WidgetFactory, ChangeListener {
 
     @Override
     public void attach(Consumer<Lookup[]> addtlLookupConsumer) {
-        System.out.println("twl attach " + addtlLookupConsumer);
         lookupConsumer.setDelegate(addtlLookupConsumer);
         Zoom zoom = controller.getZoom();
         zoom.addChangeListener(this);

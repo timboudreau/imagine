@@ -18,8 +18,8 @@ import java.util.WeakHashMap;
 import org.imagine.awt.impl.Accessor;
 import org.imagine.awt.util.Hasher;
 import org.imagine.awt.util.IdPathBuilder;
-import org.imagine.awt.io.KeyWriter;
-import org.imagine.awt.io.KeyReader;
+import org.imagine.io.KeyWriter;
+import org.imagine.io.KeyReader;
 
 /**
  * A texture paint key which embeds the raster data for the texture - these are
@@ -174,7 +174,7 @@ public final class TexturePaintKey extends PaintKey<TexturePaint> {
             = Collections.synchronizedMap(new WeakHashMap<>());
 
     @Override
-    protected TexturePaint toPaint() {
+    public TexturePaint toPaint() {
         TexturePaint result = paintForKey.get(this);
         if (result == null) {
             result = constructPaint();

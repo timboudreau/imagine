@@ -161,8 +161,12 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
 
     @Override
     public void addToBounds(Rectangle2D bds) {
-        bds.add(x, y);
-        bds.add(x + w, y + h);
+        if (bds.isEmpty()) {
+            bds.setFrame(x, y, w, h);
+        } else {
+            bds.add(x, y);
+            bds.add(x + w, y + h);
+        }
     }
 
     @Override
@@ -252,11 +256,13 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
             case 2:
                 w = pt.x - x;
                 h = pt.y - y;
+                renormalize();
                 break;
             case 3:
                 w = pt.x - x;
                 h += y - pt.y;
                 y = pt.y;
+                renormalize();
                 break;
             default:
                 throw new IllegalArgumentException(Integer.toString(pointIndex));
@@ -288,6 +294,12 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
         Rectangle2D.Double bds = new Rectangle2D.Double();
         getBounds(bds);
         return bds.getBounds();
+    }
+
+    @Override
+    public void collectSizings(SizingCollector c) {
+        c.dimension(h, true, 1, 3);
+        c.dimension(w, false, 0, 1);
     }
 
     public double x() {

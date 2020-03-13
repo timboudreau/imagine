@@ -47,6 +47,10 @@ public abstract class Accessor {
         return INVERSE.surfaceFor(impl);
     }
 
+    public static final PictureImplementation pictureImplFor(Picture picture) {
+        return DEFAULT.getImpl(picture);
+    }
+
     public static abstract class InverseAccessor {
         public abstract Layer layerFor (LayerImplementation impl);
         public abstract Picture pictureFor (PictureImplementation impl);

@@ -67,4 +67,12 @@ public interface Adjustable extends Primitive {
     default Set<ControlPointKind> availablePointKinds(int point) {
         return Collections.emptySet();
     }
+
+    default boolean hasReadOnlyControlPoints() {
+        return false;
+    }
+
+    default boolean isControlPointReadOnly(int index) {
+        return hasReadOnlyControlPoints();
+    }
 }

@@ -32,7 +32,6 @@ public class CircleInspector extends InspectorFactory<CircleWrapper> {
 
     public CircleInspector() {
         super(CircleWrapper.class);
-        System.out.println("Create a circle inspector");
     }
 
     @Override

@@ -123,6 +123,19 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>io</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.netbeans.contrib</groupId>
+            <artifactId>org-netbeans-modules-paintcatcher</artifactId>
+            <version>1.5</version>
+        </dependency>
+        
+        
+        
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>misc-swing</artifactId>
             <exclusions>
                 <exclusion>

@@ -45,6 +45,7 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
         this.fill = fill;
     }
 
+    @Override
     public synchronized Runnable restorableSnapshot() {
         int[] xp = Arrays.copyOf(xpoints, xpoints.length);
         int[] yp = Arrays.copyOf(ypoints, ypoints.length);
@@ -157,8 +158,12 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
             maxX = Math.max(maxX, xpoints[i]);
             maxY = Math.max(maxY, ypoints[i]);
         }
-        bds.add(minX, minY);
-        bds.add(maxX, maxY);
+        if (bds.isEmpty()) {
+            bds.setFrameFromDiagonal(minX, minY, maxX, maxY);
+        } else {
+            bds.add(minX, minY);
+            bds.add(maxX, maxY);
+        }
     }
 
     @Override

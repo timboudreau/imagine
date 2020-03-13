@@ -8,8 +8,8 @@ import java.io.IOException;
 import org.imagine.awt.impl.Accessor;
 import org.imagine.awt.util.Hasher;
 import org.imagine.awt.util.IdPathBuilder;
-import org.imagine.awt.io.KeyWriter;
-import org.imagine.awt.io.KeyReader;
+import org.imagine.io.KeyWriter;
+import org.imagine.io.KeyReader;
 
 /**
  * For performance reasons, the GradientManager will wrap some linear

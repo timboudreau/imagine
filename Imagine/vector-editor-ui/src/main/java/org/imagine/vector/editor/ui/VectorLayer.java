@@ -10,10 +10,10 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
-import java.util.Arrays;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.support.AbstractLayerImplementation;
+import org.imagine.editor.api.Zoom;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
@@ -25,13 +25,18 @@ import org.openide.util.lookup.ProxyLookup;
 final class VectorLayer extends AbstractLayerImplementation {
 
     private final RepaintHandle repainter;
-    private final Shapes shapes = new Shapes(true);
+    private final Shapes shapes;
     private final VectorSurface surface;
     private final ToolWidgetSupplier widgetHooks = new ToolWidgetSupplier(this);
     private MPL lkp;
 
-    VectorLayer(String name, RepaintHandle handle, Dimension size, VectorLayerFactory factory) {
+    VectorLayer(String name, RepaintHandle handle, VectorLayerFactory factory) {
+        this(name, handle, factory, new Shapes(true));
+    }
+
+    VectorLayer(String name, RepaintHandle handle, VectorLayerFactory factory, Shapes shapes) {
         super(factory, true, name);
+        this.shapes = shapes;
         repainter = handle;
         addRepaintHandle(handle);
         surface = new VectorSurface(shapes, getMasterRepaintHandle());
@@ -41,7 +46,15 @@ final class VectorLayer extends AbstractLayerImplementation {
         super(layer.getFactory(), layer.isResolutionIndependent(), layer.getName());
         repainter = layer.repainter;
         addRepaintHandle(layer.repainter);
-        surface = new VectorSurface(shapes, getMasterRepaintHandle());
+        this.shapes = deepCopy ? layer.shapes.copy() : layer.shapes;
+        surface = new VectorSurface(this.shapes, getMasterRepaintHandle());
+    }
+
+    @Override
+    public String toString() {
+        return "VectorLayer(" + Long.toString(System.identityHashCode(this), 36)
+                + " with " + shapes.size() + " shapes hash "
+                + shapes.hashCode() + ")";
     }
 
     void setAdditionalLookups(Lookup... lkps) {
@@ -58,7 +71,7 @@ final class VectorLayer extends AbstractLayerImplementation {
     @Override
     protected MPL createLookup() {
         return lkp != null ? lkp : (lkp = new MPL(
-                Lookups.fixed(this, getLayer(),
+                Lookups.fixed(this, getLayer(), ShapesLayerSave.INSTANCE,
                         new RepaintProxyShapes(shapes, getMasterRepaintHandle()),
                         surface, surface.getSurface(), widgetHooks,
                         surface.transformReceiver())));
@@ -98,8 +111,24 @@ final class VectorLayer extends AbstractLayerImplementation {
     }
 
     @Override
-    protected boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection) {
-        return shapes.paint(g, bounds);
+    protected boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom) {
+        if (bounds != null) {
+            if (bounds.isEmpty()) {
+                return false;
+            }
+            g = (Graphics2D) g.create();
+            Rectangle r = getBounds();
+            if (r.isEmpty()) {
+                return false;
+            }
+            g.scale(bounds.getWidth() / r.getWidth(), bounds.getHeight() / r.getHeight());
+        }
+        boolean result = shapes.paint(g, bounds, zoom);
+        result |= surface.paint(g, bounds, zoom);
+        if (bounds != null) {
+            g.dispose();
+        }
+        return result;
     }
 
     static class MPL extends ProxyLookup {
@@ -115,7 +144,6 @@ final class VectorLayer extends AbstractLayerImplementation {
             if (lkps.length == 0) {
                 super.setLookups(defaultLookups);
             } else {
-                System.out.println("SET SECONDARIES: " + Arrays.toString(lkps));
                 super.setLookups(ArrayUtils.concatenate(lkps,
                         defaultLookups));
             }

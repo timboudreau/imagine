@@ -15,8 +15,8 @@ import java.util.Arrays;
 import org.imagine.awt.impl.Accessor;
 import org.imagine.awt.util.Hasher;
 import org.imagine.awt.util.IdPathBuilder;
-import org.imagine.awt.io.KeyWriter;
-import org.imagine.awt.io.KeyReader;
+import org.imagine.io.KeyWriter;
+import org.imagine.io.KeyReader;
 
 /**
  *
@@ -61,7 +61,7 @@ public class ManagedTexturePaintKey extends PaintKey<TexturePaint> {
     }
 
     @Override
-    protected TexturePaint toPaint() {
+    public TexturePaint toPaint() {
         return Accessor.texturePaintForManaged(this);
     }
 

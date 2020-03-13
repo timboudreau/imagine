@@ -1,20 +1,31 @@
 package net.java.dev.imagine.api.vector.elements;
 
+import org.imagine.geometry.MinimalAggregateShapeFloat;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
+import java.awt.font.LineMetrics;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Vector;
+import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.graphics.FontWrapper;
 import net.java.dev.imagine.api.vector.util.Pt;
+import org.imagine.geometry.DoubleList;
 import org.imagine.utils.java2d.GraphicsUtils;
+import org.openide.util.Exceptions;
 
 /**
  * Wraps a string and the font used to render it so it can be turned into a
@@ -22,10 +33,20 @@ import org.imagine.utils.java2d.GraphicsUtils;
  *
  * @author Tim Boudreau
  */
-public class Text implements Primitive, Vector {
+public class Text implements Primitive, Vector, Adjustable {
 
+    private transient static BufferedImage scratch;
     private StringWrapper text;
     private FontWrapper font;
+    private AffineTransform xform;
+    private transient double[] baselines;
+    private float leadingMultiplier = 1;
+
+    public Text(StringWrapper string, FontWrapper font, AffineTransform xform) {
+        this.text = string;
+        this.font = font;
+        this.xform = xform;
+    }
 
     public Text(StringWrapper string, FontWrapper font) {
         this.text = string;
@@ -34,15 +55,37 @@ public class Text implements Primitive, Vector {
 
     public Text(String text, Font font, double x, double y) {
         this.text = new StringWrapper(text, x, y);
-        this.font = FontWrapper.create(font);
+        this.font = FontWrapper.create(font, true);
+        // XXX remove the translation component of the font wrapper?
     }
 
+    @Override
+    public void translate(double x, double y) {
+        if (xform != null) {
+            double[] offsets = new double[]{x, y};
+            try {
+                AffineTransform xf = xform.createInverse();
+                xf.deltaTransform(offsets, 0, offsets, 0, 1);
+                x = offsets[0];
+                y = offsets[1];
+            } catch (NoninvertibleTransformException ex) {
+                Exceptions.printStackTrace(ex);
+            }
+        }
+        text.translate(x, y);
+        invalidateCachedShape();
+    }
+
+    @Override
     public Runnable restorableSnapshot() {
         Runnable tr = text.restorableSnapshot();
         Runnable fr = font.restorableSnapshot();
+        AffineTransform xf = xform == null ? null : new AffineTransform(xform);
         return () -> {
+            xform = xf;
             tr.run();
             fr.run();
+            invalidateCachedShape();
         };
     }
 
@@ -67,47 +110,56 @@ public class Text implements Primitive, Vector {
     }
 
     public void setFontSize(float size) {
+        invalidateCachedShape();
         font.setFontSize(size);
     }
 
     public void setFontName(String fontName) {
+        invalidateCachedShape();
         font.setFontName(fontName);
     }
 
     public void setFontStyle(int style) {
+        invalidateCachedShape();
         font.setFontStyle(style);
     }
 
     public void setTransform(AffineTransform xform) {
-        font.setTransform(xform);
+//        font.setTransform(xform);
+        this.xform = xform;
     }
 
     public void setText(StringWrapper text) {
+        invalidateCachedShape();
         this.text = text;
     }
 
     public void setFont(FontWrapper font) {
+        invalidateCachedShape();
         this.font = font;
     }
 
     public void setText(String txt) {
+        invalidateCachedShape();
         text.setText(txt);
     }
 
     public double x() {
-        return text.x();
+        return text.x;
     }
 
     public double y() {
-        return text.y();
+        return text.y;
     }
 
     public void setX(double x) {
-        text.setX(x);
+        text.x = x;
+        invalidateCachedShape();
     }
 
     public void setY(double y) {
-        text.setY(y);
+        text.y = y;
+        invalidateCachedShape();
     }
 
     public String getText() {
@@ -121,17 +173,37 @@ public class Text implements Primitive, Vector {
     @Override
     public void setLocation(double x, double y) {
         text.setLocation(x, y);
+        invalidateCachedShape();
     }
 
     @Override
     public void clearLocation() {
         text.clearLocation();
+        invalidateCachedShape();
     }
 
     @Override
     public void applyTransform(AffineTransform xform) {
-        font.applyTransform(xform);
-        text.applyTransform(xform);
+        if (xform == null || xform.isIdentity()) {
+            return;
+        } else {
+            if (xform.getType() == AffineTransform.TYPE_TRANSLATION) {
+                double[] xy = new double[]{0, 0};
+                xform.transform(xy, 0, xy, 0, 1);
+                text.translate(xy[0], xy[1]);
+                invalidateCachedShape();
+                return;
+            }
+            if (this.xform == null) {
+                this.xform = xform;
+            } else {
+                this.xform.concatenate(xform);
+                if (this.xform.isIdentity()) {
+                    this.xform = null;
+                }
+            }
+            invalidateCachedShape();
+        }
     }
 
     public Font getFont() {
@@ -167,26 +239,35 @@ public class Text implements Primitive, Vector {
 
     @Override
     public Pt getLocation() {
-        return text.getLocation();
+        return new Pt(x(), y());
     }
 
     @Override
     public Text copy(AffineTransform transform) {
-        StringWrapper txt = text.copy(transform);
-        FontWrapper fnt = font.copy(transform);
-        return new Text(txt, fnt);
+        StringWrapper txt = text.copy();
+        FontWrapper fnt = font.copy();
+        if (xform != null) {
+            AffineTransform xf = new AffineTransform(xform);
+            xf.preConcatenate(transform);
+            return new Text(txt, fnt, xf);
+        }
+        return new Text(txt, fnt, transform);
     }
 
     @Override
     public Text copy() {
         StringWrapper txt = text.copy();
         FontWrapper fnt = font.copy();
-        return new Text(txt, fnt);
+        return new Text(txt, fnt, xform);
     }
 
     @Override
     public void addToBounds(Rectangle2D bds) {
-        bds.add(toShape().getBounds2D());
+        if (bds.isEmpty()) {
+            getBounds(bds);
+        } else {
+            bds.add(toShape().getBounds2D());
+        }
     }
 
     @Override
@@ -200,6 +281,19 @@ public class Text implements Primitive, Vector {
     }
 
     @Override
+    public void collectSizings(SizingCollector c) {
+        // XXX in toShape, capture the baselines
+        Rectangle2D r = toShape().getBounds2D();
+        c.dimension(r.getHeight(), true, -1, -1);
+        c.dimension(r.getWidth(), false, -1, -1);
+    }
+
+    public double[] getBaselines() {
+        toShape();
+        return baselines;
+    }
+
+    @Override
     public Rectangle getBounds() {
         return toShape().getBounds();
     }
@@ -207,8 +301,10 @@ public class Text implements Primitive, Vector {
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 29 * hash + Objects.hashCode(this.text);
-        hash = 29 * hash + Objects.hashCode(this.font);
+        hash = 29 * hash + text.hashCode();
+        hash = 29 * hash + font.hashCode();
+        hash = 29 * hash + Float.floatToIntBits(leadingMultiplier);
+        hash = 29 * hash + (xform == null || xform.isIdentity() ? 0 : xform.hashCode());
         return hash;
     }
 
@@ -222,13 +318,21 @@ public class Text implements Primitive, Vector {
             return false;
         }
         final Text other = (Text) obj;
-        return Objects.equals(this.text, other.text)
-                && Objects.equals(this.font, other.font);
+        return other.leadingMultiplier == leadingMultiplier
+                && Objects.equals(this.text, other.text)
+                && Objects.equals(this.font, other.font)
+                && Objects.equals(this.xform, other.xform);
     }
 
     @Override
     public String toString() {
         return "Text{" + "text=" + text + ", font=" + font + '}';
+    }
+
+    private void invalidateCachedShape() {
+        cachedShape = null;
+        hashAtShapeCache = -1;
+        baselines = null;
     }
 
     private Shape cachedShape;
@@ -252,21 +356,132 @@ public class Text implements Primitive, Vector {
         return result;
     }
 
+    double[] charPositions = null;
+
     private Shape makeShape() {
         BufferedImage img = scratchImage();
         Graphics2D g = img.createGraphics();
         try {
             Font f = getFont();
             FontRenderContext frc = g.getFontRenderContext();
-            GlyphVector gv = f.createGlyphVector(frc, getText());
-            return gv.getOutline((float) x(), (float) y());
+            String txt = trimTail(getText());
+            FontMetrics fm = g.getFontMetrics(f);
+            DoubleList cps = new DoubleList(getText().length() * 2);
+            if (txt.indexOf('\n') > 0) {
+                String[] lines = txt.split("\\s*?\\n");
+                DoubleList bs = new DoubleList(lines.length * 2);
+                List<Shape> vectors = new ArrayList<>(lines.length);
+                double x = x();
+                double y = y();
+                for (int i = 0; i < lines.length; i++) {
+                    LineMetrics lm = fm.getLineMetrics(lines[i], g);
+                    double interlineGap = lm.getLeading() * leadingMultiplier;
+
+                    bs.add(x);
+                    bs.add(y);
+
+                    GlyphVector gv = f.createGlyphVector(frc, lines[i]);
+
+                    int glyphs = gv.getNumGlyphs();
+                    float[] glyphPositions = gv.getGlyphPositions(0, glyphs, null);
+                    for (int j = 0; j < glyphPositions.length; j += 2) {
+                        cps.add(glyphPositions[j] + x);
+                        cps.add(y);
+                    }
+
+                    Shape shape = gv.getOutline((float) x, (float) y);
+                    y += interlineGap + lm.getHeight();
+                    vectors.add(shape);
+                }
+                baselines = bs.toDoubleArray();
+                charPositions = cps.toDoubleArray();
+                if (xform != null && baselines.length > 0) {
+                    xform.transform(baselines, 0, baselines, 0, baselines.length / 2);
+                    xform.transform(charPositions, 0, charPositions, 0, charPositions.length / 2);
+                }
+                return new MinimalAggregateShapeFloat(xform,
+                        vectors.toArray(new Shape[vectors.size()]));
+            }
+            GlyphVector gv = f.createGlyphVector(frc, txt);
+            double x = x();
+            double y = y();
+            cps.add(x);
+            cps.add(y);
+            int glyphs = gv.getNumGlyphs();
+            float[] glyphPositions = gv.getGlyphPositions(0, glyphs, null);
+            for (int j = 0; j < glyphPositions.length; j += 2) {
+                cps.add(glyphPositions[j] + x);
+                cps.add(y);
+            }
+            baselines = new double[]{x, y};
+            charPositions = cps.toDoubleArray();
+            if (xform != null) {
+                xform.transform(baselines, 0, baselines, 0, baselines.length / 2);
+                xform.transform(charPositions, 0, charPositions, 0, charPositions.length / 2);
+            }
+            return new MinimalAggregateShapeFloat(xform, new Shape[]{gv.getOutline((float) x(), (float) y())});
         } finally {
             g.dispose();
         }
     }
 
-    static BufferedImage scratch;
+    /**
+     * For multi-line text, set the multiplier applied to the font's leading -
+     * usually a value between 0 and 2, to increase line spacing when &gt; 1 and
+     * reduce it when &lt; 1.
+     *
+     * @param val The new multiplier
+     */
+    public void setLeadingMultiplier(float val) {
+        this.leadingMultiplier = val;
+        invalidateCachedShape();
+    }
 
+    /**
+     * For multi-line text, get the fraction the leading of the font is
+     * multiplied by to determine the interline spacing.
+     *
+     * @return
+     */
+    public float getLeadingMultiplier() {
+        return leadingMultiplier;
+    }
+
+    /**
+     * Trims trailing but not leading whitespace from a shape, and converts tabs
+     * to spaces (4).
+     *
+     * @param s Some text
+     * @return The revised text
+     */
+    private static String trimTail(String s) {
+        int ix = s.lastIndexOf('\n');
+        if (ix < 0) {
+            return s;
+        }
+        int last = s.length() - 1;
+        for (int i = last; i >= ix - 1; i--) {
+            if (Character.isWhitespace(s.charAt(i))) {
+                last--;
+            } else {
+                break;
+            }
+        }
+        if (last == s.length() - 1) {
+            return s;
+        }
+        if (s.indexOf('\t') >= 0) {
+            s = s.replace("\\t", "    ");
+        }
+        return s.substring(0, last + 1);
+    }
+
+    /**
+     * A cached image we use the font render context from for generating glyph
+     * vectors. Hmm, may be sensitive to the graphics device having a transform.
+     *
+     * @return
+     */
     static BufferedImage scratchImage() {
         if (scratch == null) {
             scratch = GraphicsUtils.newBufferedImage(1, 1);
@@ -276,5 +491,72 @@ public class Text implements Primitive, Vector {
 
     public String getFontName() {
         return font.name;
+    }
+
+    private void ensureShape() {
+        if (cachedShape == null) {
+            toShape();
+        }
+    }
+
+    @Override
+    public int getControlPointCount() {
+        ensureShape();
+        return baselines == null ? 0 : (baselines.length + charPositions.length) / 2;
+    }
+
+    @Override
+    public void getControlPoints(double[] xy) {
+        ensureShape();
+        if (baselines == null) {
+            Arrays.fill(xy, 0);
+            return;
+        }
+        System.arraycopy(baselines, 0, xy, 0, Math.min(xy.length, baselines.length));
+        System.arraycopy(charPositions, 0, xy, baselines.length,
+                Math.min(xy.length, charPositions.length));
+
+    }
+
+    @Override
+    public int[] getVirtualControlPointIndices() {
+        ensureShape();
+        if (baselines == null) {
+            return new int[0];
+        }
+        int[] result = new int[(baselines.length + charPositions.length) / 2];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = i;
+        }
+        return result;
+    }
+
+    @Override
+    public void setControlPointLocation(int pointIndex, Pt location) {
+        // do nothing
+    }
+
+    @Override
+    public ControlPointKind[] getControlPointKinds() {
+        ensureShape();
+        if (baselines == null) {
+            return new ControlPointKind[0];
+        }
+        int count = baselines == null ? 0 : (baselines.length + charPositions.length) / 2;
+        ControlPointKind[] result = new ControlPointKind[count];
+        Arrays.fill(result, ControlPointKind.CHARACTER_POSITION);
+        Arrays.fill(result, 0, baselines.length / 2, ControlPointKind.TEXT_BASELINE);
+//        Arrays.fill(result, baselines.length / 2, charPositions.length / 2, ControlPointKind.CHARACTER_POSITION);
+        return result;
+    }
+
+    @Override
+    public boolean hasReadOnlyControlPoints() {
+        return true;
+    }
+
+    @Override
+    public boolean isControlPointReadOnly(int index) {
+        return true;
     }
 }

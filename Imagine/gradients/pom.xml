@@ -21,6 +21,8 @@
                         <publicPackage>org.imagine.awt</publicPackage>
                         <publicPackage>org.imagine.awt.key</publicPackage>
                         <publicPackage>org.imagine.awt.util</publicPackage>
+                        <publicPackage>org.imagine.awt.io</publicPackage>
+                        <publicPackage>org.imagine.awt.dnd</publicPackage>
                     </publicPackages>
                 </configuration>
             </plugin>
@@ -47,6 +49,10 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>geometry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>io</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

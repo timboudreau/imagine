@@ -17,9 +17,9 @@ import java.awt.geom.Point2D;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Surface;
-import org.imagine.geometry.Triangle;
 import static org.netbeans.paint.tools.RectangleTool.strokeC;
 import org.imagine.editor.api.PaintingStyle;
+import org.imagine.geometry.TriangleDouble;
 import org.openide.util.NbBundle;
 
 /**
@@ -43,7 +43,7 @@ public class TriangleTool extends RectangleTool {
 
     @Override
     protected void draw(Rectangle toPaint, Graphics2D g2d, PaintingStyle style) {
-        Triangle tri = new Triangle(toPaint.getCenterX(), toPaint.getY(),
+        TriangleDouble tri = new TriangleDouble(toPaint.getCenterX(), toPaint.getY(),
                 toPaint.getX(), toPaint.getY() + toPaint.getHeight(),
                 toPaint.getX() + toPaint.getWidth(), toPaint.getY() + toPaint.getHeight());
         if (rotation != 0D) {

@@ -39,6 +39,7 @@ import net.java.dev.imagine.layers.text.widget.api.Text;
 import net.java.dev.imagine.layers.text.widget.api.TextItems;
 import net.java.dev.imagine.layers.text.widget.api.TextItems.TextItemsSupport;
 import net.java.dev.imagine.spi.image.LayerImplementation;
+import org.imagine.editor.api.Zoom;
 import org.imagine.utils.painting.RepaintHandle;
 import org.netbeans.api.visual.layout.Layout;
 import org.netbeans.api.visual.layout.LayoutFactory;
@@ -407,7 +408,7 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
     }
 
     @Override
-    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignore) {
+    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignore, Zoom zoom) {
         //do nothing
         return false;
     }

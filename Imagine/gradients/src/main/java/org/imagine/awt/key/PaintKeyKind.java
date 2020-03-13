@@ -5,9 +5,11 @@
  */
 package org.imagine.awt.key;
 
+import java.awt.Paint;
+
 /**
- * The "type" of a paint key for purposes of describing to the user
- * (may be the underlying type of a paint key wrapped in a texture).
+ * The "type" of a paint key for purposes of describing to the user (may be the
+ * underlying type of a paint key wrapped in a texture).
  *
  * @see StandardPaintKeyKinds
  * @author Tim Boudreau
@@ -23,14 +25,17 @@ public interface PaintKeyKind {
 
     /**
      * Programmatic name
+     *
      * @return The name
      */
     String name();
 
+    Class<? extends Paint> type();
+
     default String description() {
         return "";
     }
-    
+
     default boolean is(PaintKeyKind kind) {
         return name().equals(kind.name());
     }
@@ -50,6 +55,11 @@ public interface PaintKeyKind {
             @Override
             public String description() {
                 return desc;
+            }
+
+            @Override
+            public Class<? extends Paint> type() {
+                return PaintKeyKind.this.type();
             }
         };
     }

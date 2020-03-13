@@ -78,16 +78,16 @@ public class ShapeElementPropertiesInspector extends InspectorFactory<ShapeEleme
             Customizer<? extends Paint> cus = null;
             Component comp = null;
             if (fill instanceof Color) {
-                cus = Customizers.getCustomizer(Color.class, obj.toString(), (Color) fill);
+                cus = Customizers.getCustomizer(Color.class, obj.getName(), (Color) fill);
                 comp = cus == null ? null : cus.getComponent();
             } else if (fill instanceof GradientPaint) {
-                cus = Customizers.getCustomizer(GradientPaint.class, obj.toString(), (GradientPaint) fill);
+                cus = Customizers.getCustomizer(GradientPaint.class, obj.getName(), (GradientPaint) fill);
                 comp = cus == null ? null : cus.getComponent();
             } else if (fill instanceof RadialGradientPaint) {
-                cus = Customizers.getCustomizer(RadialGradientPaint.class, obj.toString(), (RadialGradientPaint) fill);
+                cus = Customizers.getCustomizer(RadialGradientPaint.class, obj.getName(), (RadialGradientPaint) fill);
                 comp = cus == null ? null : cus.getComponent();
             } else if (fill instanceof LinearGradientPaint) {
-                cus = Customizers.getCustomizer(LinearGradientPaint.class, obj.toString(), (LinearGradientPaint) fill);
+                cus = Customizers.getCustomizer(LinearGradientPaint.class, obj.getName(), (LinearGradientPaint) fill);
                 comp = cus == null ? null : cus.getComponent();
             }
             if (comp != null) {
@@ -112,16 +112,16 @@ public class ShapeElementPropertiesInspector extends InspectorFactory<ShapeEleme
             Customizer<? extends Paint> cus = null;
             Component comp = null;
             if (draw instanceof Color) {
-                cus = Customizers.getCustomizer(Color.class, obj.toString(), (Color) draw);
+                cus = Customizers.getCustomizer(Color.class, obj.getName(), (Color) draw);
                 comp = cus == null ? null : cus.getComponent();
             } else if (draw instanceof GradientPaint) {
-                cus = Customizers.getCustomizer(GradientPaint.class, obj.toString(), (GradientPaint) draw);
+                cus = Customizers.getCustomizer(GradientPaint.class, obj.getName(), (GradientPaint) draw);
                 comp = cus == null ? null : cus.getComponent();
             } else if (draw instanceof RadialGradientPaint) {
-                cus = Customizers.getCustomizer(RadialGradientPaint.class, obj.toString(), (RadialGradientPaint) draw);
+                cus = Customizers.getCustomizer(RadialGradientPaint.class, obj.getName(), (RadialGradientPaint) draw);
                 comp = cus == null ? null : cus.getComponent();
             } else if (draw instanceof LinearGradientPaint) {
-                cus = Customizers.getCustomizer(LinearGradientPaint.class, obj.toString(), (LinearGradientPaint) draw);
+                cus = Customizers.getCustomizer(LinearGradientPaint.class, obj.getName(), (LinearGradientPaint) draw);
                 comp = cus == null ? null : cus.getComponent();
             }
             if (comp != null) {

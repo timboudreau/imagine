@@ -36,12 +36,26 @@ public abstract class ImageEditorFactory {
         return true;
     }
 
+    @Override
     public final boolean equals(Object o) {
         return o != null && (o == this || o.getClass() == getClass());
     }
 
+    @Override
     public final int hashCode() {
         return getClass().hashCode();
+    }
+
+    /**
+     * Return false from factories which simply delegate to another,
+     * like the native image opener, and should not be offered to
+     * the user as a choice of what kind of editor to open.
+     *
+     * @return Whether or not to offer a choice to the user if this
+     * factory and another is present, in NewCanvasAction
+     */
+    public boolean isUserVisible() {
+        return true;
     }
 
     public abstract void openNew(Dimension dim, BackgroundStyle bg);

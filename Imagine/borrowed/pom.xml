@@ -8,4 +8,18 @@
     </parent>
     <artifactId>borrowed</artifactId>
     <packaging>jar</packaging>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <!--to have the jar plugin pickup the nbm generated manifest-->
+                    <archive>
+                        <manifestFile>${project.basedir}/manifest.mf</manifestFile>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

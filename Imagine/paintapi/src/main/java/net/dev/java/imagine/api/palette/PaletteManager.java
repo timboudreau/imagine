@@ -5,11 +5,14 @@
  */
 package net.dev.java.imagine.api.palette;
 
+import com.mastfrog.function.TriConsumer;
 import java.awt.event.ActionEvent;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import net.dev.java.imagine.spi.palette.PaletteHandler;
+import org.openide.awt.StatusDisplayer;
+import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 
@@ -19,9 +22,9 @@ import org.openide.util.NbBundle.Messages;
  */
 public final class PaletteManager {
 
-    private static <T> PaletteSaver<? super T> saver(T object) {
+    private static <T> PaletteSaver<? super T> saver(Class<T> type) {
         for (PaletteHandler h : Lookup.getDefault().lookupAll(PaletteHandler.class)) {
-            Consumer<T> saver = h.saver(object);
+            TriConsumer<String, T, BiConsumer<Throwable, String>> saver = h.saver(type);
             if (saver != null) {
                 return new PaletteSaver<>(saver, h.displayName());
             }
@@ -29,8 +32,12 @@ public final class PaletteManager {
         return null;
     }
 
-    public static <T> Action createSaveToPaletteAction(T object) {
-        PaletteSaver<? super T> saver = saver(object);
+    public static <T> Action createSaveToPaletteAction(T object, Class<T> type) {
+        return createSaveToPaletteAction(object, type, false);
+    }
+
+    public static <T> Action createSaveToPaletteAction(T object, Class<T> type, boolean askForName) {
+        PaletteSaver<? super T> saver = saver(type);
         if (saver != null) {
             return new SaveToPaletteAction<>(saver, object);
         }
@@ -39,7 +46,10 @@ public final class PaletteManager {
 
     @Messages({
         "# {0} - paletteName",
-        "saveTo=Save To {0} Palette"
+        "saveTo=Save To {0} Palette",
+        "# {0} - itemName",
+        "# {1} - paletteName",
+        "savedTo=Saved {0} To {1} Palette"
     })
     private static final class SaveToPaletteAction<T> extends AbstractAction {
 
@@ -54,7 +64,14 @@ public final class PaletteManager {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            saver.accept(object);
+            saver.accept(object, (thrown, name) -> {
+                if (thrown != null) {
+                    Exceptions.printStackTrace(thrown);
+                } else if (name != null) {
+                    StatusDisplayer.getDefault().setStatusText(
+                            Bundle.savedTo(name, saver.displayName()));
+                }
+            });
         }
     }
 }

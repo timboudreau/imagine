@@ -53,6 +53,7 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
         this.fill = fill;
     }
 
+    @Override
     public Runnable restorableSnapshot() {
         double cx = centerX;
         double cy = centerY;
@@ -101,7 +102,7 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
 
     @Override
     public void draw(Graphics2D g) {
-        g.draw(new Circle(centerX, centerY, radius));
+        g.draw(toShape());
     }
 
     @Override
@@ -148,17 +149,26 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
 
     @Override
     public void getBounds(Rectangle2D dest) {
-        dest.setFrame(toShape().getBounds2D());
+        dest.setFrameFromDiagonal(centerX - radius, centerY - radius,
+                centerX + radius, centerY + radius);
     }
 
     @Override
     public void addToBounds(Rectangle2D bds) {
-        bds.add(toShape().getBounds2D());
+        if (bds.isEmpty()) {
+            getBounds(bds);
+        } else {
+            bds.add(centerX - radius, centerY - radius);
+            bds.add(centerX + radius, centerY + radius);
+        }
     }
 
     @Override
     public Rectangle getBounds() {
-        return toShape().getBounds();
+        return new Rectangle((int) Math.floor(centerX - radius),
+                (int) Math.floor(centerY - radius),
+                (int) Math.ceil(centerX + radius),
+                (int) Math.ceil(centerY + radius));
     }
 
     @Override

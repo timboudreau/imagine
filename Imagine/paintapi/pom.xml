@@ -48,6 +48,14 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>utils</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>mastfrog-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>image-editor-api</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -71,6 +79,8 @@
                         <publicPackage>org.netbeans.paint.api.editing</publicPackage>
                         <publicPackage>org.netbeans.paint.api.editor</publicPackage>
                         <publicPackage>org.netbeans.paint.api.util</publicPackage>
+                        <publicPackage>net.java.dev.imagine.spi.io</publicPackage>
+                        <publicPackage>net.java.dev.imagine.api.io</publicPackage>
                     </publicPackages>
                 </configuration>
             </plugin>

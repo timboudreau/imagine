@@ -1,6 +1,5 @@
 package org.imagine.awt.dnd;
 
-import com.mastfrog.util.collections.CollectionUtils;
 import java.awt.Paint;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -37,10 +36,12 @@ public class PaintKeyDropSupport {
 
     static String mimeTypeFor(Class<?> type) {
         Map<String, Class<?>> mc = Accessor.allSupportedTypes();
-        Map<Class<?>, String> rev = CollectionUtils.reverse(mc);
-
-        String name = rev.get(type);
-        return "application/x-paintkey;kind=" + name;
+        for (Map.Entry<String, Class<?>> e : mc.entrySet()) {
+            if (e.getValue() == type) {
+                return "application/x-paintkey;kind=" + e.getKey();
+            }
+        }
+        return null;
     }
 
     public static Transferable createTransferrable(PaintKey<?> transferrable) {

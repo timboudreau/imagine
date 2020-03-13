@@ -1,5 +1,12 @@
 package org.imagine.awt.io;
 
+import org.imagine.io.KeyStringWriter;
+import org.imagine.io.KeyBinaryWriter;
+import org.imagine.io.KeyWriter;
+import org.imagine.io.ByteArrayReadChannel;
+import org.imagine.io.KeyReader;
+import org.imagine.io.KeyBinaryReader;
+import org.imagine.io.KeyStringReader;
 import com.mastfrog.function.throwing.io.IOFunction;
 import java.awt.Paint;
 import java.io.IOException;
@@ -11,8 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import org.imagine.awt.impl.Accessor;
-import static org.imagine.awt.io.KeyStringWriter.MAGIC_1;
-import static org.imagine.awt.io.KeyStringWriter.MAGIC_2;
+import static org.imagine.io.KeyStringWriter.MAGIC_1;
+import static org.imagine.io.KeyStringWriter.MAGIC_2;
 import org.imagine.awt.key.ColorKey;
 import org.imagine.awt.key.GradientPaintKey;
 import org.imagine.awt.key.LinearPaintKey;
@@ -57,7 +64,7 @@ public final class PaintKeyIO {
         sw.writeInt(key.idBase().hashCode());
         sw.writeInt(key.hashCode());
         key.writeTo(sw);
-        sw.finish();
+        sw.finishRecord();
         return sw.toByteArray();
     }
 
@@ -97,10 +104,25 @@ public final class PaintKeyIO {
         sw.writeInt(key.idBase().hashCode());
         sw.writeInt(key.hashCode());
         key.writeTo(sw);
-        sw.finish();
+        sw.finishRecord();
         for (ByteBuffer buf : sw.get()) {
+            buf.flip();
             channel.write(buf);
         }
+    }
+
+    public static void write(KeyWriter<?> sw, PaintKey<?> key) throws IOException {
+        sw.writeInt(key.idBase().hashCode());
+        sw.writeInt(key.hashCode());
+        key.writeTo(sw);
+    }
+
+    public static PaintKey<?> read(KeyReader r) throws IOException {
+
+        int idBase = r.readInt();
+        int hashCode = r.readInt();
+        Class<? extends PaintKey<?>> type = findType(idBase);
+        return readOne((Class) type, r, hashCode);
     }
 
     public static PaintKey<?> read(byte[] bytes) throws IOException {
@@ -109,17 +131,7 @@ public final class PaintKeyIO {
 
     public static <C extends ReadableByteChannel & SeekableByteChannel> PaintKey<?> read(C channel) throws IOException {
         KeyBinaryReader<C> reader = new KeyBinaryReader<>(channel);
-
-        byte m1 = reader.readByte();
-        if (MAGIC_1 != m1) {
-            throw new IOException("Wrong first magic number byte " + m1 + " should be " + MAGIC_1);
-        }
-        byte m2 = reader.readByte();
-        if (MAGIC_2 != m2) {
-            throw new IOException("Wrong second magic number byte " + m2 + " should be " + MAGIC_2);
-        }
-
-        int len = reader.readInt();
+        int len = reader.readMagicAndSize();
         if (channel.size() - channel.position() < len - 16) {
             throw new IOException("Record size reported " + len + " but only "
                     + (channel.size() - channel.position()) + " bytes remain"

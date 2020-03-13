@@ -23,6 +23,7 @@ import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
+import org.imagine.editor.api.Zoom;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
@@ -185,7 +186,7 @@ final class NoOpLayer extends LayerFactory {
         }
 
         @Override
-        public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignoreVisibility) {
+        public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignoreVisibility, Zoom zoom) {
             g.setColor(new Color(136, 50, 50));
             Rectangle r = getBounds();
             g.fill(r);
@@ -258,7 +259,7 @@ final class NoOpLayer extends LayerFactory {
             }
 
             @Override
-            public boolean paint(Graphics2D g, Rectangle r) {
+            public boolean paint(Graphics2D g, Rectangle r, Zoom zoom) {
                 // do nothing
                 return false;
             }

@@ -91,6 +91,10 @@ public interface ControlPoint extends Comparable<ControlPoint> {
      */
     boolean set(double newX, double newY);
 
+    default boolean set(Point2D pos) {
+        return set(pos.getX(), pos.getY());
+    }
+
     /**
      * Delete this control point. Some shape types (paths) allow for dynamic
      * insertion and deletion of points; most do not.
@@ -132,13 +136,19 @@ public interface ControlPoint extends Comparable<ControlPoint> {
         return o == this ? 0 : Integer.compare(index(), o.index());
     }
 
+    public default boolean isEditable() {
+        return true;
+    }
     /**
-     * Get the set of control point kinds which are not this point's kind,
-     * which this control point could be changed to.  Applies to paths,
-     * where a LINE_TO instruction can be replaced with a QUAD_TO or CURVE_TO.
+     * Get the set of control point kinds which are not this point's kind, which
+     * this control point could be changed to. Applies to paths, where a LINE_TO
+     * instruction can be replaced with a QUAD_TO or CURVE_TO.
      *
      * @return A set of possible kinds
      */
     Set<ControlPointKind> availableControlPointKinds();
 
+    default Point2D toPoint() {
+        return new Point2D.Double(getX(), getY());
+    }
 }

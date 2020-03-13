@@ -1,5 +1,10 @@
 package org.imagine.awt.io;
 
+import org.imagine.io.KeyStringReader;
+import org.imagine.io.KeyStringWriter;
+import org.imagine.io.ByteArrayReadChannel;
+import org.imagine.io.KeyBinaryWriter;
+import org.imagine.io.KeyBinaryReader;
 import com.mastfrog.util.strings.Strings;
 import java.awt.Color;
 import java.awt.GradientPaint;
@@ -22,14 +27,14 @@ import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.imagine.awt.impl.Accessor;
-import static org.imagine.awt.io.KeyStringReader.parseLongHex;
-import static org.imagine.awt.io.KeyStringReader.toByte;
-import static org.imagine.awt.io.KeyStringReader.toNibble;
-import static org.imagine.awt.io.KeyStringWriter.BYTE_ARRAY_PREFIX;
-import static org.imagine.awt.io.KeyStringWriter.INT_ARRAY_PREFIX;
-import static org.imagine.awt.io.KeyStringWriter.LONG_ARRAY_PREFIX;
-import static org.imagine.awt.io.KeyStringWriter.MAGIC_1;
-import static org.imagine.awt.io.KeyStringWriter.MAGIC_2;
+import static org.imagine.io.KeyStringReader.parseLongHex;
+import static org.imagine.io.KeyStringReader.toByte;
+import static org.imagine.io.KeyStringReader.toNibble;
+import static org.imagine.io.KeyStringWriter.BYTE_ARRAY_PREFIX;
+import static org.imagine.io.KeyStringWriter.INT_ARRAY_PREFIX;
+import static org.imagine.io.KeyStringWriter.LONG_ARRAY_PREFIX;
+import static org.imagine.io.KeyStringWriter.MAGIC_1;
+import static org.imagine.io.KeyStringWriter.MAGIC_2;
 import org.imagine.awt.key.ColorKey;
 import org.imagine.awt.key.GradientPaintKey;
 import org.imagine.awt.key.LinearPaintKey;
@@ -132,7 +137,7 @@ public class PaintKeyIOTest {
         for (int i = 1; i < 5; i++) {
             wri.writeByte((byte) (i * 20));
         }
-        wri.finish();
+        wri.finishRecord();
         byte[] bt = wri.toByteArray();
         ByteBuffer buf = ByteBuffer.wrap(bt);
         int m1 = buf.get();
@@ -173,7 +178,7 @@ public class PaintKeyIOTest {
         for (int i = 1; i < 5; i++) {
             wri.writeInt(i * 20);
         }
-        wri.finish();
+        wri.finishRecord();
         byte[] bt = wri.toByteArray();
         ByteBuffer buf = ByteBuffer.wrap(bt);
         int m1 = buf.get();
@@ -214,7 +219,7 @@ public class PaintKeyIOTest {
         for (int i = 1; i < 5; i++) {
             wri.writeLong(i * 20);
         }
-        wri.finish();
+        wri.finishRecord();
         byte[] bt = wri.toByteArray();
         ByteBuffer buf = ByteBuffer.wrap(bt);
         int m1 = buf.get();
@@ -263,7 +268,7 @@ public class PaintKeyIOTest {
             ints[i] = i + 23;
         }
         wri.writeLongArray(ints);
-        wri.finish();
+        wri.finishRecord();
 
         ByteBuffer buf = ByteBuffer.wrap(wri.toByteArray());
         int m1 = buf.get();
@@ -305,7 +310,7 @@ public class PaintKeyIOTest {
             ints[i] = i + 23;
         }
         wri.writeIntArray(ints);
-        wri.finish();
+        wri.finishRecord();
 
         ByteBuffer buf = ByteBuffer.wrap(wri.toByteArray());
         int m1 = buf.get();
@@ -347,7 +352,7 @@ public class PaintKeyIOTest {
             ints[i] = (byte) (i + 23);
         }
         wri.writeByteArray(ints);
-        wri.finish();
+        wri.finishRecord();
 
         ByteBuffer buf = ByteBuffer.wrap(wri.toByteArray());
         int m1 = buf.get();
@@ -464,7 +469,7 @@ public class PaintKeyIOTest {
             ints[i] = i + 23;
         }
         wri.writeLongArray(ints);
-        wri.finish();
+        wri.finishRecord();
 
         ByteBuffer buf = ByteBuffer.wrap(wri.toByteArray());
         int m1 = buf.get();

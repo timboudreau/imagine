@@ -18,7 +18,7 @@ import java.awt.Polygon;
 import java.awt.Rectangle;
 import javax.swing.JComponent;
 import org.imagine.editor.api.PaintingStyle;
-import org.imagine.geometry.Triangle;
+import org.imagine.geometry.TriangleDouble;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import org.netbeans.paint.tools.spi.BrushTip;
 
@@ -48,7 +48,7 @@ public class TriangleBrushTip implements BrushTip, Customizable {
     @Override
     public void emit(Point p, int size, ShapeEmitter em) {
         int half = size / 2;
-        Triangle tri = new Triangle(p.x, p.y, p.x + half, p.y + size, p.x + size, p.y);
+        TriangleDouble tri = new TriangleDouble(p.x, p.y, p.x + half, p.y + size, p.x + size, p.y);
         em.emit(tri, PaintingStyle.OUTLINE);
     }
 

@@ -30,6 +30,9 @@ public class OvalInspector extends InspectorFactory<Oval> {
         ShapesCollection shapes = lookup.lookup(Shapes.class);
         ShapeElement shape = lookup.lookup(ShapeElement.class);
         JPanel pnl = new JPanel(new VerticalFlowLayout());
+        if (shape == null || shapes == null) {
+            return pnl;
+        }
         NumericConstraint con = DOUBLE.withMaximum(10000D).withMinimum(-2000D);
         pnl.add(new NamedNumberEditor(Bundle.x(), con, obj::x, shapes.wrapInEdit("X", shape, obj::setX)));
         pnl.add(new NamedNumberEditor(Bundle.y(), con, obj::y, shapes.wrapInEdit("Y", shape, obj::setY)));

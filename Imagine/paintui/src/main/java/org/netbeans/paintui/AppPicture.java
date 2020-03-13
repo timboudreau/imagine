@@ -46,6 +46,7 @@ import net.java.dev.imagine.spi.image.PictureImplementation;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.imagine.editor.api.AspectRatio;
+import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.api.util.RasterConverter;
@@ -161,14 +162,14 @@ class AppPicture extends PictureImplementation {
         return getMasterRepaintHandle();
     }
 
-    public boolean paint(Graphics2D g, Rectangle r, boolean showSelection) {
+    public boolean paint(Graphics2D g, Rectangle r, boolean showSelection, Zoom zoom) {
         if (hibernated) {
             return false;
         }
         boolean result = false;
         for (Iterator i = state.layers.iterator(); i.hasNext(); ) {
             LayerImplementation l = (LayerImplementation)i.next();
-            result |= l.paint(g, r, showSelection, false);
+            result |= l.paint(g, r, showSelection, r != null, zoom);
         }
         return result;
     }
@@ -377,7 +378,7 @@ class AppPicture extends PictureImplementation {
                     getMasterRepaintHandle(), getSize());
             SurfaceImplementation surface = nue.getSurface();
             if (surface != null) {
-                this.paint (surface.getGraphics(), null,true);
+                this.paint (surface.getGraphics(), null, false, Zoom.ONE_TO_ONE);
             } else {
                 Logger.getLogger("global").log(Level.SEVERE,
                         "Tried to flatten image but default layer factory" +
@@ -701,9 +702,9 @@ class AppPicture extends PictureImplementation {
                     g.setClip (clip);
                 }
                 if (allLayers) {
-                    AppPicture.this.paint(g, null, false);
+                    AppPicture.this.paint(g, null, false, Zoom.ONE_TO_ONE);
                 } else {
-                    layer.paint(g, null, false, false);
+                    layer.paint(g, null, false, false, Zoom.ONE_TO_ONE);
                 }
                 g.dispose();
                 if (!isCut) {

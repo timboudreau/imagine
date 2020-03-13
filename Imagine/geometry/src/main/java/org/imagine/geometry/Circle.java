@@ -73,6 +73,12 @@ public class Circle implements Shape {
         this.radius = radius;
     }
 
+    public void setCenterAndRadius(double centerX, double centerY, double radius) {
+        this.centerX = centerX;
+        this.centerY = centerY;
+        this.radius = radius;
+    }
+
     public void applyTransform(AffineTransform xform) {
         switch (xform.getType()) {
             case AffineTransform.TYPE_QUADRANT_ROTATION:
@@ -158,7 +164,7 @@ public class Circle implements Shape {
 
     @Override
     public boolean contains(double x, double y) {
-        boolean result = distanceToCenter(x, y) < radius;
+        boolean result = distanceToCenter(x, y) <= radius;
         if (factor != 1D) {
             double usableDegrees = factor * 360;
             if (angleOf(x, y) > usableDegrees) {
@@ -604,8 +610,8 @@ public class Circle implements Shape {
             switch (state) {
                 case 0:
                 case 1:
-                    coords[0] = Math.round(curr[0]);
-                    coords[1] = Math.round(curr[1]);
+                    coords[0] = (float) curr[0];
+                    coords[1] = (float) curr[1];
                     if (affine != null) {
                         affine.transform(coords, 0, coords, 0, 1);
                     }
@@ -690,8 +696,6 @@ public class Circle implements Shape {
     }
 
     static class PointsPI implements PathIterator {
-        // ArcIterator.btan(Math.PI/2)
-
         private final double centerX;
         private final double centerY;
         private final AffineTransform affine;

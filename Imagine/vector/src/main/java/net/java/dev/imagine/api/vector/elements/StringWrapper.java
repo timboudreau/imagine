@@ -23,7 +23,7 @@ import net.java.dev.imagine.api.vector.util.Pt;
  */
 public class StringWrapper implements Vector {
 
-    public long serialVersionUID = 72_305_123_414L;
+    private static final long serialVersionUID = 72_305_123_414L;
     public String string;
     public double x;
     public double y;

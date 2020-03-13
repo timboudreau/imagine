@@ -20,7 +20,9 @@ class DelegatingLookupConsumer implements Consumer<Lookup[]> {
             }
         }
         delegate = c;
-        c.accept(lastValue);
+        if (c != null) {
+            c.accept(lastValue);
+        }
     }
 
     @Override

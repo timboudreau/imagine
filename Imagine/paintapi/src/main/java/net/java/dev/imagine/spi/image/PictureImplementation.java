@@ -11,6 +11,7 @@ import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.api.image.Picture;
+import org.imagine.editor.api.Zoom;
 
 /**
  * An ordered stack of one or more images which compose an image.  This 
@@ -61,7 +62,7 @@ public abstract class PictureImplementation implements Hibernator {
         return picture;
     }
 
-    public abstract boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection);
+    public abstract boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom);
 
     public void hibernate() {
         //do nothing

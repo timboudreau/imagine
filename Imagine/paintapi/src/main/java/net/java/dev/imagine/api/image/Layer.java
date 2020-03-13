@@ -21,6 +21,7 @@ import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
+import org.imagine.editor.api.Zoom;
 import org.openide.util.Lookup;
 import org.openide.util.Mutex;
 
@@ -203,9 +204,9 @@ public final class Layer implements Lookup.Provider {
      * @param r A bounding rectangle if painting a thumbnail image, or null
      *  if full quality painting is desired
      */
-    public boolean paint (Graphics2D g, Rectangle bounds,boolean showSelection,
-            boolean paintWhenVisibleFalse) {
-        return impl.paint (g, bounds, showSelection, paintWhenVisibleFalse);
+    public boolean paint (Graphics2D g, Rectangle bounds, boolean showSelection,
+            boolean paintWhenVisibleFalse, Zoom zoom) {
+        return impl.paint (g, bounds, showSelection, paintWhenVisibleFalse, zoom);
     }
 
     public void commitLastPropertyChangeToUndoHistory() {

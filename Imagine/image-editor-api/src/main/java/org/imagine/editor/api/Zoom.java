@@ -67,4 +67,26 @@ public interface Zoom {
         }
         return getStroke(1);
     }
+
+    public static Zoom ONE_TO_ONE = new Zoom() {
+        @Override
+        public float getZoom() {
+            return 1;
+        }
+
+        @Override
+        public void setZoom(float val) {
+            // do nothing
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener cl) {
+            // do nothing
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener cl) {
+            // do nothing
+        }
+    };
 }

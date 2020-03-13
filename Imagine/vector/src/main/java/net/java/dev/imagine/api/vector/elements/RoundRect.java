@@ -67,6 +67,12 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
     }
 
     @Override
+    public void collectSizings(SizingCollector c) {
+        c.dimension(h, true, 1, 3);
+        c.dimension(w, false, 0, 1);
+    }
+
+    @Override
     public void translate(double x, double y) {
         this.x += x;
         this.y += y;
@@ -160,8 +166,12 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
 
     @Override
     public void addToBounds(Rectangle2D bds) {
-        bds.add(x, y);
-        bds.add(x + w, y + h);
+        if (bds.isEmpty()) {
+            bds.setFrame(x, y, w, h);
+        } else {
+            bds.add(x, y);
+            bds.add(x + w, y + h);
+        }
     }
 
     @Override

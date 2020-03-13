@@ -55,6 +55,12 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
         };
     }
 
+    @Override
+    public void collectSizings(SizingCollector c) {
+        c.dimension(height, true, 1, 3);
+        c.dimension(width, false, 0, 1);
+    }
+
     public double x() {
         return x;
     }
@@ -130,8 +136,12 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
 
     @Override
     public void addToBounds(Rectangle2D bds) {
-        bds.add(x, y);
-        bds.add(x + width, y + height);
+        if (bds.isEmpty()) {
+            getBounds(bds);
+        } else {
+            bds.add(x, y);
+            bds.add(x + width, y + height);
+        }
     }
 
     @Override

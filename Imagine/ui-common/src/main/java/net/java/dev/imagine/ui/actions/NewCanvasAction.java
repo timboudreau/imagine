@@ -24,6 +24,8 @@ import java.awt.Insets;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.prefs.Preferences;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
@@ -51,7 +53,16 @@ public final class NewCanvasAction extends org.openide.util.actions.CallableSyst
     }
 
     private ImageEditorFactory findFactory() {
-        Collection<? extends ImageEditorFactory> all = Lookup.getDefault().lookupAll(ImageEditorFactory.class);
+        Collection<? extends ImageEditorFactory> all = new LinkedHashSet<>(Lookup.getDefault().lookupAll(ImageEditorFactory.class));
+        // Filter out ones that simply delegate to whatever else is in the
+        // lookup and should not be offered as a choice to the user - these
+        // exist just to supply additional file filters
+        for (Iterator<? extends ImageEditorFactory> it = all.iterator(); it.hasNext();) {
+            if (!it.next().isUserVisible()) {
+                it.remove();
+            }
+        }
+
         if (all.isEmpty()) {
             return new Dummy();
         } else if (all.size() == 1) {
@@ -95,7 +106,7 @@ public final class NewCanvasAction extends org.openide.util.actions.CallableSyst
                     lbl.setLabelFor(btn);
                 }
                 c.gridy++;
-                pnl.add(btn);
+                pnl.add(btn, c);
                 btn.addActionListener(evt -> {
                     result[0] = e;
                     al.actionPerformed(evt);

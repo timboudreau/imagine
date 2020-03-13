@@ -97,6 +97,7 @@
                         <publicPackage>org.netbeans.paint.api.components.fractions</publicPackage>
                         <publicPackage>org.netbeans.paint.api.components.number</publicPackage>
                         <publicPackage>org.netbeans.paint.api.components.points</publicPackage>
+                        <publicPackage>org.netbeans.paint.api.components.dialog</publicPackage>
                     </publicPackages>
                 </configuration>
             </plugin>

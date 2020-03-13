@@ -13,6 +13,7 @@ import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,12 +26,15 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.Supplier;
-import net.dev.java.imagine.api.tool.aspects.snap.SnapPoint;
-import net.dev.java.imagine.api.tool.aspects.snap.SnapPoints;
-import net.dev.java.imagine.api.tool.aspects.snap.SnapPointsConsumer;
+import net.java.dev.imagine.api.vector.Adjustable;
+import org.imagine.editor.api.snap.SnapPoints;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.design.ControlPoint;
+import net.java.dev.imagine.api.vector.design.ControlPointKind;
+import org.imagine.awt.key.PaintKey;
 import org.imagine.editor.api.PaintingStyle;
+import org.imagine.editor.api.Zoom;
+import org.imagine.editor.api.snap.OnSnap;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
@@ -46,12 +50,12 @@ import org.imagine.vector.editor.ui.undo.UndoRedoHookable;
  *
  * @author Tim Boudreau
  */
-final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
+public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
 
     private final Shapes shapes;
     private final RepaintHandle handle;
 
-    RepaintProxyShapes(Shapes shapes, RepaintHandle handle) {
+    public RepaintProxyShapes(Shapes shapes, RepaintHandle handle) {
         this.shapes = shapes;
         this.handle = handle;
     }
@@ -148,8 +152,8 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
     }
 
     @Override
-    public Supplier<SnapPoints> snapPoints(double radius, BiConsumer<SnapPoint, SnapPoint> onSnap) {
-        return shapes.snapPoints(radius);
+    public Supplier<SnapPoints> snapPoints(double radius, OnSnap onSnap) {
+        return shapes.snapPoints(radius, onSnap);
     }
 
     @Override
@@ -188,6 +192,15 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
     }
 
     @Override
+    public ShapeElement add(Shaped vect, Paint bg, Paint fg, BasicStroke stroke, PaintingStyle style) {
+        return new WrapperShapeEntry(shapes.add(vect, bg, fg, stroke, style));
+    }
+
+    @Override
+    public ShapeElement add(Shaped vect, PaintKey<?> bg, PaintKey<?> fg, BasicStroke stroke, PaintingStyle style) {
+        return new WrapperShapeEntry(shapes.add(vect, bg, fg, stroke, style));
+    }
+
     public ShapeElement add(Shaped vect, Paint bg, Paint fg, BasicStroke stroke, boolean draw, boolean fill) {
         return new WrapperShapeEntry(shapes.add(vect, bg, fg, stroke, draw, fill));
     }
@@ -243,13 +256,18 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
     }
 
     @Override
-    public boolean paint(Graphics2D g, Rectangle bounds) {
-        return shapes.paint(g, bounds);
+    public boolean paint(Graphics2D g, Rectangle bounds, Zoom zoom) {
+        return shapes.paint(g, bounds, zoom);
     }
 
     @Override
     public ShapesCollection snapshot() {
         return new RepaintProxyShapes(shapes.snapshot(), handle);
+    }
+
+    @Override
+    public ShapeElement addForeign(ShapeElement element) {
+        return new WrapperShapeEntry(shapes.addForeign(element));
     }
 
     @Override
@@ -455,13 +473,16 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
         @Override
         public ShapeControlPoint[] controlPoints(double size, Consumer<ControlPoint> c) {
             Rectangle bds = getBounds();
-            return entry.controlPoints(size, (cp) -> {
+            ShapeControlPoint[] result = entry.controlPoints(size, (cp) -> {
                 c.accept(cp);
                 Rectangle nue = getBounds();
                 bds.add(nue);
                 handle.repaintArea(bds);
                 bds.setFrame(nue);
             });
+            // Shouldn't be needed, but having trouble with
+            // Shape identity
+            return WrapperControlPoint.wrap(result, this);
         }
 
         @Override
@@ -564,6 +585,20 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
         }
 
         @Override
+        public void setFill(PaintKey<?> fill) {
+            wrapMutation(() -> {
+                entry.setFill(fill);
+            });
+        }
+
+        @Override
+        public void setDraw(PaintKey<?> draw) {
+            wrapMutation(() -> {
+                entry.setDraw(draw);
+            });
+        }
+
+        @Override
         public void setDraw(Paint draw) {
             wrapMutation(() -> {
                 entry.setDraw(draw);
@@ -575,9 +610,17 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
             return entry.getFill();
         }
 
+        public PaintKey<?> getFillKey() {
+            return entry.getFillKey();
+        }
+
         @Override
         public Paint getDraw() {
             return entry.getDraw();
+        }
+
+        public PaintKey<?> getDrawKey() {
+            return entry.getDrawKey();
         }
 
         @Override
@@ -604,17 +647,150 @@ final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shapes> {
             } else if (o == this) {
                 return true;
             } else if (o instanceof ShapeEntry) {
-                return ((ShapeEntry) o) == entry || ((ShapeEntry) o).equals(entry);
+                return ((ShapeEntry) o) == entry || ((ShapeEntry) o).equals(entry)
+                        || ((ShapeEntry) o).id() == entry.id();
             } else if (o instanceof WrapperShapeEntry) {
                 return ((WrapperShapeEntry) o).entry == entry
                         || ((WrapperShapeEntry) o).entry.equals(entry);
             } else if (o instanceof ShapeElement) {
-                ShapeEntry e = Wrapper.find(o, ShapeEntry.class);
-                if (e != null) {
-                    return e == entry || e.equals(entry);
-                }
+                return ((ShapeElement) o).id() == entry.id();
+//                ShapeEntry e = Wrapper.find(o, ShapeEntry.class);
+//                if (e != null) {
+//                    return e == entry || e.equals(entry);
+//                }
             }
             return false;
         }
     }
+
+    static class WrapperControlPoint implements ShapeControlPoint {
+
+        private final ShapeControlPoint delegate;
+        private final WrapperShapeEntry owner;
+        private final ShapeControlPoint[] family;
+
+        public WrapperControlPoint(ShapeControlPoint delegate, WrapperShapeEntry owner, ShapeControlPoint[] family) {
+            this.delegate = delegate;
+            this.owner = owner;
+            this.family = family;
+        }
+
+        static ShapeControlPoint[] wrap(ShapeControlPoint[] originals, WrapperShapeEntry owner) {
+            ShapeControlPoint[] result = new ShapeControlPoint[originals.length];
+            for (int i = 0; i < originals.length; i++) {
+                result[i] = new WrapperControlPoint(originals[i], owner, result);
+            }
+            return result;
+        }
+
+        @Override
+        public ShapeElement owner() {
+            return owner;
+        }
+
+        @Override
+        public ShapeControlPoint[] family() {
+            return family;
+        }
+
+        @Override
+        public ControlPointKind kind() {
+            return delegate.kind();
+        }
+
+        @Override
+        public int index() {
+            return delegate.index();
+        }
+
+        @Override
+        public Adjustable getPrimitive() {
+            return delegate.getPrimitive();
+        }
+
+        @Override
+        public Point2D.Double location() {
+            return delegate.location();
+        }
+
+        @Override
+        public boolean isValid() {
+            return delegate.isValid();
+        }
+
+        @Override
+        public boolean move(double dx, double dy) {
+            return delegate.move(dx, dy);
+        }
+
+        @Override
+        public double getX() {
+            return delegate.getX();
+        }
+
+        @Override
+        public double getY() {
+            return delegate.getY();
+        }
+
+        @Override
+        public boolean set(double newX, double newY) {
+            return delegate.set(newX, newY);
+        }
+
+        @Override
+        public boolean delete() {
+            return delegate.delete();
+        }
+
+        @Override
+        public boolean canDelete() {
+            return delegate.canDelete();
+        }
+
+        @Override
+        public boolean isVirtual() {
+            return delegate.isVirtual();
+        }
+
+        @Override
+        public boolean hit(double hx, double hy) {
+            return delegate.hit(hx, hy);
+        }
+
+        @Override
+        public Set<ControlPointKind> availableControlPointKinds() {
+            return delegate.availableControlPointKinds();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) {
+                return true;
+            } else if (o == delegate) {
+                return true;
+            } else if (o instanceof WrapperControlPoint) {
+                return ((WrapperControlPoint) o).delegate
+                        == delegate
+                        || ((WrapperControlPoint) o).delegate.equals(delegate);
+            } else if (o instanceof ShapeControlPoint) {
+                ShapeControlPoint other = (ShapeControlPoint) o;
+                return other.owner().id() == owner.id()
+                        && other.index() == index();
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return delegate.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return "W(" + delegate + ")";
+        }
+
+    }
+
 }

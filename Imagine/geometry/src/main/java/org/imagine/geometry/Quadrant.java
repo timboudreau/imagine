@@ -24,6 +24,7 @@
 package org.imagine.geometry;
 
 /**
+ * Quadrants of a 360 degree circular coordinate space.
  *
  * @author Tim Boudreau
  */
