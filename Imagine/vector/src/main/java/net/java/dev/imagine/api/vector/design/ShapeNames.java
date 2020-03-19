@@ -2,6 +2,7 @@ package net.java.dev.imagine.api.vector.design;
 
 import com.mastfrog.util.strings.Escaper;
 import com.mastfrog.util.strings.Strings;
+import java.awt.geom.Rectangle2D;
 import java.text.DecimalFormat;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.elements.Arc;
@@ -13,7 +14,7 @@ import net.java.dev.imagine.api.vector.elements.Oval;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
 import net.java.dev.imagine.api.vector.elements.RoundRect;
 import net.java.dev.imagine.api.vector.elements.Text;
-import org.imagine.geometry.Triangle;
+import org.imagine.geometry.Triangle2D;
 import org.openide.util.NbBundle.Messages;
 
 /**
@@ -82,7 +83,9 @@ public class ShapeNames {
             return Bundle.circleInfo(FMT.format(cw.centerX), FMT.format(cw.centerY), FMT.format(cw.radius));
         } else if (primitive instanceof ImageWrapper) {
             ImageWrapper img = (ImageWrapper) primitive;
-            return Bundle.rectangularInfo(FMT.format(img.x), FMT.format(img.y),
+            Rectangle2D.Double r = new Rectangle2D.Double();
+            img.getBounds(r);
+            return Bundle.rectangularInfo(FMT.format(r.getX()), FMT.format(r.getY()),
                     FMT.format(img.imageWidth()), FMT.format(img.imageHeight()));
         } else if (primitive instanceof net.java.dev.imagine.api.vector.elements.Rectangle) {
             net.java.dev.imagine.api.vector.elements.Rectangle r = (net.java.dev.imagine.api.vector.elements.Rectangle) primitive;
@@ -94,7 +97,7 @@ public class ShapeNames {
             RoundRect r = (RoundRect) primitive;
             return Bundle.rectangularInfo(FMT.format(r.x), FMT.format(r.y),
                     FMT.format(r.width()), FMT.format(r.height()));
-        } else if (primitive instanceof Triangle) {
+        } else if (primitive instanceof Triangle2D) {
             return Bundle.triangle();
         } else if (primitive instanceof PathIteratorWrapper) {
             PathIteratorWrapper w = (PathIteratorWrapper) primitive;
@@ -130,7 +133,7 @@ public class ShapeNames {
             return Bundle.text();
         } else if (primitive instanceof RoundRect) {
             return Bundle.roundRect();
-        } else if (primitive instanceof Triangle) {
+        } else if (primitive instanceof Triangle2D) {
             return Bundle.triangle();
         } else if (primitive instanceof PathIteratorWrapper) {
             return Bundle.path();

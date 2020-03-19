@@ -11,9 +11,10 @@ package net.java.dev.imagine.api.vector.elements;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
+import static java.awt.RenderingHints.KEY_INTERPOLATION;
+import static java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
@@ -22,12 +23,12 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
+import java.util.Objects;
 import javax.imageio.ImageIO;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.utils.java2d.GraphicsUtils;
-import org.openide.util.Exceptions;
 
 /**
  *
@@ -36,8 +37,6 @@ import org.openide.util.Exceptions;
 public class ImageWrapper implements Primitive, Vector {
 
     public transient BufferedImage img;
-    public double x;
-    public double y;
     public AffineTransform xform;
 
     public ImageWrapper(RenderedImage img) {
@@ -50,73 +49,40 @@ public class ImageWrapper implements Primitive, Vector {
 
     public ImageWrapper(RenderedImage img, double x, double y) {
         this.img = getBufferedImage(img, false);
-        this.x = x;
-        this.y = y;
+        this.xform = AffineTransform.getTranslateInstance(x, y);
     }
 
     public ImageWrapper(RenderableImage img, double x, double y) {
         this.img = getBufferedImage(img);
-        this.x = x;
-        this.y = y;
+        this.xform = AffineTransform.getTranslateInstance(x, y);
     }
 
     public ImageWrapper(double x, double y, Image img) {
         this.img = getBufferedImage(img);
-        this.x = x;
-        this.y = y;
+        this.xform = AffineTransform.getTranslateInstance(x, y);
     }
 
     public ImageWrapper(AffineTransform xform, Image img) {
-        setupCoordinatesAndTransform(0, 0, xform);
+        this.xform = xform;
         this.img = getBufferedImage(img);
-    }
-
-    public ImageWrapper(RenderedImage img, AffineTransform xform, double x, double y) {
-        this.img = getBufferedImage(img, false);
-        setupCoordinatesAndTransform(x, y, xform);
     }
 
     public ImageWrapper(RenderedImage img, AffineTransform xform) {
         this.img = getBufferedImage(img, false);
-        setupCoordinatesAndTransform(x, y, xform);
-    }
-
-    public ImageWrapper(RenderableImage img, AffineTransform xform, double x, double y) {
-        this.img = getBufferedImage(img);
-        setupCoordinatesAndTransform(x, y, xform);
+        this.xform = xform;
     }
 
     public ImageWrapper(RenderableImage img, AffineTransform xform) {
-        setupCoordinatesAndTransform(0, 0, xform);
+        this.xform = xform;
         this.img = getBufferedImage(img);
     }
 
-    public ImageWrapper(double x, double y, AffineTransform xform, Image img) {
-        setupCoordinatesAndTransform(x, y, xform);
-        this.img = getBufferedImage(img);
-    }
-
-    private void setupCoordinatesAndTransform(double x, double y, AffineTransform xform) {
-        if (xform != null && !xform.isIdentity()) {
-            this.x = x + xform.getTranslateX();
-            this.y = y + xform.getTranslateY();
-            this.xform = GraphicsUtils.removeTranslation(xform);
-        } else {
-            this.xform = null;
-            this.x = x;
-            this.y = y;
-        }
-    }
-
+    @Override
     public Runnable restorableSnapshot() {
         BufferedImage oim = img;
-        double ox = x;
-        double oy = y;
         AffineTransform xf = xform == null ? null
                 : new AffineTransform(xform);
         return () -> {
-            x = ox;
-            y = oy;
             img = oim;
             xform = xf;
         };
@@ -124,19 +90,11 @@ public class ImageWrapper implements Primitive, Vector {
 
     @Override
     public void translate(double x, double y) {
-        if (xform != null) {
-            double[] offsets = new double[]{x, y};
-            try {
-                AffineTransform xf = xform.createInverse();
-                xf.deltaTransform(offsets, 0, offsets, 0, 1);
-                x = offsets[0];
-                y = offsets[1];
-            } catch (NoninvertibleTransformException ex) {
-                Exceptions.printStackTrace(ex);
-            }
+        if (xform == null) {
+            xform = AffineTransform.getTranslateInstance(x, y);
+        } else {
+            xform.preConcatenate(AffineTransform.getTranslateInstance(x, y));
         }
-        this.x += x;
-        this.y += y;
     }
 
     public int imageWidth() {
@@ -148,69 +106,64 @@ public class ImageWrapper implements Primitive, Vector {
     }
 
     @Override
+    public double cumulativeLength() {
+        Rectangle2D.Double r = new Rectangle2D.Double();
+        getBounds(r);
+        return (r.width * 2) + r.height * 2;
+    }
+
+    @Override
     public void applyTransform(AffineTransform xform) {
-        if (xform == null || xform.isIdentity()) {
-            return;
-        } else {
-            if (xform.getType() == AffineTransform.TYPE_TRANSLATION) {
-                double[] xy = new double[]{0, 0};
-                xform.transform(xy, 0, xy, 0, 1);
-                x += xy[0];
-                y += xy[1];
-                return;
-            }
+        if (xform != null && !xform.isIdentity()) {
             if (this.xform == null) {
                 this.xform = xform;
             } else {
-                this.xform.concatenate(xform);
-                if (this.xform.isIdentity()) {
-                    this.xform = null;
-                }
+                this.xform.preConcatenate(xform);
             }
         }
     }
 
     private static BufferedImage getBufferedImage(Image img) {
         if (img instanceof BufferedImage) {
-            return (BufferedImage) img;
-        } else {
-            BufferedImage result = new BufferedImage(img.getWidth(null), img.getHeight(null),
-                    BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = result.createGraphics();
-            g2d.drawImage(img, AffineTransform.getTranslateInstance(0, 0), null);
-            g2d.dispose();
-            return result;
+            BufferedImage bi = (BufferedImage) img;
+            if (bi.getType() == GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE) {
+                return (BufferedImage) img;
+            }
         }
+        return GraphicsUtils.newBufferedImage(img.getWidth(null), img.getHeight(null), g -> {
+            g.drawImage(img, null, null);
+        });
     }
 
-    private static BufferedImage getBufferedImage(RenderedImage img, boolean force) {
-        if (img instanceof BufferedImage && !force) {
-            return (BufferedImage) img;
-        } else {
-            BufferedImage result = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = result.createGraphics();
-            g2d.drawRenderedImage(img, AffineTransform.getTranslateInstance(0, 0));
-            g2d.dispose();
-            return result;
+    private static BufferedImage getBufferedImage(RenderedImage img, boolean forceCopy) {
+        if (img instanceof BufferedImage && !forceCopy) {
+            BufferedImage bi = (BufferedImage) img;
+            if (bi.getType() == GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE) {
+                return (BufferedImage) img;
+            }
         }
+        return GraphicsUtils.newBufferedImage(img.getWidth(), img.getHeight(), g -> {
+            g.drawRenderedImage(img, AffineTransform.getTranslateInstance(
+                    0, 0));
+        });
     }
 
     private static BufferedImage getBufferedImage(RenderableImage img) {
         if (img instanceof BufferedImage) {
-            return (BufferedImage) img;
-        } else {
-            BufferedImage result = new BufferedImage((int) img.getWidth(), (int) img.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = result.createGraphics();
-            g2d.drawRenderableImage(img, AffineTransform.getTranslateInstance(0, 0));
-            g2d.dispose();
-            return result;
+            BufferedImage bi = (BufferedImage) img;
+            if (bi.getType() == GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE) {
+                return (BufferedImage) img;
+            }
         }
+        return GraphicsUtils.newBufferedImage((int) Math.ceil(img.getWidth()),
+                (int) Math.ceil(img.getHeight()), g -> {
+            g.drawRenderableImage(img, AffineTransform.getTranslateInstance(
+                    0, 0));
+        });
     }
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         ImageIO.write(img, "png", out);
-        out.writeDouble(x);
-        out.writeDouble(y);
         boolean writeXform = xform != null && !xform.isIdentity();
         out.writeBoolean(writeXform);
         if (writeXform) {
@@ -224,8 +177,6 @@ public class ImageWrapper implements Primitive, Vector {
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         img = ImageIO.read(in);
-        x = in.readDouble();
-        y = in.readDouble();
         boolean hasXform = in.readBoolean();
         if (hasXform) {
             double[] mx = new double[6];
@@ -238,81 +189,72 @@ public class ImageWrapper implements Primitive, Vector {
 
     private void readObjectNoData() throws ObjectStreamException {
         img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-        x = 0;
-        y = 0;
     }
 
     @Override
     public String toString() {
-        return "ImageWrapper " + img;
+        return "ImageWrapper " + img + " " + GraphicsUtils.transformToString(xform);
     }
 
     @Override
     public void paint(Graphics2D g) {
-        AffineTransform xf = AffineTransform.getTranslateInstance(x, y);
-        if (xform != null) {
-            xf.concatenate(xform);
-        }
-        g.drawRenderedImage(img, xf);
+        Object old = g.getRenderingHint(KEY_INTERPOLATION);
+        g.setRenderingHint(KEY_INTERPOLATION, VALUE_INTERPOLATION_BICUBIC);
+        g.drawRenderedImage(img, xform);
+        g.setRenderingHint(KEY_INTERPOLATION, old);
     }
 
     @Override
     public void addToBounds(Rectangle2D bds) {
-        double[] pts = new double[]{x, y, x + img.getWidth(),
-            y + img.getHeight()};
-        if (xform != null) {
-            xform.transform(pts, 0, pts, 0, 2);
-        }
         if (bds.isEmpty()) {
-            bds.setFrameFromDiagonal(pts[0], pts[1], pts[2], pts[3]);
+            bds.setFrame(toShape().getBounds2D());
         } else {
-            bds.add(pts[0], pts[1]);
-            bds.add(pts[2], pts[3]);
+            bds.add(toShape().getBounds2D());
         }
     }
 
     public void getBounds(java.awt.Rectangle r) {
-        double[] pts = new double[]{x, y, x + img.getWidth(),
-            y + img.getHeight()};
-        if (xform != null) {
-            xform.transform(pts, 0, pts, 0, 2);
-        }
-        r.setFrameFromDiagonal(pts[0], pts[1], pts[2], pts[3]);
+        r.setBounds(toShape().getBounds());
     }
 
     @Override
     public ImageWrapper copy() {
-        return new ImageWrapper(x, y, xform, img);
+        return new ImageWrapper(new AffineTransform(xform), img);
     }
 
     @Override
     public Shape toShape() {
-        Rectangle2D.Double result = new Rectangle2D.Double();
-        addToBounds(result);
+        Shape result = new Rectangle2D.Double(0, 0, img.getWidth(), img.getHeight());
+        if (xform != null) {
+            result = xform.createTransformedShape(result);
+        }
         return result;
     }
 
     @Override
     public Pt getLocation() {
-        return new Pt((int) x, (int) y);
+        Rectangle r = getBounds();
+        return new Pt(r.x, r.y);
     }
 
     @Override
     public void setLocation(double x, double y) {
-        this.x = x;
-        this.y = y;
+        Rectangle2D.Double r = new Rectangle2D.Double();
+        addToBounds(r);
+        double offX = x - r.x;
+        double offY = y - r.y;
+        xform.translate(-offX, -offY);
     }
 
     @Override
     public void clearLocation() {
-        this.x = 0;
-        this.y = 0;
+        setLocation(0, 0);
     }
 
     @Override
     public ImageWrapper copy(AffineTransform xform) {
         AffineTransform origXform = this.xform == null ? null : new AffineTransform(this.xform);
-        ImageWrapper nue = new ImageWrapper(x, y, origXform, img);
+        ImageWrapper nue = new ImageWrapper(new AffineTransform(origXform), img);
         if (xform != null && !xform.isIdentity()) {
             nue.applyTransform(xform);
         }
@@ -321,12 +263,7 @@ public class ImageWrapper implements Primitive, Vector {
 
     @Override
     public void getBounds(Rectangle2D dest) {
-        double[] pts = new double[]{x, y, x + img.getWidth(),
-            y + img.getHeight()};
-        if (xform != null) {
-            xform.transform(pts, 0, pts, 0, 2);
-        }
-        dest.setFrameFromDiagonal(pts[0], pts[1], pts[2], pts[3]);
+        dest.setFrame(toShape().getBounds2D());
     }
 
     @Override
@@ -336,4 +273,27 @@ public class ImageWrapper implements Primitive, Vector {
         return result;
     }
 
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 59 * hash + Objects.hashCode(this.img);
+        hash = 59 * hash + GraphicsUtils.transformHashCode(xform);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final ImageWrapper other = (ImageWrapper) obj;
+        return GraphicsUtils.transformsEqual(this.xform, other.xform)
+                && Objects.equals(this.img, other.img);
+    }
 }

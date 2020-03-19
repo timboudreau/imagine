@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Surface;
@@ -48,6 +49,11 @@ public class FreehandTool extends MultiStateTool {
     @Override
     protected InputHandler createInitialInputHandler() {
         return new InitialPoint();
+    }
+
+    @Override
+    protected void onAttachRepainter(Repainter rep) {
+        rep.requestRepaint();
     }
 
     @Override
@@ -254,8 +260,8 @@ public class FreehandTool extends MultiStateTool {
             if (p != null) {
                 g.draw(p);
                 lastRepaintBounds.add(p.getBounds());
-            } else {
-                System.out.println("no path yet");
+//            } else {
+//                System.out.println("no path yet");
             }
 
             Rectangle sp = state.paint(g, bounds, false);

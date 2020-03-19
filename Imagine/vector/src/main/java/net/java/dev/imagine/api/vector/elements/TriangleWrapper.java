@@ -14,8 +14,8 @@ import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.geometry.Circle;
-import org.imagine.geometry.TriangleDouble;
-import org.imagine.geometry.Triangle;
+import org.imagine.geometry.EnhancedShape;
+import org.imagine.geometry.Triangle2D;
 
 /**
  *
@@ -40,11 +40,11 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
         this.fill = fill;
     }
 
-    public TriangleWrapper(Triangle t) {
+    public TriangleWrapper(Triangle2D t) {
         this(t, true);
     }
 
-    public TriangleWrapper(Triangle t, boolean fill) {
+    public TriangleWrapper(Triangle2D t, boolean fill) {
         ax = t.ax();
         ay = t.ay();
         bx = t.bx();
@@ -54,20 +54,7 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
         this.fill = fill;
     }
 
-    public TriangleWrapper(TriangleDouble t) {
-        this(t, true);
-    }
-
-    public TriangleWrapper(TriangleDouble t, boolean fill) {
-        ax = t.ax();
-        ay = t.ay();
-        bx = t.bx();
-        by = t.by();
-        cx = t.cx();
-        cy = t.cy();
-        this.fill = fill;
-    }
-
+    @Override
     public Runnable restorableSnapshot() {
         double oax = ax;
         double oay = ay;
@@ -144,7 +131,7 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
     }
 
     public TriangleWrapper[] tesselate() {
-        TriangleDouble[] triangles = toShape().tesselate();
+        Triangle2D[] triangles = toShape().tesselate();
         TriangleWrapper[] res = new TriangleWrapper[triangles.length];
         for (int i = 0; i < triangles.length; i++) {
             res[i] = new TriangleWrapper(triangles[i], fill);
@@ -170,8 +157,30 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
     }
 
     @Override
-    public TriangleDouble toShape() {
-        return new TriangleDouble(ax, ay, bx, by, cx, cy);
+    public Triangle2D toShape() {
+        return new Triangle2D(ax, ay, bx, by, cx, cy);
+    }
+
+    public double cumulativeLength() {
+        return Point2D.distance(ax, ay, bx, by)
+                + Point2D.distance(bx, by, cx, cy)
+                + Point2D.distance(cx, cy, ax, ay);
+    }
+
+    @Override
+    public <T> T as(Class<T> type) {
+        if (EnhancedShape.class == type) {
+            return type.cast(toShape());
+        }
+        return Strokable.super.as(type);
+    }
+
+    @Override
+    public boolean is(Class<?> type) {
+        if (EnhancedShape.class == type) {
+            return true;
+        }
+        return Strokable.super.is(type);
     }
 
     @Override

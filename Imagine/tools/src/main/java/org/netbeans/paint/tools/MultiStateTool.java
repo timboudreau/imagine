@@ -142,11 +142,16 @@ abstract class MultiStateTool extends ToolImplementation<Surface> implements Cus
         }
     }
 
+    protected void onAttachRepainter(Repainter repainter) {
+        // do nothing
+    }
+
     private final class Part implements PaintParticipant {
 
         @Override
         public void attachRepainter(Repainter repainter) {
             MultiStateTool.this.repainter = repainter;
+            onAttachRepainter(repainter);
         }
 
         @Override
@@ -174,6 +179,7 @@ abstract class MultiStateTool extends ToolImplementation<Surface> implements Cus
             if (!updateScratch.isEmpty()) {
                 repaint(updateScratch);
             }
+            repaint();
             return true;
         }
         return false;

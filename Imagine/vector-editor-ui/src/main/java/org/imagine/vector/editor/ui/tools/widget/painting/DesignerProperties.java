@@ -12,7 +12,7 @@ import java.util.Map;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.Rhombus;
-import org.imagine.geometry.TriangleDouble;
+import org.imagine.geometry.Triangle2D;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.netbeans.api.visual.model.ObjectState;
 
@@ -187,7 +187,7 @@ public class DesignerProperties {
         return rect;
     }
 
-    private static final TriangleDouble tri = new TriangleDouble(0, 0, 1, 1, 0, 2);
+    private static final Triangle2D tri = new Triangle2D(0, 0, 1, 1, 0, 2);
 
     private static final Rhombus rhom = new Rhombus(new Rectangle(), 0);
 
@@ -246,7 +246,7 @@ public class DesignerProperties {
                     px + half, py + half
             );
         }
-        return new TriangleDouble(tri);
+        return new Triangle2D(tri);
     }
 
     private Shape rect(ShapeControlPoint point, boolean localCoords, double zoom, boolean forHitTest, ObjectState state) {

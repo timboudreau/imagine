@@ -1,5 +1,6 @@
 package org.netbeans.paint.api.components.dialog;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dialog.ModalityType;
 import java.awt.DisplayMode;
@@ -440,7 +441,6 @@ public abstract class DialogBuilder {
 
     static final class InputLinePanel extends JPanel implements DocumentListener, FocusListener, ShowHideObserver<InputLinePanel>, BiPredicate<InputLinePanel, ButtonMeaning> {
 
-        private final DialogBuilder bldr;
         private final JTextComponent field;
         private final Predicate<String> tester;
         private final Border fieldOrigBorder;
@@ -449,7 +449,7 @@ public abstract class DialogBuilder {
         private final Consumer<String> consumer;
 
         InputLinePanel(int columns, String initialText, DialogBuilder bldr, Predicate<String> tester, Consumer<String> consumer, JTextComponent comp) {
-            this.bldr = bldr;
+            setLayout(new BorderLayout());
             this.tester = tester;
             setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
             comp.setText(initialText);
@@ -468,12 +468,13 @@ public abstract class DialogBuilder {
             Insets ins = origBorder.getBorderInsets(field);
             errorBorder = BorderFactory.createMatteBorder(ins.top, ins.left, ins.bottom, ins.right, c);
             this.consumer = consumer;
-            add(lbl);
             if (field instanceof JTextArea) {
+                add(lbl, BorderLayout.NORTH);
                 JScrollPane pane = new JScrollPane(field);
-                add(pane);
+                add(pane, BorderLayout.CENTER);
             } else {
-                add(field);
+                add(field, BorderLayout.LINE_START);
+                add(lbl, BorderLayout.CENTER);
             }
             field.getDocument().addDocumentListener(this);
             field.addFocusListener(this);
@@ -523,6 +524,7 @@ public abstract class DialogBuilder {
         @Override
         public void addNotify() {
             super.addNotify();
+            EventQueue.invokeLater(this::requestFocus);
         }
 
         @Override

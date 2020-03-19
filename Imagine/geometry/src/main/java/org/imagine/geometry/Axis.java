@@ -24,7 +24,6 @@
 package org.imagine.geometry;
 
 import java.awt.Point;
-import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.util.EnumSet;
 import java.util.Set;
@@ -46,12 +45,12 @@ public enum Axis {
         return this == HORIZONTAL ? point.x : point.y;
     }
 
-    public Line2D.Double line(double otherCoord, double start, double end) {
+    public EqLine line(double otherCoord, double start, double end) {
         switch (this) {
             case HORIZONTAL:
-                return new Line2D.Double(start, otherCoord, end, otherCoord);
+                return new EqLine(start, otherCoord, end, otherCoord);
             case VERTICAL:
-                return new Line2D.Double(otherCoord, start, otherCoord, end);
+                return new EqLine(otherCoord, start, otherCoord, end);
             default:
                 throw new AssertionError();
         }

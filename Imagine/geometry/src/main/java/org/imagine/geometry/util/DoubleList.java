@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.imagine.geometry;
+package org.imagine.geometry.util;
 
 import com.mastfrog.util.collections.ArrayUtils;
 import java.text.DecimalFormat;

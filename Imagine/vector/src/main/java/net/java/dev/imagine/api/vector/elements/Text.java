@@ -19,11 +19,13 @@ import java.util.List;
 import java.util.Objects;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Primitive;
+import net.java.dev.imagine.api.vector.Textual;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.graphics.FontWrapper;
 import net.java.dev.imagine.api.vector.util.Pt;
-import org.imagine.geometry.DoubleList;
+import org.imagine.geometry.util.DoubleList;
+import org.imagine.geometry.util.GeometryUtils;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.Exceptions;
 
@@ -33,7 +35,7 @@ import org.openide.util.Exceptions;
  *
  * @author Tim Boudreau
  */
-public class Text implements Primitive, Vector, Adjustable {
+public class Text implements Primitive, Vector, Adjustable, Textual {
 
     private transient static BufferedImage scratch;
     private StringWrapper text;
@@ -56,7 +58,10 @@ public class Text implements Primitive, Vector, Adjustable {
     public Text(String text, Font font, double x, double y) {
         this.text = new StringWrapper(text, x, y);
         this.font = FontWrapper.create(font, true);
-        // XXX remove the translation component of the font wrapper?
+    }
+
+    public AffineTransform transform() {
+        return xform;
     }
 
     @Override
@@ -184,22 +189,19 @@ public class Text implements Primitive, Vector, Adjustable {
 
     @Override
     public void applyTransform(AffineTransform xform) {
-        if (xform == null || xform.isIdentity()) {
-            return;
-        } else {
+        if (xform != null && !xform.isIdentity()) {
             if (xform.getType() == AffineTransform.TYPE_TRANSLATION) {
                 double[] xy = new double[]{0, 0};
                 xform.transform(xy, 0, xy, 0, 1);
                 text.translate(xy[0], xy[1]);
-                invalidateCachedShape();
-                return;
-            }
-            if (this.xform == null) {
-                this.xform = xform;
             } else {
-                this.xform.concatenate(xform);
-                if (this.xform.isIdentity()) {
-                    this.xform = null;
+                if (this.xform == null) {
+                    this.xform = xform;
+                } else {
+                    this.xform.concatenate(xform);
+                    if (this.xform.isIdentity()) {
+                        this.xform = null;
+                    }
                 }
             }
             invalidateCachedShape();
@@ -258,7 +260,9 @@ public class Text implements Primitive, Vector, Adjustable {
     public Text copy() {
         StringWrapper txt = text.copy();
         FontWrapper fnt = font.copy();
-        return new Text(txt, fnt, xform);
+        return new Text(txt, fnt, xform == null || xform.isIdentity()
+                ? null
+                : new AffineTransform(xform));
     }
 
     @Override
@@ -304,7 +308,7 @@ public class Text implements Primitive, Vector, Adjustable {
         hash = 29 * hash + text.hashCode();
         hash = 29 * hash + font.hashCode();
         hash = 29 * hash + Float.floatToIntBits(leadingMultiplier);
-        hash = 29 * hash + (xform == null || xform.isIdentity() ? 0 : xform.hashCode());
+        hash = 29 * hash + GraphicsUtils.transformHashCode(xform);
         return hash;
     }
 
@@ -321,12 +325,13 @@ public class Text implements Primitive, Vector, Adjustable {
         return other.leadingMultiplier == leadingMultiplier
                 && Objects.equals(this.text, other.text)
                 && Objects.equals(this.font, other.font)
-                && Objects.equals(this.xform, other.xform);
+                && GraphicsUtils.transformsEqual(this.xform, other.xform);
     }
 
     @Override
     public String toString() {
-        return "Text{" + "text=" + text + ", font=" + font + '}';
+        return "Text{" + "text=" + text + ", font=" + font + ' '
+                + GraphicsUtils.transformToString(xform) + '}';
     }
 
     private void invalidateCachedShape() {
@@ -454,7 +459,7 @@ public class Text implements Primitive, Vector, Adjustable {
      * @param s Some text
      * @return The revised text
      */
-    private static String trimTail(String s) {
+    static String trimTail(String s) {
         int ix = s.lastIndexOf('\n');
         if (ix < 0) {
             return s;
@@ -474,6 +479,11 @@ public class Text implements Primitive, Vector, Adjustable {
             s = s.replace("\\t", "    ");
         }
         return s.substring(0, last + 1);
+    }
+
+    @Override
+    public double cumulativeLength() {
+        return GeometryUtils.shapeLength(toShape());
     }
 
     /**

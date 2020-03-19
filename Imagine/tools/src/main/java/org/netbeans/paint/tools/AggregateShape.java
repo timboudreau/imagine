@@ -17,9 +17,15 @@ final class AggregateShape implements Shape {
 
     private final List<Shape> shapes;
     private final Rectangle2D.Double bounds = new Rectangle2D.Double();
+    private final AffineTransform xform;
 
     public AggregateShape(List<Shape> shapes) {
+        this(shapes, null);
+    }
+
+    public AggregateShape(List<Shape> shapes, AffineTransform xform) {
         this.shapes = shapes;
+        this.xform = xform;
     }
 
     @Override
@@ -47,7 +53,14 @@ final class AggregateShape implements Shape {
 
     @Override
     public boolean contains(double x, double y) {
-        return _getBounds2D().contains(x, y);
+        if (_getBounds2D().contains(x, y)) {
+            for (Shape s : shapes) {
+                if (s.contains(x, y)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -57,7 +70,14 @@ final class AggregateShape implements Shape {
 
     @Override
     public boolean intersects(double x, double y, double w, double h) {
-        return _getBounds2D().intersects(x, y, w, h);
+        if( _getBounds2D().intersects(x, y, w, h)) {
+            for (Shape shape : shapes) {
+                if (shape.intersects(x, y, w, h)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -77,11 +97,21 @@ final class AggregateShape implements Shape {
 
     @Override
     public PathIterator getPathIterator(AffineTransform at) {
+        if (xform != null) {
+            AffineTransform xf = new AffineTransform(xform);
+            xf.concatenate(at);
+            at = xf;
+        }
         return new MetaPathIterator(shapes.iterator(), at, 0, false);
     }
 
     @Override
     public PathIterator getPathIterator(AffineTransform at, double flatness) {
+        if (xform != null) {
+            AffineTransform xf = new AffineTransform(xform);
+            xf.concatenate(at);
+            at = xf;
+        }
         return new MetaPathIterator(shapes.iterator(), at, flatness, true);
     }
 

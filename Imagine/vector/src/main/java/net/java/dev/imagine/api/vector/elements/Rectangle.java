@@ -9,7 +9,6 @@
 package net.java.dev.imagine.api.vector.elements;
 
 import java.awt.Graphics2D;
-import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -24,6 +23,8 @@ import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
+import org.imagine.geometry.EnhRectangle2D;
+import org.imagine.geometry.EnhancedShape;
 
 /**
  *
@@ -72,8 +73,29 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
     }
 
     @Override
-    public Shape toShape() {
-        return new Rectangle2D.Double(x, y, w, h);
+    public EnhRectangle2D toShape() {
+        return new EnhRectangle2D(x, y, w, h);
+    }
+
+    @Override
+    public <T> T as(Class<T> type) {
+        if (EnhancedShape.class == type) {
+            return type.cast(toShape());
+        }
+        return Strokable.super.as(type);
+    }
+
+    @Override
+    public boolean is(Class<?> type) {
+        if (EnhancedShape.class == type) {
+            return true;
+        }
+        return Strokable.super.is(type);
+    }
+
+    @Override
+    public double cumulativeLength() {
+        return (w * 2) + (h * 2);
     }
 
     public String toSvgFragment(Map<String, String> otherAttributes) {

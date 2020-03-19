@@ -98,6 +98,10 @@ public class Line implements Strokable, Adjustable, Vector {
         return Point2D.distance(x1, y1, x2, y2);
     }
 
+    public double cumulativeLength() {
+        return length();
+    }
+
     @Override
     public String toString() {
         return "Line " + x1 + ", " + y1

@@ -58,7 +58,6 @@ public class TriangleInspector extends InspectorFactory<TriangleWrapper> {
         pnl.add(new NamedNumberEditor(Bundle.by(), con, obj::by, shape.wrap(obj::setBy)));
         pnl.add(new NamedNumberEditor(Bundle.cx(), con, obj::cx, shape.wrap(obj::setCx)));
         pnl.add(new NamedNumberEditor(Bundle.cy(), con, obj::cy, shape.wrap(obj::setCy)));
-
         return pnl;
     }
 }

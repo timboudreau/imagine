@@ -12,7 +12,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import javax.swing.JComponent;
 import org.imagine.geometry.Circle;
-import org.imagine.geometry.Triangle;
+import org.imagine.geometry.Triangle2D;
 
 /**
  *
@@ -82,7 +82,7 @@ class TestPointPainter extends JComponent {
         g.setColor(Color.BLUE);
         g.draw(circ);
 
-        Triangle tri = Triangle.isoceles(otherPoint, 13);
+        Triangle2D tri = Triangle2D.isoceles(otherPoint, 13);
         g.setColor(Color.BLACK);
         g.fill(tri);
         g.setColor(Color.RED);

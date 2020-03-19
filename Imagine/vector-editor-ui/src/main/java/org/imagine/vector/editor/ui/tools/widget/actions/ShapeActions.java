@@ -1,28 +1,49 @@
 package org.imagine.vector.editor.ui.tools.widget.actions;
 
 import com.mastfrog.util.collections.IntSet;
+import java.awt.Font;
 import java.awt.Point;
+import java.awt.Shape;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.PathIterator;
+import static java.awt.geom.PathIterator.SEG_CLOSE;
+import static java.awt.geom.PathIterator.SEG_CUBICTO;
+import static java.awt.geom.PathIterator.SEG_LINETO;
+import static java.awt.geom.PathIterator.SEG_MOVETO;
+import static java.awt.geom.PathIterator.SEG_QUADTO;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.IntConsumer;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
+import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import net.java.dev.imagine.api.vector.Adjustable;
+import net.java.dev.imagine.api.vector.Shaped;
+import net.java.dev.imagine.api.vector.Textual;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
+import net.java.dev.imagine.api.vector.design.ShapeNames;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
+import net.java.dev.imagine.api.vector.elements.PathText;
+import net.java.dev.imagine.api.vector.elements.StringWrapper;
 import net.java.dev.imagine.api.vector.elements.Text;
 import net.java.dev.imagine.api.vector.elements.TriangleWrapper;
+import net.java.dev.imagine.api.vector.graphics.FontWrapper;
+import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.grid.Grid;
+import org.imagine.geometry.Circle;
+import org.imagine.geometry.EqLine;
+import org.imagine.geometry.EqPointDouble;
 import org.imagine.vector.editor.ui.palette.PaintPalettes;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
@@ -110,7 +131,13 @@ public class ShapeActions {
         "actionSetText=Set Te&xt",
         "opSetText=Edit Text",
         "actionsSnapAllPointsToGrid=Snap All Points to Nearest &Grid",
-        "opSnapAllPointsToGrid=Snap All Points"
+        "opSnapAllPointsToGrid=Snap All Points",
+        "actionFlipHorizontal=Flip &Horizontal",
+        "opFlipHorizontal=Flip Horizontal",
+        "actionFlipVertical=&Flip Vertical",
+        "opFlipVertical=Flip Vertical",
+        "actionConvertToPathText=Convert to Text Path",
+        "opConvertToPathText=Convert to Text Path"
     })
     public ShapeActions(DesignerControl ctrl) {
         this.ctrl = ctrl;
@@ -241,57 +268,6 @@ public class ShapeActions {
 //                }
 //            }).hook(ctrl::shapesMayBeDeleted);
 //        });
-        actions.action(Bundle.actionsSnapAllPointsToGrid())
-                .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0))
-                .sensitiveTo(ShapeElement.class)
-                .testingEach(el -> {
-                    // No grid, nothing to snap to
-                    if (!Grid.getInstance().isEnabled()) {
-                        return false;
-                    }
-                    Adjustable adj = el.item().as(Adjustable.class);
-                    if (adj == null) {
-                        return false;
-                    }
-                    if (!adj.hasReadOnlyControlPoints()) {
-                        int ct = adj.getControlPointCount();
-                        for (int i = 0; i < ct; i++) {
-                            if (!adj.isControlPointReadOnly(i)) {
-                                return true;
-                            }
-                        }
-                    }
-                    return false;
-                }).sensitiveTo(ShapesCollection.class).sensingPresence()
-                .finishMultiple((items, colls) -> {
-                    ShapesCollection c = colls.iterator().next();
-                    Grid grid = Grid.getInstance();
-                    Set<ShapeElement> allChanged = new HashSet<>();
-                    c.geometryEdit(Bundle.opSnapAllPointsToGrid(), () -> {
-                        boolean[] changed = new boolean[1];
-                        for (ShapeElement entry : items) {
-                            ShapeControlPoint[] cps = entry.controlPoints(0, cp -> {
-                                changed[0] = true;
-                                allChanged.add(entry);
-                            });
-                            for (int i = 0; i < cps.length; i++) {
-                                ShapeControlPoint cp = cps[i];
-                                if (cp.isEditable()) {
-                                    Point2D pos = grid.nearestPointTo(cp.getX(), cp.getY());
-                                    cp.set(pos.getX(), pos.getY());
-                                }
-                            }
-                            if (changed[0]) {
-                                ctrl.shapeGeometryChanged(entry);
-                            }
-                        }
-                    }).hook(() -> {
-                        for (ShapeElement el : allChanged) {
-                            ctrl.shapeGeometryChanged(el);
-                        }
-                    });
-                });
-
         actions.action(Bundle.actionTesselate())
                 .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_T, 0))
                 .sensitiveTo(ShapeElement.class).testingOne(se -> se.item().is(TriangleWrapper.class))
@@ -315,13 +291,13 @@ public class ShapeActions {
                 .sensingPresence()
                 .sensitiveTo(ShapeElement.class)
                 .testingOne(se -> {
-                    return se.item().is(Text.class);
+                    return se.item().is(Textual.class);
                 }).finish((shapes, text) -> {
             DialogBuilder.forName("shapeText")
                     .setTitle(Bundle.opSetText())
-                    .modal().showMultiLineTextLineDialog(text.item().as(Text.class).getText(), 1, 768, newText -> {
+                    .modal().showMultiLineTextLineDialog(text.item().as(Textual.class).getText(), 1, 768, newText -> {
                         shapes.edit(Bundle.opSetText(), text, () -> {
-                            text.item().as(Text.class).setText(newText);
+                            text.item().as(Textual.class).setText(newText);
                             text.changed();
                             ctrl.pointCountMayBeChanged(text);
                             ctrl.shapeGeometryChanged(text);
@@ -332,7 +308,69 @@ public class ShapeActions {
                         });
                     });
         });
-        ;
+
+        actions.action(Bundle.actionFlipHorizontal())
+                .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_F, 0))
+                .sensitiveTo(ShapesCollection.class).sensingPresence()
+                .sensitiveTo(ShapeElement.class)
+                .testingEach(el -> {
+                    return el.canApplyTransform(AffineTransform.getScaleInstance(-1, 1));
+                }).finish((shapes, el) -> {
+            shapes.edit(Bundle.opFlipHorizontal(), el, () -> {
+                Rectangle2D.Double origBounds = new Rectangle2D.Double();
+                el.addToBounds(origBounds);
+                AffineTransform xf = AffineTransform.getScaleInstance(-1, 1);
+                if (el.item().is(Text.class) && el.item().as(Text.class).transform() == null) {
+                    // This works only for text, which internally diddles
+                    // with transforms
+                    el.applyTransform(xf);
+                    el.changed();
+                    el.applyTransform(AffineTransform.getTranslateInstance((-origBounds.getX() * 2) - origBounds.getWidth(), 0));
+                    el.changed();
+                } else {
+                    // XXX if a PathIteratorWrapper, maybe center
+                    // on the non-virtual points?
+                    el.applyTransform(xf);
+                    el.changed();
+                    el.translate((origBounds.x * 2) + origBounds.width, 0);
+                }
+                ctrl.shapeGeometryChanged(el);
+            }).hook(() -> {
+                ctrl.shapeGeometryChanged(el);
+            });
+        });
+
+        actions.action(Bundle.actionFlipVertical())
+                .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_V, 0))
+                .sensitiveTo(ShapesCollection.class).sensingPresence()
+                .sensitiveTo(ShapeElement.class)
+                .testingEach(el -> {
+                    return el.canApplyTransform(AffineTransform.getScaleInstance(1, -1));
+                }).finish((shapes, el) -> {
+            shapes.edit(Bundle.opFlipVertical(), el, () -> {
+                Rectangle2D.Double origBounds = new Rectangle2D.Double();
+                el.addToBounds(origBounds);
+                AffineTransform xf = AffineTransform.getScaleInstance(1, -1);
+                if (el.item().is(Text.class) && el.item().as(Text.class).transform() == null) {
+                    // This works only for text, which internally diddles
+                    // with transforms
+                    el.applyTransform(xf);
+                    el.changed();
+                    el.applyTransform(AffineTransform.getTranslateInstance(0, (-origBounds.getY() * 2) - origBounds.getHeight()));
+                    el.changed();
+                } else {
+                    // XXX if a PathIteratorWrapper, maybe center
+                    // on the non-virtual points?
+                    el.applyTransform(xf);
+                    el.changed();
+                    el.translate(0, (origBounds.y * 2) + origBounds.height);
+
+                }
+                ctrl.shapeGeometryChanged(el);
+            }).hook(() -> {
+                ctrl.shapeGeometryChanged(el);
+            });
+        });
 
         actions.action(Bundle.actionConvertToCurves())
                 .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_V, 0))
@@ -358,6 +396,32 @@ public class ShapeActions {
                         ctrl.shapeGeometryChanged(shape);
                         ctrl.pointCountMayBeChanged(shape);
                     });
+                });
+
+        actions.action(Bundle.actionConvertToPathText())
+                .sensitiveTo(ShapeElement.class).sensingPresence()
+                .sensitiveTo(ShapesCollection.class).sensingPresence()
+                .finish((shape, shapes) -> {
+                    DialogBuilder.forName("convertToShapes")
+                            .okCancel()
+                            .showMultiLineTextLineDialog("This text will wrap around the shape", 2, 512, txt -> {
+                                Customizer<Font> cus = Customizers.getCustomizer(Font.class, "font");
+                                DialogBuilder.<Font>forName("font").closeOnly()
+                                        .forContent(cus.getComponent())
+                                        .openDialog(comp -> {
+                                            return cus.get();
+                                        }, fnt -> {
+                                            shapes.edit(Bundle.opConvertToPathText(), shape, () -> {
+                                                PathText pt = new PathText(shape.item(), new StringWrapper(txt, 0, 0), FontWrapper.create(fnt));
+                                                shape.setShape(pt);
+                                                shape.setPaintingStyle(PaintingStyle.FILL);
+                                                ctrl.shapeGeometryChanged(shape);
+                                            }).hook(() -> {
+                                                ctrl.shapeGeometryChanged(shape);
+                                            });
+
+                                        });
+                            });
                 });
 
         actions.submenu(Bundle.submenuChangeControlPointType(), a -> {
@@ -479,7 +543,7 @@ public class ShapeActions {
                             if (allShapes.size() == 1) {
                                 ShapeElement only = allShapes.iterator().next();
                                 only.addToBounds(aggregateBounds);
-                                AffineTransform realXform = AffineTransform.getRotateInstance(degrees, aggregateBounds.getCenterX(), aggregateBounds.getCenterY());
+                                AffineTransform realXform = AffineTransform.getRotateInstance(rad, aggregateBounds.getCenterX(), aggregateBounds.getCenterY());
                                 shapes.edit(Bundle.actionRotate(only.getName(), degrees), only, () -> {
                                     only.applyTransform(realXform);
                                     ctrl.shapeGeometryChanged(only);
@@ -489,7 +553,7 @@ public class ShapeActions {
                                 for (ShapeElement el : allShapes) {
                                     el.addToBounds(aggregateBounds);
                                 }
-                                AffineTransform realXform = AffineTransform.getRotateInstance(degrees, aggregateBounds.getCenterX(), aggregateBounds.getCenterY());
+                                AffineTransform realXform = AffineTransform.getRotateInstance(rad, aggregateBounds.getCenterX(), aggregateBounds.getCenterY());
                                 shapes.geometryEdit(Bundle.actionRotateMultiple(degrees), () -> {
                                     for (ShapeElement el : allShapes) {
                                         el.applyTransform(realXform);
@@ -568,6 +632,57 @@ public class ShapeActions {
                     }
                 });
 
+        actions.action(Bundle.actionsSnapAllPointsToGrid())
+                .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0))
+                .sensitiveTo(ShapeElement.class)
+                .testingEach(el -> {
+                    // No grid, nothing to snap to
+                    if (!Grid.getInstance().isEnabled()) {
+                        return false;
+                    }
+                    Adjustable adj = el.item().as(Adjustable.class);
+                    if (adj == null) {
+                        return false;
+                    }
+                    if (!adj.hasReadOnlyControlPoints()) {
+                        int ct = adj.getControlPointCount();
+                        for (int i = 0; i < ct; i++) {
+                            if (!adj.isControlPointReadOnly(i)) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                }).sensitiveTo(ShapesCollection.class).sensingPresence()
+                .finishMultiple((items, colls) -> {
+                    ShapesCollection c = colls.iterator().next();
+                    Grid grid = Grid.getInstance();
+                    Set<ShapeElement> allChanged = new HashSet<>();
+                    c.geometryEdit(Bundle.opSnapAllPointsToGrid(), () -> {
+                        boolean[] changed = new boolean[1];
+                        for (ShapeElement entry : items) {
+                            ShapeControlPoint[] cps = entry.controlPoints(0, cp -> {
+                                changed[0] = true;
+                                allChanged.add(entry);
+                            });
+                            for (int i = 0; i < cps.length; i++) {
+                                ShapeControlPoint cp = cps[i];
+                                if (cp.isEditable()) {
+                                    Point2D pos = grid.nearestPointTo(cp.getX(), cp.getY());
+                                    cp.set(pos.getX(), pos.getY());
+                                }
+                            }
+                            if (changed[0]) {
+                                ctrl.shapeGeometryChanged(entry);
+                            }
+                        }
+                    }).hook(() -> {
+                        for (ShapeElement el : allChanged) {
+                            ctrl.shapeGeometryChanged(el);
+                        }
+                    });
+                });
+
         actions.action(Bundle.actionDuplicate())
                 .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0))
                 .sensitiveTo(ShapesCollection.class).sensingPresence()
@@ -630,6 +745,11 @@ public class ShapeActions {
                 .sensitiveTo(ShapeElement.class).sensingPresence()
                 .sensitiveTo(ShapesCollection.class).sensingPresence()
                 .finish(this::doDeleteShape);
+
+        actions.action("Debug Shape Info")
+                .separatorBefore()
+                .sensitiveTo(ShapeElement.class).sensingPresence()
+                .finish(this::shapeInfo);
     }
 
     private void doDeleteShape(ShapeElement element, ShapesCollection shapes) {
@@ -676,4 +796,115 @@ public class ShapeActions {
         return menu;
     }
 
+    public void shapeInfo(ShapeElement el) {
+        Shape shape = el.shape();
+        Shaped vect = el.item();
+        StringBuilder sb = new StringBuilder(ShapeNames.nameOf(vect) + "\n" + ShapeNames.infoString(vect));
+        Rectangle2D bds = shape.getBounds2D();
+        sb.append("\nBounds: ").append(bds.getX()).append(", ").append(bds.getY()).append(", ").append(bds.getWidth()).append(" x ").append(bds.getWidth()).append('\n');
+        double[] data = new double[6];
+        PathIterator pi = shape.getPathIterator(null);
+        int firstType = pi.currentSegment(data);
+        pi.next();
+        double[] firstPoint = new double[]{data[0], data[1]};
+        int secondType = pi.currentSegment(data);
+        double[] secondPoint = new double[]{data[0], data[1]};
+
+        Circle circ = new Circle(firstPoint[0], firstPoint[1],
+                Point2D.distance(firstPoint[0], firstPoint[1], secondPoint[0],
+                        secondPoint[1]));
+
+        sb.append('\n').append("Point 1 to 2 dist / radius: " + circ.radius()).append('\n');
+        sb.append('\n').append("Points:\n");
+        int ix = 2;
+        while (!pi.isDone()) {
+            sb.append(ix).append(". ");
+            int type = pi.currentSegment(data);
+            int pointCount;
+            switch (type) {
+                case SEG_CUBICTO:
+                    sb.append("Cubic ");
+                    pointCount = 3;
+                    break;
+                case SEG_CLOSE:
+                    sb.append("Close ");
+                    pointCount = 0;
+                    break;
+                case SEG_QUADTO:
+                    sb.append("Quad ");
+                    pointCount = 2;
+                    break;
+                case SEG_MOVETO:
+                    sb.append("Move ");
+                    pointCount = 1;
+                    break;
+                case SEG_LINETO:
+                    sb.append("Line ");
+                    pointCount = 1;
+                    break;
+                default:
+                    throw new AssertionError("Bogus point type " + type);
+            }
+            EqPointDouble lastMaster = new EqPointDouble(secondPoint[0], secondPoint[1]);
+            if (pointCount > 0) {
+                List<EqPointDouble> controlPoints = new ArrayList<>();
+                EqPointDouble master = new EqPointDouble();
+                for (int i = 0; i < pointCount; i++) {
+                    int offset = i * 2;
+                    if (i == pointCount - 1) {
+                        master.setLocation(data[offset], data[offset + 1]);
+                    } else {
+                        controlPoints.add(new EqPointDouble(data[offset], data[offset + 1]));
+                    }
+                }
+                double ang = circ.angleOf(master.getX(), master.getY());
+                double precAng = circ.angleOf(lastMaster.getX(), lastMaster.getY());
+
+                double distToFirst = Point2D.distance(firstPoint[0], firstPoint[1], master.x, master.y);
+                sb.append(master.x).append(", ").append(master.y)
+                        .append("\n angle ").append(ang).append('\u00b0')
+                        .append("\n dist to first point ").append(distToFirst);
+                sb.append("\n dist to preceding: ").append(Point2D.distance(lastMaster.x, lastMaster.y, master.x, master.y)).append('\n');
+                sb.append("\n angle diff from preceding: ").append(ang - precAng);
+
+                if (!controlPoints.isEmpty()) {
+                    for (int i = 0; i < controlPoints.size(); i++) {
+                        EqPointDouble cp = controlPoints.get(i);
+                        double distToMaster = Point2D.distance(master.getX(), master.getY(), cp.x, cp.y);
+                        Circle temp = new Circle(master.x, master.y, distToMaster);
+                        EqLine tangent = circ.tangent(ang, distToMaster);
+                        sb.append("\n\tCP ").append(i + 1).append(". ")
+                                .append(cp.x).append(", ").append(cp.y).append('\n');
+                        sb.append("\t\tdist to master: ").append(distToMaster)
+                                .append(" radius percentage ");
+                        double percentageOfRadius = 100 * (distToMaster / circ.radius());
+                        sb.append(percentageOfRadius).append('\n');
+
+                        double distToTangent1 = Point2D.distance(tangent.x1, tangent.y1, cp.x, cp.y);
+                        double distToTangent2 = Point2D.distance(tangent.x2, tangent.y2, cp.x, cp.y);
+
+                        int bestTangentPointIndex = distToTangent1 < distToTangent2 ? 0 : 1;
+                        EqPointDouble bestTangentPoint = new EqPointDouble(bestTangentPointIndex == 0 ? tangent.x1 : tangent.x2,
+                                bestTangentPointIndex == 0 ? tangent.y1 : tangent.y2);
+
+                        sb.append("\t\tNearest tangent point ").append(bestTangentPointIndex)
+                                .append(" at ").append(bestTangentPoint.x).append(bestTangentPoint.y)
+                                .append(" dist ").append(bestTangentPointIndex == 0
+                                ? distToTangent1 : distToTangent2).append('\n');
+                        sb.append("\t\tTangent angle ").append(temp.angleOf(bestTangentPoint.x, bestTangentPoint.y)).append('\n');
+                        sb.append("\t\tActual angle ").append(temp.angleOf(cp.x, cp.y));
+                        sb.append("\t\tAngle difference ").append(temp.angleOf(cp.x, cp.y) - temp.angleOf(bestTangentPoint.x, bestTangentPoint.y));
+                        sb.append('\n');
+                    }
+                }
+                lastMaster = master;
+            }
+            sb.append('\n');
+            pi.next();
+        }
+        DialogBuilder.forName("debug").nonModal()
+                .showMultiLineTextLineDialog(sb.toString(), ignored -> true, ign -> {
+                });
+
+    }
 }

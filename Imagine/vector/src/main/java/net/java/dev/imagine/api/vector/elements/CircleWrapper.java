@@ -53,6 +53,10 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
         this.fill = fill;
     }
 
+    public double cumulativeLength() {
+        return 2D * Math.PI * radius;
+    }
+
     @Override
     public Runnable restorableSnapshot() {
         double cx = centerX;

@@ -11,6 +11,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import net.java.dev.imagine.api.vector.Primitive;
+import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.elements.Arc;
 import net.java.dev.imagine.api.vector.elements.CircleWrapper;
 import net.java.dev.imagine.api.vector.elements.Clear;
@@ -19,6 +20,7 @@ import net.java.dev.imagine.api.vector.elements.Line;
 import net.java.dev.imagine.api.vector.elements.Oval;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper.PointVisitor;
+import net.java.dev.imagine.api.vector.elements.PathText;
 import net.java.dev.imagine.api.vector.elements.Polygon;
 import net.java.dev.imagine.api.vector.elements.Polyline;
 import net.java.dev.imagine.api.vector.elements.Rectangle;
@@ -56,12 +58,21 @@ public class VectorIO {
     private static final byte LINE = 12;
     private static final byte IMAGE = 13;
     private static final byte STROKE = 14;
+    private static final byte STRING = 15;
+    private static final byte FONT = 16;
+    private static final byte PATH_TEXT = 17;
 
     private HashInconsistencyBehavior hashInconsistencyBehavior
             = HashInconsistencyBehavior.defaultBehavior();
 
     private static byte typeIdFor(Primitive shaped) throws IOException {
-        if (shaped instanceof CircleWrapper) {
+        if (shaped instanceof StringWrapper) {
+            return STRING;
+        } else if (shaped instanceof FontWrapper) {
+            return FONT;
+        } else if (shaped instanceof PathText) {
+            return PATH_TEXT;
+        } else if (shaped instanceof CircleWrapper) {
             return CIRCLE;
         } else if (shaped instanceof Rectangle) {
             return RECTANGLE;
@@ -179,6 +190,15 @@ public class VectorIO {
             case STROKE:
                 result = readStroke(reader);
                 break;
+            case STRING :
+                result = readStringWrapper(reader);
+                break;
+            case FONT :
+                result = readFontWrapper(reader);
+                break;
+            case PATH_TEXT :
+                result = readPathText(reader);
+                break;
             default:
                 throw new AssertionError(type + " unknown ");
         }
@@ -231,6 +251,15 @@ public class VectorIO {
                 break;
             case STROKE:
                 writeStroke((BasicStrokeWrapper) shape, writer);
+                break;
+            case STRING :
+                writeStringWrapper((StringWrapper) shape, writer);
+                break;
+            case FONT :
+                writeFontWrapper((FontWrapper) shape, writer);
+                break;
+            case PATH_TEXT :
+                writePathText((PathText) shape, writer);
                 break;
             default:
                 throw new AssertionError(type + " " + shape);
@@ -346,18 +375,18 @@ public class VectorIO {
     }
 
     private void writePolygon(Polygon polygon, KeyWriter writer) {
-        writer.writeIntArray(polygon.xpoints);
-        writer.writeIntArray(polygon.ypoints);
+        writer.writeDoubleArray(polygon.xpoints);
+        writer.writeDoubleArray(polygon.ypoints);
     }
 
     private Polygon readPolygon(KeyReader r) throws IOException {
-        int[] xpoints = r.readIntArray();
-        int[] ypoints = r.readIntArray();
+        double[] xpoints = r.readDoubleArray();
+        double[] ypoints = r.readDoubleArray();
         if (xpoints.length != ypoints.length) {
             throw new IOException("Different xpoints and ypoints array lengths: "
                     + xpoints.length + " vs " + ypoints.length);
         }
-        return new Polygon(xpoints, ypoints, xpoints.length, false);
+        return new Polygon(xpoints, ypoints, false);
     }
 
     private void writePolyline(Polyline polyline, KeyWriter writer) {
@@ -379,6 +408,18 @@ public class VectorIO {
         writer.writeDouble(text.x());
         writer.writeDouble(text.y());
         writer.writeString(text.getText());
+        AffineTransform xf
+                = text.transform() == null || text.transform().isIdentity()
+                ? null
+                : text.transform();
+        if (xf == null) {
+            writer.writeDoubleArray(new double[0]);
+        } else {
+            double[] mx = new double[6];
+            xf.getMatrix(mx);
+            writer.writeDoubleArray(mx);
+        }
+
         FontWrapper fnt = text.font();
         writer.writeFloat(fnt.size);
         writer.writeInt(fnt.style);
@@ -395,7 +436,19 @@ public class VectorIO {
     private Text readText(KeyReader r) throws IOException {
         double x = r.readDouble();
         double y = r.readDouble();
+
+        // TRANSFORM!
         String text = r.readString();
+
+        double[] mx = r.readDoubleArray();
+        AffineTransform masterTransform = null;
+        if (mx.length == 6) {
+            masterTransform = new AffineTransform(mx);
+        } else if (mx.length != 0) {
+            throw new IOException("Wrong size for AffineTransform matrix "
+                    + "is " + mx.length + " should be 6");
+        }
+
         float size = r.readFloat();
         int style = r.readInt();
         switch (style) {
@@ -419,7 +472,7 @@ public class VectorIO {
         }
         StringWrapper string = new StringWrapper(text, x, y);
         FontWrapper font = FontWrapper.create(name, style, size, xform);
-        return new Text(string, font);
+        return new Text(string, font, masterTransform);
     }
 
     private void writePath(PathIteratorWrapper pathIteratorWrapper, KeyWriter writer) {
@@ -449,8 +502,13 @@ public class VectorIO {
     }
 
     private void writeImage(ImageWrapper imageWrapper, KeyWriter writer) {
-        writer.writeDouble(imageWrapper.x);
-        writer.writeDouble(imageWrapper.y);
+        AffineTransform xf = imageWrapper.xform;
+        double[] mx = xf == null ? new double[0] : new double[6];
+        if (imageWrapper.xform != null) {
+            imageWrapper.xform.getMatrix(mx);
+        }
+        writer.writeDoubleArray(mx);
+
         BufferedImage img = imageWrapper.img;
         writer.writeInt(img.getType());
         writer.writeInt(img.getWidth());
@@ -460,15 +518,15 @@ public class VectorIO {
     }
 
     private ImageWrapper readImage(KeyReader reader) throws IOException {
-        double x = reader.readDouble();
-        double y = reader.readDouble();
+        double[] mx = reader.readDoubleArray();
+        AffineTransform xform = mx.length == 0 ? null : new AffineTransform(mx);
         int type = reader.readInt();
         int w = reader.readInt();
         int h = reader.readInt();
         int[] pixels = reader.readIntArray();
         BufferedImage img = new BufferedImage(w, h, type);
         img.getRaster().setPixels(0, 0, w, h, pixels);
-        return new ImageWrapper(x, y, img);
+        return new ImageWrapper(img, xform);
     }
 
     private void writeStroke(BasicStrokeWrapper s, KeyWriter writer) {
@@ -490,5 +548,74 @@ public class VectorIO {
                 dashes.length == 0 ? null : dashes,
                 dashPhase, lineWidth,
                 endCap, lineJoin);
+    }
+
+    private void writeFontWrapper(FontWrapper font, KeyWriter writer) {
+        writer.writeString(font.getFontName());
+        writer.writeFloat(font.getFontSize());
+        writer.writeInt(font.getFontStyle());
+        writeAffineTransform(font.getTransform(), writer);
+    }
+
+    private void writePathText(PathText text, KeyWriter writer) throws IOException {
+        writeStringWrapper(text.text(), writer);
+        writeFontWrapper(text.font(), writer);
+        writeShape(text.shape(), writer);
+        writeAffineTransform(text.transform(), writer);
+    }
+
+    private PathText readPathText(KeyReader reader) throws IOException {
+        StringWrapper text = readStringWrapper(reader);
+        FontWrapper font = readFontWrapper(reader);
+        Shaped sh = readShape(reader).as(Shaped.class);
+        AffineTransform xf = readAffineTransform(reader, false);
+        return new PathText(sh, text, font, xf);
+    }
+
+    private FontWrapper readFontWrapper(KeyReader r) throws IOException {
+        String fontName = r.readString();
+        float size = r.readFloat();
+        int style = r.readInt();
+        AffineTransform xform = readAffineTransform(r, true);
+        return FontWrapper.create(fontName, style, size, xform);
+    }
+
+    private void writeStringWrapper(StringWrapper stringWrapper, KeyWriter writer) {
+        writer.writeDouble(stringWrapper.x);
+        writer.writeDouble(stringWrapper.y);
+        writer.writeString(stringWrapper.string);
+    }
+
+    private StringWrapper readStringWrapper(KeyReader r) throws IOException {
+        double x = r.readDouble();
+        double y = r.readDouble();
+        String txt = r.readString();
+        return new StringWrapper(txt, x, y);
+    }
+
+    private void writeAffineTransform(AffineTransform xform, KeyWriter writer) {
+        if (xform == null || xform.isIdentity()) {
+            writer.writeDoubleArray(new double[0]);
+            return;
+        }
+        double[] matrix = new double[6];
+        xform.getMatrix(matrix);
+        writer.writeDoubleArray(matrix);
+    }
+
+    private AffineTransform readAffineTransform(KeyReader reader) throws IOException {
+        return readAffineTransform(reader, false);
+    }
+
+    private AffineTransform readAffineTransform(KeyReader reader, boolean nonNull) throws IOException {
+        double[] dbl = reader.readDoubleArray();
+        if (dbl.length == 0) {
+            if (nonNull) {
+                return new AffineTransform();
+            } else {
+                return null;
+            }
+        }
+        return new AffineTransform(dbl);
     }
 }

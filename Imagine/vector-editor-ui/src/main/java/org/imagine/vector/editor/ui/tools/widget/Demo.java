@@ -8,6 +8,8 @@ import java.awt.Cursor;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.awt.image.BufferedImage;
@@ -30,8 +32,11 @@ import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import net.java.dev.imagine.api.vector.elements.CircleWrapper;
 import net.java.dev.imagine.api.vector.elements.ImageWrapper;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
+import net.java.dev.imagine.api.vector.elements.PathText;
+import net.java.dev.imagine.api.vector.elements.StringWrapper;
 import net.java.dev.imagine.api.vector.elements.Text;
 import net.java.dev.imagine.api.vector.elements.TriangleWrapper;
+import net.java.dev.imagine.api.vector.graphics.FontWrapper;
 import net.java.dev.imagine.ui.toolbar.GridEditor;
 import net.java.dev.imagine.ui.toolbar.SnapEditor;
 import org.imagine.editor.api.PaintingStyle;
@@ -113,7 +118,9 @@ public class Demo {
     }
 
     public static void main(String[] args) {
-        System.setProperty("sun.java2d.opengl", "true");
+//        System.setProperty("sun.java2d.opengl", "true");
+        System.setProperty("swing.aatext", "true");
+        System.setProperty("awt.useSystemAAFontSettings", "lcd_hrgb");
 
         InMemoryPaintPaletteBackend paintPaletteBackend
                 = new InMemoryPaintPaletteBackend().setAsDefault();
@@ -135,9 +142,26 @@ public class Demo {
         Shapes shapes = new Shapes();
         RepaintProxyShapes proxy = new RepaintProxyShapes(shapes, rep);
         BasicStroke strk = new BasicStroke(8);
-        proxy.add(new net.java.dev.imagine.api.vector.elements.Rectangle(
-                0, 0, 20, 20, true), Color.BLACK, Color.RED,
-                strk, true, true);
+
+        Path2D.Double p2 = new Path2D.Double();
+        p2.moveTo(10, 100);
+        p2.curveTo(200, 600, 200, 0, 400, 500);
+        p2.curveTo(500, 800, 500, 600, 10, 700);
+        p2.curveTo(-100, 1200, 400, 800, 400, 1000);
+
+        Shape s2 = AffineTransform.getScaleInstance(0.25, 0.25).createTransformedShape(p2);
+
+        PathText txt = new PathText(
+                //                new CircleWrapper(200, 200, 200),
+                //                new CircleWrapper(200, 200, 200),
+                new PathIteratorWrapper(s2),
+                new StringWrapper("Hello World, how about path text?", 0, 0), FontWrapper.create(
+                        "Times New Roman", 30F, Font.BOLD));
+
+        proxy.add(txt, new Color(140, 140, 240), Color.RED,
+                new BasicStroke(0.5f), PaintingStyle.FILL);
+//        proxy.add(new PathIteratorWrapper(new PieWedge(200, 200, 200, 0, 110)), new Color(140, 140, 240), Color.RED,
+//                strk, true, true);
         proxy.add(randomImage(), Color.BLACK, Color.RED,
                 strk, true, true);
 

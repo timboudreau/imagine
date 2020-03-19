@@ -3,6 +3,7 @@ package net.java.dev.imagine.api.vector.design;
 import java.awt.geom.Point2D;
 import java.util.Arrays;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
+import org.imagine.geometry.Angle;
 import org.imagine.geometry.Circle;
 import org.openide.util.NbBundle.Messages;
 
@@ -179,7 +180,7 @@ public enum ControlPointKind {
                         double ctrlY = pts[(index * 2) - 1];
                         double dist = Point2D.distance(x, y, ctrlX, ctrlY);
                         Circle c = new Circle(x, y, dist);
-                        double[] opp = c.positionOf(Circle.opposite(c.angleOf(ctrlX, ctrlY)));
+                        double[] opp = c.positionOf(Angle.opposite(c.angleOf(ctrlX, ctrlY)));
                         path.setToCurveTo(index, ctrlX, ctrlY, opp[0], opp[1], x, y);
                         return true;
                     case LINE_TO_DESTINATION:
@@ -197,7 +198,7 @@ public enum ControlPointKind {
                     // should not happen
                     return false;
                 }
-                // Find the angle of a line from the current point to
+                // Find the ofLine of a line from the current point to
                 // the non-control point immediately preceding this one,
                 // and compute the position of the half-way point along
                 // that line from this one
@@ -281,9 +282,9 @@ public enum ControlPointKind {
                 path.addQuadTo(pointA[0], pointA[1], near.getX(), near.getY(), true);
                 return true;
             }
-            // fallthrough is cubic - take a point opposite angle
+            // fallthrough is cubic - take a point opposite ofLine
             // half the distance
-            double opp = Circle.opposite(ang);
+            double opp = Angle.opposite(ang);
             double[] pointB = circ.positionOf(opp, halfDist);
             path.addCubicTo(pointA[0], pointA[1], pointB[0], pointB[1], near.getX(), near.getY(), true);
             return true;

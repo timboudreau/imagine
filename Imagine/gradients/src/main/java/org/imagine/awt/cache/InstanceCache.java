@@ -19,19 +19,22 @@ import java.util.function.Function;
 import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.imagine.awt.counters.UsageCounter;
 
 /**
  * A generic cache for objects of type P which can be wrappered or replaced with
- * objects of supertype B, keyed by key type K, with a LRU eviction policy.
- * So, for example with Paint instances, you look up with a Paint and get back
- * something which may or may not be the same instance.  Also supports tracking
+ * objects of supertype B, keyed by key type K, with a LRU eviction policy. So,
+ * for example with Paint instances, you look up with a Paint and get back
+ * something which may or may not be the same instance. Also supports tracking
  * and collecting stats on wrapped objects.
  *
  * @author Tim Boudreau
  */
 final class InstanceCache<B, P extends B, K> {
 
+    private static final Logger LOG = Logger.getLogger(InstanceCache.class.getName());
     private static long DEFAULT_PAINT_EXPIRE_DELAY = 60000;
     private final Map<K, UsageCounter> counterCache
             = new ConcurrentHashMap<>();
@@ -107,16 +110,15 @@ final class InstanceCache<B, P extends B, K> {
     private static int TICK_PERIOD = 32000;
 
     private void periodicCheck(int tick) {
-        if (tick++ % TICK_PERIOD == 0) {
-            System.out.println("---------------- " + tick + " -----------------");
+        if (tick++ % TICK_PERIOD == 0 && tick > 1) {
+            LOG.log(Level.INFO, "---------------- tick {0} -----------------", tick);
             int sz = size();
-            System.out.println("Cache size:\t" + sz);
-            System.out.println("Contents:");
+            LOG.log(Level.INFO, "Cache size:\t{0}", sz);
+            LOG.log(Level.INFO, "Contents:");
             List<CacheEntry<K, B>> entries = new ArrayList<>(cache.values());
             for (CacheEntry<K, B> e : entries) {
-                System.out.println("  " + e.key() + " " + e.counter());
+                LOG.log(Level.INFO, "{0} {1}", new Object[]{e.key(), e.counter()});
             }
-            System.out.println("\n");
         }
     }
 
@@ -156,7 +158,8 @@ final class InstanceCache<B, P extends B, K> {
     }
 
     private void onExpire(CacheEntry<K, B> entry, UsageCounter counter) {
-        System.out.println("EXPIRED " + entry.key() + " with " + counter);
+        LOG.log(Level.FINE, "Expired {0} with {1}",
+                new Object[]{entry.key(), counter});
         onExpire.accept(entry.key(), counter);
     }
 
@@ -164,7 +167,7 @@ final class InstanceCache<B, P extends B, K> {
 
         @Override
         public void run() {
-            System.out.println("Expire thread started");
+            LOG.log(Level.FINE, "Expire thread started");
             Thread.currentThread().setName("Paint cache expirer");
             for (;;) {
                 try {

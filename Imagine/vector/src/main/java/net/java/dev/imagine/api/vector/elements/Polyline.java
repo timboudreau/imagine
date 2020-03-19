@@ -21,6 +21,8 @@ import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
+import org.imagine.geometry.EnhancedShape;
+import org.imagine.geometry.Polygon2D;
 
 /**
  * Represents a polyline that can be painted to a graphics context
@@ -129,6 +131,19 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
     @Override
     public int getControlPointCount() {
         return npoints;
+    }
+
+    @Override
+    public double cumulativeLength() {
+        double result = 0;
+        for (int i = 1; i < npoints; i++) {
+            double xp = xpoints[i - 1];
+            double yp = ypoints[i - 1];
+            double x = xpoints[i];
+            double y = ypoints[i];
+            result += Point2D.distance(xp, yp, x, y);
+        }
+        return result;
     }
 
     @Override
@@ -249,6 +264,22 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
                 ypoints[i] += offy;
             }
         }
+    }
+
+    @Override
+    public <T> T as(Class<T> type) {
+        if (EnhancedShape.class == type) {
+            return type.cast(new Polygon2D(xpoints, ypoints, npoints));
+        }
+        return Strokable.super.as(type); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean is(Class<?> type) {
+        if (EnhancedShape.class == type) {
+            return true;
+        }
+        return Strokable.super.is(type);
     }
 
     @Override

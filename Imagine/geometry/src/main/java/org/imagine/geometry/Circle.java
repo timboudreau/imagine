@@ -25,6 +25,8 @@
  */
 package org.imagine.geometry;
 
+import com.mastfrog.function.DoubleBiConsumer;
+import com.mastfrog.function.DoubleBiPredicate;
 import com.mastfrog.function.DoubleQuadConsumer;
 import java.awt.Rectangle;
 import java.awt.Shape;
@@ -37,20 +39,23 @@ import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import org.imagine.geometry.util.GeometryUtils;
+import static org.imagine.geometry.util.GeometryUtils.toInt;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class Circle implements Shape {
+public class Circle implements Shape, Sector {
 
     double centerX;
     double centerY;
     double radius = 10D;
+    double factor = 1D;
     private double rotation;
 
     public Circle() {
-        this(new Point2D.Double());
+        this(0, 0);
     }
 
     public Circle(Point2D center) {
@@ -70,13 +75,102 @@ public class Circle implements Shape {
     public Circle(double centerX, double centerY, double radius) {
         this.centerX = centerX;
         this.centerY = centerY;
-        this.radius = radius;
+        this.radius = Math.abs(radius);
+    }
+
+    @Override
+    public Circle toShape(double x, double y, double radius) {
+        if (x == centerX && y == centerY && radius == this.radius) {
+            return this;
+        }
+        Circle circ = new Circle(x, y, radius);
+        circ.factor = factor;
+        circ.rotation = rotation;
+        return circ;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 29 * hash + (int) (Double.doubleToLongBits(this.centerX) ^ (Double.doubleToLongBits(this.centerX) >>> 32));
+        hash = 29 * hash + (int) (Double.doubleToLongBits(this.centerY) ^ (Double.doubleToLongBits(this.centerY) >>> 32));
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Circle other = (Circle) obj;
+        if (Double.doubleToLongBits(this.centerX) != Double.doubleToLongBits(other.centerX)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(this.centerY) != Double.doubleToLongBits(other.centerY)) {
+            return false;
+        }
+        return true;
     }
 
     public void setCenterAndRadius(double centerX, double centerY, double radius) {
-        this.centerX = centerX;
-        this.centerY = centerY;
-        this.radius = radius;
+        this.centerX = centerX + 0.0; // avoid -0.0
+        this.centerY = centerY + 0.0;
+        this.radius = Math.abs(radius);
+    }
+
+    @Override
+    public double start() {
+        return rotation;
+    }
+
+    @Override
+    public double extent() {
+        return factor == 1 ? 360 : 360 * factor;
+    }
+
+    @Override
+    public boolean isSameSector(Sector other) {
+        return other.extent() == 360;
+    }
+
+    @Override
+    public boolean contains(Sector sector) {
+        return true;
+    }
+
+    @Override
+    public boolean contains(double degrees) {
+        if (factor == 1) {
+            return true;
+        }
+        return Sector.super.contains(degrees);
+    }
+
+    @Override
+    public Circle rotatedBy(double degrees) {
+        if (degrees == 0.0 || degrees == -0.0) {
+            return this;
+        }
+        Circle nue = new Circle(centerX, centerY, radius);
+        nue.factor = this.factor;
+        nue.rotation = Angle.normalize(rotation + degrees);
+        return nue;
+    }
+
+    @Override
+    public PieWedge[] subdivide(int by) {
+        Sector[] sects = Sector.super.subdivide(by);
+        PieWedge[] w = new PieWedge[sects.length];
+        for (int i = 0; i < sects.length; i++) {
+            w[i] = new PieWedge(centerX, centerY, radius, sects[i].start(), sects[i].extent(), true);
+        }
+        return w;
     }
 
     public void applyTransform(AffineTransform xform) {
@@ -96,6 +190,19 @@ public class Circle implements Shape {
     }
 
     /**
+     * Get the rotation of this angle (skews results of positionOf, etc.).
+     *
+     * @return The rotation
+     */
+    public double rotation() {
+        return rotation;
+    }
+
+    public Angle getRotation() {
+        return Angle.ofDegrees(rotation);
+    }
+
+    /**
      * Create a circle which entirely contains the passed rectangle.
      *
      * @param rect
@@ -106,6 +213,12 @@ public class Circle implements Shape {
         return new Circle(rect.getCenterX(), rect.getCenterY(), dist / 2D);
     }
 
+    /**
+     * Determine if this circle overlaps another.
+     *
+     * @param other Another circle
+     * @return True if they overlap
+     */
     public boolean overlaps(Circle other) {
         if (other == this || other.centerX == centerX && other.centerY == centerY) {
             return true;
@@ -116,46 +229,41 @@ public class Circle implements Shape {
 
     /*
     public double areaOfOverlap(Circle other) {
-        // Some optimizations - overlap with self is always area
-        if (other == this || other.equals(this)) {
-            return area();
-        }
-        // If either is fully contained in the other, return the smaller
-        // of them's radius
-        if (contains(other.centerX, other.centerY)) {
-            // This one fully contains that one
-            if (distanceToRadius(other.centerX, other.centerY) > other.radius) {
-                return other.area();
-            }
-        } else if (other.contains(centerX, centerY)) {
-            // That one fully contains this one
-            if (other.distanceToRadius(centerX, centerY) > radius) {
-                return area();
-            }
-            // If the bounding boxes do not overlap, the circles cannot either
-        } else if (!this.getBounds2D().intersects(other.getBounds2D())) {
-            return 0;
-        }
-        double d = Point2D.distance(centerX, centerY, other.centerX, other.centerY);
-//        double a1 = Math.acos((d2 + r12 - r22) / (2 * d * r1));
-//        double a2 = Math.acos((d2 + r22 - r12) / (2 * d * r2));
-        double ang1 = Math.acos((Math.pow(d, 2D) + Math.pow(radius, 2D) - Math.pow(other.radius, 2) / (2D * d * radius)));
-        double ang2 = Math.acos((Math.pow(d, 2D) + Math.pow(other.radius, 2D) - Math.pow(radius, 2) / (2D * d * other.radius)));
-        // FINISHME:
-        // http://www.ambrsoft.com/TrigoCalc/Circles2/circle2intersection/CircleCircleIntersection.htm
+    // Some optimizations - overlap with self is always area
+    if (other == this || other.equals(this)) {
+    return area();
+    }
+    // If either is fully contained in the other, return the smaller
+    // of them's radius
+    if (contains(other.centerX, other.centerY)) {
+    // This one fully contains that one
+    if (distanceToRadius(other.centerX, other.centerY) > other.radius) {
+    return other.area();
+    }
+    } else if (other.contains(centerX, centerY)) {
+    // That one fully contains this one
+    if (other.distanceToRadius(centerX, centerY) > radius) {
+    return area();
+    }
+    // If the bounding boxes do not overlap, the circles cannot either
+    } else if (!this.getBounds2D().intersects(other.getBounds2D())) {
+    return 0;
+    }
+    double d = Point2D.distance(centerX, centerY, other.centerX, other.centerY);
+    //        double a1 = Math.acos((d2 + r12 - r22) / (2 * d * r1));
+    //        double a2 = Math.acos((d2 + r22 - r12) / (2 * d * r2));
+    double ang1 = Math.acos((Math.pow(d, 2D) + Math.pow(radius, 2D) - Math.pow(other.radius, 2) / (2D * d * radius)));
+    double ang2 = Math.acos((Math.pow(d, 2D) + Math.pow(other.radius, 2D) - Math.pow(radius, 2) / (2D * d * other.radius)));
+    // FINISHME:
+    // http://www.ambrsoft.com/TrigoCalc/Circles2/circle2intersection/CircleCircleIntersection.htm
     }
      */
-    public static double angleBetween(double angleA, double angleB) {
-        if (angleA == angleB) {
-            return angleA;
-        }
-        angleA = Quadrant.normalize(angleA);
-        angleB = Quadrant.normalize(angleB);
-        double a = Math.min(angleA, angleB);
-        double b = Math.max(angleA, angleB);
-        return a + ((b - a) / 2D);
-    }
-
+    /**
+     * Get a circle centered on the center of one quadrant of this one.
+     *
+     * @param quadrant The quadrant
+     * @return
+     */
     public Circle quadrantCircle(Quadrant quadrant) {
         double halfRadius = radius / 2D;
         double[] center = positionOf(quadrant.center(), halfRadius);
@@ -174,67 +282,17 @@ public class Circle implements Shape {
         return result;
     }
 
+    /**
+     * Get the distance of a point to the edge of this circle (will be negative
+     * for points outside the circle).
+     *
+     * @param x x coord
+     * @param y y coord
+     * @return the distance
+     */
     public double distanceToRadius(double x, double y) {
         double toCenter = distanceToCenter(x, y);
         return radius - toCenter;
-    }
-
-    public static double perpendicularClockwise(double angle) {
-        if (!Double.isFinite(angle)) {
-            return angle;
-        }
-        if (angle < 0) {
-            angle = 360D + angle;
-        }
-        if (angle > 360) {
-            angle = 360D % angle;
-        }
-        if (angle + 90D > 360) {
-            return (angle + 90D) - 360;
-        } else {
-            return angle + 90D;
-        }
-    }
-
-    public static double perpendicularCounterclockwise(double angle) {
-        if (!Double.isFinite(angle)) {
-            return angle;
-        }
-        if (angle < 0) {
-            angle = 360D + angle;
-        }
-        if (angle > 360) {
-            angle = 360D % angle;
-        }
-        if (angle - 90D < 0) {
-            return 360D + (angle - 90D);
-        } else {
-            return angle - 90D;
-        }
-    }
-
-    public static double opposite(double angle) {
-        if (!Double.isFinite(angle)) {
-            return angle;
-        }
-        if (angle < 0) {
-            angle = 360D + angle;
-        }
-        if (angle > 360) {
-            angle = 360D % angle;
-        }
-        if (angle == 0D) {
-            return 180D;
-        } else if (angle == 180D) {
-            return 0;
-        } else if (angle == 90D) {
-            return 270D;
-        }
-        if (angle > 180D) {
-            return angle - 180D;
-        } else {
-            return angle + 180D;
-        }
     }
 
     public Circle scale(double by) {
@@ -271,42 +329,39 @@ public class Circle implements Shape {
     }
 
     public Circle setCenter(double x, double y) {
-        this.centerX = x;
-        this.centerY = y;
+        this.centerX = x + 0.0; // avoid -0.0
+        this.centerY = y + 0.0;
         return this;
     }
 
     public Circle setRadius(double radius) {
-        this.radius = radius;
+        this.radius = Math.abs(radius);
         return this;
     }
 
     public Circle setRotation(double angle) {
-        this.rotation = angle;
+        this.rotation = Angle.normalize(angle);
         return this;
     }
 
-    /**
-     * THe angle of a line through the two passed points, if the center is an
-     * equidistant point and we take the angle of the second point.
-     *
-     * @param x1 x1
-     * @param y1 y1
-     * @param x2 x2
-     * @param y2 y2
-     * @return an angle
-     */
-    public static double angle(double x1, double y1, double x2, double y2) {
-        double[] db = equidistantPoint(x1, y1, x2, y2);
-        double result = Math.round(new Circle(db[0], db[1]).angleOf(x2, y2) - 180);
-        if (result < 0) {
-            result += 360;
-        }
-        return result;
+    public Circle setRotation(Angle angle) {
+        return setRotation(angle.degrees());
     }
 
-    public static double[] equidistantPoint(double x1, double y1, double x2, double y2) {
-        return new double[]{(x1 + x2) / 2D, (y1 + y2) / 2D};
+    public Circle rotateTo(double x, double y) {
+        return setRotation(angleOf(x, y));
+    }
+
+    public Angle getAngle(double x, double y) {
+        return Angle.ofDegrees(angleOf(x, y));
+    }
+
+    public Angle getAngle(Point2D p) {
+        return getAngle(p.getX(), p.getY());
+    }
+
+    public double angleOf(Point2D p) {
+        return angleOf(p.getX(), p.getY());
     }
 
     public double angleOf(double x, double y) {
@@ -314,13 +369,8 @@ public class Circle implements Shape {
         return angle;
     }
 
-    public Quadrant quadrantOf(double angle) {
-        return Quadrant.forAngle(angle);
-    }
-
     public Quadrant quadrantOf(double x, double y) {
-        double angle = angleOf(x, y);
-        return quadrantOf(angle);
+        return Quadrant.forAngle(angleOf(x, y));
     }
 
     public double distanceToCenter(double x, double y) {
@@ -329,8 +379,6 @@ public class Circle implements Shape {
         double len = Math.sqrt((distX * distX) + (distY * distY));
         return len;
     }
-
-    double factor = 1D;
 
     void setUsablePercentage(double factor) {
         this.factor = Math.max(0.001D, Math.min(1D, factor));
@@ -346,10 +394,25 @@ public class Circle implements Shape {
         return result;
     }
 
-    /*
+    /**
+     * Get the position of an angle (in degrees) on the radius of this circle.
+     *
+     * @param angle The angle, in degrees
+     * @param c A consumer
+     */
     public void positionOf(double angle, DoubleBiConsumer c) {
         positionOf(angle, this.radius, c);
     }
+
+    /**
+     * Fetch the position of an angle (in degrees) on the radius of this circle
+     * into the passed array at the requested offset.
+     *
+     * @param angle The angle, in degrees
+     * @param radius The radius
+     * @param offset The offset into the array
+     * @param into The array
+     * @return the passed array
      */
     public double[] positionOf(double angle, double radius, int offset, double[] into) {
         angle -= 90D;
@@ -360,9 +423,15 @@ public class Circle implements Shape {
         return into;
     }
 
-    public Point2D getPosition(double angle) {
+    /**
+     * Get the position of an angle (in degrees) on the radius of this circle.
+     *
+     * @param angle The angl3, in degrees
+     * @return A point
+     */
+    public EqPointDouble getPosition(double angle) {
         double[] d = positionOf(angle);
-        return new Point2D.Double(d[0], d[1]);
+        return new EqPointDouble(d[0], d[1]);
     }
 
     public double[] positionOf(double angle, double radius, double[] into) {
@@ -374,7 +443,6 @@ public class Circle implements Shape {
         return into;
     }
 
-    /*
     public void positionOf(double angle, double radius, DoubleBiConsumer into) {
         angle -= 90D;
         angle += rotation;
@@ -383,6 +451,15 @@ public class Circle implements Shape {
         double y = radius * sin(angle) + centerY;
         into.accept(x, y);
     }
+
+    /**
+     * Pass the passed consumer a series of points along the radius of this
+     * circle.
+     *
+     * @param count The number of times to subdivide the circumference and call
+     * the consumer
+     * @param c A consumer
+     */
     public void positions(int count, DoubleBiConsumer c) {
         if (count == 0) {
             return;
@@ -395,15 +472,23 @@ public class Circle implements Shape {
         }
     }
 
-    public boolean testPositions(int count, DoubleBiPredicate c) {
+    /**
+     * Pass the passed predicate a series of points along the radius of this
+     * circle, stopping when it returns false.
+     *
+     * @param count The number of times to subdivide the circumference and call
+     * the consumer
+     * @param tester A predicate
+     */
+    public boolean testPositions(int count, DoubleBiPredicate tester) {
         if (count == 0) {
             return true;
         }
         final double stepSize = (360D / count) * factor;
-        if (c.test(centerX, centerY - radius)) {
+        if (tester.test(centerX, centerY - radius)) {
             for (int i = 1; i < count; i++) {
                 double ang = ((((double) i) * stepSize) - rotation) % 360;
-                if (!c.test(centerX + radius * Math.cos(ang), centerY + radius * Math.sin(ang))) {
+                if (!tester.test(centerX + radius * Math.cos(ang), centerY + radius * Math.sin(ang))) {
                     return false;
                 }
             }
@@ -412,18 +497,36 @@ public class Circle implements Shape {
         }
         return true;
     }
+
+    /**
+     * Get an iterator of positions along the circumference, one for each
+     * integer coordinate pair along it.
+     *
+     * @return An iterator
      */
     public Iterator<double[]> positions() {
         return positions((int) Math.floor(circumference()));
     }
 
+    /**
+     * Get an iterator of positions along the circumference.
+     *
+     * @return The number of times to subdivide the circumference
+     * @return An iterator
+     */
     public Iterator<double[]> positions(final int count) {
         return new It(count);
     }
 
-    void translate(double x, double y) {
-        centerX += x;
-        centerY += y;
+    /**
+     * Shift this circle by the passed delta coordinates.
+     *
+     * @param deltaX The x delta
+     * @param deltaY The y delta
+     */
+    public void translate(double deltaX, double deltaY) {
+        centerX += deltaX;
+        centerY += deltaY;
     }
 
     class It implements Iterator<double[]> {
@@ -450,10 +553,6 @@ public class Circle implements Shape {
 
     public Iterable<double[]> iterable(final int count) {
         return () -> positions(count);
-    }
-
-    private static int toInt(double val, boolean biasUp) {
-        return (int) (biasUp ? Math.ceil(val) : Math.floor(val));
     }
 
     public void getBounds(Rectangle into) {
@@ -696,6 +795,7 @@ public class Circle implements Shape {
     }
 
     static class PointsPI implements PathIterator {
+
         private final double centerX;
         private final double centerY;
         private final AffineTransform affine;
@@ -932,6 +1032,12 @@ public class Circle implements Shape {
         return c.line(angle - 90);
     }
 
+    public EqLine tangent(double angle, double length) {
+        double[] tangentCenter = positionOf(angle);
+        Circle c = new Circle(tangentCenter[0], tangentCenter[1], length);
+        return c.line(angle - 90, length);
+    }
+
     /**
      * Scan all lines which intersect this circle at the passed angle, with step
      * positions between them, starting at the tangent line to the passed angle
@@ -951,7 +1057,7 @@ public class Circle implements Shape {
         // Get a line which is at a tangent to the angle
         Line2D.Double line = tangent(angle);
         // Get its quadrant
-        Quadrant angleQuadrant = quadrantOf(angle);
+        Quadrant angleQuadrant = Quadrant.forAngle(angle);
 
         // With a circle of radius 1, we can get x/y multipliers
         // for the step, so we produce evenly-spaced lines at all
@@ -975,7 +1081,7 @@ public class Circle implements Shape {
         line.x2 += xStep;
         line.y2 += yStep;
 
-        assert line.getP1().distance(line.getP2()) < (radius * 2 + 1) : "Bogus line " + l2s(line);
+        assert line.getP1().distance(line.getP2()) < (radius * 2 + 1) : "Bogus line " + GeometryUtils.lineToString(line.x1, line.y1, line.x2, line.y2);
         //Line2D.Double lastIsect = null;
         Line2D.Double lisect;
         int count = 0;

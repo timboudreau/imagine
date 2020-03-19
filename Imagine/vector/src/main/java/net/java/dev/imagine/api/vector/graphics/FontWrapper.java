@@ -16,6 +16,7 @@ import java.util.Objects;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Transformable;
+import org.imagine.utils.java2d.GraphicsUtils;
 
 /**
  * Sets the Font of a Graphics2D
@@ -131,11 +132,6 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
     }
 
     public static AffineTransform removeTranslation(AffineTransform xform) {
-//        double[] pts = new double[]{0, 0};
-//        xform.transform(pts, 0, pts, 0, 1);
-//        AffineTransform nue = new AffineTransform(xform);
-//        nue.preConcatenate(AffineTransform.getTranslateInstance(-pts[0], -pts[1]));
-//        return nue;
         double x = xform.getTranslateX();
         double y = xform.getTranslateY();
         AffineTransform nue = new AffineTransform(xform);
@@ -244,20 +240,8 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
             return false;
         } else if (!name.equals(other.name)) {
             return false;
-        } else if (transform == null && other.transform != null) {
-            if (!other.transform.isIdentity()) {
-                return false;
-            }
-        } else if (transform != null && other.transform == null) {
-            if (!transform.isIdentity()) {
-                return false;
-            }
-        } else if (transform != null && other.transform != null) {
-            if (!other.transform.equals(transform)) {
-                return false;
-            }
         }
-        return true;
+        return GraphicsUtils.transformsEqual(transform, other.transform);
     }
 
     @Override
@@ -266,11 +250,7 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
         hash = 97 * hash + Objects.hashCode(this.name);
         hash = 97 * hash + Float.floatToIntBits(this.size);
         hash = 97 * hash + this.style;
-        if (this.transform != null && !this.transform.isIdentity()) {
-            double[] mx = new double[6];
-            transform.getMatrix(mx);
-            hash = 97 * hash + Arrays.hashCode(mx);
-        }
+        hash = 97 * hash + GraphicsUtils.transformHashCode(transform);
         return hash;
     }
 }

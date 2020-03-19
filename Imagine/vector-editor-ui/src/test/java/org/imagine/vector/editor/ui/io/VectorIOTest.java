@@ -21,8 +21,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Shaped;
@@ -30,13 +32,16 @@ import net.java.dev.imagine.api.vector.elements.CircleWrapper;
 import net.java.dev.imagine.api.vector.elements.Line;
 import net.java.dev.imagine.api.vector.elements.Oval;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
+import net.java.dev.imagine.api.vector.elements.PathText;
 import net.java.dev.imagine.api.vector.elements.Polygon;
 import net.java.dev.imagine.api.vector.elements.Polyline;
 import net.java.dev.imagine.api.vector.elements.Rectangle;
 import net.java.dev.imagine.api.vector.elements.RoundRect;
+import net.java.dev.imagine.api.vector.elements.StringWrapper;
 import net.java.dev.imagine.api.vector.elements.Text;
 import net.java.dev.imagine.api.vector.elements.TriangleWrapper;
 import net.java.dev.imagine.api.vector.graphics.BasicStrokeWrapper;
+import net.java.dev.imagine.api.vector.graphics.FontWrapper;
 import org.imagine.awt.key.PaintKey;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.io.KeyBinaryReader;
@@ -46,6 +51,7 @@ import org.imagine.io.KeyStringWriter;
 import static org.imagine.io.KeyStringWriter.MAGIC_1;
 import static org.imagine.io.KeyStringWriter.MAGIC_2;
 import org.imagine.vector.editor.ui.Shapes;
+import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -163,10 +169,17 @@ public class VectorIOTest {
 
     @Test
     public void testString() throws IOException {
-        VectorIO io = new VectorIO().setHashInconsistencyBehavior(HashInconsistencyBehavior.THROW);
+        VectorIO io = new VectorIO().setHashInconsistencyBehavior(HashInconsistencyBehavior.WARN);
         StringBuilder sb = new StringBuilder();
         KeyStringWriter w = new KeyStringWriter(sb);
-        for (Primitive p : primitives) {
+        int textIndex = 0;
+        Text txt = null;
+        for (int i = 0; i < primitives.length; i++) {
+            Primitive p = primitives[i];
+            if (p instanceof Text) {
+                textIndex = i;
+                txt = (Text) p;
+            }
             io.writeShape(p, w);
         }
         w.finishRecord();
@@ -177,9 +190,18 @@ public class VectorIOTest {
         byte m2 = r.readByte();
         assertEquals(MAGIC_1, m1);
         assertEquals(MAGIC_2, m2);
+        int item = 0;
         while (r.cursor() < sb.length()) {
             Primitive p = io.readShape(r);
+            if (item == textIndex) {
+                System.out.println("ORIG TEXT: " + txt);
+                System.out.println("GOT  TEXT: " + p);
+            }
             all.add(p);
+            assertEquals(primitives[item], p);
+            assertEquals(primitives[item].hashCode(), p.hashCode(),
+                    " hash codes do not match: " + primitives[item] + " and " + p);
+            item++;
         }
         assertEquals(primitives.length, all.size());
     }
@@ -204,7 +226,18 @@ public class VectorIOTest {
             assertNotEquals(0, size, "Size recorded in record is zero");
             Shapes nue = Shapes.load(r);
             assertEquals(primitives.length, shapes.size());
-            assertEquals(shapes, nue);
+            Set<ShapeElement> l = new HashSet<>(shapes.size());
+            Set<ShapeElement> got = new HashSet<>(l.size());
+            for (ShapeElement e : nue) {
+                got.add(e);
+                all.add(e.item());
+            }
+            for (ShapeElement e : shapes) {
+                l.add(e);
+            }
+
+            assertEquals(l, got);
+            assertEquals(Arrays.asList(primitives), all);
         });
     }
 
@@ -221,7 +254,17 @@ public class VectorIOTest {
         r.readMagic();
         Shapes nue = Shapes.load(r);
         assertEquals(primitives.length, shapes.size());
-        assertEquals(shapes, nue);
+        List<Primitive> all = new ArrayList<>();
+//        assertEquals(shapes, nue);
+        Set<ShapeElement> l = new HashSet<>(shapes.size());
+        Set<ShapeElement> got = new HashSet<>(l.size());
+        for (ShapeElement e : nue) {
+            got.add(e);
+            all.add(e.item());
+        }
+        for (ShapeElement e : shapes) {
+            l.add(e);
+        }
 
         System.out.println("SHAPES: " + sb);
     }
@@ -260,7 +303,9 @@ public class VectorIOTest {
             new Text("Hello world", new Font("Times New Roman", Font.PLAIN, 17)
             .deriveFont(AffineTransform.getRotateInstance(Math.toRadians(30))),
             17.3, 17.5),
-            new PathIteratorWrapper(path)
+            new PathIteratorWrapper(path),
+            new PathText(new PathIteratorWrapper(path), new StringWrapper("Foober", 7, 3.3), FontWrapper.create("Times New Roman", 13.5F, Font.BOLD),
+            AffineTransform.getRotateInstance(Math.toRadians(33.5)))
         };
         Path tmp = Paths.get(System.getProperty("java.io.tmpdir"));
         file = tmp.resolve("VectorIOTest-" + Long.toString(System.currentTimeMillis(), 36)

@@ -3,6 +3,7 @@ package net.java.dev.imagine.api.vector;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
+import org.imagine.geometry.util.GeometryUtils;
 
 /**
  *
@@ -36,6 +37,10 @@ public interface Shaped extends Copyable {
     Shaped copy();
 
     Runnable restorableSnapshot();
+
+    default double cumulativeLength() {
+        return GeometryUtils.shapeLength(toShape());
+    }
 
     default void collectSizings(SizingCollector c) {
 

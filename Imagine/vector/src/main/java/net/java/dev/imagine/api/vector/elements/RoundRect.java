@@ -23,6 +23,7 @@ import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
+import org.imagine.geometry.util.GeometryUtils;
 
 /**
  *
@@ -64,6 +65,11 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
             aw = oaw;
             ah = oah;
         };
+    }
+
+    @Override
+    public double cumulativeLength() {
+        return GeometryUtils.shapeLength(toShape());
     }
 
     @Override

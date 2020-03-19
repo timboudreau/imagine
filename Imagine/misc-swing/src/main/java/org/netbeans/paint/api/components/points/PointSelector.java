@@ -45,7 +45,7 @@ import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import org.imagine.geometry.Circle;
-import org.imagine.geometry.Triangle;
+import org.imagine.geometry.Triangle2D;
 import org.netbeans.paint.api.components.RadialSliderUI;
 import static org.netbeans.paint.api.components.points.PointSelectorMode.POINT_AND_LINE;
 import org.openide.util.Exceptions;
@@ -335,7 +335,7 @@ public final class PointSelector extends JComponent {
         g.fill(circle);
         g.draw(circle);
 
-        Triangle triangle = Triangle.isoceles(proposedFocus, radius);
+        Triangle2D triangle = Triangle2D.isoceles(proposedFocus, radius);
         g.draw(triangle);
         g.setColor(getBackground());
         g.fill(triangle);
@@ -362,7 +362,7 @@ public final class PointSelector extends JComponent {
         if (mode.isDrawable()) {
             Point2D.Double focus = copy(focusScaled);
             toLocal().transform(focus, focus);
-            Triangle tri = Triangle.isoceles(focus, oneCharHeight / 2);
+            Triangle2D tri = Triangle2D.isoceles(focus, oneCharHeight / 2);
             g.setColor(getBackground());
             g.fill(tri);
             g.setColor(getForeground());

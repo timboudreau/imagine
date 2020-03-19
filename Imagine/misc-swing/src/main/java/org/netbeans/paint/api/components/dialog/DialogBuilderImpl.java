@@ -305,12 +305,6 @@ final class DialogBuilderImpl extends DialogBuilder {
             // public FlowLayout(int align, int hgap, int vgap)
             JPanel dialogControlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, dist, 0));
             ButtonType[] types = buttons.buttons();
-            assert Arrays.asList(types).contains(buttons.defaultDefaultButtonMeaning()) : "Default button meaning for " + buttons + " is " + buttons.defaultDefaultButtonMeaning()
-                    + " but is not present in " + Arrays.toString(buttons.buttons());
-            assert Arrays.asList(types).contains(buttons.negativeMeaning()) : "Negative button meaning for " + buttons + " is " + buttons.negativeMeaning()
-                    + " but is not present in " + Arrays.toString(buttons.buttons());
-            assert Arrays.asList(types).contains(buttons.nonPositiveMeaning()) : "Negative button meaning for " + buttons + " is " + buttons.nonPositiveMeaning()
-                    + " but is not present in " + Arrays.toString(buttons.buttons());
 
             controlButtons = buttons.buttons(this::onButtonAction);
             assert types.length == controlButtons.length;

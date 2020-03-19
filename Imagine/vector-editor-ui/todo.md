@@ -53,6 +53,7 @@ UI Buglets:
 Questionable ideas:
  * Derive control point color from shape color?
  * Need a group type - use aggregate?
+ * Maybe use a single widget for all control points?  Performance gets bad when there are a lot.  Would be paintful to implement, particularly revalidation and dragging, but may be worth it.
  
  
  For repaint catching:

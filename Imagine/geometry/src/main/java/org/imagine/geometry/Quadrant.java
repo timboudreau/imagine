@@ -28,7 +28,7 @@ package org.imagine.geometry;
  *
  * @author Tim Boudreau
  */
-public enum Quadrant {
+public enum Quadrant implements Sector {
 
     NORTHEAST,
     SOUTHEAST,
@@ -50,8 +50,44 @@ public enum Quadrant {
         }
     }
 
+    @Override
+    public Sector intersection(Sector other) {
+        if (other == this) {
+            return this;
+        } else if (other instanceof Quadrant) {
+            return null;
+        } else if (other instanceof Circle && ((Circle) other).factor == 1) {
+            return this;
+        }
+        if (other instanceof Hemisphere) {
+            Hemisphere hem = (Hemisphere) other;
+            if (hem.contains(this)) {
+                return this;
+            } else {
+                return null;
+            }
+        }
+        return Sector.super.intersection(other);
+    }
+
+    @Override
+    public double midPoint() {
+        return start() + 45;
+    }
+
+    @Override
+    public double extent() {
+        return 90;
+    }
+
+    @Override
     public boolean contains(double angle) {
-        return angle >= start() && angle < end();
+        double s = start();
+        boolean result = angle >= s && angle < s + 90;
+//        System.out.println(this + " contains " + angle
+//                + " >= " + start() + "? " + (angle >= start())
+//                + " <= end " + end() + "? " + (angle < end()));
+        return result;
     }
 
     public int subdivision(double angle, int subs) {
@@ -69,7 +105,7 @@ public enum Quadrant {
     }
 
     public double translate(Quadrant from, double ang) {
-        ang = normalize(ang);
+        ang = Angle.normalize(ang);
         double relative = ang - from.start();
         if (relative == 0) {
             return start();
@@ -96,21 +132,16 @@ public enum Quadrant {
         }
     }
 
-    static double normalize(double ang) {
-        if (ang == 360) {
-            ang = 0;
-        }
-        if (ang < 0) {
-            ang = 360 + ang;
-        }
-        if (ang > 360) {
-            ang = 360D % ang;
-        }
-        return ang;
+    public static boolean isLeading(double angle) {
+        return forAngle(angle).center() <= Angle.normalize(angle);
     }
 
-    public static boolean isLeading(double angle) {
-        return forAngle(angle).center() <= normalize(angle);
+    public Angle startingAngle() {
+        return Angle.ofDegrees(start());
+    }
+
+    public Angle endingAngle() {
+        return Angle.ofDegrees(end());
     }
 
     public double start() {
@@ -235,7 +266,7 @@ public enum Quadrant {
         if (!Double.isFinite(ang)) {
             throw new IllegalArgumentException("Not an angle: " + ang);
         }
-        ang = normalize(ang);
+        ang = Angle.normalize(ang);
         if ((ang >= 0 && ang < 90) || ang == 360) {
             return NORTHEAST;
         } else if (ang >= 90 && ang < 180) {
@@ -246,5 +277,44 @@ public enum Quadrant {
             return NORTHWEST;
         }
         throw new IllegalArgumentException("Not an angle: " + ang);
+    }
+
+    public boolean isAdjacentTo(Quadrant q) {
+        switch (this) {
+            case NORTHEAST:
+                switch (q) {
+                    case NORTHWEST:
+                    case SOUTHEAST:
+                        return true;
+                    default:
+                        return false;
+                }
+            case NORTHWEST:
+                switch (q) {
+                    case NORTHEAST:
+                    case SOUTHWEST:
+                        return true;
+                    default:
+                        return false;
+                }
+            case SOUTHEAST:
+                switch (q) {
+                    case SOUTHWEST:
+                    case NORTHEAST:
+                        return true;
+                    default:
+                        return false;
+                }
+            case SOUTHWEST:
+                switch (q) {
+                    case NORTHWEST:
+                    case SOUTHEAST:
+                        return true;
+                    default:
+                        return false;
+                }
+            default:
+                throw new AssertionError(this);
+        }
     }
 }

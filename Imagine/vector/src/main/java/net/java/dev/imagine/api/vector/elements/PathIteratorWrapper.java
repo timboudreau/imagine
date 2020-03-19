@@ -18,6 +18,9 @@
  */
 package net.java.dev.imagine.api.vector.elements;
 
+import com.mastfrog.function.DoubleBiConsumer;
+import com.mastfrog.function.DoubleQuadConsumer;
+import com.mastfrog.function.DoubleSextaConsumer;
 import com.mastfrog.util.collections.IntList;
 import java.awt.Graphics2D;
 import java.awt.Shape;
@@ -46,7 +49,10 @@ import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import static net.java.dev.imagine.api.vector.design.ControlPointKind.CUBIC_CURVE_DESTINATION;
 import net.java.dev.imagine.api.vector.util.Pt;
-import org.imagine.geometry.Circle;
+import org.imagine.geometry.Angle;
+import org.imagine.geometry.EnhancedShape;
+import org.imagine.geometry.EqPointDouble;
+import org.imagine.geometry.util.GeometryUtils;
 
 /**
  * Wrapper for a PathIterator - i.e. any shape.
@@ -207,6 +213,11 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
     }
 
     @Override
+    public double cumulativeLength() {
+        return GeometryUtils.shapeLength(toShape());
+    }
+
+    @Override
     public void translate(double x, double y) {
         for (Segment s : segments) {
             s.translate(x, y);
@@ -263,33 +274,65 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             double py = prev.physicalY();
             double cx = curr.physicalX();
             double cy = curr.physicalY();
-            c.dimension(Math.abs(cy - py), true, i - 1, i);
-            c.dimension(Math.abs(cx - px), true, i - 1, i);
+
+            if (GeometryUtils.isSameCoordinate(px, cx, 0.01)) {
+                c.dimension(Math.abs(cx - px), false, i - 1, i);
+            }
+            if (GeometryUtils.isSameCoordinate(py, cy, 0.01)) {
+                c.dimension(Math.abs(cy - py), true, i - 1, i);
+            }
         }
     }
 
     @Override
     public void collectAngles(AngleCollector c) {
-        if (segments.length <= 1) {
+        if (segments.length <= 2) {
             return;
         }
-        Circle circle = new Circle(0, 0, 1);
-        for (int i = 1; i < segments.length; i++) {
-            Segment prev = segments[i - 1];
-            if (prev.type == SEG_CLOSE) {
-                continue;
+        int lastStart = 0;
+        boolean reset = false;
+        int emittableCount = 0;
+        int cpIndex = 0;
+        for (int i = 0; i < segments.length; i++) {
+            Segment seg = segments[i];
+            reset = false;
+            int currCpIndex = cpIndex;
+            switch (seg.type) {
+                case SEG_CLOSE:
+                    reset = true;
+                    break;
+                case SEG_MOVETO:
+                    lastStart = i;
+                    emittableCount = 1;
+                    cpIndex += 1;
+                    break;
+                case SEG_LINETO:
+                    emittableCount++;
+                    cpIndex += 1;
+                    break;
+                case SEG_CUBICTO:
+                    reset = true;
+                    cpIndex += 3;
+                    currCpIndex += 2;
+                    break;
+                case SEG_QUADTO:
+                    reset = true;
+                    cpIndex += 2;
+                    currCpIndex += 1;
+                    break;
+                default:
+                    throw new AssertionError("" + seg.type);
             }
-            Segment curr = segments[i];
-            if (curr.type == SEG_CLOSE) {
-                continue;
+            if (reset) {
+                emittableCount = 0;
+                reset = false;
+                lastStart = 0;
+            } else if (emittableCount >= 2) {
+                Segment start = segments[i - 1];
+                double angle = Angle.ofLine(start.physicalX(), start.physicalY(), seg.physicalX(), seg.physicalY());
+                // XXX if we include bezier curves, currCpIndex-1 below will be wrong
+                c.angle(angle, currCpIndex - 1, currCpIndex);
             }
-            double px = prev.physicalX();
-            double py = prev.physicalY();
-            double cx = curr.physicalX();
-            double cy = curr.physicalY();
-            circle.setCenterAndRadius(cx, cy, Point2D.distance(cx, cy, px, py));
-            double ang = circle.angleOf(px, py);
-            c.angle(ang, i - 1, i);
         }
     }
 
@@ -666,7 +709,8 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
 
     @Override
     public synchronized Shape toShape() {
-        Path2D.Double path = new Path2D.Double();
+        Path2D.Float path = new Path2D.Float(PathIterator.WIND_NON_ZERO,
+                segments.length);
         for (Segment seg : segments) {
             switch (seg.type) {
                 case SEG_MOVETO:
@@ -694,6 +738,110 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             }
         }
         return path;
+    }
+
+    @Override
+    public <T> T as(Class<T> type) {
+        if (EnhancedShape.class == type) {
+            return type.cast(new Enh());
+        }
+        return Strokable.super.as(type);
+    }
+
+    @Override
+    public boolean is(Class<?> type) {
+        if (EnhancedShape.class == type) {
+            return true;
+        }
+        return Strokable.super.is(type);
+    }
+
+    class Enh implements EnhancedShape {
+
+        @Override
+        public boolean isClosed() {
+            boolean result = PathIteratorWrapper.this.isExplicitlyClosed();
+            if (!result && segments.length > 1) {
+                Segment last = segments[segments.length - 1];
+                Segment first = segments[0];
+                double fx = first.physicalX();
+                double fy = first.physicalY();
+                double lx = last.physicalX();
+                double ly = last.physicalY();
+                result = GeometryUtils.isSamePoint(fx, fy, lx, ly);
+            }
+            return result;
+        }
+
+        @Override
+        public void visitAdjoiningLines(DoubleSextaConsumer sex) {
+            EnhancedShape.super.visitAdjoiningLines(sex);
+        }
+
+        @Override
+        public void visitLines(DoubleQuadConsumer consumer) {
+            int shapeStart = 0;
+            for (int i = 1; i < segments.length; i++) {
+                Segment prev = segments[i - 1];
+                Segment curr = segments[i];
+                if (prev.type != SEG_CLOSE && curr.type != SEG_CLOSE) {
+                    consumer.accept(prev.physicalX(), prev.physicalY(), curr.physicalX(), curr.physicalY());
+                } else {
+                    shapeStart = i + 1;
+                }
+                if (curr.type == SEG_CLOSE && shapeStart != i) {
+                    Segment start = segments[shapeStart];
+                    consumer.accept(curr.physicalX(), curr.physicalY(), start.physicalX(), start.physicalY());
+                }
+            }
+        }
+
+        @Override
+        public List<? extends EqPointDouble> points() {
+            List<EqPointDouble> all = new ArrayList<>();
+            visitPoints((x, y) -> {
+                all.add(new EqPointDouble(x, y));
+            });
+            return all;
+        }
+
+        @Override
+        public void visitPoints(DoubleBiConsumer consumer) {
+            for (int i = 0; i < segments.length; i++) {
+                Segment seg = segments[i];
+                if (seg.type != SEG_CLOSE) {
+                    consumer.accept(seg.physicalX(), seg.physicalY());
+                }
+            }
+        }
+
+        @Override
+        public Point2D point(int index) {
+            if (!isMultipleSegments()) {
+                return new EqPointDouble(segments[index].physicalX(),
+                        segments[index].physicalY());
+            }
+            int pointCursor = 0;
+            for (int i = 0; i < segments.length; i++) {
+                if (pointCursor == i && segments[i].type != SEG_CLOSE) {
+                    return new EqPointDouble(segments[i].physicalX(), segments[i].physicalY());
+                } else if (segments[i].type != SEG_CLOSE) {
+                    pointCursor++;
+                }
+            }
+            throw new IndexOutOfBoundsException("" + index);
+        }
+
+        @Override
+        public int pointCount() {
+            int result = 0;
+            for (int i = 0; i < segments.length; i++) {
+                if (segments[i].type != SEG_CLOSE) {
+                    result++;
+                }
+            }
+            return result;
+        }
     }
 
     @Override

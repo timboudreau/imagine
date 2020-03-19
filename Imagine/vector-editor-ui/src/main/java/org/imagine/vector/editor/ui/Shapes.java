@@ -93,7 +93,8 @@ public class Shapes implements HitTester, ShapesCollection {
         }
         Shapes result = new Shapes();
         for (int i = 0; i < count; i++) {
-            result.addShape(0, ShapeEntry.read(vio, reader));
+//            result.addShape(result.size(), ShapeEntry.read(vio, reader));
+            result.shapes.add(0, ShapeEntry.read(vio, reader));
         }
         return result;
     }

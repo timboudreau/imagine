@@ -25,6 +25,7 @@ import net.java.dev.imagine.api.vector.design.ControlPointController;
 import net.java.dev.imagine.api.vector.design.ShapeNames;
 import net.java.dev.imagine.api.vector.elements.ImageWrapper;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
+import net.java.dev.imagine.api.vector.elements.PathText;
 import net.java.dev.imagine.api.vector.graphics.BasicStrokeWrapper;
 import net.java.dev.imagine.api.vector.util.Size;
 import org.imagine.awt.GradientManager;
@@ -482,9 +483,11 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
 //            return false;
         }
         if (vect.is(ImageWrapper.class)) {
-            ImageWrapper w = vect.as(ImageWrapper.class);
-            System.out.println("PAINT IW " + w.img);
-            w.paint(g);
+            vect.as(ImageWrapper.class).paint(g);
+        } else if (vect.is(PathText.class)) {
+            g.setPaint(getFill());
+            g.setStroke(stroke);
+            vect.as(PathText.class).paint(g);
         } else {
             Stroke oldStroke = null;
             if (stroke != null) {

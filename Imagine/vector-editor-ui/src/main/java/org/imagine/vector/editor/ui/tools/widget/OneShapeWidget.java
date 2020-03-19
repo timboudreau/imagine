@@ -5,7 +5,9 @@ import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Shape;
 import net.java.dev.imagine.api.vector.elements.ImageWrapper;
+import net.java.dev.imagine.api.vector.elements.PathText;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
@@ -267,6 +269,26 @@ public class OneShapeWidget extends Widget {
         }
         if (el.item().is(ImageWrapper.class)) {
             el.item().as(ImageWrapper.class).paint(g);
+        } else if (el.item().is(PathText.class)) {
+            if (el.isFill()) {
+                g.setPaint(el.fill());
+                el.item().as(PathText.class).paint(g);
+            }
+            if (el.isDraw()) {
+                g.setPaint(el.outline());
+                g.setStroke(el.stroke());
+                el.item().as(PathText.class).draw(g);
+            }
+
+            if (getState().isFocused()) {
+                el.item().as(PathText.class, pt -> {
+                    Shape shape = pt.shape().toShape();
+                    if (pt.transform() != null) {
+                        shape = pt.transform().createTransformedShape(shape);
+                    }
+                    g.draw(shape);
+                });
+            }
         } else {
             if (el.isFill()) {
                 Paint bg = el.getFill();

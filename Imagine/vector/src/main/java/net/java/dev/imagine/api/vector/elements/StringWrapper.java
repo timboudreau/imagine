@@ -13,6 +13,7 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import static java.lang.Double.doubleToLongBits;
+import net.java.dev.imagine.api.vector.Textual;
 import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.util.Pt;
 
@@ -21,7 +22,7 @@ import net.java.dev.imagine.api.vector.util.Pt;
  *
  * @author Tim Boudreau
  */
-public class StringWrapper implements Vector {
+public class StringWrapper implements Vector, Textual {
 
     private static final long serialVersionUID = 72_305_123_414L;
     public String string;
@@ -44,6 +45,10 @@ public class StringWrapper implements Vector {
             y = oy;
             string = s;
         };
+    }
+
+    public double cumulativeLength() {
+        return 0;
     }
 
     @Override

@@ -35,6 +35,11 @@ public final class Clear implements Volume, Primitive, Transformable {
     }
 
     @Override
+    public double cumulativeLength() {
+        return (width * 2) + (height * 2);
+    }
+
+    @Override
     public void collectSizings(SizingCollector c) {
         c.dimension(height, true, 1, 3);
         c.dimension(width, false, 0, 1);

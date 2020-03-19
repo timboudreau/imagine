@@ -40,6 +40,7 @@ import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.Timer;
 import org.imagine.awt.counters.Ring;
+import org.imagine.geometry.Angle;
 import org.imagine.geometry.Circle;
 
 /**
@@ -215,7 +216,7 @@ public class Demo {
         }
 
         private double newAngle(Circle circ, double curr) {
-            double opp = Circle.opposite(curr);
+            double opp = Angle.opposite(curr);
             opp += rnd.nextDouble() * 120;
             if (opp > 360) {
                 opp -= 360D;

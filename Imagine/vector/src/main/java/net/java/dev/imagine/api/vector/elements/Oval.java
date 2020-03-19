@@ -23,6 +23,7 @@ import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.geometry.Circle;
+import org.imagine.geometry.util.GeometryUtils;
 
 /**
  *
@@ -40,6 +41,11 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
         this.width = width;
         this.height = height;
         this.fill = fill;
+    }
+
+    @Override
+    public double cumulativeLength() {
+        return GeometryUtils.shapeLength(toShape());
     }
 
     public Runnable restorableSnapshot() {

@@ -15,7 +15,7 @@ import net.java.dev.imagine.api.vector.design.ControlPointController;
 import net.java.dev.imagine.api.vector.design.ControlPointFactory;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Size;
-import org.imagine.geometry.Triangle;
+import org.imagine.geometry.Triangle2D;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -101,7 +101,7 @@ public class PathIteratorWrapperTest {
     }
 
     private PathIteratorWrapper triangle() {
-        Triangle tri = new Triangle(0, 0, 10, 10, 20, 20);
+        Triangle2D tri = new Triangle2D(0, 0, 10, 10, 20, 20);
         PathIteratorWrapper w = new PathIteratorWrapper(tri.getPathIterator(null));
         return w;
     }

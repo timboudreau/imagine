@@ -31,6 +31,7 @@ import static java.awt.Transparency.TRANSLUCENT;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -318,6 +319,128 @@ public final class GraphicsUtils {
         AffineTransform nue = new AffineTransform(xform);
         nue.translate(-x, -y);
         return nue;
+    }
+
+    public static int transformHashCode(AffineTransform xform) {
+        if (xform == null) {
+            return 0;
+        }
+        double[] mxa = new double[6];
+        xform.getMatrix(mxa);
+        long hash = 5;
+        for (int i = 0; i < 6; i++) {
+            double d = mxa[i] + 0.0;
+            if (d == -0.0) {
+                d = 0.0;
+            }
+            long val = Double.doubleToLongBits(d);
+            hash = hash * 37 + val;
+        }
+        return (int) (hash ^ (hash >> 32));
+    }
+
+    public static boolean transformsEqual(AffineTransform a, AffineTransform b) {
+        if (a == null && b == null) {
+            return true;
+        } else if ((a == null) != (b == null)) {
+            return (a != null && a.isIdentity())
+                    || (b != null && b.isIdentity());
+        }
+        double[] mxa = new double[6];
+        double[] mxb = new double[6];
+        a.getMatrix(mxa);
+        b.getMatrix(mxb);
+        return doubleArraysEqual(mxa, mxb);
+    }
+
+    public static boolean doubleArraysEqual(double[] mxa, double[] mxb) {
+        if (mxa.length != mxb.length) {
+            return false;
+        }
+        int len = mxa.length;
+        for (int i = 0; i < len; i++) {
+            double da = mxa[i];
+            double db = mxb[i];
+            // avoids problems deserializing to -0.0 for a previous 0.0
+            if ((da + 0.0) != (db + 0.0)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean doubleArraysEqual(double[] mxa, double[] mxb, double tolerance) {
+        if (mxa.length != mxb.length) {
+            return false;
+        }
+        int len = mxa.length;
+        for (int i = 0; i < len; i++) {
+            double da = mxa[i];
+            double db = mxb[i];
+            if (Math.abs(da - db) > tolerance) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static final DecimalFormat FMT = new DecimalFormat("######################0.############################################");
+
+    public static String transformToString(AffineTransform xform) {
+        if (xform == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder("(");
+        sb.append(typeString(xform.getType())).append(' ');
+        double[] mx = new double[6];
+        xform.getMatrix(mx);
+        doubleArrayToString(mx, sb);
+        return sb.append(')').toString();
+    }
+
+    public static String doubleArrayToString(double[] dbls) {
+        return doubleArrayToString(dbls, new StringBuilder()).toString();
+    }
+
+    public static StringBuilder doubleArrayToString(double[] dbls, StringBuilder into) {
+        for (int i = 0; i < dbls.length; i++) {
+            into.append(doubleToString(dbls[i]));
+            if (i != dbls.length) {
+                into.append(", ");
+            }
+        }
+        return into;
+    }
+
+    public static String doubleToString(double d) {
+        return FMT.format(d);
+    }
+
+    private static String typeString(int type) {
+        switch (type) {
+            case AffineTransform.TYPE_FLIP:
+                return "Flip";
+            case AffineTransform.TYPE_GENERAL_ROTATION:
+                return "General Rotation";
+            case AffineTransform.TYPE_GENERAL_SCALE:
+                return "General Scale";
+            case AffineTransform.TYPE_GENERAL_TRANSFORM:
+                return "General Transform";
+            case AffineTransform.TYPE_IDENTITY:
+                return "Identity";
+            case AffineTransform.TYPE_QUADRANT_ROTATION:
+                return "Quadrant Rotation";
+            case AffineTransform.TYPE_TRANSLATION:
+                return "Translation";
+            case AffineTransform.TYPE_UNIFORM_SCALE:
+                return "Uniform Scale";
+            case AffineTransform.TYPE_MASK_ROTATION:
+                return "Rotation";
+            case AffineTransform.TYPE_MASK_SCALE:
+                return "Scale";
+            default:
+                return "Unknown";
+        }
     }
 
 }

@@ -34,7 +34,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
-import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
@@ -70,9 +69,10 @@ import net.java.dev.imagine.api.vector.graphics.GradientPaintWrapper;
 import net.java.dev.imagine.api.vector.graphics.LinearPaintWrapper;
 import net.java.dev.imagine.api.vector.graphics.RadialPaintWrapper;
 import net.java.dev.imagine.api.vector.graphics.TexturePaintWrapper;
+import net.java.dev.imagine.api.vector.util.ShapeCharacteristics;
 import org.imagine.geometry.Circle;
-import org.imagine.geometry.Triangle;
-import org.imagine.geometry.TriangleDouble;
+import org.imagine.geometry.Polygon2D;
+import org.imagine.geometry.Triangle2D;
 import org.imagine.utils.java2d.GraphicsUtils;
 
 /**
@@ -121,32 +121,14 @@ public class VectorWrapperGraphics extends Graphics2D {
         return new Dimension(w, h);
     }
 
-    static TriangleDouble toTriangle(Shape shape, boolean fill) {
-        PathIterator it = shape.getPathIterator(null);
-        int count = 0;
-        double[] scratch = new double[8];
-        double[] pts = new double[6];
-        while (!it.isDone()) {
-            int type = it.currentSegment(scratch);
-            if (count != 0 && type != PathIterator.SEG_LINETO) {
-                return null;
-            } else if (count == 0 && type != PathIterator.SEG_MOVETO) {
-                return null;
-            }
-            pts[count * 2] = scratch[0];
-            pts[(count * 2) + 1] = scratch[1];
-            count++;
-            if (count > 3) {
-                return null;
-            }
-        }
-        return new TriangleDouble(pts[0], pts[1], pts[2], pts[3], pts[4], pts[5]);
-    }
-
     public static Shaped primitiveFor(Shape shape, boolean fill) {
         if (shape instanceof java.awt.Rectangle) {
             java.awt.Rectangle r = (java.awt.Rectangle) shape;
             Rectangle rect = new Rectangle(r.x, r.y, r.width, r.height, fill);
+            return rect;
+        } else if (shape instanceof Rectangle2D) {
+            Rectangle2D r = (Rectangle2D) shape;
+            Rectangle rect = new Rectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight(), fill);
             return rect;
         } else if (shape instanceof Circle) {
             Circle circ = (Circle) shape;
@@ -165,6 +147,9 @@ public class VectorWrapperGraphics extends Graphics2D {
             }
             Oval ov = new Oval(ell.getX(), ell.getY(), ell.getWidth(), ell.getHeight(), fill);
             return ov;
+        } else if (shape instanceof Polygon2D) {
+            Polygon2D p = (Polygon2D) shape;
+            return new Polygon(p, fill);
         } else if (shape instanceof java.awt.Polygon) {
             java.awt.Polygon p = (java.awt.Polygon) shape;
             Polygon polygon = new Polygon(p.xpoints, p.ypoints, p.npoints, fill);
@@ -178,15 +163,13 @@ public class VectorWrapperGraphics extends Graphics2D {
         } else if (shape instanceof Line2D) {
             Line2D line = (Line2D) shape;
             return new Line(line.getX1(), line.getY1(), line.getX2(), line.getY2());
-        } else if (shape instanceof Triangle) {
-            return new TriangleWrapper((Triangle) shape, fill);
-        } else if (shape instanceof TriangleDouble) {
-            TriangleDouble t = (TriangleDouble) shape;
-            return new TriangleWrapper(t, fill);
+        } else if (shape instanceof Triangle2D) {
+            return new TriangleWrapper((Triangle2D) shape, fill);
         } else {
-            TriangleDouble tri = toTriangle(shape, fill);
-            if (tri != null) {
-                return new TriangleWrapper(tri, fill);
+            Shape interpreted = ShapeCharacteristics.bestShapeFor(shape);
+            if (interpreted != null) {
+                System.out.println("INTERPRETED SHAPE " + interpreted);
+                return primitiveFor(interpreted, fill);
             }
             return new PathIteratorWrapper(shape.getPathIterator(null), fill);
         }
@@ -308,7 +291,7 @@ public class VectorWrapperGraphics extends Graphics2D {
 
     public void draw(ImageWrapper img) {
         receiving = true;
-        drawRenderedImage(img.img, AffineTransform.getTranslateInstance(img.x, img.y));
+        drawRenderedImage(img.img, img.xform);
         changed();
         receiving = false;
     }

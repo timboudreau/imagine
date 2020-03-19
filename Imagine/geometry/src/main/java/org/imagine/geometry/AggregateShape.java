@@ -23,9 +23,15 @@ public final class AggregateShape implements Shape, Iterable<Shape> {
 
     private final List<Shape> shapes;
     private final Rectangle2D.Double bounds = new Rectangle2D.Double();
+    private final AffineTransform xform;
 
     public AggregateShape(List<Shape> shapes) {
+        this(shapes, null);
+    }
+
+    public AggregateShape(List<Shape> shapes, AffineTransform xform) {
         this.shapes = shapes;
+        this.xform = xform;
     }
 
     @Override
@@ -83,11 +89,21 @@ public final class AggregateShape implements Shape, Iterable<Shape> {
 
     @Override
     public PathIterator getPathIterator(AffineTransform at) {
+        if (xform != null) {
+            AffineTransform xf = new AffineTransform(xform);
+            xf.concatenate(at);
+            at = xf;
+        }
         return new MetaPathIterator(shapes.iterator(), at, 0, false);
     }
 
     @Override
     public PathIterator getPathIterator(AffineTransform at, double flatness) {
+        if (xform != null) {
+            AffineTransform xf = new AffineTransform(xform);
+            xf.concatenate(at);
+            at = xf;
+        }
         return new MetaPathIterator(shapes.iterator(), at, flatness, true);
     }
 
@@ -113,18 +129,22 @@ public final class AggregateShape implements Shape, Iterable<Shape> {
         }
 
         private void maybeNext() {
-            Shape shape = shapes.hasNext() ? shapes.next() : null;
-            if (shape != null) {
-                if (xform == null) {
-                    curr = shape.getPathIterator(null);
-                } else {
-                    if (useFlatness) {
-                        curr = shape.getPathIterator(xform, flatness);
+            do {
+                Shape shape = shapes.hasNext() ? shapes.next() : null;
+                if (shape != null) {
+                    if (xform == null) {
+                        curr = shape.getPathIterator(null);
                     } else {
-                        curr = shape.getPathIterator(xform);
+                        if (useFlatness) {
+                            curr = shape.getPathIterator(xform, flatness);
+                        } else {
+                            curr = shape.getPathIterator(xform);
+                        }
                     }
+                } else {
+                    curr = null;
                 }
-            }
+            } while (curr != null && curr.isDone());
         }
 
         private PathIterator curr() {
@@ -153,8 +173,9 @@ public final class AggregateShape implements Shape, Iterable<Shape> {
 
         @Override
         public void next() {
+            PathIterator last = curr;
             PathIterator pi = curr();
-            if (pi != null) {
+            if (pi != null && pi == last) {
                 pi.next();
             }
         }
