@@ -5,6 +5,7 @@
  */
 package org.imagine.geometry.util;
 
+import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Line2D;
 import java.awt.geom.PathIterator;
@@ -416,6 +417,10 @@ public class GeometryUtils {
     public static String toString(Rectangle2D r) {
         return toString(r.getX(), r.getY()) + " "
                 + toString(" x ", r.getWidth(), r.getHeight());
+    }
+
+    public static String toString(Rectangle r) {
+        return r.x + ", " + r.y + " " + r.width + " x " + r.height;
     }
 
     private GeometryUtils() {

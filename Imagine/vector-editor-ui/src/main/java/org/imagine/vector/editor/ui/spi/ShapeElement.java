@@ -15,7 +15,6 @@ import java.awt.geom.Rectangle2D;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import net.java.dev.imagine.api.vector.Shaped;
-import net.java.dev.imagine.api.vector.design.ControlPoint;
 import net.java.dev.imagine.api.vector.painting.VectorWrapperGraphics;
 import org.imagine.awt.key.PaintKey;
 import org.imagine.editor.api.PaintingStyle;
@@ -68,7 +67,7 @@ public interface ShapeElement {
 
     String getName();
 
-    ShapeControlPoint[] controlPoints(double size, Consumer<ControlPoint> c);
+    ShapeControlPoint[] controlPoints(double size, Consumer<ShapeControlPoint> c);
 
     void addToBounds(Rectangle2D r);
 

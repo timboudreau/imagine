@@ -29,12 +29,12 @@ import java.util.function.Supplier;
 import net.java.dev.imagine.api.vector.Adjustable;
 import org.imagine.editor.api.snap.SnapPoints;
 import net.java.dev.imagine.api.vector.Shaped;
-import net.java.dev.imagine.api.vector.design.ControlPoint;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import org.imagine.awt.key.PaintKey;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.OnSnap;
+import org.imagine.utils.Holder;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
@@ -471,15 +471,21 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
         }
 
         @Override
-        public ShapeControlPoint[] controlPoints(double size, Consumer<ControlPoint> c) {
+        public ShapeControlPoint[] controlPoints(double size, Consumer<ShapeControlPoint> c) {
             Rectangle bds = getBounds();
+            Holder<ShapeControlPoint[]> h = c == null ? null : Holder.create();
             ShapeControlPoint[] result = entry.controlPoints(size, (cp) -> {
-                c.accept(cp);
+                if (c != null) {
+                    c.accept(h.get()[cp.index()]);
+                }
                 Rectangle nue = getBounds();
                 bds.add(nue);
                 handle.repaintArea(bds);
                 bds.setFrame(nue);
             });
+            if (c != null) {
+                h.set(result);
+            }
             // Shouldn't be needed, but having trouble with
             // Shape identity
             return WrapperControlPoint.wrap(result, this);

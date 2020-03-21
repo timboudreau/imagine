@@ -126,13 +126,23 @@ public class OneShapeWidget extends Widget {
             throw new IllegalStateException("Dragging control point and "
                     + "dragging shape simultaneously is impossible");
         }
+
+        System.out.println("\nsetCpDragInProgress " + value);
+//        new Exception("setCpDragInProgress " + value).printStackTrace();
         if (value != this.draggingControlPoint) {
             this.draggingControlPoint = value;
             if (value) {
-                return switchToShapeCopy();
+                ShapeElement result = switchToShapeCopy();
+                System.out.println("switch to copy " + result.getName());
+                return result;
             } else {
-                return clearShapeCopy();
+                ShapeElement result = clearShapeCopy();
+                System.out.println("switch back to real " + result.getName());
+                return result;
             }
+        } else {
+            System.out.println("NOT A CHANGE");
+            if (true) return temp;
         }
         return null;
     }
@@ -206,6 +216,7 @@ public class OneShapeWidget extends Widget {
     }
 
     public ShapeControlPoint onBeginControlPointDrag(ShapeControlPoint pt) {
+        System.out.println("begin drag " + pt.index() + " on " + pt.owner().getName());
         setControlPointDragInProgress(true);
         return tempControlPoint(pt.index());
     }

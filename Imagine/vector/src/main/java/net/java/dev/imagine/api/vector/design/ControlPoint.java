@@ -139,6 +139,7 @@ public interface ControlPoint extends Comparable<ControlPoint> {
     public default boolean isEditable() {
         return true;
     }
+
     /**
      * Get the set of control point kinds which are not this point's kind, which
      * this control point could be changed to. Applies to paths, where a LINE_TO
@@ -151,4 +152,12 @@ public interface ControlPoint extends Comparable<ControlPoint> {
     default Point2D toPoint() {
         return new Point2D.Double(getX(), getY());
     }
+
+    default double distance(double x, double y) {
+        double myX = getX();
+        double myY = getY();
+        return Point2D.distance(myX, myY, x, y);
+    }
+
+    ControlPoint[] family();
 }

@@ -41,7 +41,7 @@ public final class FocusAction extends WidgetAction.Adapter {
         if (event.isShiftDown()) {
             lookup.addLookup(widget.getLookup());
         } else {
-            lookup.lookups(widget.getLookup());
+            lookup.updateLookups(widget.getLookup());
         }
         focusPerformer.accept(widget);
         widget.repaint();

@@ -10,6 +10,7 @@ import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
+import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
@@ -21,10 +22,16 @@ import org.imagine.geometry.Triangle2D;
  *
  * @author Tim Boudreau
  */
-public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable, Vector {
+public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable, Vector, Versioned {
 
-    public double ax, ay, bx, by, cx, cy;
-    public boolean fill;
+    private double ax;
+    private double ay;
+    private double bx;
+    private double by;
+    private double cx;
+    private double cy;
+    private boolean fill;
+    private int rev;
 
     public TriangleWrapper(double ax, double ay, double bx, double by, double cx, double cy) {
         this(ax, ay, bx, by, cx, cy, true);
@@ -55,6 +62,15 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
     }
 
     @Override
+    public int rev() {
+        return rev;
+    }
+
+    private void change() {
+        rev++;
+    }
+
+    @Override
     public Runnable restorableSnapshot() {
         double oax = ax;
         double oay = ay;
@@ -62,7 +78,9 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
         double oby = by;
         double ocx = cx;
         double ocy = cy;
+        int oldRev = rev;
         return () -> {
+            rev = oldRev;
             ax = oax;
             ay = oay;
             bx = obx;
@@ -97,37 +115,58 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
     }
 
     public void setAx(double val) {
-        ax = val;
+        if (val != ax) {
+            ax = val;
+            change();
+        }
     }
 
     public void setAy(double val) {
-        ay = val;
+        if (val != ay) {
+            ay = val;
+            change();
+        }
     }
 
     public void setBx(double val) {
-        bx = val;
+        if (val != bx) {
+            bx = val;
+            change();
+        }
     }
 
     public void setBy(double val) {
-        by = val;
+        if (val != by) {
+            by = val;
+            change();
+        }
     }
 
     public void setCx(double val) {
-        cx = val;
+        if (val != cx) {
+            cx = val;
+            change();
+        }
     }
 
     public void setCy(double val) {
-        cy = val;
+        if (val != cy) {
+            cy = val;
+            change();
+        }
     }
 
     @Override
     public void translate(double x, double y) {
-        this.ax += x;
-        this.ay += y;
-        this.bx += x;
-        this.by += y;
-        this.cx += x;
-        this.cy += y;
+        if (x != 0 || y != 0) {
+            this.ax += x;
+            this.ay += y;
+            this.bx += x;
+            this.by += y;
+            this.cx += x;
+            this.cy += y;
+            change();
+        }
     }
 
     public TriangleWrapper[] tesselate() {
@@ -148,7 +187,9 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
 
     @Override
     public TriangleWrapper copy() {
-        return new TriangleWrapper(ax, ay, bx, by, cx, cy, fill);
+        TriangleWrapper result = new TriangleWrapper(ax, ay, bx, by, cx, cy, fill);
+        result.rev = rev;
+        return result;
     }
 
     @Override
@@ -199,6 +240,7 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
             by += dy;
             cx += dx;
             cy += dy;
+            change();
         }
     }
 
@@ -208,11 +250,16 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
     }
 
     @Override
-    public Vector copy(AffineTransform transform) {
+    public TriangleWrapper copy(AffineTransform transform) {
+        if (transform == null || transform.isIdentity()) {
+            return copy();
+        }
         double[] pts = new double[]{ax, ay, bx, by, cx, cy};
         transform.transform(pts, 0, pts, 0, 3);
-        return new TriangleWrapper(pts[0], pts[1],
+        TriangleWrapper result = new TriangleWrapper(pts[0], pts[1],
                 pts[2], pts[3], pts[4], pts[5]);
+        result.rev = rev + 1;
+        return result;
     }
 
     @Override
@@ -260,6 +307,9 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
 
     @Override
     public void applyTransform(AffineTransform xform) {
+        if (xform == null || xform.isIdentity()) {
+            return;
+        }
         double[] pts = new double[]{ax, ay, bx, by, cx, cy};
         xform.transform(pts, 0, pts, 0, 3);
         ax = pts[0];
@@ -268,6 +318,7 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
         by = pts[3];
         cx = pts[4];
         cy = pts[5];
+        change();
     }
 
     @Override
@@ -300,20 +351,41 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
         return new int[0];
     }
 
+    public void setA(double x, double y) {
+        if (x != ax || y != ay) {
+            ax = x;
+            ay = y;
+            change();
+        }
+    }
+
+    public void setB(double x, double y) {
+        if (x != bx || y != by) {
+            bx = x;
+            by = y;
+            change();
+        }
+    }
+
+    public void setC(double x, double y) {
+        if (x != cx || y != cy) {
+            cx = x;
+            cy = y;
+            change();
+        }
+    }
+
     @Override
     public void setControlPointLocation(int pointIndex, Pt location) {
         switch (pointIndex) {
             case 0:
-                ax = location.x;
-                ay = location.y;
+                setA(location.x, location.y);
                 break;
             case 1:
-                bx = location.x;
-                by = location.y;
+                setB(location.x, location.y);
                 break;
             case 2:
-                cx = location.x;
-                cy = location.y;
+                setC(location.x, location.y);
                 break;
             default:
                 throw new IllegalArgumentException("Index out of range " + pointIndex);
@@ -326,10 +398,6 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
                 + bx + ", " + by + ", "
                 + cx + ", " + cy + ")";
     }
-
-    static int[] PRIMES = new int[]{
-        5, 433, 691, 3_931, 8_101, 11
-    };
 
     @Override
     public int hashCode() {
@@ -450,6 +518,6 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
     }
 
     private static boolean doublesEqual(double ax, double bx) {
-        return Double.doubleToLongBits(ax) == Double.doubleToLongBits(bx);
+        return Double.doubleToLongBits(ax + 0.0) == Double.doubleToLongBits(bx + 0.0);
     }
 }

@@ -70,6 +70,10 @@ class AnimationLayer extends LayerWidget {
         getScene().revalidate();
     }
 
+    void abort() {
+        circle.setVisible(false);
+    }
+
     class AL implements AnimatorListener {
 
         private int countDown = 2;
@@ -86,7 +90,7 @@ class AnimationLayer extends LayerWidget {
         public void animatorFinished(AnimatorEvent event) {
             countDown--;
             event.getAnimator().removeAnimatorListener(this);
-            if (countDown == 0) {
+            if (countDown == 0 && circle.isVisible()) {
                 circle.setVisible(false);
                 getScene().revalidate(true);
             }

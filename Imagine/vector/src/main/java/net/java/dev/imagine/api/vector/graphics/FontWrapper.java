@@ -16,6 +16,7 @@ import java.util.Objects;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Transformable;
+import net.java.dev.imagine.api.vector.Versioned;
 import org.imagine.utils.java2d.GraphicsUtils;
 
 /**
@@ -23,7 +24,9 @@ import org.imagine.utils.java2d.GraphicsUtils;
  *
  * @author Tim Boudreau
  */
-public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
+public class FontWrapper implements Primitive, Attribute<Font>, Transformable, Versioned {
+
+    private static long serialVersionUID = 5_620_138L;
 
     public static FontWrapper create(String name, float size, int style) {
         return new FontWrapper(name, size, style);
@@ -48,11 +51,11 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
     public static FontWrapper create(Font f) {
         return new FontWrapper(f);
     }
-    public long serialVersionUID = 5_620_138L;
-    public String name;
-    public float size;
-    public int style;
-    public AffineTransform transform;
+    private String name;
+    private float size;
+    private int style;
+    private AffineTransform transform;
+    private int rev;
 
     public Runnable restorableSnapshot() {
         String s = name;
@@ -63,6 +66,25 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
             size = sz;
             style = st;
         };
+    }
+
+    @Override
+    public int rev() {
+        return rev;
+    }
+
+    private void change() {
+        rev++;
+    }
+
+    private FontWrapper(FontWrapper other) {
+        this.rev = other.rev;
+        this.name = other.name;
+        this.size = other.size;
+        this.style = other.style;
+        this.transform = other.transform == null
+                ? null
+                : new AffineTransform(other.transform);
     }
 
     private FontWrapper(Font f) {
@@ -87,48 +109,16 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
                 : removeTranslation(xform);
     }
 
-    public String getFontName() {
-        return name;
-    }
-
-    public float getFontSize() {
-        return size;
-    }
-
-    public void setFontSize(float size) {
-        if (size <= 0) {
-            throw new IllegalArgumentException("Size must be > 0: " + size);
-        }
-        this.size = size;
-    }
-
-    public void setFontName(String fontName) {
-        this.name = fontName;
-    }
-
-    public void setFontStyle(int style) {
-        switch (style) {
-            case Font.PLAIN:
-            case Font.BOLD:
-            case Font.ITALIC:
-            case Font.BOLD | Font.ITALIC:
-                break;
-            default:
-                throw new IllegalArgumentException("Illegal font style " + style);
-        }
-    }
-
-    public int getFontStyle() {
-        return style;
-    }
-
     public AffineTransform getTransform() {
         return transform == null ? AffineTransform.getTranslateInstance(0, 0)
                 : new AffineTransform(transform);
     }
 
     public void setTransform(AffineTransform xform) {
-        this.transform = xform;
+        if (!Objects.equals(xform, this.transform)) {
+            this.transform = xform;
+            change();
+        }
     }
 
     public static AffineTransform removeTranslation(AffineTransform xform) {
@@ -141,7 +131,7 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
 
     @Override
     public void applyTransform(AffineTransform xform) {
-        if (xform.isIdentity()) {
+        if (xform == null || xform.isIdentity()) {
             return;
         }
         if (transform != null) {
@@ -149,6 +139,7 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
         } else {
             transform = xform;
         }
+        change();
     }
 
     @Override
@@ -164,7 +155,9 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
         } else {
             finalTransform = transform;
         }
-        return create(name, style, size, finalTransform);
+        FontWrapper result = new FontWrapper(this);
+        result.setTransform(finalTransform);
+        return result;
     }
 
     public Font toFont() {
@@ -216,7 +209,7 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
 
     @Override
     public FontWrapper copy() {
-        return FontWrapper.create(name, style, size, transform);
+        return new FontWrapper(this);
     }
 
     @Override
@@ -252,5 +245,70 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable {
         hash = 97 * hash + this.style;
         hash = 97 * hash + GraphicsUtils.transformHashCode(transform);
         return hash;
+    }
+
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * @param name the name to set
+     */
+    public void setName(String name) {
+        if (!name.equals(this.name)) {
+            this.name = name;
+            change();
+        }
+    }
+
+    /**
+     * @return the size
+     */
+    public float getSize() {
+        return size;
+    }
+
+    /**
+     * @param size the size to set
+     */
+    public void setSize(float size) {
+        if (size <= 0) {
+            throw new IllegalArgumentException("Size must be > 0: " + size);
+        }
+        if (size != this.size) {
+            this.size = size;
+            change();
+        }
+    }
+
+    /**
+     * @return the style
+     */
+    public int getStyle() {
+        return style;
+    }
+
+    /**
+     * @param style the style to set
+     */
+    public void setStyle(int style) {
+        if (style != this.style) {
+            switch (style) {
+                case Font.PLAIN:
+                case Font.BOLD:
+                case Font.ITALIC:
+                case Font.BOLD | Font.ITALIC:
+                    if (style != this.style) {
+                        this.style = style;
+                        change();
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException("Illegal font style " + style);
+            }
+        }
     }
 }

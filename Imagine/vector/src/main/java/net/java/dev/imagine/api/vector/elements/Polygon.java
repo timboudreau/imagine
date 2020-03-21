@@ -19,6 +19,7 @@ import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Mutable;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
+import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
@@ -29,16 +30,17 @@ import org.imagine.geometry.Polygon2D;
  *
  * @author Tim Boudreau
  */
-public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector, Mutable {
+public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector, Mutable, Versioned {
 
-    private static long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     // XXX if this class winds up heavily used, rewrite it to
     // keep a single array of points - the only reason it is
     // like this is that it started out as a wrapper for int-based
     // java.awt.Polygon
-    public double[] xpoints;
-    public double[] ypoints;
-    public boolean fill;
+    private double[] xpoints;
+    private double[] ypoints;
+    private boolean fill;
+    private transient int rev;
 
     public Polygon(double[] xpoints, double[] ypoints, boolean fill) {
         if (xpoints.length != ypoints.length) {
@@ -62,19 +64,32 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
     public Polygon(Polygon2D poly) {
         this(poly, true);
     }
+
     public Polygon(Polygon2D poly, boolean fill) {
         xpoints = new double[poly.pointCount()];
         ypoints = new double[poly.pointCount()];
         double[] data = poly.pointsArray();
         for (int i = 0; i < data.length; i += 2) {
             int ptix = i / 2;
-            xpoints[i] = data[i];
-            ypoints[i] = data[i + 1];
+            xpoints[ptix] = data[i];
+            ypoints[ptix] = data[i + 1];
         }
     }
 
     public Polygon(java.awt.Polygon poly, boolean fill) {
         this(poly.xpoints, poly.ypoints, poly.npoints, fill);
+    }
+
+    private void change() {
+        rev++;
+    }
+
+    public double[] xpoints() {
+        return xpoints;
+    }
+
+    public double[] ypoints() {
+        return ypoints;
     }
 
     private static double[] toDoubleArray(int[] ints, int count) {
@@ -89,6 +104,7 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
     public synchronized Runnable restorableSnapshot() {
         double[] xp = Arrays.copyOf(xpoints, xpoints.length);
         double[] yp = Arrays.copyOf(ypoints, ypoints.length);
+        int oldRev = rev;
         return () -> {
             if (xpoints.length != xp.length) {
                 xpoints = xp;
@@ -97,6 +113,7 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
                 System.arraycopy(xp, 0, xpoints, 0, xp.length);
                 System.arraycopy(yp, 0, ypoints, 0, yp.length);
             }
+            rev = oldRev;
         };
     }
 
@@ -111,6 +128,7 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
             xpoints[i] += xx;
             ypoints[i] += yy;
         }
+        change();
     }
 
     @Override
@@ -156,11 +174,11 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
     public double cumulativeLength() {
         double result = 0;
         for (int i = 1; i < xpoints.length; i++) {
-            double xp = xpoints[i-1];
-            double yp = ypoints[i-1];
+            double xp = xpoints[i - 1];
+            double yp = ypoints[i - 1];
             double x = xpoints[i];
             double y = ypoints[i];
-            result+= Point2D.distance(xp, yp, x, y);
+            result += Point2D.distance(xp, yp, x, y);
         }
         return result;
     }
@@ -278,14 +296,15 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
 
     @Override
     public void applyTransform(AffineTransform xform) {
-        Point2D.Double scratch = new Point2D.Double();
+        double[] scratch = new double[2];
         for (int i = 0; i < xpoints.length; i++) {
-            scratch.x = xpoints[i];
-            scratch.y = ypoints[i];
-            xform.transform(scratch, scratch);
-            xpoints[i] = (int) Math.round(scratch.x);
-            ypoints[i] = (int) Math.round(scratch.x);
+            scratch[0] = xpoints[i];
+            scratch[1] = ypoints[i];
+            xform.transform(scratch, 0, scratch, 0, 1);
+            xpoints[i] = scratch[0];
+            ypoints[i] = scratch[1];
         }
+        change();
     }
 
     @Override
@@ -336,6 +355,7 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
                 xpoints[i] += offx;
                 ypoints[i] += offy;
             }
+            change();
         }
     }
 
@@ -365,6 +385,7 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
 
         System.arraycopy(ypoints, 0, newY, 0, pointIndex);
         System.arraycopy(ypoints, pointIndex + 1, newY, pointIndex, ypoints.length - pointIndex);
+        change();
         return true;
     }
 
@@ -399,6 +420,7 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
         yp[index] = y;
         xpoints = xp;
         ypoints = yp;
+        change();
         return true;
     }
 
@@ -427,6 +449,7 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
     public void setControlPointLocation(int pointIndex, Pt pt) {
         xpoints[pointIndex] = (int) pt.x;
         ypoints[pointIndex] = (int) pt.y;
+        change();
     }
 
     @Override
@@ -434,5 +457,9 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
         Rectangle2D.Double bds = new Rectangle2D.Double();
         getBounds(bds);
         return bds.getBounds();
+    }
+
+    public int rev() {
+        return rev;
     }
 }

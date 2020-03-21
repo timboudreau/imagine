@@ -20,6 +20,7 @@ import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
+import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
@@ -29,16 +30,17 @@ import org.imagine.geometry.util.GeometryUtils;
  *
  * @author Tim Boudreau
  */
-public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokable {
+public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokable, Versioned {
 
-    public long serialVersionUID = 39_201L;
-    public double aw;
-    public double ah;
-    public double x;
-    public double y;
-    public double w;
-    public double h;
+    private static final long serialVersionUID = 39_201L;
+    private double aw;
+    private double ah;
+    private double x;
+    private double y;
+    private double w;
+    private double h;
     public boolean fill;
+    private transient int rev;
 
     public RoundRect(double x, double y, double w, double h, double aw, double ah, boolean fill) {
         this.x = x;
@@ -50,6 +52,25 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
         this.fill = fill;
     }
 
+    public RoundRect(RoundRect other) {
+        this.x = other.x;
+        this.y = other.y;
+        this.w = other.w;
+        this.h = other.h;
+        this.aw = other.aw;
+        this.ah = other.ah;
+        this.fill = other.fill;
+        this.rev = other.rev;
+    }
+
+    public int rev() {
+        return rev;
+    }
+
+    private void change() {
+        rev++;
+    }
+
     public Runnable restorableSnapshot() {
         double ox = x;
         double oy = y;
@@ -57,6 +78,7 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
         double oh = h;
         double oaw = aw;
         double oah = ah;
+        int oldRev = rev;
         return () -> {
             x = ox;
             y = oy;
@@ -64,6 +86,7 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
             w = ow;
             aw = oaw;
             ah = oah;
+            rev = oldRev;
         };
     }
 
@@ -80,8 +103,11 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
 
     @Override
     public void translate(double x, double y) {
-        this.x += x;
-        this.y += y;
+        if (x != 0 || y != 0) {
+            this.x += x;
+            this.y += y;
+            change();
+        }
     }
 
     public double getArcHeight() {
@@ -117,19 +143,31 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
     }
 
     public void setX(double x) {
-        this.x = x;
+        if (x != this.x) {
+            this.x = x;
+            change();
+        }
     }
 
     public void setY(double y) {
-        this.y = y;
+        if (this.y != y) {
+            this.y = y;
+            change();
+        }
     }
 
     public void setWidth(double w) {
-        this.w = w;
+        if (this.w != w) {
+            this.w = w;
+            change();
+        }
     }
 
     public void setHeight(double h) {
-        this.h = h;
+        if (this.h != h) {
+            this.h = h;
+            change();
+        }
     }
 
     @Override
@@ -167,7 +205,7 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
 //
     @Override
     public RoundRect copy() {
-        return new RoundRect(x, y, w, h, aw, ah, fill);
+        return new RoundRect(this);
     }
 
     @Override
@@ -182,6 +220,7 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
 
     @Override
     public void getBounds(Rectangle2D r) {
+        // XXX WTF is this?
         double wid = w;
         double hi = h;
         double xx, yy, ww, hh;
@@ -229,8 +268,11 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
 
     @Override
     public void setLocation(double x, double y) {
-        this.x = x;
-        this.y = y;
+        if (x != this.x || y != this.y) {
+            this.x = x;
+            this.y = y;
+            change();
+        }
     }
 
     @Override
@@ -239,12 +281,14 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
     }
 
     @Override
-    public Vector copy(AffineTransform transform) {
+    public RoundRect copy(AffineTransform transform) {
         double[] pts = new double[]{
             x, y, x + w, y + h,};
         transform.transform(pts, 0, pts, 0, 2);
-        return new RoundRect(pts[0], pts[1], pts[2] - pts[0],
+        RoundRect result = new RoundRect(pts[0], pts[1], pts[2] - pts[0],
                 pts[3] - pts[1], aw, ah, fill);
+        result.rev = rev + 1;
+        return result;
     }
 
     @Override
@@ -327,12 +371,12 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
             default:
                 throw new IllegalArgumentException(Integer.toString(pointIndex));
         }
+        change();
         renormalize();
     }
 
     private void renormalize() {
         if (w < 0) {
-            double ww = w;
             x += w;
             w *= -1;
         }
@@ -344,6 +388,9 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
 
     @Override
     public void applyTransform(AffineTransform xform) {
+        if (xform == null || xform.isIdentity()) {
+            return;
+        }
         Point2D.Double a = new Point2D.Double(x, y);
         Point2D.Double b = new Point2D.Double(x + w, y + h);
         xform.transform(a, a);
@@ -352,6 +399,7 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
         y = a.y;
         w = b.x - a.x;
         h = b.y - a.y;
+        change();
     }
 
     @Override
@@ -359,5 +407,19 @@ public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokabl
         Rectangle2D.Double bds = new Rectangle2D.Double();
         getBounds(bds);
         return bds.getBounds();
+    }
+
+    /**
+     * @return the aw
+     */
+    public double arcWidth() {
+        return aw;
+    }
+
+    /**
+     * @return the ah
+     */
+    public double arcHeight() {
+        return ah;
     }
 }

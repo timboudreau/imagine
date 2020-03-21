@@ -52,7 +52,7 @@ public class RectSelectAction implements RectangularSelectProvider, RectangularS
                 selected.add(el);
             }
         }
-        lookup.lookups(Lookups.fixed(selected.toArray()));
+        lookup.updateLookups(Lookups.fixed(selected.toArray()));
     }
 
     @Override

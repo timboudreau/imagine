@@ -11,9 +11,10 @@ import java.util.function.ToDoubleFunction;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Shaped;
+import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.design.ControlPoint;
 import net.java.dev.imagine.api.vector.design.ControlPointController;
-import net.java.dev.imagine.api.vector.design.ControlPointFactory;
+import net.java.dev.imagine.api.vector.design.ControlPointFactory2;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
@@ -26,18 +27,46 @@ import org.imagine.vector.editor.ui.spi.ShapeElement;
  *
  * @author Tim Boudreau
  */
-final class ShapeElementControlPointFactory extends ControlPointFactory {
+final class ShapeElementControlPointFactory extends ControlPointFactory2 {
 
     public ShapeControlPoint[] getControlPoints(ShapeEntry entry, ControlPointController ctrllr) {
         ControlPointSupplier supp = new ControlPointSupplier(entry, ctrllr);
         Adjustable adj = entry.item().as(Adjustable.class);
         int cpCount = adj == null ? 0 : adj.getControlPointCount();
         ShapeControlPoint[] result = new ShapeControlPoint[cpCount];
+        FamilySupplier fam = new FamilySupplier(entry, ctrllr, result);
         for (int i = 0; i < result.length; i++) {
             result[i] = new DelegatingControlPoint(entry,
-                    supp.forIndex(i), i, result);
+                    supp.forIndex(i), i, fam);
         }
         return result;
+    }
+
+    class FamilySupplier implements Supplier<ShapeControlPoint[]> {
+        private final ShapeEntry entry;
+        private ShapeControlPoint[] family;
+        private ControlPointController ctrllr;
+        public FamilySupplier(ShapeEntry entry, ControlPointController ctrllr, ShapeControlPoint[] initialArray) {
+            this.entry = entry;
+            this.ctrllr = ctrllr;
+            this.family = initialArray;
+        }
+
+        @Override
+        public ShapeControlPoint[] get() {
+            Shaped sh = entry.item();
+            if (sh.is(Adjustable.class)) {
+                Adjustable adj = sh.as(Adjustable.class);
+                int count = adj.getControlPointCount();
+                if (count == family.length) {
+                    return family;
+                }
+                family = getControlPoints(entry, ctrllr);
+                return family;
+            }
+            return new ShapeControlPoint[0];
+        }
+
     }
 
     class ControlPointSupplier implements Supplier<ControlPoint[]> {
@@ -57,7 +86,7 @@ final class ShapeElementControlPointFactory extends ControlPointFactory {
         private ControlPoint[] fetch(int newHash, int newIdHash) {
             Shaped s = origin.item();
             hashAtLastFetch = newHash != -1 ? newHash
-                    : s.hashCode();
+                    : hash();
             idHashAtLastFetch = newIdHash != -1 ? newIdHash
                     : System.identityHashCode(s);
 
@@ -69,10 +98,18 @@ final class ShapeElementControlPointFactory extends ControlPointFactory {
             return lastPoints;
         }
 
+        private int hash() {
+            Shaped adj = origin.item();
+            if (adj instanceof Versioned) {
+                return ((Versioned) adj).rev();
+            }
+            return origin.item().hashCode();
+        }
+
         @Override
         public ControlPoint[] get() {
             Shaped s = origin.item();
-            int hash = s.hashCode();
+            int hash = hash();
             if (hash != hashAtLastFetch) {
                 return fetch(hash, -1);
             }
@@ -104,9 +141,9 @@ final class ShapeElementControlPointFactory extends ControlPointFactory {
         private final ShapeEntry origin;
         private final Supplier<ControlPoint> supp;
         private final int index;
-        private final ShapeControlPoint[] family;
+        private final Supplier<ShapeControlPoint[]> family;
 
-        public DelegatingControlPoint(ShapeEntry origin, Supplier<ControlPoint> supp, int index, ShapeControlPoint[] family) {
+        public DelegatingControlPoint(ShapeEntry origin, Supplier<ControlPoint> supp, int index, Supplier<ShapeControlPoint[]> family) {
             this.origin = origin;
             this.supp = supp;
             this.index = index;
@@ -114,7 +151,7 @@ final class ShapeElementControlPointFactory extends ControlPointFactory {
         }
 
         public ShapeControlPoint[] family() {
-            return family;
+            return family.get();
         }
 
         @Override

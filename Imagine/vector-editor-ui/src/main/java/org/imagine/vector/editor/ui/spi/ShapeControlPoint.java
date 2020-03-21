@@ -79,4 +79,17 @@ public interface ShapeControlPoint extends ControlPoint {
         }
         return result;
     }
+
+    @Override
+    default int compareTo(ControlPoint o) {
+        if (o instanceof ShapeControlPoint) {
+            ShapeControlPoint sc = (ShapeControlPoint) o;
+            int result = Long.compare(owner().id(), sc.owner().id());
+            if (result != 0) {
+                return result;
+            }
+        }
+        return ControlPoint.super.compareTo(o);
+    }
+
 }

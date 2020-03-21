@@ -2,6 +2,7 @@ package org.imagine.vector.editor.ui.tools.widget.painting;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Stroke;
@@ -34,9 +35,9 @@ public class DesignerProperties {
     private float[] focusStrokeSections
             = new float[]{7, 2, 5, 2};
     private Color focusedControlPointBackground
-            = new Color(240, 240, 128);
+            = new Color(240, 240, 30);
     private Color focusedControlPointForeground
-            = new Color(80, 80, 255);
+            = new Color(212, 40, 40);
 
     private int selectionStrokeCount;
     private int focusStrokeCount;
@@ -148,14 +149,14 @@ public class DesignerProperties {
         return dec;
     }
 
-    public Color fillForControlPoint(ControlPointKind kind, ObjectState state) {
+    public Paint fillForControlPoint(ControlPointKind kind, ObjectState state) {
         if (state.isFocused()) {
             return focusedControlPointBackground;
         }
         return controlPointFill.getOrDefault(kind, Color.WHITE);
     }
 
-    public Color drawForControlPoint(ControlPointKind kind, ObjectState state) {
+    public Paint drawForControlPoint(ControlPointKind kind, ObjectState state) {
         if (state.isFocused()) {
             return focusedControlPointForeground;
         }
@@ -179,6 +180,23 @@ public class DesignerProperties {
         }
     }
 
+    public Shape shapeForControlPoint(double x, double y, ControlPointKind kind, boolean valid, boolean localCoords, double zoom, boolean forHitTest, ObjectState state) {
+        if (!valid) {
+            return invalid();
+        }
+        switch (kind) {
+            case CHARACTER_POSITION:
+                return rhom(x, y, localCoords, zoom, forHitTest, state);
+            case TEXT_BASELINE:
+            case EDGE_HANDLE:
+                return rect(x, y, localCoords, zoom, forHitTest, state);
+            case RADIUS:
+                return tri(x, y, localCoords, zoom, forHitTest, state);
+            default:
+                return circle(x, y, localCoords, zoom, forHitTest, state);
+        }
+    }
+
     private Shape invalid() {
         rect.width = 0;
         rect.height = 0;
@@ -192,6 +210,10 @@ public class DesignerProperties {
     private static final Rhombus rhom = new Rhombus(new Rectangle(), 0);
 
     private Shape rhom(ShapeControlPoint point, boolean localCoords, double zoom, boolean forHitTest, ObjectState state) {
+        return rhom(point.getX(), point.getY(), localCoords, zoom, forHitTest, state);
+    }
+
+    private Shape rhom(double px, double py, boolean localCoords, double zoom, boolean forHitTest, ObjectState state) {
         double invZoom = 1D / zoom;
         double base = state.isFocused() ? focusedControlPointSize() : controlPointSize();
         double sz = base * invZoom;
@@ -199,8 +221,6 @@ public class DesignerProperties {
             sz += 1D * invZoom;
         }
         double half = sz / 2D;
-        double px = point.getX();
-        double py = point.getY();
         if (localCoords) {
             rhom.setCenter(0, 0);
             rhom.setXRadius(half);
@@ -224,6 +244,10 @@ public class DesignerProperties {
     }
 
     private Shape tri(ShapeControlPoint point, boolean localCoords, double zoom, boolean forHitTest, ObjectState state) {
+        return tri(point.getX(), point.getY(), localCoords, zoom, forHitTest, state);
+    }
+
+    private Shape tri(double px, double py, boolean localCoords, double zoom, boolean forHitTest, ObjectState state) {
         double invZoom = 1D / zoom;
         double base = state.isFocused() ? focusedControlPointSize() : controlPointSize();
         double sz = base * invZoom;
@@ -231,9 +255,6 @@ public class DesignerProperties {
             sz += 1D * invZoom;
         }
         double half = sz / 2D;
-
-        double px = point.getX();
-        double py = point.getY();
         if (localCoords) {
             tri.setPoints(0, half,
                     -half, half,
@@ -246,10 +267,14 @@ public class DesignerProperties {
                     px + half, py + half
             );
         }
-        return new Triangle2D(tri);
+        return tri;
     }
 
     private Shape rect(ShapeControlPoint point, boolean localCoords, double zoom, boolean forHitTest, ObjectState state) {
+        return rect(point.getX(), point.getY(), localCoords, zoom, forHitTest, state);
+    }
+
+    private Shape rect(double px, double py, boolean localCoords, double zoom, boolean forHitTest, ObjectState state) {
         double invZoom = 1D / zoom;
         double base = state.isFocused() ? focusedControlPointSize() : controlPointSize();
         double sz = base * invZoom;
@@ -263,13 +288,17 @@ public class DesignerProperties {
             rect.x = -half;
             rect.y = rect.x;
         } else {
-            rect.x = point.getX() - half;
-            rect.y = point.getY() - half;
+            rect.x = px - half;
+            rect.y = px - half;
         }
         return rect;
     }
 
     private Circle circle(ShapeControlPoint point, boolean localCoords, double zoom, boolean forHitTest, ObjectState state) {
+        return circle(point.getX(), point.getY(), localCoords, zoom, forHitTest, state);
+    }
+
+    private Circle circle(double px, double py, boolean localCoords, double zoom, boolean forHitTest, ObjectState state) {
         double invZoom = 1D / zoom;
         double base = state.isFocused() ? focusedControlPointSize() : controlPointSize();
         double sz = (base / 2D) * invZoom;
@@ -279,8 +308,6 @@ public class DesignerProperties {
         // Could do this only in one branch of the if clause below,
         // but we need to reforce the point to refresh its contents
         // or the widget will render a little bit offset
-        double px = point.getX();
-        double py = point.getY();
         if (localCoords) {
             circle.setCenterAndRadius(0, 0, sz);
         } else {
@@ -295,7 +322,7 @@ public class DesignerProperties {
     public Stroke strokeForControlPoint(double zoom) {
         if (lastStrokeZoom != zoom) {
             float inv = 1F / (float) zoom;
-//            inv = Math.max(inv, 0.5); // Java2D will not draw narrower strokes
+//            inv = Math.max(inv, 0.125F); // Java2D will not draw narrower strokes
             lastStrokeZoom = zoom;
             return lastStroke = new BasicStroke(inv);
         }

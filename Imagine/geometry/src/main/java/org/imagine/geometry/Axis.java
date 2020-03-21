@@ -24,6 +24,7 @@
 package org.imagine.geometry;
 
 import java.awt.Point;
+import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.util.EnumSet;
 import java.util.Set;
@@ -36,6 +37,22 @@ public enum Axis {
 
     HORIZONTAL,
     VERTICAL;
+
+    public static Axis nearestForLine(Line2D line) {
+        return _forAngle(EqLine.of(line).angle());
+    }
+
+    private static Axis _forAngle(double ang) {
+        if (ang <= 45 || ang > 325 || (ang > 135 && ang <= 215)) {
+            return VERTICAL;
+        } else {
+            return HORIZONTAL;
+        }
+    }
+
+    public static Axis nearestForAngle(double angle) {
+        return _forAngle(Angle.normalize(angle));
+    }
 
     public double value(Point2D point) {
         return this == HORIZONTAL ? point.getX() : point.getY();

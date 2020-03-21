@@ -5,7 +5,10 @@
  */
 package org.imagine.geometry;
 
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -70,13 +73,57 @@ public enum Hemisphere implements Sector {
         }
     }
 
+    public Hemisphere preceding() {
+        switch (this) {
+            case NORTH:
+                return WEST;
+            case WEST:
+                return SOUTH;
+            case SOUTH:
+                return EAST;
+            case EAST:
+                return NORTH;
+            default:
+                throw new AssertionError(this);
+        }
+    }
+
+    public Hemisphere next() {
+        switch (this) {
+            case NORTH:
+                return EAST;
+            case EAST:
+                return SOUTH;
+            case SOUTH:
+                return WEST;
+            case WEST:
+                return NORTH;
+            default:
+                throw new AssertionError(this);
+        }
+    }
+
+    /**
+     * Returns the hemisphere that best contains this angle - that which the
+     * angle is nearest to the midpoint of.
+     *
+     * @param ang An angle
+     * @return A hemisphere
+     */
     public static Hemisphere forAngle(double ang) {
+        double a = Angle.normalize(ang);
+        List<Hemisphere> result = new LinkedList<>();
         for (Hemisphere h : values()) {
-            if (h.contains(ang)) {
-                return h;
+            if (h.contains(a)) {
+                result.add(h);
             }
         }
-        throw new AssertionError("Angle " + ang + " not in a hemisphere");
+        Collections.sort(result, (ha, hb) -> {
+            double distA = Math.abs(a - ha.midpoint());
+            double distB = Math.abs(a - hb.midpoint());
+            return Double.compare(distA, distB);
+        });
+        return result.iterator().next();
     }
 
     @Override

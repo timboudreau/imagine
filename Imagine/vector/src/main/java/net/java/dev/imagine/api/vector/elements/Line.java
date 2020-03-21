@@ -19,6 +19,7 @@ import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
+import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 
@@ -26,13 +27,14 @@ import net.java.dev.imagine.api.vector.util.Pt;
  *
  * @author Tim Boudreau
  */
-public class Line implements Strokable, Adjustable, Vector {
+public class Line implements Strokable, Adjustable, Vector, Versioned {
 
-    public double x1;
-    public double x2;
-    public double y1;
-    public double y2;
-    public long serialVersionUID = 23_923_214L;
+    private double x1;
+    private double x2;
+    private double y1;
+    private double y2;
+    private static final long serialVersionUID = 23_923_214L;
+    private int rev;
 
     public Line(double x1, double y1, double x2, double y2) {
         this.x1 = x1;
@@ -46,7 +48,9 @@ public class Line implements Strokable, Adjustable, Vector {
         double oy1 = y1;
         double ox2 = x2;
         double oy2 = y2;
+        int oldRev = rev;
         return () -> {
+            rev = oldRev;
             x1 = ox1;
             y1 = oy1;
             x2 = ox2;
@@ -54,12 +58,23 @@ public class Line implements Strokable, Adjustable, Vector {
         };
     }
 
+    public int rev() {
+        return rev;
+    }
+
+    private void change() {
+        rev++;
+    }
+
     @Override
     public void translate(double x, double y) {
-        this.x1 += x;
-        this.y1 += y;
-        this.x2 += x;
-        this.y2 += y;
+        if (x != 0 || y != 0) {
+            this.x1 += x;
+            this.y1 += y;
+            this.x2 += x;
+            this.y2 += y;
+            change();
+        }
     }
 
     public double x1() {
@@ -79,25 +94,38 @@ public class Line implements Strokable, Adjustable, Vector {
     }
 
     public void setX1(double x1) {
-        this.x1 = x1;
+        if (x1 != this.x1) {
+            this.x1 = x1;
+            change();
+        }
     }
 
     public void setX2(double x2) {
-        this.x2 = x2;
+        if (x2 != this.x2) {
+            this.x2 = x2;
+            change();
+        }
     }
 
     public void setY1(double y1) {
-        this.y1 = y1;
+        if (y1 != this.y1) {
+            this.y1 = y1;
+            change();
+        }
     }
 
     public void setY2(double y2) {
-        this.y2 = y2;
+        if (y2 != this.y2) {
+            this.y2 = y2;
+            change();
+        }
     }
 
     public double length() {
         return Point2D.distance(x1, y1, x2, y2);
     }
 
+    @Override
     public double cumulativeLength() {
         return length();
     }
@@ -115,14 +143,17 @@ public class Line implements Strokable, Adjustable, Vector {
 
     @Override
     public void applyTransform(AffineTransform xform) {
-        Point2D.Double a = new Point2D.Double(x1, y1);
-        Point2D.Double b = new Point2D.Double(x2, y2);
-        xform.transform(a, a);
-        xform.transform(b, b);
-        x1 = a.x;
-        x2 = b.x;
-        y1 = a.y;
-        y2 = b.y;
+        if (xform == null || xform.isIdentity()) {
+            return;
+        }
+        double[] pts = new double[4];
+        getControlPoints(pts);
+        xform.transform(pts, 0, pts, 0, 2);
+        x1 = pts[0];
+        x2 = pts[1];
+        y1 = pts[2];
+        y2 = pts[3];
+        change();
     }
 
     @Override
@@ -156,10 +187,7 @@ public class Line implements Strokable, Adjustable, Vector {
     }
 
     public void getBounds(Rectangle r) {
-        r.x = (int) Math.floor(x1);
-        r.y = (int) Math.floor(y1);
-        r.width = (int) Math.ceil(x2 - x1);
-        r.height = (int) Math.ceil(y2 - y1);
+        r.setFrameFromDiagonal(x1, y1, x2, y2);
     }
 
     @Override
@@ -184,7 +212,9 @@ public class Line implements Strokable, Adjustable, Vector {
 
     @Override
     public Line copy() {
-        return new Line(x1, y1, x2, y2);
+        Line result = new Line(x1, y1, x2, y2);
+        result.rev = rev;
+        return result;
     }
 
     @Override
@@ -194,27 +224,33 @@ public class Line implements Strokable, Adjustable, Vector {
 
     @Override
     public void setLocation(double x, double y) {
-        double dx = x2 - x1;
-        double dy = y2 - y1;
-        x1 = x;
-        y1 = y;
-        x2 = x1 + dx;
-        y2 = y1 + dy;
+        if (x != 0 || y != 0) {
+            double dx = x2 - x1;
+            double dy = y2 - y1;
+            x1 = x;
+            y1 = y;
+            x2 = x1 + dx;
+            y2 = y1 + dy;
+            change();
+        }
     }
 
     @Override
     public void clearLocation() {
-        double offx = x2 - x1;
-        double offy = y2 - y1;
-        x1 = 0;
-        y1 = 0;
-        x2 = offx;
-        y2 = offy;
-        if (x2 < 0 || y2 < 0) {
-            x2 = 0;
-            y2 = 0;
-            x1 = -offx;
-            y1 = -offy;
+        if (x1 != 0 || y1 != 0) {
+            double offx = x2 - x1;
+            double offy = y2 - y1;
+            x1 = 0;
+            y1 = 0;
+            x2 = offx;
+            y2 = offy;
+            if (x2 < 0 || y2 < 0) {
+                x2 = 0;
+                y2 = 0;
+                x1 = -offx;
+                y1 = -offy;
+            }
+            change();
         }
     }
 
@@ -228,7 +264,9 @@ public class Line implements Strokable, Adjustable, Vector {
         y1 = pts[1];
         x2 = pts[2];
         y2 = pts[3];
-        return new Line(x1, y1, x2, y2);
+        Line result = new Line(x1, y1, x2, y2);
+        result.rev = rev + 1;
+        return result;
     }
 
     @Override
@@ -264,12 +302,18 @@ public class Line implements Strokable, Adjustable, Vector {
     public void setControlPointLocation(int pointIndex, Pt location) {
         switch (pointIndex) {
             case 0:
-                x1 = location.x;
-                y1 = location.y;
+                if (x1 != location.x || y1 != location.y) {
+                    x1 = location.x;
+                    y1 = location.y;
+                    change();
+                }
                 break;
             case 1:
-                x2 = location.x;
-                y2 = location.y;
+                if (x2 != location.x || y2 != location.y) {
+                    x2 = location.x;
+                    y2 = location.y;
+                    change();
+                }
                 break;
             default:
                 throw new IllegalArgumentException(Integer.toString(pointIndex));
@@ -278,8 +322,8 @@ public class Line implements Strokable, Adjustable, Vector {
 
     @Override
     public Rectangle getBounds() {
-        Rectangle2D.Double bds = new Rectangle2D.Double();
-        getBounds(bds);
-        return bds.getBounds();
+        Rectangle r = new Rectangle();
+        r.setFrameFromDiagonal(x1, y1, x2, y2);
+        return r;
     }
 }

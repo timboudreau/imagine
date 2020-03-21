@@ -13,6 +13,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.function.Consumer;
 import org.imagine.editor.api.snap.Axis;
 import net.java.dev.imagine.api.image.Hibernator;
@@ -22,6 +23,7 @@ import net.java.dev.imagine.api.vector.Transformable;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPoint;
 import net.java.dev.imagine.api.vector.design.ControlPointController;
+import net.java.dev.imagine.api.vector.design.DelegatingControlPointController;
 import net.java.dev.imagine.api.vector.design.ShapeNames;
 import net.java.dev.imagine.api.vector.elements.ImageWrapper;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
@@ -35,15 +37,17 @@ import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.snap.SnapPointsBuilder;
 import org.imagine.io.KeyReader;
 import org.imagine.io.KeyWriter;
+import org.imagine.utils.Holder;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.vector.editor.ui.io.VectorIO;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
+import org.openide.util.WeakSet;
 
 /**
  *
  * @author Tim Boudreau
  */
-public final class ShapeEntry implements Hibernator, ShapeElement {
+public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointController {
 
     private static long IDS = 0 /* - System.currentTimeMillis() */;
     private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
@@ -57,7 +61,7 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
     private BasicStroke stroke;
     private String name;
     private final long id;
-    private static final ShapeElementControlPointFactory CPF
+    private final ShapeElementControlPointFactory CPF
             = new ShapeElementControlPointFactory();
 
     private static final byte IO_REV = 1;
@@ -336,21 +340,66 @@ public final class ShapeEntry implements Hibernator, ShapeElement {
         return 0;
     }
 
+    private final DelegatingControlPointController ctrllr = new DelegatingControlPointController();
+
     @Override
-    public ShapeControlPoint[] controlPoints(double size, Consumer<ControlPoint> c) {
+    public void changed(ControlPoint pt) {
+        changed();
+    }
+
+    @Override
+    public Size getControlPointSize() {
+        return cpSize;
+    }
+
+    @Override
+    public void deleted(ControlPoint pt) {
+        changed();
+    }
+
+    private Size cpSize = new Size(3, 3);
+    private final Set<Consumer<ShapeControlPoint>> pointConsumers = new WeakSet<>();
+
+    @Override
+    public ShapeControlPoint[] controlPoints(double size, Consumer<ShapeControlPoint> c) {
+        double newSize = Math.max(cpSize.w, size);
+        if (newSize != cpSize.w) {
+            cpSize = new Size(newSize, newSize);
+        }
+        pointConsumers.add(c);
         if (vect instanceof Adjustable) {
+            Holder<ShapeControlPoint[]> h = c == null ? null : Holder.create();
             ShapeControlPoint[] result = CPF.getControlPoints(this, new ControlPointController() {
                 @Override
                 public void changed(ControlPoint pt) {
-                    c.accept(pt);
-                    ShapeEntry.this.changed();
+//                    System.out.println("CHANGED " + pt.getClass().getSimpleName() + " point " + pt.index()
+//                        + " of " + pt.family().length + " with shape family of "
+//                        + h.get().length + " " + Arrays.toString(h.get()));
+                    ShapeControlPoint[] pts = h.get();
+                    // If the point count has changed, the
+                    // original array will be out-of-date
+                    if (pts.length > 0) {
+                        pts = pts[0].family();
+                    }
+                    if (c != null) {
+                        c.accept(pts[pt.index()]);
+                    }
+                    ShapeEntry.this.changed(pt);
                 }
 
                 @Override
                 public Size getControlPointSize() {
-                    return new Size(size, size);
+                    return cpSize;
+                }
+
+                @Override
+                public void deleted(ControlPoint pt) {
+                    ShapeEntry.this.changed(pt);
                 }
             });
+            if (c != null) {
+                h.set(result);
+            }
             return result == null ? new ShapeControlPoint[0] : result;
         }
         return new ShapeControlPoint[0];

@@ -165,12 +165,12 @@ public class Demo {
         proxy.add(randomImage(), Color.BLACK, Color.RED,
                 strk, true, true);
 
-        proxy.add(new Text("Hello", new Font("Times New Roman", Font.BOLD, 32), 200, 200), randomColor(), randomColor(), strk, PaintingStyle.OUTLINE_AND_FILL);
+        proxy.add(new Text("Hello", new Font("Times New Roman", Font.BOLD, 32), 5, 5), randomColor(), randomColor(), strk, PaintingStyle.OUTLINE_AND_FILL);
 
         proxy.add(randomShape(), new Color(128, 128, 255), new Color(0, 0, 128),
                 strk, true, true);
 
-        proxy.add(new CircleWrapper(30, 30, 22), Color.BLUE, Color.YELLOW,
+        proxy.add(new CircleWrapper(330, 330, 22), Color.BLUE, Color.YELLOW,
                 strk, true, true);
         proxy.add(new PathIteratorWrapper(new Rhombus(80, 80, 30, 40, 45)),
                 Color.GREEN, Color.GRAY, strk, true, true);
@@ -220,8 +220,9 @@ public class Demo {
                     }
                 });
 
-                float[] fractions = new float[]{0.125F, 0.25F, 0.5F, 0.75F, 1F,
-                    1.25F, 1.5F, 2F, 3F, 4F, 5F, 6F, 7F, 8F, 9F, 10F};
+                float[] fractions = new float[]{0.0625F, 0.125F, 0.25F, 0.5F, 0.75F, 1F,
+                    1.25F, 1.5F, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+                    16, 17, 18, 19, 20, 21, 22, 23, 24, 25};
                 int[] zoomCursor = new int[]{7};
                 scene.setZoomFactor(fractions[zoomCursor[0]]);
                 JButton in = new JButton("Zoom In");

@@ -249,8 +249,8 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
         GraphicsUtils.newBufferedImage(1, 1, g -> {
             FontRenderContext frc = g.getFontRenderContext();
             GlyphVector gv = f.createGlyphVector(frc, sw.getText());
-            PathIteratorWrapper iw = new PathIteratorWrapper(gv, (float) sw.x,
-                    (float) sw.y);
+            PathIteratorWrapper iw = new PathIteratorWrapper(gv, (float) sw.x(),
+                    (float) sw.y());
             emitFill(iw);
         }).flush();
     }

@@ -45,12 +45,15 @@ import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Mutable;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
+import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import static net.java.dev.imagine.api.vector.design.ControlPointKind.CUBIC_CURVE_DESTINATION;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.geometry.Angle;
+import org.imagine.geometry.Axis;
 import org.imagine.geometry.EnhancedShape;
+import org.imagine.geometry.EqLine;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.util.GeometryUtils;
 
@@ -59,12 +62,13 @@ import org.imagine.geometry.util.GeometryUtils;
  *
  * @author Tim Boudreau
  */
-public final class PathIteratorWrapper implements Strokable, Fillable, Volume, Adjustable, Vector, Mutable {
+public final class PathIteratorWrapper implements Strokable, Fillable, Volume, Adjustable, Vector, Mutable, Versioned {
 
     private static final int[] EMPTY_INTS = new int[0];
     private final boolean fill;
-
     private Segment[] segments;
+
+    private int rev;
 
     public PathIteratorWrapper(byte[] types, double[][] data) {
         if (types.length != data.length) {
@@ -155,6 +159,15 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         this.fill = fill;
     }
 
+    @Override
+    public int rev() {
+        return rev;
+    }
+
+    private void change() {
+        rev++;
+    }
+
     public boolean hasMultiplePaths() {
         int ct = 0;
         for (Segment seg : segments) {
@@ -197,6 +210,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         System.arraycopy(segments, 0, nue, 0, element);
         System.arraycopy(segments, element + 1, nue, element, segments.length - (element + 1));
         segments = nue;
+        change();
         return true;
     }
 
@@ -210,6 +224,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             it.next();
         }
         this.segments = segments.toArray(new Segment[segments.size()]);
+        change();
     }
 
     @Override
@@ -219,8 +234,11 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
 
     @Override
     public void translate(double x, double y) {
-        for (Segment s : segments) {
-            s.translate(x, y);
+        if (x != 0 || y != 0) {
+            for (Segment s : segments) {
+                s.translate(x, y);
+            }
+            change();
         }
     }
 
@@ -261,6 +279,9 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         if (segments.length <= 1) {
             return;
         }
+        EqLine ln = new EqLine();
+        int cpIx = 0;
+        int prevCpIx = 0;
         for (int i = 1; i < segments.length; i++) {
             Segment prev = segments[i - 1];
             if (prev.type == SEG_CLOSE) {
@@ -270,17 +291,25 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             if (curr.type == SEG_CLOSE) {
                 continue;
             }
-            double px = prev.physicalX();
-            double py = prev.physicalY();
-            double cx = curr.physicalX();
-            double cy = curr.physicalY();
+            ln.setLine(prev.physicalX(), prev.physicalY(),
+                    curr.physicalX(), curr.physicalY());
 
-            if (GeometryUtils.isSameCoordinate(px, cx, 0.01)) {
-                c.dimension(Math.abs(cx - px), false, i - 1, i);
+            Axis axis = Axis.nearestForLine(ln);
+            int pc = curr.getPointCount();
+            int targetCp = cpIx + pc - 1;
+
+            switch (axis) {
+                case VERTICAL:
+                    double height = Math.abs(curr.physicalY() - prev.physicalY());
+                    c.dimension(height, true, prevCpIx, targetCp);
+                    break;
+                case HORIZONTAL:
+                    double width = Math.abs(curr.physicalX() - prev.physicalX());
+                    c.dimension(width, true, prevCpIx, targetCp);
+                    break;
             }
-            if (GeometryUtils.isSameCoordinate(py, cy, 0.01)) {
-                c.dimension(Math.abs(cy - py), true, i - 1, i);
-            }
+            cpIx += curr.getPointCount();
+            prevCpIx = targetCp;
         }
     }
 
@@ -857,40 +886,43 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
 
     @Override
     public void setLocation(double x, double y) {
-        if (x == 0D && y == 0D) {
-            return;
-        }
         Pt old = getLocation();
         double offx = x - old.x;
         double offy = y - old.y;
-        for (Segment seg : segments) {
-            seg.translate(offx, offy);
+        if (offx != 0 || offy != 0) {
+            for (Segment seg : segments) {
+                seg.translate(offx, offy);
+            }
+            change();
         }
     }
 
     @Override
     public void clearLocation() {
         Pt pt = getLocation();
-        setLocation(0 - pt.x, 0 - pt.y);
+        setLocation(-pt.x, -pt.y);
     }
 
     public PathIteratorWrapper transform(AffineTransform xform) {
-        if (xform == null || AffineTransform.getTranslateInstance(0, 0).equals(xform)) {
+        if (xform == null || xform.isIdentity()) {
             return this;
         }
         for (Segment segment : segments) {
             segment.transform(xform);
         }
+        change();
         return this;
     }
 
     public synchronized Runnable restorableSnapshot() {
+        int oldRev = rev;
         Segment[] segs = new Segment[segments.length];
         for (int i = 0; i < segs.length; i++) {
             segs[i] = new Segment(segments[i]);
         }
         return () -> {
             synchronized (this) {
+                rev = oldRev;
                 this.segments = segs;
             }
         };
@@ -904,12 +936,13 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
 
     @Override
     public void applyTransform(AffineTransform xform) {
-        if (xform.isIdentity()) {
+        if (xform == null || xform.isIdentity()) {
             return;
         }
         for (Segment seg : segments) {
             seg.applyTransform(xform);
         }
+        change();
 //        unpack(xform.createTransformedShape(toShape())
 //                .getPathIterator(null));
     }
@@ -919,13 +952,20 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         if (xform == null || xform.isIdentity()) {
             Segment[] nue = new Segment[segments.length];
             for (int i = 0; i < segments.length; i++) {
-                Segment seg = segments[i];
-                Segment s = new Segment(seg);
-                nue[i] = s;
+                nue[i] = new Segment(segments[i]);
             }
-            return new PathIteratorWrapper(nue, fill);
+            PathIteratorWrapper result = new PathIteratorWrapper(nue, fill);
+            result.rev = rev;
+            return result;
         } else {
-            return new PathIteratorWrapper(toShape().getPathIterator(null), fill);
+            Segment[] nue = new Segment[segments.length];
+            for (int i = 0; i < segments.length; i++) {
+                nue[i] = new Segment(segments[i]);
+                nue[i].applyTransform(xform);
+            }
+            PathIteratorWrapper w = new PathIteratorWrapper(nue, fill);
+            w.rev = rev + 1;
+            return w;
         }
     }
 
@@ -1017,6 +1057,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
                 seg.data[i] += offsetX;
                 seg.data[i + 1] += offsetY;
             }
+            change();
             return true;
         }
         return false;
@@ -1040,6 +1081,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
                     seg.data[i] += offsetX;
                     seg.data[i + 1] = seg.data[i] + offsetY;
                 }
+                change();
                 return true;
             }
         }
@@ -1146,6 +1188,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         setControlPointLocation(pointIndex, location.x, location.y);
     }
 
+    @Override
     public Set<ControlPointKind> availablePointKinds(int point) {
         ControlPointKind[] kinds = getControlPointKinds();
         if (point >= kinds.length) {
@@ -1169,8 +1212,11 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             if (segments.length > 0) {
                 Segment seg = segments[0];
                 int ix = seg.primaryPointIndexInternal();
-                seg.data[ix] = x;
-                seg.data[ix + 1] = y;
+                if (seg.data[ix] != x || seg.data[ix + 1] != y) {
+                    seg.data[ix] = x;
+                    seg.data[ix + 1] = y;
+                    change();
+                }
                 return;
             } else {
                 return;
@@ -1184,13 +1230,20 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
                 continue;
             }
             if (pointIndex == cursor) {
-                seg.data[0] = x;
-                seg.data[1] = y;
+                if (seg.data[0] != x || seg.data[1] != y) {
+                    seg.data[0] = x;
+                    seg.data[1] = y;
+                    change();
+                }
                 return;
             } else if (pointIndex > cursor && pointIndex < cursor + currentPointCount) {
                 int offset = (pointIndex - cursor) * 2;
-                seg.data[offset] = x;
-                seg.data[offset + 1] = y;
+                if (seg.data[offset] != x || seg.data[offset + 1] != y) {
+                    seg.data[offset] = x;
+                    seg.data[offset + 1] = y;
+                    change();
+                    return;
+                }
             }
             cursor += currentPointCount;
         }
@@ -1247,6 +1300,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
                 Segment nue = new Segment(null, (byte) SEG_CLOSE);
                 this.segments = Arrays.copyOf(this.segments, this.segments.length + 1);
                 this.segments[this.segments.length - 1] = nue;
+                change();
             }
         }
         return this;
@@ -1258,6 +1312,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         synchronized (this) {
             segments[pointIndex] = nue;
         }
+        change();
         return this;
     }
 
@@ -1267,6 +1322,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         synchronized (this) {
             segments[pointIndex] = nue;
         }
+        change();
         return this;
     }
 
@@ -1276,6 +1332,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         synchronized (this) {
             segments[pointIndex] = nue;
         }
+        change();
         return this;
     }
 
@@ -1285,6 +1342,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         synchronized (this) {
             segments[pointIndex] = nue;
         }
+        change();
         return this;
     }
 
@@ -1303,6 +1361,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
                 }
             }
             segments = nue;
+            change();
         }
         return result;
     }
@@ -1371,6 +1430,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             curr.data[2] = newPoint[0];
             curr.data[3] = newPoint[1];
         }
+        change();
     }
 
     private static double[] equidistantPoint(double x1, double y1, double x2, double y2) {
@@ -1446,6 +1506,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             }
             nue[targetIx] = seg;
             this.segments = nue;
+            change();
         }
         return this;
     }
@@ -1478,6 +1539,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             nue[i] = seg;
         }
         segments = nue;
+        change();
         return true;
     }
 
@@ -1515,7 +1577,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
     public synchronized boolean toCubicSplines() {
         boolean result = false;
         for (int i = 0; i < segments.length; i++) {
-            if (segments[i].type == SEG_LINETO) {
+            if (segments[i].type == SEG_LINETO || segments[i].type == SEG_QUADTO) {
                 double[] pt = segments[i].primaryPoint();
                 double[] nue = new double[6];
                 System.arraycopy(pt, 0, nue, 0, 2);
@@ -1525,13 +1587,16 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
                 result = true;
             }
         }
+        if (result) {
+            change();
+        }
         return result;
     }
 
     public synchronized boolean toQuadSplines() {
         boolean result = false;
         for (int i = 0; i < segments.length; i++) {
-            if (segments[i].type == SEG_LINETO) {
+            if (segments[i].type == SEG_LINETO || segments[i].type == SEG_CUBICTO) {
                 double[] pt = segments[i].primaryPoint();
                 double[] nue = new double[4];
                 System.arraycopy(pt, 0, nue, 0, 2);
@@ -1539,6 +1604,9 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
                 segments[i] = new Segment(nue, (byte) SEG_QUADTO);
                 result = true;
             }
+        }
+        if (result) {
+            change();
         }
         return result;
     }
@@ -1639,6 +1707,10 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
                 s.applyTo(result);
             }
             lastType = s.type;
+        }
+        if (elided > 0) {
+            unpack(result.getPathIterator(null));
+            change();
         }
         return elided;
     }

@@ -303,10 +303,10 @@ public class VectorIO {
     }
 
     private void writeLine(Line line, KeyWriter writer) {
-        writer.writeDouble(line.x1);
-        writer.writeDouble(line.y1);
-        writer.writeDouble(line.x2);
-        writer.writeDouble(line.y2);
+        writer.writeDouble(line.x1());
+        writer.writeDouble(line.y1());
+        writer.writeDouble(line.x2());
+        writer.writeDouble(line.y2());
     }
 
     private Line readLine(KeyReader r) throws IOException {
@@ -315,10 +315,10 @@ public class VectorIO {
     }
 
     private void writeOval(Oval oval, KeyWriter writer) {
-        writer.writeDouble(oval.x);
-        writer.writeDouble(oval.y);
-        writer.writeDouble(oval.width);
-        writer.writeDouble(oval.height);
+        writer.writeDouble(oval.x());
+        writer.writeDouble(oval.y());
+        writer.writeDouble(oval.width());
+        writer.writeDouble(oval.height());
     }
 
     private Oval readOval(KeyReader r) throws IOException {
@@ -328,10 +328,10 @@ public class VectorIO {
     }
 
     private void writeRectangle(Rectangle rectangle, KeyWriter writer) {
-        writer.writeDouble(rectangle.x);
-        writer.writeDouble(rectangle.y);
-        writer.writeDouble(rectangle.w);
-        writer.writeDouble(rectangle.h);
+        writer.writeDouble(rectangle.x());
+        writer.writeDouble(rectangle.y());
+        writer.writeDouble(rectangle.width());
+        writer.writeDouble(rectangle.height());
     }
 
     private Rectangle readRect(KeyReader r) throws IOException {
@@ -341,12 +341,12 @@ public class VectorIO {
     }
 
     private void writerRoundRect(RoundRect rectangle, KeyWriter writer) {
-        writer.writeDouble(rectangle.x);
-        writer.writeDouble(rectangle.y);
-        writer.writeDouble(rectangle.w);
-        writer.writeDouble(rectangle.h);
-        writer.writeDouble(rectangle.aw);
-        writer.writeDouble(rectangle.ah);
+        writer.writeDouble(rectangle.x());
+        writer.writeDouble(rectangle.y());
+        writer.writeDouble(rectangle.width());
+        writer.writeDouble(rectangle.height());
+        writer.writeDouble(rectangle.arcWidth());
+        writer.writeDouble(rectangle.arcHeight());
     }
 
     private RoundRect readRoundRect(KeyReader r) throws IOException {
@@ -356,12 +356,12 @@ public class VectorIO {
     }
 
     private void writeTriangle(TriangleWrapper triangleWrapper, KeyWriter writer) {
-        writer.writeDouble(triangleWrapper.ax);
-        writer.writeDouble(triangleWrapper.ay);
-        writer.writeDouble(triangleWrapper.bx);
-        writer.writeDouble(triangleWrapper.by);
-        writer.writeDouble(triangleWrapper.cx);
-        writer.writeDouble(triangleWrapper.cy);
+        writer.writeDouble(triangleWrapper.ax());
+        writer.writeDouble(triangleWrapper.ay());
+        writer.writeDouble(triangleWrapper.bx());
+        writer.writeDouble(triangleWrapper.by());
+        writer.writeDouble(triangleWrapper.cx());
+        writer.writeDouble(triangleWrapper.cy());
     }
 
     private TriangleWrapper readTriangle(KeyReader r) throws IOException {
@@ -375,8 +375,8 @@ public class VectorIO {
     }
 
     private void writePolygon(Polygon polygon, KeyWriter writer) {
-        writer.writeDoubleArray(polygon.xpoints);
-        writer.writeDoubleArray(polygon.ypoints);
+        writer.writeDoubleArray(polygon.xpoints());
+        writer.writeDoubleArray(polygon.ypoints());
     }
 
     private Polygon readPolygon(KeyReader r) throws IOException {
@@ -421,14 +421,14 @@ public class VectorIO {
         }
 
         FontWrapper fnt = text.font();
-        writer.writeFloat(fnt.size);
-        writer.writeInt(fnt.style);
-        writer.writeString(fnt.getFontName());
-        if (fnt.transform == null || fnt.transform.isIdentity()) {
+        writer.writeFloat(fnt.getSize());
+        writer.writeInt(fnt.getStyle());
+        writer.writeString(fnt.getName());
+        if (fnt.getTransform() == null || fnt.getTransform().isIdentity()) {
             writer.writeDoubleArray(new double[0]);
         } else {
             double[] dbls = new double[6];
-            fnt.transform.getMatrix(dbls);
+            fnt.getTransform().getMatrix(dbls);
             writer.writeDoubleArray(dbls);
         }
     }
@@ -551,9 +551,9 @@ public class VectorIO {
     }
 
     private void writeFontWrapper(FontWrapper font, KeyWriter writer) {
-        writer.writeString(font.getFontName());
-        writer.writeFloat(font.getFontSize());
-        writer.writeInt(font.getFontStyle());
+        writer.writeString(font.getName());
+        writer.writeFloat(font.getSize());
+        writer.writeInt(font.getStyle());
         writeAffineTransform(font.getTransform(), writer);
     }
 
@@ -581,9 +581,9 @@ public class VectorIO {
     }
 
     private void writeStringWrapper(StringWrapper stringWrapper, KeyWriter writer) {
-        writer.writeDouble(stringWrapper.x);
-        writer.writeDouble(stringWrapper.y);
-        writer.writeString(stringWrapper.string);
+        writer.writeDouble(stringWrapper.x());
+        writer.writeDouble(stringWrapper.y());
+        writer.writeString(stringWrapper.getText());
     }
 
     private StringWrapper readStringWrapper(KeyReader r) throws IOException {

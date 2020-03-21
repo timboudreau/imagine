@@ -52,7 +52,7 @@ public class ShapeDesignTool extends ToolImplementation<ShapesCollection>
             ViewL.detach(designToolWidget.getScene());
         }
         layerLookup.setOtherLookups();
-        widgetLookup.lookups();
+        widgetLookup.updateLookups();
         ShapesPaletteTC.closePalette();
     }
 
@@ -85,7 +85,7 @@ public class ShapeDesignTool extends ToolImplementation<ShapesCollection>
             designToolWidget = man.getMainWidget();
 
             layerLookup.setOtherLookups(designToolWidget.getLookup());
-//            widgetLookup.lookups(designToolWidget.getLookup());
+//            widgetLookup.updateLookups(designToolWidget.getLookup());
         }
         return designToolWidget;
     }

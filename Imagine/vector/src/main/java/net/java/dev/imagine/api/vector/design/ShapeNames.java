@@ -89,13 +89,13 @@ public class ShapeNames {
                     FMT.format(img.imageWidth()), FMT.format(img.imageHeight()));
         } else if (primitive instanceof net.java.dev.imagine.api.vector.elements.Rectangle) {
             net.java.dev.imagine.api.vector.elements.Rectangle r = (net.java.dev.imagine.api.vector.elements.Rectangle) primitive;
-            return Bundle.rectangularInfo(FMT.format(r.x), FMT.format(r.y),
+            return Bundle.rectangularInfo(FMT.format(r.x()), FMT.format(r.y()),
                     FMT.format(r.width()), FMT.format(r.height()));
         } else if (primitive instanceof Text) {
             return Bundle.text();
         } else if (primitive instanceof RoundRect) {
             RoundRect r = (RoundRect) primitive;
-            return Bundle.rectangularInfo(FMT.format(r.x), FMT.format(r.y),
+            return Bundle.rectangularInfo(FMT.format(r.x()), FMT.format(r.y()),
                     FMT.format(r.width()), FMT.format(r.height()));
         } else if (primitive instanceof Triangle2D) {
             return Bundle.triangle();
@@ -104,12 +104,12 @@ public class ShapeNames {
             return Bundle.pathInfo(w.size());
         } else if (primitive instanceof Line) {
             Line line = (Line) primitive;
-            return Bundle.lineInfo(FMT.format(line.x1),
-                    FMT.format(line.y1), FMT.format(line.x2),
-                    FMT.format(line.y2), FMT.format(line.length()));
+            return Bundle.lineInfo(FMT.format(line.x1()),
+                    FMT.format(line.y1()), FMT.format(line.x2()),
+                    FMT.format(line.y2()), FMT.format(line.length()));
         } else if (primitive instanceof Oval) {
             Oval r = (Oval) primitive;
-            return Bundle.rectangularInfo(FMT.format(r.x), FMT.format(r.y),
+            return Bundle.rectangularInfo(FMT.format(r.x()), FMT.format(r.y()),
                     FMT.format(r.width()), FMT.format(r.height()));
         } else if (primitive instanceof Clear) {
             Clear r = (Clear) primitive;

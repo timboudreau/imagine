@@ -12,6 +12,7 @@ import java.awt.Toolkit;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Set;
+import java.util.function.Supplier;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Mutable;
 import net.java.dev.imagine.api.vector.util.Pt;
@@ -30,8 +31,11 @@ final class ControlPointImpl implements ControlPoint {
     private boolean invalid;
     private double[] vals;
     private final ControlPointKind kind;
+    private final Supplier<ControlPoint[]> family;
 
-    ControlPointImpl(Adjustable primitive, ControlPointController controller, int index, boolean virtual, ControlPointKind kind) {
+    ControlPointImpl(Adjustable primitive, ControlPointController controller, int index, boolean virtual, ControlPointKind kind,
+                Supplier<ControlPoint[]> family) {
+        this.family = family;
         this.primitive = primitive;
         this.index = index;
         this.controller = controller;
@@ -40,12 +44,16 @@ final class ControlPointImpl implements ControlPoint {
         this.kind = kind;
     }
 
+    public ControlPoint[] family() {
+        return family.get();
+    }
+
     @Override
     public String toString() {
         return "Cp("
                 + index
                 + " "
-                + Integer.toString(System.identityHashCode(primitive));
+                + Integer.toString(System.identityHashCode(primitive), 36);
     }
 
     @Override
@@ -219,7 +227,7 @@ final class ControlPointImpl implements ControlPoint {
 
     @Override
     public int hashCode() {
-        return index * 98_479;
+        return index * 98_479 + System.identityHashCode(primitive);
     }
 
     @Override
@@ -232,7 +240,8 @@ final class ControlPointImpl implements ControlPoint {
             return false;
         }
         final ControlPoint other = (ControlPoint) obj;
-        return this.index == other.index();
+        return this.index == other.index()
+                && other.getPrimitive() == primitive;
     }
 
     @Override

@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
- * Safe type for a normalized angle in degrees.
+ * Safe type for a normalized angle in degrees, assuming 0\u00b0 is 12 o'clock.
  *
  * @author Tim Boudreau
  */

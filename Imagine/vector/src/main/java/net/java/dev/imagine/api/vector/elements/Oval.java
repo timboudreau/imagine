@@ -19,6 +19,7 @@ import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
+import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
@@ -29,11 +30,15 @@ import org.imagine.geometry.util.GeometryUtils;
  *
  * @author Tim Boudreau
  */
-public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
+public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector, Versioned {
 
-    public long serialVersionUID = 232_354_194L;
-    public double x, y, width, height;
+    private static final long serialVersionUID = 232_354_194L;
+    private double x;
+    private double y;
+    private double width;
+    private double height;
     public boolean fill;
+    private transient int rev;
 
     public Oval(double x, double y, double width, double height, boolean fill) {
         this.x = x;
@@ -44,16 +49,28 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
     }
 
     @Override
+    public int rev() {
+        return rev;
+    }
+
+    private void change() {
+        rev++;
+    }
+
+    @Override
     public double cumulativeLength() {
         return GeometryUtils.shapeLength(toShape());
     }
 
+    @Override
     public Runnable restorableSnapshot() {
         double ox = x;
         double oy = y;
         double ow = width;
         double oh = height;
+        int oldRev = rev;
         return () -> {
+            rev = oldRev;
             x = ox;
             y = oy;
             height = oh;
@@ -84,25 +101,40 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
     }
 
     public void setX(double x) {
-        this.x = x;
+        if (x != this.x) {
+            this.x = x;
+            change();
+        }
     }
 
     public void setY(double y) {
-        this.y = y;
+        if (y != this.y) {
+            this.y = y;
+            change();
+        }
     }
 
     public void setWidth(double w) {
-        this.width = w;
+        if (w != this.width) {
+            width = w;
+            change();
+        }
     }
 
     public void setHeight(double h) {
-        this.height = h;
+        if (h != height) {
+            height = h;
+            change();
+        }
     }
 
     @Override
     public void translate(double x, double y) {
-        this.x += x;
-        this.y += y;
+        if (x != 0 || y != 0) {
+            this.x += x;
+            this.y += y;
+            change();
+        }
     }
 
     @Override
@@ -114,13 +146,17 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
     @Override
     public Shape toShape() {
         if (width == height) {
-            return new Circle(x + (width / 2D), y + (height / 2D), width / 2D);
+            double radius = width / 2;
+            return new Circle(x + radius, y + radius, radius);
         }
         return new Ellipse2D.Double(x, y, width, height);
     }
 
     @Override
     public void applyTransform(AffineTransform xform) {
+        if (xform == null || xform.isIdentity()) {
+            return;
+        }
         Point2D.Double a = new Point2D.Double(x, y);
         Point2D.Double b = new Point2D.Double(x + width, y + height);
         xform.transform(a, a);
@@ -129,6 +165,7 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
         y = a.y;
         width = b.x - a.x;
         height = b.y - a.y;
+        change();
     }
 
     @Override
@@ -194,7 +231,9 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
 
     @Override
     public Oval copy() {
-        return new Oval(x, y, width, height, fill);
+        Oval result = new Oval(x, y, width, height, fill);
+        result.rev = rev;
+        return result;
     }
 
     @Override
@@ -204,23 +243,27 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
 
     @Override
     public void setLocation(double x, double y) {
-        this.x = x;
-        this.y = y;
+        if (x != this.x || y != this.y) {
+            this.x = x;
+            this.y = y;
+            change();
+        }
     }
 
     @Override
     public void clearLocation() {
-        x = 0D;
-        y = 0D;
+        setLocation(0, 0);
     }
 
     @Override
-    public Vector copy(AffineTransform xform) {
+    public Oval copy(AffineTransform xform) {
         double[] pts = new double[]{
             x, y, x + width, y + height,};
         xform.transform(pts, 0, pts, 0, 2);
-        return new Oval(pts[0], pts[1],
+        Oval result = new Oval(pts[0], pts[1],
                 pts[2] - pts[0], pts[3] - pts[1], fill);
+        result.rev = rev + 1;
+        return result;
     }
 
     @Override
@@ -302,6 +345,7 @@ public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector {
             default:
                 throw new IllegalArgumentException(Integer.toString(pointIndex));
         }
+        change();
         renormalize();
     }
 

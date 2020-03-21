@@ -80,7 +80,7 @@ public class NextPrevProviderImpl implements NextPrevProvider {
                 lkp.removeLookup(wl);
                 break;
             case REPLACE_SELECTION:
-                lkp.lookups(wl);
+                lkp.updateLookups(wl);
                 break;
             default:
                 throw new AssertionError(op);

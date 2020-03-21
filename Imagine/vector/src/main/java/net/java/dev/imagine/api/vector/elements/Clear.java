@@ -13,25 +13,36 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Transformable;
+import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 
 /**
  *
  * @author Tim Boudreau
  */
-public final class Clear implements Volume, Primitive, Transformable {
+public final class Clear implements Volume, Primitive, Transformable, Versioned {
 
     private static final long serialVersionUID = 101_034L;
     public int x;
     public int y;
     public int width;
     public int height;
+    private int rev;
 
     public Clear(int x, int y, int w, int h) {
         this.x = x;
         this.y = y;
         this.width = w;
         this.height = h;
+    }
+
+    @Override
+    public int rev() {
+        return rev;
+    }
+
+    private void change() {
+        rev++;
     }
 
     @Override
@@ -50,7 +61,9 @@ public final class Clear implements Volume, Primitive, Transformable {
         int oy = y;
         int ow = width;
         int oh = height;
+        int oldRev = rev;
         return () -> {
+            rev = oldRev;
             x = ox;
             y = oy;
             width = ow;
@@ -60,8 +73,13 @@ public final class Clear implements Volume, Primitive, Transformable {
 
     @Override
     public void translate(double x, double y) {
-        this.x += (int) x;
-        this.y += (int) y;
+        int dx = (int) x;
+        int dy = (int) y;
+        if (dx != 0 && dy != 0) {
+            this.x += dx;
+            this.y += dy;
+            change();
+        }
     }
 
     @Override
@@ -91,7 +109,9 @@ public final class Clear implements Volume, Primitive, Transformable {
 
     @Override
     public Clear copy() {
-        return new Clear(x, y, width, height);
+        Clear result = new Clear(x, y, width, height);
+        result.rev = rev;
+        return result;
     }
 
     @Override
@@ -116,8 +136,13 @@ public final class Clear implements Volume, Primitive, Transformable {
     }
 
     public void setLocation(double x, double y) {
-        this.x = (int) x;
-        this.y = (int) y;
+        int nx = (int) x;
+        int ny = (int) y;
+        if (nx != x || ny != y) {
+            this.x = nx;
+            this.y = ny;
+            change();
+        }
     }
 
     private void setFrame(double x, double y, double w, double h) {
@@ -127,6 +152,7 @@ public final class Clear implements Volume, Primitive, Transformable {
         double y1 = Math.ceil(y + h);
         this.width = (int) (x1 - this.x);
         this.height = (int) (y1 - this.y);
+        change();
     }
 
     @Override

@@ -19,6 +19,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import javax.swing.AbstractAction;
@@ -34,6 +35,7 @@ import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.Textual;
 import net.java.dev.imagine.api.vector.Vector;
+import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import static net.java.dev.imagine.api.vector.elements.Text.scratchImage;
 import static net.java.dev.imagine.api.vector.elements.Text.trimTail;
@@ -55,7 +57,7 @@ import org.openide.util.Exceptions;
  *
  * @author Tim Boudreau
  */
-public class PathText implements Primitive, Vector, Adjustable, Textual {
+public class PathText implements Primitive, Vector, Adjustable, Textual, Versioned {
 
     public static final int MAX_RENDERING_VERSION = 1;
 
@@ -72,6 +74,37 @@ public class PathText implements Primitive, Vector, Adjustable, Textual {
     Area area;
     private int renderingVersion = MAX_RENDERING_VERSION;
     private Shaped shape;
+    private int rev;
+
+    public PathText(PathText other, AffineTransform xform) {
+        this.shape = other.shape.copy();
+        this.text = other.text.copy();
+        this.font = other.font.copy();
+        this.xform = xform;
+        this.rev = xform == null ? other.rev : other.rev + 1;
+        this.leadingMultiplier = other.leadingMultiplier;
+        this.cachedShape = xform != null ? null : other.cachedShape;
+        this.hashAtShapeCache = xform != null ? -1 : other.hashAtShapeCache;
+        this.useArea = other.useArea;
+        this.baselines = xform != null ? new double[0] : other.baselines == null ? new double[0] : Arrays.copyOf(other.baselines, other.baselines.length);
+        this.charPositions = xform != null ? new double[0] : other.charPositions == null ? new double[0] : Arrays.copyOf(other.charPositions, other.charPositions.length);
+        this.renderingVersion = other.renderingVersion;
+    }
+
+    public PathText(PathText other) {
+        this.shape = other.shape.copy();
+        this.text = other.text.copy();
+        this.font = other.font.copy();
+        this.xform = other.xform == null ? null : new AffineTransform(other.xform);
+        this.rev = other.rev;
+        this.leadingMultiplier = other.leadingMultiplier;
+        this.cachedShape = other.cachedShape;
+        this.hashAtShapeCache = other.hashAtShapeCache;
+        this.useArea = other.useArea;
+        this.baselines = other.baselines == null ? null : Arrays.copyOf(other.baselines, other.baselines.length);
+        this.charPositions = other.charPositions == null ? null : Arrays.copyOf(other.charPositions, other.charPositions.length);
+        this.renderingVersion = other.renderingVersion;
+    }
 
     public PathText(Shaped shape, StringWrapper string, FontWrapper font, AffineTransform xform) {
         this.text = string;
@@ -90,6 +123,18 @@ public class PathText implements Primitive, Vector, Adjustable, Textual {
         this.text = new StringWrapper(text, x, y);
         this.font = FontWrapper.create(font, true);
         this.shape = shape;
+    }
+
+    public int rev() {
+        int result = rev + 1000 * text.rev() + 10000 * font.rev();
+        if (shape instanceof Versioned) {
+            result += 100000 * ((Versioned) shape).rev();
+        }
+        return result;
+    }
+
+    private void change() {
+        rev++;
     }
 
     public Shaped shape() {
@@ -120,9 +165,19 @@ public class PathText implements Primitive, Vector, Adjustable, Textual {
         Runnable tr = text.restorableSnapshot();
         Runnable fr = font.restorableSnapshot();
         Runnable sh = shape.restorableSnapshot();
+        int oldRev = rev;
+        int rv = renderingVersion;
+        Shaped oldShape = shape;
+        FontWrapper oldFont = font;
+        StringWrapper oldText = text;
         AffineTransform xf = xform == null ? null : new AffineTransform(xform);
         return () -> {
+            font = oldFont;
+            text = oldText;
+            rev = oldRev;
             xform = xf;
+            shape = oldShape;
+            renderingVersion = rv;
             tr.run();
             fr.run();
             sh.run();
@@ -139,30 +194,30 @@ public class PathText implements Primitive, Vector, Adjustable, Textual {
     }
 
     public String fontName() {
-        return font.getFontName();
+        return font.getName();
     }
 
     public float fontSize() {
-        return font.getFontSize();
+        return font.getSize();
     }
 
     public int getFontStyle() {
-        return font.getFontStyle();
+        return font.getStyle();
     }
 
     public void setFontSize(float size) {
         invalidateCachedShape();
-        font.setFontSize(size);
+        font.setSize(size);
     }
 
     public void setFontName(String fontName) {
         invalidateCachedShape();
-        font.setFontName(fontName);
+        font.setName(fontName);
     }
 
     public void setFontStyle(int style) {
         invalidateCachedShape();
-        font.setFontStyle(style);
+        font.setStyle(style);
     }
 
     public void setTransform(AffineTransform xform) {
@@ -186,20 +241,20 @@ public class PathText implements Primitive, Vector, Adjustable, Textual {
     }
 
     public double x() {
-        return text.x;
+        return text.x();
     }
 
     public double y() {
-        return text.y;
+        return text.y();
     }
 
     public void setX(double x) {
-        text.x = x;
+        text.setX(x);
         invalidateCachedShape();
     }
 
     public void setY(double y) {
-        text.y = y;
+        text.setY(y);
         invalidateCachedShape();
     }
 
@@ -307,8 +362,7 @@ public class PathText implements Primitive, Vector, Adjustable, Textual {
 
     @Override
     public PathText copy(AffineTransform xform) {
-        AffineTransform origXform = this.xform == null ? null : new AffineTransform(this.xform);
-        PathText nue = new PathText(shape.copy(), text.copy(), font.copy(), new AffineTransform(origXform));
+        PathText nue = new PathText(this);
         if (xform != null && !xform.isIdentity()) {
             nue.applyTransform(xform);
         }
@@ -317,11 +371,7 @@ public class PathText implements Primitive, Vector, Adjustable, Textual {
 
     @Override
     public PathText copy() {
-        StringWrapper txt = text.copy();
-        FontWrapper fnt = font.copy();
-        return new PathText(shape.copy(), txt, fnt, xform == null || xform.isIdentity()
-                ? null
-                : new AffineTransform(xform));
+        return new PathText(this);
     }
 
     @Override
@@ -394,6 +444,7 @@ public class PathText implements Primitive, Vector, Adjustable, Textual {
         cachedShape = null;
         hashAtShapeCache = -1;
         baselines = null;
+        change();
     }
 
     public int renderingVersion() {
@@ -593,7 +644,7 @@ public class PathText implements Primitive, Vector, Adjustable, Textual {
 
         Triangle2D t2 = new Triangle2D(10, 10, 150, 100, 100, 100);
 
-        FontWrapper fw = FontWrapper.create("Agate", 680F, Font.BOLD);
+        FontWrapper fw = FontWrapper.create("monofur", 680F, Font.BOLD);
         Text tx = new Text("J", fw.toFont(), 100, 100);
 
         tx.translate(20, 400);
@@ -602,27 +653,27 @@ public class PathText implements Primitive, Vector, Adjustable, Textual {
                 .createTransformedShape(p2);
 
         PathText txt = new PathText(
-//                                new CircleWrapper(300, 300, 200),
-                new PathIteratorWrapper(p3),
-//                new PathIteratorWrapper(tx.toShape()),
-//                tx,
+                //                new CircleWrapper(300, 300, 200),
+                //                new PathIteratorWrapper(p3),
+                //                new PathIteratorWrapper(tx.toShape()),
+                tx,
                 //                                new PathIteratorWrapper(t2),
                 new StringWrapper(
                         "Jack Jack Jack Jack Jack Jack Jack Jack Jack "
                         + "Jack Jack Jack Jack Jack Jack Jack Jack Jack "
                         + "Jack Jack Jack Jack Jack Jack",
-//                        "This is the letter M.  This is the letter M."
-//                                + "This is the letter M.  This is the letter M."
-//                                + "This is the letter M.   This is the letter M. "
-//                                + "This is the letter M.  This is the letter M."
-//                                + "This is the letter M.",
-//                        "Hello World, how about path text? "
-//                        + "It looks like it could be kind of fun.  At least I "
-//                        + "think it will be - let's scale it to be sure.  Well, "
-//                        + "maybe it works.  "
-//                        + "We'll see.",
+                        //                        "This is the letter M.  This is the letter M."
+                        //                                + "This is the letter M.  This is the letter M."
+                        //                                + "This is the letter M.   This is the letter M. "
+                        //                                + "This is the letter M.  This is the letter M."
+                        //                                + "This is the letter M.",
+                        //                        "Hello World, how about path text? "
+                        //                        + "It looks like it could be kind of fun.  At least I "
+                        //                        + "think it will be - let's scale it to be sure.  Well, "
+                        //                        + "maybe it works.  "
+                        //                        + "We'll see.",
                         0, 0), FontWrapper.create(
-                        "Agate", 35F, Font.PLAIN));
+                        "monofur", 45F, Font.PLAIN));
         JFrame jf = new JFrame();
         jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         jf.setContentPane(new JScrollPane(new VComp(txt)));
@@ -715,7 +766,7 @@ public class PathText implements Primitive, Vector, Adjustable, Textual {
     }
 
     public String getFontName() {
-        return font.name;
+        return font.getName();
     }
 
     @Override
@@ -784,6 +835,4 @@ public class PathText implements Primitive, Vector, Adjustable, Textual {
         }
         return true;
     }
-
-
 }

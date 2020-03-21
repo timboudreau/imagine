@@ -21,6 +21,7 @@ import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Textual;
 import net.java.dev.imagine.api.vector.Vector;
+import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.graphics.FontWrapper;
 import net.java.dev.imagine.api.vector.util.Pt;
@@ -35,7 +36,7 @@ import org.openide.util.Exceptions;
  *
  * @author Tim Boudreau
  */
-public class Text implements Primitive, Vector, Adjustable, Textual {
+public class Text implements Primitive, Vector, Adjustable, Textual, Versioned {
 
     private transient static BufferedImage scratch;
     private StringWrapper text;
@@ -43,6 +44,7 @@ public class Text implements Primitive, Vector, Adjustable, Textual {
     private AffineTransform xform;
     private transient double[] baselines;
     private float leadingMultiplier = 1;
+    private int rev;
 
     public Text(StringWrapper string, FontWrapper font, AffineTransform xform) {
         this.text = string;
@@ -58,6 +60,14 @@ public class Text implements Primitive, Vector, Adjustable, Textual {
     public Text(String text, Font font, double x, double y) {
         this.text = new StringWrapper(text, x, y);
         this.font = FontWrapper.create(font, true);
+    }
+
+    public int rev() {
+        return rev + text.rev() + font.rev();
+    }
+
+    private void change() {
+        rev++;
     }
 
     public AffineTransform transform() {
@@ -103,45 +113,51 @@ public class Text implements Primitive, Vector, Adjustable, Textual {
     }
 
     public String fontName() {
-        return font.getFontName();
+        return font.getName();
     }
 
     public float fontSize() {
-        return font.getFontSize();
+        return font.getSize();
     }
 
     public int getFontStyle() {
-        return font.getFontStyle();
+        return font.getStyle();
     }
 
     public void setFontSize(float size) {
         invalidateCachedShape();
-        font.setFontSize(size);
+        font.setSize(size);
     }
 
     public void setFontName(String fontName) {
         invalidateCachedShape();
-        font.setFontName(fontName);
+        font.setName(fontName);
     }
 
     public void setFontStyle(int style) {
         invalidateCachedShape();
-        font.setFontStyle(style);
+        font.setStyle(style);
     }
 
     public void setTransform(AffineTransform xform) {
-//        font.setTransform(xform);
         this.xform = xform;
+        change();
     }
 
     public void setText(StringWrapper text) {
         invalidateCachedShape();
-        this.text = text;
+        if (!this.text.equals(text)) {
+            this.text = text;
+            change();
+        }
     }
 
     public void setFont(FontWrapper font) {
         invalidateCachedShape();
-        this.font = font;
+        if (!this.font.equals(font)) {
+            this.font = font;
+            change();
+        }
     }
 
     public void setText(String txt) {
@@ -150,23 +166,24 @@ public class Text implements Primitive, Vector, Adjustable, Textual {
     }
 
     public double x() {
-        return text.x;
+        return text.x();
     }
 
     public double y() {
-        return text.y;
+        return text.y();
     }
 
     public void setX(double x) {
-        text.x = x;
+        text.setX(x);
         invalidateCachedShape();
     }
 
     public void setY(double y) {
-        text.y = y;
+        text.setY(y);
         invalidateCachedShape();
     }
 
+    @Override
     public String getText() {
         return text.getText();
     }
@@ -197,11 +214,13 @@ public class Text implements Primitive, Vector, Adjustable, Textual {
             } else {
                 if (this.xform == null) {
                     this.xform = xform;
+                    change();
                 } else {
                     this.xform.concatenate(xform);
                     if (this.xform.isIdentity()) {
                         this.xform = null;
                     }
+                    change();
                 }
             }
             invalidateCachedShape();
@@ -253,16 +272,20 @@ public class Text implements Primitive, Vector, Adjustable, Textual {
             xf.preConcatenate(transform);
             return new Text(txt, fnt, xf);
         }
-        return new Text(txt, fnt, transform);
+        Text result = new Text(txt, fnt, transform);
+        result.rev = rev;
+        return result;
     }
 
     @Override
     public Text copy() {
         StringWrapper txt = text.copy();
         FontWrapper fnt = font.copy();
-        return new Text(txt, fnt, xform == null || xform.isIdentity()
+        Text result = new Text(txt, fnt, xform == null || xform.isIdentity()
                 ? null
                 : new AffineTransform(xform));
+        result.rev = rev;
+        return result;
     }
 
     @Override
@@ -500,7 +523,7 @@ public class Text implements Primitive, Vector, Adjustable, Textual {
     }
 
     public String getFontName() {
-        return font.name;
+        return font.getName();
     }
 
     private void ensureShape() {

@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.java.dev.imagine.api.vector.elements;
 
 import java.awt.Graphics2D;
@@ -15,6 +10,7 @@ import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Vector;
+import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import static net.java.dev.imagine.api.vector.design.ControlPointKind.PHYSICAL_POINT;
@@ -26,10 +22,12 @@ import org.imagine.geometry.Circle;
  *
  * @author Tim Boudreau
  */
-public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, Vector {
+public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, Vector, Versioned {
 
+    private static final long serialVersionUID = 1;
     public double centerX, centerY, radius;
     public boolean fill;
+    private int rev;
 
     public CircleWrapper(Circle circle) {
         this(circle, true);
@@ -53,6 +51,24 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
         this.fill = fill;
     }
 
+    public CircleWrapper(CircleWrapper other) {
+        this.rev = other.rev;
+        this.fill = other.fill;
+        this.centerX = other.centerX;
+        this.centerY = other.centerY;
+        this.radius = other.radius;
+    }
+
+    @Override
+    public int rev() {
+        return rev;
+    }
+
+    private void change() {
+        rev++;
+    }
+
+    @Override
     public double cumulativeLength() {
         return 2D * Math.PI * radius;
     }
@@ -62,10 +78,12 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
         double cx = centerX;
         double cy = centerY;
         double rad = radius;
+        int oldRev = rev;
         return () -> {
             centerX = cx;
             centerY = cy;
             radius = rad;
+            rev = oldRev;
         };
     }
 
@@ -82,26 +100,38 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
     }
 
     public void setCenterX(double centerX) {
-        this.centerX = centerX;
+        if (centerX != this.centerX) {
+            this.centerX = centerX;
+            change();
+        }
     }
 
     public void setCenterY(double centerY) {
-        this.centerY = centerY;
+        if (centerY != this.centerY) {
+            this.centerY = centerY;
+            change();
+        }
     }
 
     public void setRadius(double radius) {
-        this.radius = radius;
+        if (radius != this.radius) {
+            this.radius = radius;
+            change();
+        }
     }
 
     @Override
     public void translate(double x, double y) {
-        centerX += x;
-        centerY += y;
+        if (x != 0 || y != 0) {
+            centerX += x;
+            centerY += y;
+            change();
+        }
     }
 
     @Override
     public CircleWrapper copy() {
-        return new CircleWrapper(centerX, centerY, radius, fill);
+        return new CircleWrapper(this);
     }
 
     @Override
@@ -121,13 +151,19 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
 
     @Override
     public void setLocation(double x, double y) {
-        centerX = x;
-        centerY = y;
+        if (x != centerX || y != centerY) {
+            centerX = x;
+            centerY = y;
+            change();
+        }
     }
 
     @Override
     public void clearLocation() {
-        centerX = centerY = 0;
+        if (centerX != 0 || centerY != 0) {
+            centerX = centerY = 0;
+            change();
+        }
     }
 
     @Override
@@ -142,7 +178,9 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
                 circ.positionOf(0, radius, 2, pts);
                 transform.transform(pts, 0, pts, 0, 2);
                 double newRadius = Point2D.distance(pts[0], pts[1], pts[2], pts[3]);
-                return new CircleWrapper(pts[0], pts[1], newRadius);
+                CircleWrapper result = new CircleWrapper(pts[0], pts[1], newRadius);
+                result.rev = rev + 1;
+                return result;
         }
     }
 
@@ -196,9 +234,13 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
                 circ.positionOf(0, radius, 2, pts);
                 xform.transform(pts, 0, pts, 0, pts.length / 2);
                 double newRadius = Point2D.distance(pts[0], pts[1], pts[2], pts[3]);
-                centerX = pts[0];
-                centerY = pts[1];
-                radius = newRadius;
+                boolean changed = radius != newRadius || centerX != pts[0] || centerY != pts[1];
+                if (changed) {
+                    centerX = pts[0];
+                    centerY = pts[1];
+                    radius = newRadius;
+                    change();
+                }
         }
     }
 
@@ -233,12 +275,19 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
     public void setControlPointLocation(int pointIndex, Pt location) {
         switch (pointIndex) {
             case 0:
-                centerX = location.x;
-                centerY = location.y;
+                if (location.x != centerX || location.y != centerY) {
+                    centerX = location.x;
+                    centerY = location.y;
+                    change();
+                }
                 break;
             case 1:
-                radius = Point2D.distance(centerX, centerY, location.x,
+                double newRadius = Point2D.distance(centerX, centerY, location.x,
                         location.y);
+                if (newRadius != radius) {
+                    radius = newRadius;
+                    change();
+                }
                 break;
             default:
                 throw new IllegalArgumentException("Only 2 control points, got "

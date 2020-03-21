@@ -3,7 +3,6 @@ package net.java.dev.imagine.api.vector.elements;
 import java.awt.Shape;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -12,7 +11,6 @@ import net.java.dev.imagine.api.vector.util.plot.Positioner;
 import org.imagine.geometry.Angle;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.EqLine;
-import org.imagine.geometry.util.GeometryUtils;
 
 /**
  *
@@ -165,6 +163,7 @@ class PositionerImpl2 implements Positioner {
                 AffineTransform xl = AffineTransform.getTranslateInstance(points[0], points[1]);
                 curr = xl.createTransformedShape(curr);
 
+                /*
                 if (false && last != null) {
                     // XXX need a highly accurate intersection. This is not one.
                     Rectangle2D lastBounds = last.getBounds2D();
@@ -191,6 +190,7 @@ class PositionerImpl2 implements Positioner {
                         }
                     }
                 }
+                */
 
                 last = curr;
                 if (curr == null) {
@@ -198,8 +198,6 @@ class PositionerImpl2 implements Positioner {
                 }
                 allShapes.add(curr);
                 angleAtLastEmit = ang;
-            } else {
-                System.out.println("curr null");
             }
             if (isDone()) {
                 return -1;

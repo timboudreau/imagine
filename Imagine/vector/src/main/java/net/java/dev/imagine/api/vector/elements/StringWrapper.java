@@ -22,12 +22,12 @@ import net.java.dev.imagine.api.vector.util.Pt;
  *
  * @author Tim Boudreau
  */
-public class StringWrapper implements Vector, Textual {
+public class StringWrapper extends AbstractVersioned implements Vector, Textual {
 
     private static final long serialVersionUID = 72_305_123_414L;
     public String string;
-    public double x;
-    public double y;
+    private double x;
+    private double y;
 
     public StringWrapper(String string, double x, double y) {
         this.x = x;
@@ -35,14 +35,23 @@ public class StringWrapper implements Vector, Textual {
         this.string = string;
         assert string != null;
     }
+    
+    StringWrapper(StringWrapper other) {
+        super(other);
+        this.x = other.x;
+        this.y = other.y;
+        this.string = other.string;
+    }
 
     public Runnable restorableSnapshot() {
         double ox = x;
         double oy = y;
         String s = string;
+        Runnable r = super.versionSnapshot();
         return () -> {
             x = ox;
             y = oy;
+            r.run();
             string = s;
         };
     }
@@ -66,10 +75,12 @@ public class StringWrapper implements Vector, Textual {
     }
 
     public void setX(double x) {
+        change();
         this.x = x;
     }
 
     public void setY(double y) {
+        change();
         this.y = y;
     }
 
@@ -93,6 +104,7 @@ public class StringWrapper implements Vector, Textual {
     public void translate(double x, double y) {
         this.x += x;
         this.y += y;
+        change();
     }
 
     @Override
@@ -144,7 +156,7 @@ public class StringWrapper implements Vector, Textual {
 
     @Override
     public StringWrapper copy() {
-        return new StringWrapper(string, x, y);
+        return new StringWrapper(this);
     }
 
     @Override

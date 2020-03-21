@@ -35,6 +35,12 @@ public class MoveInSceneCoordinateSpaceAction extends WidgetAction.LockedAdapter
 //                + "; scenePoint " + scenePoint.x + ", " + scenePoint.y);
         scenePoint.x -= sceneLoc.x;
         scenePoint.y -= sceneLoc.y;
+        
+//        Point wl = widget.getLocation();
+//        scenePoint.x += wl.x;
+//        scenePoint.y += wl.y;
+//        System.out.println("widget loc " + wl.x + ", " + wl.y);
+
         scenePoint.x *= inv;
         scenePoint.y *= inv;
         return scenePoint;

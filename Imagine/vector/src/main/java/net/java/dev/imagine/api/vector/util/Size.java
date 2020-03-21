@@ -6,7 +6,6 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.vector.util;
 
 import java.io.Serializable;
@@ -18,15 +17,21 @@ import static java.lang.Double.doubleToLongBits;
  * @author Tim Boudreau
  */
 public final class Size implements Serializable {
+
     public final double w;
     public final double h;
+
     public Size(final double w, final double h) {
         this.w = w;
         this.h = h;
     }
 
+    public boolean isEmpty() {
+        return w <= 0 || h <= 0;
+    }
+
     @Override
-    public boolean equals (Object o) {
+    public boolean equals(Object o) {
         if (o == this) {
             return true;
         } else if (o == null) {

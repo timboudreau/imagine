@@ -163,7 +163,9 @@ class UIStateImpl implements UIState {
         if (listeners == null) {
             return;
         }
-        for (UIStateListener l : listeners) {
+        UIStateListener[] ll = listeners.toArray(
+                new UIStateListener[listeners.size()]);
+        for (UIStateListener l : ll) {
             l.onChange(prop, val);
         }
     }

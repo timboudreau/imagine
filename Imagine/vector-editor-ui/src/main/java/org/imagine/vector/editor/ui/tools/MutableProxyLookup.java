@@ -25,7 +25,7 @@ public class MutableProxyLookup extends ProxyLookup {
         return false;
     }
 
-    public void lookups(Lookup... lkps) {
+    public void updateLookups(Lookup... lkps) {
         assert !Arrays.asList(lkps).contains(this) : "Add to self";
         setLookups(lkps);
     }

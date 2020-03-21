@@ -19,7 +19,6 @@ import java.util.Set;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
@@ -30,13 +29,13 @@ import org.imagine.geometry.EnhancedShape;
  *
  * @author Tim Boudreau
  */
-public final class Rectangle implements Strokable, Fillable, Volume, Adjustable {
+public final class Rectangle extends AbstractVersioned implements Strokable, Fillable, Volume, Adjustable {
 
-    public long serialVersionUID = 2_354_354L;
-    public double h;
-    public double x;
-    public double y;
-    public double w;
+    private static final long serialVersionUID = 2_354_354L;
+    private double h;
+    private double x;
+    private double y;
+    private double w;
     public boolean fill;
 
     public Rectangle(double x, double y, double w, double h, boolean fill) {
@@ -52,11 +51,13 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
         double oy = y;
         double ow = w;
         double oh = h;
+        Runnable r = super.versionSnapshot();
         return () -> {
             x = ox;
             y = oy;
             h = oh;
             w = ow;
+            r.run();
         };
     }
 
@@ -64,6 +65,7 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
     public void translate(double x, double y) {
         this.x += x;
         this.y += y;
+        change();
     }
 
     @Override
@@ -222,8 +224,11 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
 
     @Override
     public void setLocation(double x, double y) {
-        this.x = x;
-        this.y = y;
+        if (x != this.x || y != this.y) {
+            this.x = x;
+            this.y = y;
+            change();
+        }
     }
 
     @Override
@@ -232,12 +237,14 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
     }
 
     @Override
-    public Vector copy(AffineTransform transform) {
+    public Rectangle copy(AffineTransform transform) {
         double[] pts = new double[]{
             x, y, x + w, y + h,};
         transform.transform(pts, 0, pts, 0, 2);
-        return new Rectangle(pts[0], pts[1],
+        Rectangle result = new Rectangle(pts[0], pts[1],
                 pts[2] - pts[0], pts[3] - pts[1], fill);
+        result.setRev(rev());
+        return result;
     }
 
     @Override
@@ -265,10 +272,12 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
     public void setControlPointLocation(int pointIndex, Pt pt) {
         switch (pointIndex) {
             case 0:
-                h += x - pt.x;
-                w += y - pt.y;
-                x = pt.x;
-                y = pt.y;
+                if (x != pt.x || y != pt.y) {
+                    h += x - pt.x;
+                    w += y - pt.y;
+                    x = pt.x;
+                    y = pt.y;
+                }
                 break;
             case 1:
                 w += x - pt.x;
@@ -278,17 +287,18 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
             case 2:
                 w = pt.x - x;
                 h = pt.y - y;
-                renormalize();
+//                renormalize();
                 break;
             case 3:
                 w = pt.x - x;
                 h += y - pt.y;
                 y = pt.y;
-                renormalize();
+//                renormalize();
                 break;
             default:
                 throw new IllegalArgumentException(Integer.toString(pointIndex));
         }
+        change();
         renormalize();
     }
 
@@ -301,7 +311,6 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
 
     private void renormalize() {
         if (w < 0) {
-            double ww = w;
             x += w;
             w *= -1;
         }
@@ -341,18 +350,30 @@ public final class Rectangle implements Strokable, Fillable, Volume, Adjustable 
     }
 
     public void setX(double x) {
-        this.x = x;
+        if (this.x != x) {
+            this.x = x;
+            change();
+        }
     }
 
     public void setY(double y) {
-        this.y = y;
+        if (this.y != y) {
+            this.y = y;
+            change();
+        }
     }
 
     public void setWidth(double w) {
-        this.w = w;
+        if (this.w != w) {
+            this.w = w;
+            change();
+        }
     }
 
     public void setHeight(double h) {
-        this.h = h;
+        if (this.h != h) {
+            this.h = h;
+            change();
+        }
     }
 }

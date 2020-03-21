@@ -36,7 +36,7 @@ public class ControlPointFactory {
                 idxix++;
             }
             result[i / 2] = new ControlPointImpl(p, c, i / 2,
-                    virtual, kinds[i / 2]);
+                    virtual, kinds[i / 2], () -> result);
         }
         return result;
     }
