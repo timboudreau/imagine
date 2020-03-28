@@ -34,7 +34,6 @@ import net.java.dev.imagine.api.vector.Proxy;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Transformable;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.graphics.AffineTransformWrapper;
@@ -44,6 +43,7 @@ import net.java.dev.imagine.api.vector.graphics.ColorWrapper;
 import net.java.dev.imagine.api.vector.graphics.FontWrapper;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.utils.Holder;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  * Wrapper for a primitive that can be painted multiple times with different
@@ -71,7 +71,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
 
     PaintedPrimitive(List<Attribute<?>> attributes, Primitive p) {
         this.p = p;
-        assert p instanceof Fillable || p instanceof Strokable || p instanceof Vector;
+        assert p instanceof Fillable || p instanceof Strokable || p instanceof Vectors;
         boolean fill = p instanceof Fillable ? ((Fillable) p).isFill() : false;
         add(attributes, fill);
         assertClass();
@@ -80,7 +80,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
     PaintedPrimitive(Primitive p, List<AttributeSet> attributeSets) {
         this.p = p;
         this.attributeSets.addAll(attributeSets);
-        assert p instanceof Fillable || p instanceof Strokable || p instanceof Vector;
+        assert p instanceof Fillable || p instanceof Strokable || p instanceof Vectors;
         assertClass();
     }
 
@@ -93,8 +93,8 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
 
     public Shape toShape() {
         Shape result = null;
-        if (p instanceof Vector) {
-            result = ((Vector) p).toShape();
+        if (p instanceof Vectors) {
+            result = ((Vectors) p).toShape();
         } else if (p instanceof Volume) {
             Rectangle2D.Double r = new Rectangle2D.Double();
             ((Volume) p).getBounds(r);
@@ -106,19 +106,19 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
     }
 
     public Pt getLocation() {
-        return p instanceof Vector ? ((Vector) p).getLocation()
+        return p instanceof Vectors ? ((Vectors) p).getLocation()
                 : Pt.ORIGIN;
     }
 
     public void setLocation(double x, double y) {
-        if (p instanceof Vector) {
-            ((Vector) p).setLocation(x, y);
+        if (p instanceof Vectors) {
+            ((Vectors) p).setLocation(x, y);
         }
     }
 
     public void clearLocation() {
-        if (p instanceof Vector) {
-            ((Vector) p).clearLocation();
+        if (p instanceof Vectors) {
+            ((Vectors) p).clearLocation();
         }
     }
 
@@ -217,7 +217,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
     }
 
     public PaintedPrimitive copy(AffineTransform transform) {
-        Vector v = ((Vector) p).copy(transform);
+        Vectors v = ((Vectors) p).copy(transform);
         List<AttributeSet> attrs = copyAttrs();
         if (this instanceof Ve) {
             return new Ve(v, attrs);
@@ -346,7 +346,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
 
     public interface AttributeConsumer {
 
-        void accept(Vector vector, Shape shape, boolean fill, boolean draw,
+        void accept(Vectors vector, Shape shape, boolean fill, boolean draw,
                 Paint fillWith, Paint drawWith, Color background, BasicStroke stroke,
                 AffineTransform xform);
 
@@ -414,8 +414,8 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
                     currentStroke.set(attr.as(BasicStrokeWrapper.class).get());
                 }
             }
-            if (shape instanceof Vector) {
-                Vector v = (Vector) shape;
+            if (shape instanceof Vectors) {
+                Vectors v = (Vectors) shape;
                 c.accept(v, v.toShape(), expectingFill, !expectingFill, currentFill.get(), currentDraw.get(), currentBackground.get(), currentStroke.get(), currentTransform.get());
                 return 1;
             } else {
@@ -556,16 +556,16 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         }
     }
 
-    private static final class Ve extends PaintedPrimitive implements Vector {
+    private static final class Ve extends PaintedPrimitive implements Vectors {
 
         Ve(Primitive p, List<AttributeSet> attrs) {
             super(p, attrs);
-            assert p instanceof Vector;
+            assert p instanceof Vectors;
         }
 
         Ve(List<Attribute<?>> attrs, Primitive p) {
             super(attrs, p);
-            assert p instanceof Vector;
+            assert p instanceof Vectors;
         }
 
         @Override
@@ -575,7 +575,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
 
         @Override
         public Ve copy(AffineTransform transform) {
-            Vector v = ((Vector) p).copy(transform);
+            Vectors v = ((Vectors) p).copy(transform);
             return new Ve(v, copyAttrs());
         }
 
@@ -589,20 +589,20 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         }
     }
 
-    private static final class SAV extends PaintedPrimitive implements Strokable, Adjustable, Vector {
+    private static final class SAV extends PaintedPrimitive implements Strokable, Adjustable, Vectors {
 
         SAV(Primitive p, List<AttributeSet> attrs) {
             super(p, attrs);
             assert p instanceof Strokable;
             assert p instanceof Adjustable;
-            assert p instanceof Vector;
+            assert p instanceof Vectors;
         }
 
         SAV(List<Attribute<?>> attrs, Primitive p) {
             super(attrs, p);
             assert p instanceof Strokable;
             assert p instanceof Adjustable;
-            assert p instanceof Vector;
+            assert p instanceof Vectors;
         }
 
         @Override
@@ -612,7 +612,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
 
         @Override
         public SAV copy(AffineTransform transform) {
-            Vector v = ((Vector) p).copy(transform);
+            Vectors v = ((Vectors) p).copy(transform);
             return new SAV(v, copyAttrs());
         }
 
@@ -626,13 +626,13 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         }
     }
 
-    private static final class SAVVM extends PaintedPrimitive implements Strokable, Adjustable, Vector, Volume, Mutable {
+    private static final class SAVVM extends PaintedPrimitive implements Strokable, Adjustable, Vectors, Volume, Mutable {
 
         SAVVM(Primitive p, List<AttributeSet> attrs) {
             super(p, attrs);
             assert p instanceof Strokable;
             assert p instanceof Adjustable;
-            assert p instanceof Vector;
+            assert p instanceof Vectors;
             assert p instanceof Volume;
             assert p instanceof Mutable;
         }
@@ -641,7 +641,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
             super(attrs, p);
             assert p instanceof Strokable;
             assert p instanceof Adjustable;
-            assert p instanceof Vector;
+            assert p instanceof Vectors;
             assert p instanceof Volume;
             assert p instanceof Mutable;
         }
@@ -653,7 +653,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
 
         @Override
         public SAVVM copy(AffineTransform transform) {
-            Vector v = ((Vector) p).copy(transform);
+            Vectors v = ((Vectors) p).copy(transform);
             return new SAVVM(v, copyAttrs());
         }
 
@@ -692,7 +692,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
 
         @Override
         public SAVF copy(AffineTransform transform) {
-            Vector v = ((Vector) p).copy(transform);
+            Vectors v = ((Vectors) p).copy(transform);
             return new SAVF(v, copyAttrs());
         }
 
@@ -706,7 +706,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
         }
     }
 
-    private static final class SAVFV extends PaintedPrimitive implements Strokable, Adjustable, Volume, Fillable, Vector {
+    private static final class SAVFV extends PaintedPrimitive implements Strokable, Adjustable, Volume, Fillable, Vectors {
 
         SAVFV(Primitive p, List<AttributeSet> attrs) {
             super(p, attrs);
@@ -714,7 +714,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
             assert p instanceof Adjustable;
             assert p instanceof Volume;
             assert p instanceof Fillable;
-            assert p instanceof Vector;
+            assert p instanceof Vectors;
         }
 
         SAVFV(List<Attribute<?>> attrs, Primitive p) {
@@ -723,7 +723,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
             assert p instanceof Adjustable;
             assert p instanceof Volume;
             assert p instanceof Fillable;
-            assert p instanceof Vector;
+            assert p instanceof Vectors;
         }
 
         @Override
@@ -733,7 +733,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
 
         @Override
         public SAVFV copy(AffineTransform transform) {
-            Vector v = ((Vector) p).copy(transform);
+            Vectors v = ((Vectors) p).copy(transform);
             return new SAVFV(v, copyAttrs());
         }
 
@@ -748,7 +748,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
 
     }
 
-    private static final class SAVFVM extends PaintedPrimitive implements Strokable, Adjustable, Volume, Fillable, Vector, Mutable {
+    private static final class SAVFVM extends PaintedPrimitive implements Strokable, Adjustable, Volume, Fillable, Vectors, Mutable {
 
         SAVFVM(Primitive p, List<AttributeSet> attrs) {
             super(p, attrs);
@@ -756,7 +756,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
             assert p instanceof Adjustable;
             assert p instanceof Volume;
             assert p instanceof Fillable;
-            assert p instanceof Vector;
+            assert p instanceof Vectors;
             assert p instanceof Mutable;
         }
 
@@ -766,7 +766,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
             assert p instanceof Adjustable;
             assert p instanceof Volume;
             assert p instanceof Fillable;
-            assert p instanceof Vector;
+            assert p instanceof Vectors;
             assert p instanceof Mutable;
         }
 
@@ -777,7 +777,7 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
 
         @Override
         public SAVFVM copy(AffineTransform transform) {
-            Vector v = ((Vector) p).copy(transform);
+            Vectors v = ((Vectors) p).copy(transform);
             return new SAVFVM(v, copyAttrs());
         }
 
@@ -796,19 +796,19 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
     }
 
     public static PaintedPrimitive create(Primitive p, List<Attribute<?>> attributes) {
-        if (p instanceof Strokable && p instanceof Fillable && p instanceof Volume && p instanceof Adjustable && p instanceof Vector && p instanceof Mutable) {
+        if (p instanceof Strokable && p instanceof Fillable && p instanceof Volume && p instanceof Adjustable && p instanceof Vectors && p instanceof Mutable) {
             return new SAVFVM(attributes, p);
-        } else if (p instanceof Strokable && p instanceof Fillable && p instanceof Volume && p instanceof Adjustable && p instanceof Vector) {
+        } else if (p instanceof Strokable && p instanceof Fillable && p instanceof Volume && p instanceof Adjustable && p instanceof Vectors) {
             return new SAVFV(attributes, p);
         } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Volume && p instanceof Fillable) {
             return new SAVF(attributes, p);
-        } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Volume && p instanceof Vector) {
+        } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Volume && p instanceof Vectors) {
             return new SAVVM(attributes, p);
-        } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Vector) {
+        } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Vectors) {
             return new SAV(attributes, p);
         } else if (p instanceof Volume) {
             return new Vo(attributes, p);
-        } else if (p instanceof Vector) {
+        } else if (p instanceof Vectors) {
             return new Ve(attributes, p);
         } else {
             throw new IllegalArgumentException("Unknown type combination:" + p); //NOI18N

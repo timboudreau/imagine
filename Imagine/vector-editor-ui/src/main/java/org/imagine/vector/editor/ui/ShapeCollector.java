@@ -12,7 +12,6 @@ import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Shaped;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.elements.Clear;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
@@ -27,6 +26,7 @@ import net.java.dev.imagine.api.vector.graphics.PaintWrapper;
 import net.java.dev.imagine.api.vector.painting.VectorRepaintHandle;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.utils.Holder;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  * Collects all operations performed on the fake Graphics2D and coalesces
@@ -92,7 +92,7 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
                 font.set(tx.font());
                 emitFill(tx);
             }, () -> {
-                t.as(Vector.class, v -> {
+                t.as(Vectors.class, v -> {
                     if (lastPaint != null) {
                         fg.set(lastPaint);
                         lastPaint = null;

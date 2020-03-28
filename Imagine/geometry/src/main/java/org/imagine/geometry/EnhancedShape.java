@@ -42,6 +42,14 @@ public interface EnhancedShape {
      */
     int pointCount();
 
+    default List<? extends CornerAngle> cornerAngles() {
+        List<CornerAngle> result = new ArrayList<>(pointCount() + 1);
+        visitAdjoiningLines((ax, ay, sx, sy, bx, by) -> {
+            result.add(new CornerAngle(ax, ay, sx, sy, bx, by));
+        });
+        return result;
+    }
+
     /**
      * Visit lines which share a point in this shape, in order; they are passed
      * to the consumer as six coordinates:      <code>(x1, y1, xShared, yShared, x3, y3).

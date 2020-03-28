@@ -9,20 +9,20 @@ import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
-import org.imagine.geometry.Circle;
+import org.imagine.geometry.Angle;
 import org.imagine.geometry.EnhancedShape;
 import org.imagine.geometry.Triangle2D;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable, Vector, Versioned {
+public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable, Vectors, Versioned {
 
     private double ax;
     private double ay;
@@ -442,24 +442,18 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
     }
 
     public double[] angles() {
-        Circle circle = new Circle(ax, ay, Point2D.distance(ax, ay, bx, by));
-        double[] result = new double[3];
-        result[0] = circle.angleOf(bx, by);
-        circle.setCenterAndRadius(bx, by, Point2D.distance(bx, by, cx, cy));
-        result[1] = circle.angleOf(cx, cy);
-        circle.setCenterAndRadius(cx, cy, Point2D.distance(cx, cy, ax, ay));
-        result[2] = circle.angleOf(ax, ay);
-        return result;
+        return new double[]{
+            Angle.ofLine(ax, ay, bx, by),
+            Angle.ofLine(bx, by, cx, cy),
+            Angle.ofLine(cx, cy, ax, ay)
+        };
     }
 
     @Override
     public void collectAngles(AngleCollector c) {
-        Circle circle = new Circle(ax, ay, Point2D.distance(ax, ay, bx, by));
-        c.angle(circle.angleOf(bx, by), 0, 1);
-        circle.setCenterAndRadius(bx, by, Point2D.distance(bx, by, cx, cy));
-        c.angle(circle.angleOf(cx, cy), 1, 2);
-        circle.setCenterAndRadius(cx, cy, Point2D.distance(cx, cy, ax, ay));
-        c.angle(circle.angleOf(ax, ay), 2, 0);
+        c.angle(Angle.ofLine(ax, ay, bx, by), 0, 1);
+        c.angle(Angle.ofLine(bx, by, cx, cy), 1, 2);
+        c.angle(Angle.ofLine(cx, cy, ax, ay), 2, 0);
     }
 
     public double[] toDoubleArray() {

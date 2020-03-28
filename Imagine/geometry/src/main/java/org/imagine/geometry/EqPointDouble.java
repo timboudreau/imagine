@@ -33,6 +33,18 @@ public final class EqPointDouble extends Point2D.Double implements Comparable<Po
         return new EqPointDouble(p);
     }
 
+    /**
+     * Exact equality test, with no within-tolerance skew.
+     *
+     * @param other Another point
+     * @return true if x == other.x && y == other.y
+     */
+    public boolean exactlyEqual(Point2D other) {
+        double ox = other.getX();
+        double oy = other.getY();
+        return ox == x && oy == y;
+    }
+
     public void translate(double dx, double dy) {
         x += dx;
         y += dy;

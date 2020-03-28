@@ -17,19 +17,19 @@ import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Mutable;
 import net.java.dev.imagine.api.vector.Strokable;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.geometry.EnhancedShape;
 import org.imagine.geometry.Polygon2D;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  * Represents a polyline that can be painted to a graphics context
  *
  * @author Tim Boudreau
  */
-public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mutable {
+public final class Polyline implements Strokable, Adjustable, Volume, Vectors, Mutable {
 
     public long serialVersionUID = 80_238_954L;
     public int[] xpoints;
@@ -288,7 +288,7 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vector, Mu
     }
 
     @Override
-    public Vector copy(AffineTransform transform) {
+    public Vectors copy(AffineTransform transform) {
         Shape s = toShape();
         //XXX not really returning the right type here
         return new PathIteratorWrapper(

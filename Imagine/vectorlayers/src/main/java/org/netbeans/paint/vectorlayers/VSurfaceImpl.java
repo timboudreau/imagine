@@ -36,7 +36,6 @@ import org.imagine.editor.api.snap.SnapPoints;
 import org.imagine.editor.api.snap.SnapPointsSupplier;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Primitive;
-import net.java.dev.imagine.api.vector.Vector;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import net.java.dev.imagine.api.vector.painting.VectorWrapperGraphics;
@@ -47,6 +46,7 @@ import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.utils.java2d.LazyGraphics;
 import org.imagine.utils.java2d.GraphicsProvider;
 import org.openide.util.Pair;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  *
@@ -129,8 +129,8 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         Dimension sz = getSize();
         ShapeStack nue = new ShapeStack(this);
         for (Primitive p : stack.primitives) {
-            if (p instanceof Vector) {
-                Vector v = (Vector) p;
+            if (p instanceof Vectors) {
+                Vectors v = (Vectors) p;
                 nue.add(v.copy(xform));
             } else {
                 nue.add(p);

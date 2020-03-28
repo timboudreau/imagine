@@ -156,11 +156,16 @@ public class OneShapeWidget extends Widget {
         }
         if (value != this.draggingShape) {
             this.draggingShape = value;
+            ShapeElement result;
             if (value) {
-                return switchToShapeCopy();
+                result = switchToShapeCopy();
             } else {
-                return clearShapeCopy();
+                result = clearShapeCopy();
             }
+            revalidate();
+            getScene().validate();
+            repaint();
+            return result;
         }
 //        if (value && temp != null) {
 //            return temp;
@@ -272,6 +277,7 @@ public class OneShapeWidget extends Widget {
             GraphicsUtils.setHighQualityRenderingHints(g);
         }
         ShapeElement el = element();
+        Shape shape = el.shape();
 
         fudge.x = fudge.y = fudge.width = fudge.height = 0;
         el.addToBounds(fudge);
@@ -283,21 +289,23 @@ public class OneShapeWidget extends Widget {
         } else if (el.item().is(PathText.class)) {
             if (el.isFill()) {
                 g.setPaint(el.fill());
-                el.item().as(PathText.class).paint(g);
+//                el.item().as(PathText.class).paint(g);
+                g.fill(shape);
             }
             if (el.isDraw()) {
                 g.setPaint(el.outline());
                 g.setStroke(el.stroke());
-                el.item().as(PathText.class).draw(g);
+//                el.item().as(PathText.class).draw(g);
+                g.fill(shape);
             }
 
             if (getState().isFocused()) {
                 el.item().as(PathText.class, pt -> {
-                    Shape shape = pt.shape().toShape();
+                    Shape sp = pt.shape().toShape();
                     if (pt.transform() != null) {
-                        shape = pt.transform().createTransformedShape(shape);
+                        sp = pt.transform().createTransformedShape(sp);
                     }
-                    g.draw(shape);
+                    g.draw(sp);
                 });
             }
         } else {
@@ -305,31 +313,31 @@ public class OneShapeWidget extends Widget {
                 Paint bg = el.getFill();
                 if (bg != null) {
                     g.setPaint(bg);
-                    g.fill(el.shape());
+                    g.fill(shape);
                 }
             }
             if (el.isDraw()) {
                 Paint fg = el.getDraw();
                 if (fg != null) {
-                    g.draw(el.shape());
+                    g.draw(shape);
                 }
             }
         }
-        paintDecorations(g);
+        paintDecorations(g, el, shape);
     }
 
-    private void paintDecorations(Graphics2D g) {
+    private void paintDecorations(Graphics2D g, ShapeElement el, Shape shape) {
         if (!uiState.focusDecorationsPainted()) {
             return;
         }
         ObjectState state = getState();
         if (state.isFocused()) {
             decorationPainting.setupFocusedPainting(getScene().getZoomFactor(), g, g1 -> {
-                g1.draw(element().shape());
+                g1.draw(shape);
             });
         } else if (state.isSelected()) {
             decorationPainting.setupFocusedPainting(getScene().getZoomFactor(), g, g1 -> {
-                g1.draw(element().shape());
+                g1.draw(shape);
             });
         }
     }

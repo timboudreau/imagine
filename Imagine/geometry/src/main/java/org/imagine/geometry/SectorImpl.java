@@ -56,6 +56,8 @@ final class SectorImpl implements Sector {
             return 0;
         }
         long hash = 51 * Double.doubleToLongBits(startingAngle + 0.0);
+        hash = 51 * hash
+                + Double.doubleToLongBits(extent + 0.0);
         return (int) (hash ^ (hash >> 32));
     }
 }

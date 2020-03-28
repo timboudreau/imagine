@@ -9,7 +9,6 @@ import static java.lang.Double.doubleToLongBits;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
@@ -17,12 +16,13 @@ import static net.java.dev.imagine.api.vector.design.ControlPointKind.PHYSICAL_P
 import static net.java.dev.imagine.api.vector.design.ControlPointKind.RADIUS;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.geometry.Circle;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, Vector, Versioned {
+public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, Vectors, Versioned {
 
     private static final long serialVersionUID = 1;
     public double centerX, centerY, radius;
@@ -167,7 +167,7 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
     }
 
     @Override
-    public Vector copy(AffineTransform transform) {
+    public Vectors copy(AffineTransform transform) {
         switch (transform.getType()) {
             case AffineTransform.TYPE_QUADRANT_ROTATION:
             case AffineTransform.TYPE_GENERAL_ROTATION:

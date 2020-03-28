@@ -44,7 +44,6 @@ import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Mutable;
 import net.java.dev.imagine.api.vector.Strokable;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
@@ -56,13 +55,14 @@ import org.imagine.geometry.EnhancedShape;
 import org.imagine.geometry.EqLine;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.util.GeometryUtils;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  * Wrapper for a PathIterator - i.e. any shape.
  *
  * @author Tim Boudreau
  */
-public final class PathIteratorWrapper implements Strokable, Fillable, Volume, Adjustable, Vector, Mutable, Versioned {
+public final class PathIteratorWrapper implements Strokable, Fillable, Volume, Adjustable, Vectors, Mutable, Versioned {
 
     private static final int[] EMPTY_INTS = new int[0];
     private final boolean fill;
@@ -364,6 +364,48 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             }
         }
     }
+/*
+    private static int ANGLE_STATE_NOT_STARTED = -1;
+    private static int ANGLE_STATE_READY = 1;
+    private static int ANGLE_STATE_USED = 0;
+    private static int ANGLE_STATE_DONE = 2;
+
+    class AngleIterator implements PrimitiveIterator.OfDouble {
+
+        private final int revAtCreation;
+        private int state = ANGLE_STATE_NOT_STARTED;
+        private int cursor;
+        private int lastMoveTo = -1;
+        private int controlPointIndex;
+        AngleIterator() {
+            revAtCreation = rev();
+            state = scanToNext();
+        }
+
+        private int scanToNextViable() {
+
+        }
+
+        private int scanToNext() {
+
+            return 0;
+        }
+
+        @Override
+        public double nextDouble() {
+            if (revAtCreation != rev) {
+                throw new ConcurrentModificationException("Shape is no longer "
+                        + " at revision " + revAtCreation + " -> " + rev);
+            }
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public boolean hasNext() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+    }
+*/
 
     private static final class Segment implements Serializable {
 
@@ -385,6 +427,21 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
 
         private Segment copy() {
             return new Segment(this);
+        }
+
+        boolean isClose() {
+            return type == SEG_CLOSE;
+        }
+
+        boolean isSpline() {
+            switch(type) {
+                case SEG_CLOSE :
+                case SEG_MOVETO :
+                case SEG_LINETO :
+                    return false;
+                default :
+                    return true;
+            }
         }
 
         void minMax(double[] xyMinMax) {

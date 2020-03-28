@@ -26,15 +26,15 @@ import java.io.ObjectStreamException;
 import java.util.Objects;
 import javax.imageio.ImageIO;
 import net.java.dev.imagine.api.vector.Primitive;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.utils.java2d.GraphicsUtils;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class ImageWrapper implements Primitive, Vector {
+public class ImageWrapper implements Primitive, Vectors {
 
     public transient BufferedImage img;
     public AffineTransform xform;

@@ -14,15 +14,15 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import static java.lang.Double.doubleToLongBits;
 import net.java.dev.imagine.api.vector.Textual;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.util.Pt;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  * Represents a string painted to a graphics context
  *
  * @author Tim Boudreau
  */
-public class StringWrapper extends AbstractVersioned implements Vector, Textual {
+public class StringWrapper extends AbstractVersioned implements Vectors, Textual {
 
     private static final long serialVersionUID = 72_305_123_414L;
     public String string;

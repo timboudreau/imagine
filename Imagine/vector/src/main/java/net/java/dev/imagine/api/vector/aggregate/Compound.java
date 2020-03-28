@@ -25,17 +25,17 @@ import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Transformable;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  * Wrapper for a stack of primitives which are treated as a unit
  *
  * @author Tim Boudreau
  */
-public class Compound implements Primitive, Strokable, Vector, Volume, Adjustable, Fillable, Mutable, Aggregate {
+public class Compound implements Primitive, Strokable, Vectors, Volume, Adjustable, Fillable, Mutable, Aggregate {
 
     private final List<Primitive> contents = new ArrayList<>(10);
     public double x;
@@ -161,8 +161,8 @@ public class Compound implements Primitive, Strokable, Vector, Volume, Adjustabl
     public Shape toShape() {
         Area a = new Area();
         for (Primitive p : contents) {
-            if (p instanceof Vector) {
-                Area b = new Area(((Vector) p).toShape());
+            if (p instanceof Vectors) {
+                Area b = new Area(((Vectors) p).toShape());
                 a.add(b);
             }
         }
@@ -234,7 +234,7 @@ public class Compound implements Primitive, Strokable, Vector, Volume, Adjustabl
     }
 
     @Override
-    public Vector copy(AffineTransform transform) {
+    public Vectors copy(AffineTransform transform) {
         double[] pts = new double[]{x, y};
         transform.transform(pts, 0, pts, 0, 1);
         Compound nue = new Compound(pts[0], pts[1]);
@@ -409,7 +409,7 @@ public class Compound implements Primitive, Strokable, Vector, Volume, Adjustabl
         int max = getPrimitiveCount();
         for (int i = 0; i < max; i++) {
             Primitive p = getPrimitive(i);
-            if (p instanceof Vector || p instanceof Strokable || p instanceof Volume) {
+            if (p instanceof Vectors || p instanceof Strokable || p instanceof Volume) {
                 result++;
             }
         }
@@ -422,7 +422,7 @@ public class Compound implements Primitive, Strokable, Vector, Volume, Adjustabl
         int max = getPrimitiveCount();
         for (int i = 0; i < max; i++) {
             Primitive p = getPrimitive(i);
-            if (p instanceof Vector || p instanceof Strokable || p instanceof Volume) {
+            if (p instanceof Vectors || p instanceof Strokable || p instanceof Volume) {
                 result++;
                 if (result == ix) {
                     return p;

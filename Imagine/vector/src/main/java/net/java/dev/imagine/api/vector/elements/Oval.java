@@ -18,19 +18,19 @@ import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.util.GeometryUtils;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class Oval implements Strokable, Fillable, Adjustable, Volume, Vector, Versioned {
+public class Oval implements Strokable, Fillable, Adjustable, Volume, Vectors, Versioned {
 
     private static final long serialVersionUID = 232_354_194L;
     private double x;

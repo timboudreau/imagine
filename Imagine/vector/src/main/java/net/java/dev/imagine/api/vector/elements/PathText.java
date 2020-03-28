@@ -34,7 +34,6 @@ import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.Textual;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import static net.java.dev.imagine.api.vector.elements.Text.scratchImage;
@@ -50,6 +49,7 @@ import static org.imagine.utils.java2d.GraphicsUtils.transformHashCode;
 import static org.imagine.utils.java2d.GraphicsUtils.transformToString;
 import static org.imagine.utils.java2d.GraphicsUtils.transformsEqual;
 import org.openide.util.Exceptions;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  * Wraps a string and the font used to render it so it can be turned into a
@@ -57,7 +57,7 @@ import org.openide.util.Exceptions;
  *
  * @author Tim Boudreau
  */
-public class PathText implements Primitive, Vector, Adjustable, Textual, Versioned {
+public class PathText implements Primitive, Vectors, Adjustable, Textual, Versioned {
 
     public static final int MAX_RENDERING_VERSION = 1;
 
@@ -287,9 +287,6 @@ public class PathText implements Primitive, Vector, Adjustable, Textual, Version
             } else {
                 this.xform.preConcatenate(xform);
             }
-//            shape.as(Transformable.class, t -> {
-//                t.applyTransform(xform);
-//            });
             invalidateCachedShape();
         }
     }
@@ -327,12 +324,12 @@ public class PathText implements Primitive, Vector, Adjustable, Textual, Version
         if (shape.is(type)) {
             return true;
         }
-        return Vector.super.is(type);
+        return Vectors.super.is(type);
     }
 
     @Override
     public <T> T as(Class<T> type) {
-        T res = Vector.super.as(type);
+        T res = Vectors.super.as(type);
         if (res != null) {
             return res;
         }

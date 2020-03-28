@@ -17,7 +17,7 @@ import java.awt.Graphics2D;
  *
  * @author Tim Boudreau
  */
-public interface Strokable extends Vector {
+public interface Strokable extends Vectors {
     /**
      * Draw the outline of the shape this object represents
      */

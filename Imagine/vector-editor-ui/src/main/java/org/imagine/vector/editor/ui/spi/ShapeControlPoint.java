@@ -1,6 +1,8 @@
 package org.imagine.vector.editor.ui.spi;
 
 import net.java.dev.imagine.api.vector.design.ControlPoint;
+import org.imagine.geometry.Angle;
+import org.imagine.geometry.EqLine;
 
 /**
  * Extension to the ControlPoint interface defined for shapes, to allow them to
@@ -33,7 +35,32 @@ public interface ShapeControlPoint extends ControlPoint {
      * @return An array of control points, one of which has the same identity as
      * this one. Returns an empty array if the point has become invalid.
      */
+    @Override
     ShapeControlPoint[] family();
+
+    default double angleToPrevious() {
+        ShapeControlPoint pt = previousPhysical();
+        if (pt == null) {
+            return -1;
+        }
+        return new EqLine(getX(), getY(), pt.getX(), pt.getY()).angle();
+    }
+
+    default double angleToNext() {
+        ShapeControlPoint pt = nextPhysical();
+        if (pt == null) {
+            return -1;
+        }
+        return new EqLine(getX(), getY(), pt.getX(), pt.getY()).angle();
+    }
+
+    default Angle angle() {
+        double prev = angleToPrevious();
+        double next = angleToNext();
+        Angle a = Angle.ofDegrees(prev);
+        Angle b = Angle.ofDegrees(next);
+        return a.degreesTo(b);
+    }
 
     default ShapeControlPoint previous() {
         ShapeControlPoint result = null;

@@ -18,19 +18,19 @@ import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Mutable;
 import net.java.dev.imagine.api.vector.Strokable;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.geometry.EnhancedShape;
 import org.imagine.geometry.Polygon2D;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector, Mutable, Versioned {
+public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vectors, Mutable, Versioned {
 
     private static final long serialVersionUID = 1L;
     // XXX if this class winds up heavily used, rewrite it to
@@ -365,7 +365,7 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vector,
     }
 
     @Override
-    public Vector copy(AffineTransform transform) {
+    public Vectors copy(AffineTransform transform) {
         Shape s = toShape();
         //XXX not really returning the right type here
         return new PathIteratorWrapper(

@@ -117,7 +117,12 @@ public class Demo {
         return new Color(RND.nextInt(255), RND.nextInt(255), RND.nextInt(255));
     }
 
+    static {
+//        System.setProperty("ArrayIntMap.debug", "true");
+    }
+
     public static void main(String[] args) {
+        Grid.getInstance().setEnabled(false);
 //        System.setProperty("sun.java2d.opengl", "true");
         System.setProperty("swing.aatext", "true");
         System.setProperty("awt.useSystemAAFontSettings", "lcd_hrgb");
@@ -230,6 +235,7 @@ public class Demo {
                     if (zoomCursor[0] < fractions.length - 1) {
                         c.z.setZoom(fractions[++zoomCursor[0]]);
                         scene.validate();
+                        man.centerSelected();
                         scene.repaint();
                     }
                 });
@@ -238,6 +244,7 @@ public class Demo {
                     if (zoomCursor[0] > 0) {
                         c.z.setZoom(fractions[--zoomCursor[0]]);
                         scene.validate();
+                        man.centerSelected();
                         scene.repaint();
                     }
                 });
@@ -260,8 +267,10 @@ public class Demo {
                 viewport.setScrollMode(JViewport.BLIT_SCROLL_MODE);
                 viewport.setDoubleBuffered(false);
 
-                jf.add(scrollPane(paintPalette), BorderLayout.EAST);
-                jf.add(scrollPane(shapePalette), BorderLayout.WEST);
+//                jf.add(scrollPane(paintPalette), BorderLayout.EAST);
+//                jf.add(scrollPane(shapePalette), BorderLayout.WEST);
+                jf.add(paintPalette, BorderLayout.EAST);
+                jf.add(shapePalette, BorderLayout.WEST);
 
                 jf.add(scroll, BorderLayout.CENTER);
                 jf.pack();

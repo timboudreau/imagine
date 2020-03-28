@@ -18,17 +18,17 @@ import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.geometry.util.GeometryUtils;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  *
  * @author Tim Boudreau
  */
-public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vector {
+public final class Arc implements Strokable, Fillable, Volume, Adjustable, Vectors {
 
     private static final long serialVersionUID = 2_394L;
     public double x;

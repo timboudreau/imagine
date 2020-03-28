@@ -135,6 +135,19 @@ public final class Angle implements Comparable<Angle> {
         return degrees;
     }
 
+    public static double complement(double degrees) {
+        Quadrant quad = Quadrant.forAngle(degrees);
+        return quad.next().translate(quad, degrees);
+    }
+
+    public Angle complement() {
+        return Angle.ofDegrees(complement(degrees));
+    }
+
+    public boolean isReflex() {
+        return degrees >= 180;
+    }
+
     public static double opposite(double angle) {
         if (!Double.isFinite(angle)) {
             return angle;

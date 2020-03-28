@@ -36,7 +36,6 @@ import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Proxy;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.aggregate.PaintedPrimitive;
 import net.java.dev.imagine.api.vector.design.ControlPoint;
@@ -47,6 +46,7 @@ import net.java.dev.imagine.api.vector.util.Pt;
 import net.java.dev.imagine.api.vector.util.Size;
 import org.netbeans.paint.vectorlayers.ShapeStack;
 import org.openide.util.Lookup;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  *
@@ -111,8 +111,8 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
         }
         boolean found = false;
         for (Primitive p : l) {
-            if (p instanceof Vector) {
-                Vector vector = (Vector) p;
+            if (p instanceof Vectors) {
+                Vectors vector = (Vectors) p;
                 Shape shape = vector.toShape();
                 if (shape.contains(point.x, point.y)) {
                     setSelectedShape(p);
@@ -218,11 +218,11 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
         Primitive shape = this.shape;
         if (cpoint != null) {
             cpoint.set(p.x, p.y);
-        } else if (shape instanceof Volume && shape instanceof Vector) {
+        } else if (shape instanceof Volume && shape instanceof Vectors) {
             int xoff = p.x - mousePressPoint.x;
             int yoff = p.y - mousePressPoint.y;
             ((Volume) shape).getBounds(scratch);
-            Vector v = (Vector) shape;
+            Vectors v = (Vectors) shape;
             Pt loc = v.getLocation();
             v.setLocation(loc.x + xoff, loc.y + yoff);
             ((Volume) shape).getBounds(scratch2);
@@ -233,10 +233,10 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
             toRepaint.width += 10;
             toRepaint.height += 10;
             repainter.requestRepaint(toRepaint);
-        } else if (shape instanceof Vector) {
+        } else if (shape instanceof Vectors) {
             int xoff = p.x - mousePressPoint.x;
             int yoff = p.y - mousePressPoint.y;
-            Vector v = (Vector) shape;
+            Vectors v = (Vectors) shape;
             Pt loc = v.getLocation();
             v.setLocation(loc.x + xoff, loc.y + yoff);
             repainter.requestRepaint();
@@ -260,11 +260,11 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
         List<Primitive> l = stack.getPrimitives();
         Rectangle2D.Double scratch = new Rectangle2D.Double(0, 0, 0, 0);
         List<Primitive> shapes = new ArrayList<Primitive>();
-        List<Vector> vectors = new ArrayList<Vector>();
+        List<Vectors> vectors = new ArrayList<Vectors>();
         Primitive topMost = null;
         for (Primitive p : l) {
-            if (p instanceof Vector) {
-                Vector vector = (Vector) p;
+            if (p instanceof Vectors) {
+                Vectors vector = (Vectors) p;
                 Shape shape = vector.toShape();
                 System.err.println(shape);
                 if (shape.contains(point.x, point.y)) {
@@ -327,10 +327,10 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
     private class CSGAction extends AbstractAction {
 
         private final int kind;
-        private final List<Vector> shapes;
+        private final List<Vectors> shapes;
         private final ShapeStack stack;
 
-        public CSGAction(int kind, List<Vector> shapes, ShapeStack stack) {
+        public CSGAction(int kind, List<Vectors> shapes, ShapeStack stack) {
             String name;
             this.kind = kind;
             this.shapes = shapes;
@@ -363,7 +363,7 @@ public class MoveShapeTool extends MouseMotionAdapter implements /* Tool, Icon, 
             Area area = null;
             List<Attribute<?>> attrs = new ArrayList<>();
             boolean fill = false;
-            for (Vector v : shapes) {
+            for (Vectors v : shapes) {
                 Primitive vv = v;
                 while (vv instanceof Proxy && !(vv instanceof PaintedPrimitive)) {
                     vv = ((Proxy) vv).getProxiedPrimitive();

@@ -24,6 +24,15 @@ public interface Sector {
      */
     double extent();
 
+    default boolean isRightAngle() {
+        double ext = extent();
+        if (ext < 90) {
+            return false;
+        }
+        double rem = Math.IEEEremainder(extent(), 90);
+        return rem > 0 && rem == 90;
+    }
+
     /**
      * The middle of this sector, in degrees.
      *
@@ -99,10 +108,6 @@ public interface Sector {
             return Sector.EMPTY;
         }
         return new SectorImpl(s, e - s);
-    }
-
-    default double midpoint() {
-        return Angle.normalize(start() + (extent() / 2));
     }
 
     default Shape toShape(double x, double y, double radius) {

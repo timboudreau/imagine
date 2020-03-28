@@ -20,7 +20,7 @@ import net.java.dev.imagine.api.vector.util.Pt;
  *
  * @author Tim Boudreau
  */
-public interface Vector extends Primitive, Transformable, Shaped {
+public interface Vectors extends Primitive, Transformable, Shaped {
 
     /**
      * Resolve this object to a Shape object which can be painted by a
@@ -54,7 +54,7 @@ public interface Vector extends Primitive, Transformable, Shaped {
      * by the passed AffineTransform.
      */
     @Override
-    Vector copy(AffineTransform transform);
+    Vectors copy(AffineTransform transform);
 
     default PathIteratorWrapper toPaths() {
         if (this instanceof PathIteratorWrapper) {
@@ -66,7 +66,7 @@ public interface Vector extends Primitive, Transformable, Shaped {
     }
 
     @Override
-    public Vector copy();
+    public Vectors copy();
 
     @Override
     Rectangle getBounds();

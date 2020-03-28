@@ -11,7 +11,6 @@ import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Proxy;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.Strokable;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.elements.Arc;
@@ -25,6 +24,7 @@ import net.java.dev.imagine.api.vector.elements.Rectangle;
 import net.java.dev.imagine.api.vector.elements.RoundRect;
 import net.java.dev.imagine.api.vector.elements.StringWrapper;
 import net.java.dev.imagine.api.vector.util.Pt;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  * Represents a primitive which is transformed using an AffineTransform. Note
@@ -53,9 +53,9 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
 
     private static AffineTransform convert(Primitive primitive) {
         AffineTransform at;
-        if (primitive instanceof Vector) {
-            Pt p = ((Vector) primitive).getLocation();
-            ((Vector) primitive).clearLocation();
+        if (primitive instanceof Vectors) {
+            Pt p = ((Vectors) primitive).getLocation();
+            ((Vectors) primitive).clearLocation();
             at = AffineTransform.getTranslateInstance(p.x, p.y);
         } else {
             at = AffineTransform.getTranslateInstance(0, 0);
@@ -83,11 +83,11 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
     }
 
     public Shape toShape() {
-        return xform.createTransformedShape(((Vector) primitive).toShape());
+        return xform.createTransformedShape(((Vectors) primitive).toShape());
     }
 
     public Pt getLocation() {
-        Pt pt = ((Vector) primitive).getLocation();
+        Pt pt = ((Vectors) primitive).getLocation();
         double[] d = new double[]{pt.x, pt.y};
         xform.transform(d, 0, d, 0, 1);
         return new Pt((int) d[0], (int) d[1]);
@@ -224,7 +224,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         }
     }
 
-    public Vector copy(AffineTransform trans) {
+    public Vectors copy(AffineTransform trans) {
         double[] matrix = new double[6];
         xform.getMatrix(matrix);
         AffineTransform nue = new AffineTransform(matrix);
@@ -297,16 +297,16 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         }
     }
 
-    private static final class Ve extends TransformedPrimitive implements Vector {
+    private static final class Ve extends TransformedPrimitive implements Vectors {
 
         Ve(Primitive primitive) {
             super(primitive, true);
-            assert primitive instanceof Vector;
+            assert primitive instanceof Vectors;
         }
 
         Ve(Primitive primitive, AffineTransform xform) {
             super(primitive, xform);
-            assert primitive instanceof Vector;
+            assert primitive instanceof Vectors;
         }
 
         @Override
@@ -324,20 +324,20 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         }
     }
 
-    static class SAV extends TransformedPrimitive implements Strokable, Adjustable, Vector {
+    static class SAV extends TransformedPrimitive implements Strokable, Adjustable, Vectors {
 
         SAV(Primitive primitive) {
             super(primitive, true);
             assert primitive instanceof Strokable;
             assert primitive instanceof Adjustable;
-            assert primitive instanceof Vector;
+            assert primitive instanceof Vectors;
         }
 
         SAV(Primitive primitive, AffineTransform xform) {
             super(primitive, xform);
             assert primitive instanceof Strokable;
             assert primitive instanceof Adjustable;
-            assert primitive instanceof Vector;
+            assert primitive instanceof Vectors;
         }
 
         @Override
@@ -355,13 +355,13 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         }
     }
 
-    private static final class SAVVM extends TransformedPrimitive implements Strokable, Adjustable, Vector, Volume, Mutable {
+    private static final class SAVVM extends TransformedPrimitive implements Strokable, Adjustable, Vectors, Volume, Mutable {
 
         SAVVM(Primitive primitive) {
             super(primitive, true);
             assert primitive instanceof Strokable;
             assert primitive instanceof Adjustable;
-            assert primitive instanceof Vector;
+            assert primitive instanceof Vectors;
             assert primitive instanceof Volume;
         }
 
@@ -369,7 +369,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             super(primitive, xform);
             assert primitive instanceof Strokable;
             assert primitive instanceof Adjustable;
-            assert primitive instanceof Vector;
+            assert primitive instanceof Vectors;
             assert primitive instanceof Volume;
         }
 
@@ -417,7 +417,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
         }
     }
 
-    private static final class SAVFV extends TransformedPrimitive implements Strokable, Adjustable, Volume, Fillable, Vector {
+    private static final class SAVFV extends TransformedPrimitive implements Strokable, Adjustable, Volume, Fillable, Vectors {
 
         SAVFV(Primitive primitive) {
             super(primitive, true);
@@ -425,7 +425,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             assert primitive instanceof Adjustable;
             assert primitive instanceof Volume;
             assert primitive instanceof Fillable;
-            assert primitive instanceof Vector;
+            assert primitive instanceof Vectors;
         }
 
         SAVFV(Primitive primitive, AffineTransform xform) {
@@ -434,7 +434,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             assert primitive instanceof Adjustable;
             assert primitive instanceof Volume;
             assert primitive instanceof Fillable;
-            assert primitive instanceof Vector;
+            assert primitive instanceof Vectors;
         }
 
         @Override
@@ -453,7 +453,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
 
     }
 
-    private static final class SAVFVM extends TransformedPrimitive implements Strokable, Adjustable, Volume, Fillable, Vector, Mutable {
+    private static final class SAVFVM extends TransformedPrimitive implements Strokable, Adjustable, Volume, Fillable, Vectors, Mutable {
 
         SAVFVM(Primitive primitive) {
             super(primitive, true);
@@ -461,7 +461,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             assert primitive instanceof Adjustable;
             assert primitive instanceof Volume;
             assert primitive instanceof Fillable;
-            assert primitive instanceof Vector;
+            assert primitive instanceof Vectors;
         }
 
         SAVFVM(Primitive primitive, AffineTransform xform) {
@@ -470,7 +470,7 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             assert primitive instanceof Adjustable;
             assert primitive instanceof Volume;
             assert primitive instanceof Fillable;
-            assert primitive instanceof Vector;
+            assert primitive instanceof Vectors;
         }
 
         @Override
@@ -491,19 +491,19 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
     public static TransformedPrimitive create(Primitive p) {
         if (p == null) {
             throw new NullPointerException("Null primitive");
-        } else if (p instanceof Strokable && p instanceof Fillable && p instanceof Volume && p instanceof Adjustable && p instanceof Vector && p instanceof Mutable) {
+        } else if (p instanceof Strokable && p instanceof Fillable && p instanceof Volume && p instanceof Adjustable && p instanceof Vectors && p instanceof Mutable) {
             return new SAVFVM(p);
-        } else if (p instanceof Strokable && p instanceof Fillable && p instanceof Volume && p instanceof Adjustable && p instanceof Vector) {
+        } else if (p instanceof Strokable && p instanceof Fillable && p instanceof Volume && p instanceof Adjustable && p instanceof Vectors) {
             return new SAVFV(p);
         } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Volume && p instanceof Fillable) {
             return new SAVF(p);
-        } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Volume && p instanceof Vector) {
+        } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Volume && p instanceof Vectors) {
             return new SAVVM(p);
-        } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Vector) {
+        } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Vectors) {
             return new SAV(p);
         } else if (p instanceof Volume) {
             return new Vo(p);
-        } else if (p instanceof Vector) {
+        } else if (p instanceof Vectors) {
             return new Ve(p);
         } else {
             throw new IllegalArgumentException("Unknown type combination:" + p); //NOI18N
@@ -513,19 +513,19 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
     public static TransformedPrimitive create(Primitive p, AffineTransform xform) {
         if (p == null) {
             throw new NullPointerException("Null primitive");
-        } else if (p instanceof Strokable && p instanceof Fillable && p instanceof Volume && p instanceof Adjustable && p instanceof Vector && p instanceof Mutable) {
+        } else if (p instanceof Strokable && p instanceof Fillable && p instanceof Volume && p instanceof Adjustable && p instanceof Vectors && p instanceof Mutable) {
             return new SAVFVM(p, xform);
-        } else if (p instanceof Strokable && p instanceof Fillable && p instanceof Volume && p instanceof Adjustable && p instanceof Vector) {
+        } else if (p instanceof Strokable && p instanceof Fillable && p instanceof Volume && p instanceof Adjustable && p instanceof Vectors) {
             return new SAVFV(p, xform);
         } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Volume && p instanceof Fillable) {
             return new SAVF(p, xform);
-        } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Volume && p instanceof Vector) {
+        } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Volume && p instanceof Vectors) {
             return new SAVVM(p, xform);
-        } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Vector) {
+        } else if (p instanceof Strokable && p instanceof Adjustable && p instanceof Vectors) {
             return new SAV(p, xform);
         } else if (p instanceof Volume) {
             return new Vo(p, xform);
-        } else if (p instanceof Vector) {
+        } else if (p instanceof Vectors) {
             return new Ve(p, xform);
         } else {
             throw new IllegalArgumentException("Unknown type combination:" + p); //NOI18N

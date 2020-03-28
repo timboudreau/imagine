@@ -519,6 +519,7 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
                     new ShapeSnapPointEntry(this, cpIx1, cpIx2, size));
         });
         vect.collectAngles((double angle, int cpIx1, int cpIx2) -> {
+            System.out.println("ANGLE " + getName() + " " + angle + " " + cpIx1 + " to " + cpIx2);
             bldr.addAngle(angle, new ShapeSnapPointEntry(this, cpIx1, cpIx2, angle));
         });
     }

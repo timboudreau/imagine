@@ -1,10 +1,7 @@
 package org.imagine.vector.editor.ui.tools.widget;
 
-import com.mastfrog.function.TriConsumer;
-import com.mastfrog.util.collections.DoubleMap;
-import com.mastfrog.util.collections.DoubleSet;
-import com.mastfrog.util.collections.IntSet;
-import com.mastfrog.util.search.Bias;
+import com.mastfrog.util.collections.CollectionUtils;
+import java.awt.BasicStroke;
 import java.awt.Cursor;
 import java.awt.EventQueue;
 import java.awt.Graphics2D;
@@ -16,25 +13,31 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.Predicate;
+import java.util.function.BiConsumer;
 import javax.swing.JComponent;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
+import net.java.dev.imagine.api.vector.design.ShapeNames;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.EqPointDouble;
+import org.imagine.geometry.util.GeometryUtils;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
 import org.imagine.vector.editor.ui.tools.MutableProxyLookup;
 import org.imagine.vector.editor.ui.tools.widget.actions.DragHandler;
+import org.imagine.vector.editor.ui.tools.widget.collections.CoordinateMap;
+import org.imagine.vector.editor.ui.tools.widget.collections.CoordinateMapModifier;
+import org.imagine.vector.editor.ui.tools.widget.collections.CoordinateMapPartitioned;
+import org.imagine.vector.editor.ui.tools.widget.collections.Mover;
 import org.imagine.vector.editor.ui.tools.widget.painting.DecorationController;
 import org.imagine.vector.editor.ui.tools.widget.painting.DesignerProperties;
 import org.imagine.vector.editor.ui.tools.widget.util.UIState;
@@ -57,8 +60,14 @@ public class ManyControlPointsWidget extends Widget {
 
     private final MutableProxyLookup lkp = new MutableProxyLookup();
     private final Lookup shapesLookup;
-    private final DoubleMap<Set<ShapeControlPoint>> xPoints;
-    private final DoubleMap<Set<ShapeControlPoint>> yPoints;
+
+    private final CoordinateMap<Set<ShapeControlPoint>> points
+            = new CoordinateMapPartitioned(128);
+//    private final CoordinateMap<Set<ShapeControlPoint>> points
+//            = new CoordinateMapPartitioned(512, (x, y) -> {
+//                return new DirtSimpleCoordinateMap(x, y, 512 / 4);
+//            });
+
     private final Map<ShapeControlPoint, EqPointDouble> reverseIndex = new HashMap<>();
     private final Circle circ = new Circle(0, 0, 1);
     private final DesignerProperties renderingProperties;
@@ -67,8 +76,6 @@ public class ManyControlPointsWidget extends Widget {
 
     public ManyControlPointsWidget(Scene scene, ShapesCollection coll, DesignerProperties renderingProperties, UIState uiState, Lookup selection, DragHandler drag) {
         super(scene);
-        xPoints = DoubleMap.create(coll.size() * 12);
-        yPoints = DoubleMap.create(coll.size() * 12);
         this.renderingProperties = renderingProperties;
         this.uiState = uiState;
         shapesLookup = Lookups.fixed(coll, this, drag);
@@ -79,6 +86,30 @@ public class ManyControlPointsWidget extends Widget {
     }
 
     class Clicks extends WidgetAction.Adapter {
+
+        @Override
+        public State mouseMoved(Widget widget, WidgetMouseEvent event) {
+            Point p = event.getPoint();
+            if (cells.wasOccupied(p.x, p.y)) {
+                Set<ShapeControlPoint> cps = points.nearestValueTo(p.x, p.y, renderingProperties.controlPointSize());
+                if (cps != null && !cps.isEmpty()) {
+                    ShapeControlPoint cp = cps.iterator().next();
+                    String info = cp.kind().toString() + " "
+                            + cp.index() + " @ "
+                            + GeometryUtils.toString(cp.getX(), cp.getY())
+                            + " of " + ShapeNames.infoString(cp.getPrimitive());
+                    if (!cp.isValid()) {
+                        info = "INVALID " + info;
+                    }
+                    setToolTipText(info);
+                } else {
+                    setToolTipText(null);
+                }
+            } else {
+                setToolTipText(null);
+            }
+            return super.mouseMoved(widget, event);
+        }
 
         @Override
         public State mousePressed(Widget widget, WidgetMouseEvent event) {
@@ -129,26 +160,33 @@ public class ManyControlPointsWidget extends Widget {
 
     private double controlPointSize() {
         double factor = 1D / getScene().getZoomFactor();
-        return renderingProperties.controlPointSize() * factor;
+        return Math.ceil(renderingProperties.controlPointSize() * factor);
+    }
+
+    private double focusControlPointSize() {
+        double factor = 1D / getScene().getZoomFactor();
+        return Math.ceil(renderingProperties.focusedControlPointSize() * factor);
     }
 
     public void sync() {
         time("sync", () -> {
-            prune(true, xPoints, (removeX, reAddX, removedPointsX) -> {
-                prune(false, yPoints, (removeY, reAddY, removedPointsY) -> {
-                    xPoints.removeIndices(removeX);
-                    yPoints.removeIndices(removeY);
-                    reAddX.addAll(reAddY);
-                    removedPointsX.addAll(removedPointsY);
-                    updateCachedControlPointInfo(reAddX, removedPointsX);
-                });
-            });
+            prune();
         });
     }
 
     public void shapeDeleted(ShapeElement el) {
         Rectangle2D.Double repaint = new Rectangle2D.Double();
-        removeSomeControlPoints(el.getControlPointCount(), repaint, cp -> el.equals(cp.owner()));
+        points.conditionallyRemove(cps -> {
+            for (Iterator<ShapeControlPoint> it = cps.iterator(); it.hasNext();) {
+                ShapeControlPoint scp = it.next();
+                if (scp.owner().id() == el.id()) {
+                    it.remove();
+                    reverseIndex.remove(scp);
+                }
+            }
+            return cps.isEmpty();
+        });
+        repaint(repaint);
     }
 
     public void shapeAdded(ShapeElement el) {
@@ -161,79 +199,11 @@ public class ManyControlPointsWidget extends Widget {
 
     public void controlPointDeleted(ShapeControlPoint cp) {
         EqPointDouble pt = reverseIndex.remove(cp);
-        double x = pt == null ? cp.getX() : pt.x;
-        double y = pt == null ? cp.getY() : pt.y;
-        Set<ShapeControlPoint> xs = xPoints.get(x);
-        if (xs != null) {
-            if (xs.remove(cp)) {
-                if (xs.isEmpty()) {
-                    xPoints.remove(x);
-                }
-            }
+        Set<ShapeControlPoint> set = points.get(pt.x, pt.y);
+        if (set != null) {
+            set.remove(cp);
         }
-        Set<ShapeControlPoint> ys = yPoints.get(y);
-        if (ys != null) {
-            if (ys.remove(cp)) {
-                if (ys.isEmpty()) {
-                    yPoints.remove(y);
-                }
-            }
-        }
-        repaint(x, y);
-    }
-
-    private void removeSomeControlPoints(int ct, Rectangle2D.Double repaint, Predicate<ShapeControlPoint> test) {
-        Set<ShapeControlPoint> toRemove = null;
-        IntSet xRemove = null;
-        IntSet yRemove = null;
-        for (Map.Entry<ShapeControlPoint, EqPointDouble> e : reverseIndex.entrySet()) {
-            ShapeControlPoint cp = e.getKey();
-            if (test.test(cp)) {
-                EqPointDouble pt = e.getValue();
-                addToRect(repaint, pt);
-                if (toRemove == null) {
-                    toRemove = new HashSet<>(ct);
-                }
-                toRemove.add(cp);
-                Set<ShapeControlPoint> xs = xPoints.get(pt.x);
-                if (xs != null) {
-                    xs.remove(e.getKey());
-                    if (xs.isEmpty()) {
-                        int ix = xPoints.indexOf(pt.x);
-                        if (xRemove == null) {
-                            xRemove = IntSet.create(ct);
-                        }
-                        if (ix >= 0) {
-                            xRemove.add(ix);
-                        }
-                    }
-                }
-                Set<ShapeControlPoint> ys = xPoints.get(pt.y);
-                if (ys != null) {
-                    ys.remove(e.getKey());
-                    if (ys.isEmpty()) {
-                        int ix = yPoints.indexOf(pt.y);
-                        if (yRemove == null) {
-                            yRemove = IntSet.create(ct);
-                        }
-                        if (ix >= 0) {
-                            yRemove.add(ix);
-                        }
-                    }
-                }
-            }
-        }
-        if (xRemove != null) {
-            xPoints.removeIndices(xRemove);
-        }
-        if (yRemove != null) {
-            yPoints.removeIndices(yRemove);
-        }
-        if (toRemove != null) {
-            for (ShapeControlPoint rem : toRemove) {
-                reverseIndex.remove(rem);
-            }
-        }
+        repaint(pt.x, pt.y);
     }
 
     private final L l = new L();
@@ -249,7 +219,6 @@ public class ManyControlPointsWidget extends Widget {
             switch (prop) {
                 case CONTROL_POINTS_VISIBLE:
                     if (val) {
-                        System.out.println("control points vis");
                         done();
                     }
             }
@@ -297,99 +266,78 @@ public class ManyControlPointsWidget extends Widget {
             return;
         }
         time("syncOne " + el.getName(), () -> {
-            ShapeControlPoint[] pts = el.controlPoints(renderingProperties.controlPointSize(), this::controlPointMoved);
+            MO mo = new MO();
+            CoordinateMapModifier<Set<ShapeControlPoint>> mod = points.modifier(mo);
             Rectangle2D.Double repaint = new Rectangle2D.Double();
-
-            removeSomeControlPoints(pts.length, repaint, cp -> {
-                return el.equals(cp.owner()) && cp.index() >= pts.length;
-            });
-
-            DoubleSet toRemoveX = DoubleSet.create(30);
-            DoubleSet toRemoveY = DoubleSet.create(30);
-            DoubleMap<Set<ShapeControlPoint>> toAddX = DoubleMap.create(120);
-            DoubleMap<Set<ShapeControlPoint>> toAddY = DoubleMap.create(120);
-            for (ShapeControlPoint pt : pts) {
-                double x = pt.getX();
-                double y = pt.getY();
-                addToRect(repaint, x, y);
-                EqPointDouble cachedLocation = reverseIndex.get(pt);
-                if (cachedLocation != null) {
-                    addToRect(repaint, cachedLocation.x, cachedLocation.y);
-                }
-                addToRect(repaint, x, y);
-                boolean absent = cachedLocation == null;
-                if (absent) {
-                    cachedLocation = addOneControlPoint(pt);
-                    addToRect(repaint, x, y);
+            el.addToBounds(repaint);
+            ShapeControlPoint[] pts = el.controlPoints(renderingProperties.controlPointSize(), this::controlPointMoved);
+            Set<ShapeControlPoint> currentPoints = new HashSet<>();
+            for (ShapeControlPoint p : pts) {
+                currentPoints.add(p);
+                EqPointDouble curr = reverseIndex.get(p);
+                if (curr == null) {
+                    Set<ShapeControlPoint> set = points.get(p.getX(), p.getY());
+                    if (set != null) {
+                        set.add(p);
+                    } else {
+                        Set<ShapeControlPoint> newSet = TinySets.of(p);
+                        mod.add(p.getX(), p.getY(), newSet);
+                        reverseIndex.put(p, new EqPointDouble(p.getX(), p.getY()));
+                    }
+                    addPointBoundsToRect(repaint, p.getX(), p.getY());
                 } else {
-                    boolean changed = absent
-                            ? false
-                            : x != cachedLocation.x
-                            || y != cachedLocation.y;
-                    if (changed) {
-                        Set<ShapeControlPoint> xs = xPoints.get(cachedLocation.x);
-                        if (xs != null) {
-                            if (xs.remove(pt)) {
-                                if (xs.isEmpty()) {
-//                                    xPoints.remove(cachedLocation.x);
-                                    toRemoveX.add(cachedLocation.x);
-                                }
-                            }
+                    double x = p.getX();
+                    double y = p.getY();
+                    if (x != curr.x || y != curr.y) {
+                        reverseIndex.put(p, new EqPointDouble(x, y));
+                        addPointBoundsToRect(repaint, x, y);
+                        addPointBoundsToRect(repaint, curr.x, curr.y);
+                        Set<ShapeControlPoint> existing
+                                = points.get(curr.x, curr.y);
+                        if (existing != null) {
+                            mo.toMove.add(p);
+                            mod.move(curr.x, curr.y, x, y);
+                        } else {
+                            Set<ShapeControlPoint> scp = TinySets.of(p);
+                            mod.add(x, y, scp);
                         }
-                        Set<ShapeControlPoint> ys = yPoints.get(cachedLocation.y);
-                        if (ys != null) {
-                            if (ys.remove(pt)) {
-                                if (ys.isEmpty()) {
-                                    toRemoveY.add(cachedLocation.y);
-//                                    yPoints.remove(cachedLocation.y);
-                                }
-                            }
-                        }
-                        xs = xPoints.get(x);
-                        if (xs == null) {
-                            xs = new HashSet<>(pts.length);
-                            toAddX.put(x, ys);
-//                            xPoints.put(x, xs);
-//                            toRemoveX.remove(x);
-                        }
-                        xs.add(pt);
-                        ys = yPoints.get(y);
-                        if (ys == null) {
-                            ys = new HashSet<>(pts.length);
-                            toAddY.put(y, ys);
-//                            yPoints.put(y, ys);
-//                            toRemoveY.remove(y);
-                        }
-                        ys.add(pt);
-                        cachedLocation.x = x;
-                        cachedLocation.y = y;
+                    } else {
+                        addPointBoundsToRect(repaint, x, y);
                     }
                 }
             }
-            System.out.println("REMOVE " + toRemoveX.size() + " Xs");
-            System.out.println("REMOVE " + toRemoveY.size() + " Ys");
-            // Bulk adds and removes are much cheaper - like 100x cheaper
-            // to do these in one shot at the end of looping over the control
-            // points
-            // NOTE: It is critical that we do the removes FIRST, in the event
-            // that we are removing a coordinate and adding back exactly the
-            // same coordinate, BECAUSE the way DoubleMapImpl resolves conflicts
-            // when duplicates are inserted is undefined (up to the order sort algorithm,
-            // discovers the duplicate keys, really), so we could leave behind a
-            // stale set and never add its replacement that contains data we need
-            System.out.println("Old Sizes " + xPoints.size() + ", " + yPoints.size());
-            xPoints.removeAll(toRemoveX);
-            yPoints.removeAll(toRemoveY);
-            System.out.println("Rem Sizes " + xPoints.size() + ", " + yPoints.size());
-
-            System.out.println("ADD " + toAddX.size() + " Xs");
-            System.out.println("ADD " + toAddY.size() + " Ys");
-            xPoints.putAll(toAddX);
-            yPoints.putAll(toAddY);
-            System.out.println("New Sizes " + xPoints.size() + ", " + yPoints.size());
-            if (!repaint.isEmpty()) {
-                repaint(repaint);
+            Set<ShapeControlPoint> defunct = new HashSet<>();
+            reverseIndex.forEach((scp, thePoint) -> {
+                if (el.equals(scp.owner())) {
+                    if (!currentPoints.contains(scp)) {
+                        addPointBoundsToRect(repaint, thePoint);
+                        defunct.add(scp);
+                        Set<ShapeControlPoint> currPts = points.get(thePoint.x, thePoint.y);
+                        if (currPts == null) {
+                            thePoint = new EqPointDouble(scp.getX(), scp.getY());
+                            currPts = points.get(thePoint.x, thePoint.y);
+                            if (currPts != null && !currPts.isEmpty() && currPts.contains(scp)) {
+                                addPointBoundsToRect(repaint, thePoint);
+                            }
+                        }
+                        if (currPts != null) {
+                            System.out.println("remove defunct " + scp);
+                            if (currPts.size() > 1) {
+                                currPts.remove(scp);
+                            } else if (currPts.contains(scp)) {
+                                mod.remove(scp.getX(), scp.getY());
+                            }
+                        }
+                    }
+                }
+            });
+            if (!defunct.isEmpty()) {
+                defunct.forEach(reverseIndex::remove);
             }
+
+            mod.commit();
+            revalidate();
+            repaint(repaint);
         });
     }
 
@@ -407,59 +355,27 @@ public class ManyControlPointsWidget extends Widget {
         }
     }
 
+    private void addPointBoundsToRect(Rectangle2D.Double repaintRect, Point2D pt) {
+        addPointBoundsToRect(repaintRect, pt.getX(), pt.getY());
+    }
+
+    private void addPointBoundsToRect(Rectangle2D.Double repaintRect, double x, double y) {
+        double sz = focusControlPointSize();
+        sz += renderingProperties.focusStrokeSize() * (1D / getScene().getZoomFactor());
+        if (repaintRect.isEmpty()) {
+            repaintRect.setFrame(x - sz, y - sz,
+                    x + sz, y + sz);
+        } else {
+            repaintRect.add(x - sz, y - sz);
+            repaintRect.add(x + sz, y + sz);
+        }
+    }
+
     private void time(String what, Runnable r) {
         long then = System.currentTimeMillis();
         r.run();
         long elapsed = System.currentTimeMillis() - then;
         System.out.println(what + " took " + elapsed + "ms");
-    }
-
-    private void updateCachedControlPointInfo(Set<ShapeControlPoint> changedOrAdded, Set<ShapeControlPoint> removed) {
-        double sz = controlPointSize();
-        Rectangle currBounds = getClientArea();
-        Rectangle2D.Double repaintRect = new Rectangle2D.Double();
-        ShapeElement el = null;
-        for (ShapeControlPoint cp : changedOrAdded) {
-            ShapeElement own = cp.owner();
-            if (own != el) {
-                el = own;
-                own.addToBounds(repaintRect);
-            }
-            EqPointDouble oldPoint = reverseIndex.get(cp);
-            addOneControlPoint(cp);
-            double newX = cp.getX();
-            double newY = cp.getY();
-            if (oldPoint != null) {
-                addToRect(repaintRect, oldPoint.x - sz, oldPoint.y - sz);
-                addToRect(repaintRect, oldPoint.x + sz, oldPoint.y + sz);
-                oldPoint.setLocation(newX, newY);
-            }
-            addToRect(repaintRect, newX - sz, newY - sz);
-            addToRect(repaintRect, newX + sz, newY + sz);
-            if (oldPoint == null) {
-                reverseIndex.put(cp, new EqPointDouble(newX, newY));
-            }
-        }
-        for (ShapeControlPoint cp : removed) {
-            EqPointDouble old = reverseIndex.remove(cp);
-            double x, y;
-            if (old != null) {
-                x = old.x;
-                y = old.y;
-            } else {
-                x = cp.getX();
-                y = cp.getY();
-            }
-            addToRect(repaintRect, x - sz, y - sz);
-            addToRect(repaintRect, x + sz, y + sz);
-        }
-        if (!repaintRect.isEmpty()) {
-            Rectangle bds = repaintRect.getBounds();
-            if (bds.x <= currBounds.x || bds.y <= currBounds.y || currBounds.x + currBounds.width <= repaintRect.width || currBounds.y + currBounds.height <= repaintRect.height) {
-                revalidate();
-            }
-            repaint(repaintRect);
-        }
     }
 
     private void repaint(ShapeControlPoint cp) {
@@ -472,7 +388,7 @@ public class ManyControlPointsWidget extends Widget {
     }
 
     private void repaint(double cpx, double cpy) {
-        double sz = controlPointSize();
+        double sz = focusControlPointSize();
         sz += renderingProperties.focusStrokeSize() * (1D / getScene().getZoomFactor());
         Rectangle2D.Double r = new Rectangle2D.Double();
         r.setFrameFromDiagonal(cpx - sz, cpy - sz, cpx + sz, cpy + sz);
@@ -493,36 +409,117 @@ public class ManyControlPointsWidget extends Widget {
         }
     }
 
-    private void prune(boolean isX, DoubleMap<Set<ShapeControlPoint>> pointMap, TriConsumer<IntSet, Set<ShapeControlPoint>, Set<ShapeControlPoint>> bc) {
-        time("prune " + (isX ? "x" : "y"), () -> {
-            ShapesCollection coll = shapesLookup.lookup(ShapesCollection.class);
-            IntSet defunct = IntSet.create(pointMap.size());
-            Set<ShapeControlPoint> reAdd = new HashSet<>(pointMap.size());
-            Set<ShapeElement> removedShapes = new HashSet<>(coll.size());
-            Set<ShapeControlPoint> removedPoints = new HashSet<>(pointMap.size());
-            pointMap.forEach((int index, double value, Set<ShapeControlPoint> scps) -> {
-                for (ShapeControlPoint scp : new HashSet<>(scps)) {
-                    ShapeElement owner = scp.owner();
-                    if (removedShapes.contains(owner) || !scp.isValid()) {
-                        scps.remove(scp);
-                        removedPoints.add(scp);
-                        continue;
-                    } else if (!coll.contains(owner)) {
-                        removedShapes.add(owner);
-                        scps.remove(scp);
-                        removedPoints.add(scp);
-                    }
-                    double coord = isX ? scp.getX() : scp.getY();
-                    if (coord != value) {
-                        scps.remove(scp);
-                        reAdd.add(scp);
+    static class MO implements Mover<Set<ShapeControlPoint>> {
+
+        private final Set<ShapeControlPoint> toMove = TinySets.empty();
+
+        public MO() {
+
+        }
+
+        public MO(ShapeControlPoint cp) {
+            toMove.add(cp);
+        }
+
+        @Override
+        public Set<ShapeControlPoint> coalesce(Set<ShapeControlPoint> oldValue, Set<ShapeControlPoint> intoValue, BiConsumer<Set<ShapeControlPoint>, Set<ShapeControlPoint>> oldNewConsumer) {
+            if (intoValue == null) {
+//                intoValue = new HashSet<>(oldValue == null ? 1 : oldValue.size());
+                intoValue = TinySets.empty();
+//new HashSet<>(oldValue == null ? 1 : oldValue.size());
+            }
+            if (oldValue != null && oldValue.size() == 1) {
+                ShapeControlPoint scp = oldValue.iterator().next();
+                if (toMove.contains(scp)) {
+                    oldValue.remove(scp);
+                    if (intoValue.isEmpty()) {
+                        intoValue = TinySets.of(scp);
+                    } else {
+                        intoValue.add(scp);
                     }
                 }
-                if (scps.isEmpty()) {
-                    defunct.add(index);
+                oldNewConsumer.accept(oldValue, intoValue);
+                return intoValue;
+            }
+            Set<ShapeControlPoint> intersection = CollectionUtils.intersection(oldValue, toMove);
+            if (oldValue != null) {
+                oldValue.removeAll(intersection);
+            }
+            intoValue.addAll(intoValue);
+            oldNewConsumer.accept(oldValue, intoValue);
+            return intoValue;
+        }
+    }
+
+    private void prune() {
+        time("prune ", () -> {
+            MO mo = new MO();
+            CoordinateMapModifier<Set<ShapeControlPoint>> mod = points.modifier(mo);
+            ShapesCollection coll = shapesLookup.lookup(ShapesCollection.class);
+            Set<ShapeElement> removedShapes = new HashSet<>(coll.size());
+            Set<ShapeElement> retainedShapes = new HashSet<>();
+            Rectangle2D.Double repaint = new Rectangle2D.Double();
+
+            points.visitAll((double x, double y, Set<ShapeControlPoint> val) -> {
+                for (Iterator<ShapeControlPoint> it = val.iterator(); it.hasNext();) {
+                    ShapeControlPoint scp = it.next();
+                    ShapeElement owner = scp.owner();
+                    boolean isRemoved = removedShapes.contains(owner);
+                    if (!isRemoved && !retainedShapes.contains(owner)) {
+                        if (coll.indexOf(owner) < 0) {
+                            owner.addToBounds(repaint);
+                            removedShapes.add(owner);
+                            isRemoved = true;
+                        } else {
+                            retainedShapes.add(owner);
+                        }
+                    }
+                    isRemoved |= !scp.isValid();
+                    if (isRemoved) {
+                        it.remove();
+                        EqPointDouble pt = reverseIndex.get(scp);
+                        if (pt != null) {
+                            addPointBoundsToRect(repaint, pt);
+                            if (val.isEmpty()) {
+                                mod.remove(pt.getX(), pt.getY());
+                            }
+                            reverseIndex.remove(scp);
+                        }
+                    } else {
+                        double px = scp.getX();
+                        double py = scp.getY();
+                        EqPointDouble loc = reverseIndex.get(scp);
+                        if (loc.x != px || loc.y != py) {
+                            addPointBoundsToRect(repaint, loc);
+                            addPointBoundsToRect(repaint, px, py);
+                            reverseIndex.put(scp, new EqPointDouble(px, py));
+                            mod.move(loc.x, loc.y, px, py);
+                            mo.toMove.add(scp);
+                        }
+                    }
                 }
             });
-            bc.apply(defunct, reAdd, removedPoints);
+            for (ShapeElement el : coll) {
+                if (!retainedShapes.contains(el)) {
+                    el.addToBounds(repaint);
+                    ShapeControlPoint[] pts = el.controlPoints(controlPointSize(), this::controlPointMoved);
+                    for (int i = 0; i < pts.length; i++) {
+                        double px = pts[i].getX();
+                        double py = pts[i].getY();
+                        EqPointDouble nue = new EqPointDouble(px, py);
+                        Set<ShapeControlPoint> set = points.get(px, py);
+                        if (set == null) {
+                            set = TinySets.empty();
+                            mod.add(px, py, set);
+                        }
+                        set.add(pts[i]);
+                        addPointBoundsToRect(repaint, nue);
+                        reverseIndex.put(pts[i], nue);
+                    }
+                }
+            }
+//            points.conditionallyRemove(Set::isEmpty);
+            mod.commit();
         });
     }
 
@@ -538,33 +535,72 @@ public class ManyControlPointsWidget extends Widget {
         for (ShapeControlPoint cp : pts) {
             EqPointDouble pt = addOneControlPoint(cp);
             if (addTo != null) {
-                addToRect(addTo, cp.getX(), cp.getY());
+                addPointBoundsToRect(addTo, cp.getX(), cp.getY());
                 if (pt != null) {
-                    addToRect(addTo, pt);
+                    addPointBoundsToRect(addTo, pt);
                 }
             }
         }
     }
 
     private void controlPointMoved(ShapeControlPoint cp) {
-        updateCachedControlPointInfo(Collections.singleton(cp), Collections.emptySet());
+        EqPointDouble oldLoc = reverseIndex.get(cp);
+        assert oldLoc != null : "Control point " + cp + " is not known";
+        EqPointDouble newLoc = new EqPointDouble(cp.getX(), cp.getY());
+        if (!oldLoc.exactlyEqual(newLoc)) {
+            if (temp == null || cp.owner() != temp.owner()) {
+                if (points.contains(oldLoc.x, oldLoc.y)) {
+                    points.moveData(oldLoc.x, oldLoc.y, newLoc.x, newLoc.y, new MO(cp));
+                } else {
+//                    System.err.println("Points map does not contain mapping for "
+//                            + cp + " at " + oldLoc);
+//                    System.out.println("Nearest: " + points.nearestValueTo(oldLoc.x, oldLoc.y, 3));
+
+                    points.put(newLoc.x, newLoc.y, TinySets.of(cp), (s1, s2) -> {
+                        if (s2 == null) {
+//                            s2 = new HashSet<>();
+                            s2 = TinySets.empty();
+                        }
+                        s2.add(cp);
+                        s2.addAll(s1);
+                        return s2;
+                    });
+                }
+            }
+            Set<ShapeControlPoint> related = new HashSet<>(Arrays.asList(cp.family()));
+            related.remove(cp);
+            reverseIndex.put(cp, newLoc);
+            Rectangle2D.Double repaint = new Rectangle2D.Double();
+            cp.owner().addToBounds(repaint);
+            for (Iterator<ShapeControlPoint> it = related.iterator(); it.hasNext();) {
+                ShapeControlPoint sibling = it.next();
+                ControlPointKind k = sibling.kind();
+                switch (k) {
+                    case OTHER:
+                    case RADIUS:
+                    case EDGE_HANDLE:
+                        controlPointMoved(sibling);
+                        break;
+                    default:
+                        it.remove();
+                }
+            }
+            addPointBoundsToRect(repaint, oldLoc);
+            addPointBoundsToRect(repaint, newLoc);
+            repaint(repaint);
+        }
     }
 
     private EqPointDouble addOneControlPoint(ShapeControlPoint cp) {
         double x = cp.getX();
         double y = cp.getY();
-        Set<ShapeControlPoint> scpsX = xPoints.get(x);
-        if (scpsX == null) {
-            scpsX = new HashSet<>(6);
-            xPoints.put(x, scpsX);
-        }
-        Set<ShapeControlPoint> scpsY = yPoints.get(y);
-        if (scpsY == null) {
-            scpsY = new HashSet<>(6);
-            yPoints.put(y, scpsY);
-        }
-        scpsX.add(cp);
-        scpsY.add(cp);
+        points.put(x, y, TinySets.of(cp), (Set<ShapeControlPoint> a, Set<ShapeControlPoint> b) -> {
+            if (a != null && !a.isEmpty()) {
+                a.addAll(b);
+                return a;
+            }
+            return b;
+        });
         return reverseIndex.put(cp, new EqPointDouble(x, y));
     }
 
@@ -591,13 +627,16 @@ public class ManyControlPointsWidget extends Widget {
             return;
         }
         Graphics2D g = getGraphics();
-        Rectangle clip = g.getClipBounds();
-        if (clip == null) {
-            clip = getClientArea();
+        Rectangle r = g.getClipBounds();
+        if (r == null) {
+            r = getClientArea();
         }
-        double cpSize = (renderingProperties.controlPointSize() + renderingProperties.selectionStrokeSize())
-                * 1.5;
+        double cpSize = (renderingProperties.controlPointSize() + renderingProperties.selectionStrokeSize()) /* * 1.5 */;
 
+        Rectangle clip = r;
+        clip.height = Math.max(clip.height, (int) Math.ceil(cpSize));
+        clip.width = Math.max(clip.width, (int) Math.ceil(cpSize));
+//        time("paint", () -> {
         Set<ShapeControlPoint> cps = findForRegion(clip.x, clip.y,
                 clip.x + clip.width, clip.y + clip.height);
 //        System.out.println("paint " + cps.size() + " points");
@@ -627,6 +666,7 @@ public class ManyControlPointsWidget extends Widget {
                 paintOne(virtual, ix, id, g, state, zoom);
             }
         });
+//        });
     }
 
     private void paintOne(ShapeControlPoint cp, int ix, long id, Graphics2D g, ObjectState state, double zoom) {
@@ -732,28 +772,7 @@ public class ManyControlPointsWidget extends Widget {
 
     @Override
     protected Rectangle calculateClientArea() {
-//        if (true) {
-//            JComponent v = getScene().getView();
-//            if (v != null) {
-//                Rectangle r = v.getBounds();
-//                if (!r.isEmpty()) {
-//                    r = getScene().convertViewToScene(r);
-//                    return r;
-//                }
-//            }
-//        }
-        if (xPoints.size() == 0 || yPoints.size() == 0) {
-            return new Rectangle();
-        }
-        Rectangle2D.Double area = new Rectangle2D.Double();
-        double leastX = xPoints.keySet().least();
-        double greatestX = xPoints.keySet().greatest();
-        double leastY = yPoints.keySet().least();
-        double greatestY = yPoints.keySet().greatest();
-        double sz = controlPointSize();
-        area.add(leastX - (sz / 2D), leastY - (sz / 2D));
-        area.add(greatestX + (sz / 2D), greatestY + (sz / 2D));
-        Rectangle r = area.getBounds();
+        Rectangle r = points.bounds();
         JComponent view = getScene().getView();
         if (view != null) {
             Rectangle viewBounds = view.getBounds();
@@ -823,12 +842,12 @@ public class ManyControlPointsWidget extends Widget {
     }
 
     private boolean hit(double x, double y, boolean forClick) {
-        if (!cells.wasOccupied(x, y)) {
-            return false;
-        }
+//        if (cells.wasInLastBounds(x, y) && !cells.wasOccupied(x, y)) {
+//            return false;
+//        }
         double sz = controlPointSize();
         if (forClick) {
-            sz += 2;
+//            sz += 2;
         }
         double minX = x - sz;
         double maxX = x + sz;
@@ -837,16 +856,7 @@ public class ManyControlPointsWidget extends Widget {
 
         Set<ShapeControlPoint> candidates = findForRegion(minX, minY, maxX, maxY);
 
-//        System.out.println("FOUND " + candidates.size() + " for region "
-//                + minX + ", " + minY + ", " + maxX + ", " + maxY);
-        for (ShapeControlPoint cp : candidates) {
-//            System.out.println("  TRY " + cp.getX() + ", " + cp.getY() + " " + cp);
-            if (cp.hit(x, y)) {
-                return true;
-            }
-        }
-//        return !findForRegion(minX, minY, maxX, maxY).isEmpty();
-        return false;
+        return candidates.size() > 0;
     }
 
     private ShapeControlPoint findForPoint(Point2D pt) {
@@ -854,59 +864,67 @@ public class ManyControlPointsWidget extends Widget {
     }
 
     private ShapeControlPoint findForPoint(double x, double y) {
-        double cpSize = controlPointSize();
-        Set<ShapeControlPoint> candidates = findForRegion(x - cpSize, y - cpSize, x + cpSize, y + cpSize);
+        double cpSize = Math.max(1, controlPointSize());
+        Set<ShapeControlPoint> candidates = findForRegion(
+                x - cpSize, y - cpSize, x + cpSize, y + cpSize);
+
+        if (candidates.size() > 0) {
+            System.out.println(candidates.size() + " hit candidates");
+        }
         ShapeControlPoint best = null;
         double dist = Double.MAX_VALUE;
         for (ShapeControlPoint cp : candidates) {
-            if (cp.hit(x, y)) {
-                double d = cp.distance(x, y);
-                if (d < dist) {
-                    dist = d;
-                    best = cp;
-                }
+//            if (cp.hit(x, y)) {
+            double d = cp.distance(x, y);
+            if (d < dist) {
+                dist = d;
+                best = cp;
             }
+//            }
         }
         return best;
     }
 
+    Set<ShapeControlPoint> paintSet = new HashSet<>();
+
     private Set<ShapeControlPoint> findForRegion(double minX, double minY, double maxX, double maxY) {
-        int minXKey = xPoints.keySet().nearestIndexTo(minX, Bias.FORWARD);
-        if (minXKey < 0) {
-            return Collections.emptySet();
-        }
-        int minYKey = yPoints.keySet().nearestIndexTo(minY, Bias.FORWARD);
-        if (minYKey < 0) {
-            return Collections.emptySet();
-        }
-        int maxXKey = xPoints.keySet().nearestIndexTo(maxX, Bias.BACKWARD);
-        if (maxXKey < 0) {
-            return Collections.emptySet();
-        }
-        int maxYKey = yPoints.keySet().nearestIndexTo(maxY, Bias.BACKWARD);
-        if (maxYKey < 0) {
-            return Collections.emptySet();
+        if (true) {
+            paintSet.clear();
+            for (Map.Entry<ShapeControlPoint, EqPointDouble> e : reverseIndex.entrySet()) {
+                EqPointDouble p = e.getValue();
+                if (p.x >= minX && p.x < maxX && p.y >= minY && p.y < maxY) {
+                    paintSet.add(e.getKey());
+                }
+            }
+            return paintSet;
         }
 
-        // Use a TreeSet here to try to keep some consistency in which points
-        // get painted (still dependent on the clip rectangle therefore what
-        // arguments get passed to this method, so imperfect)
-        Set<ShapeControlPoint> xps = new TreeSet<>();
-        Set<ShapeControlPoint> yps = new TreeSet<>();
-        for (int xk = minXKey; xk <= maxXKey; xk++) {
-            Set<ShapeControlPoint> curr = xPoints.valueAt(xk);
-            if (curr != null) {
-                xps.addAll(curr);
+        Set<ShapeControlPoint> result = new HashSet<>();
+        points.valuesWithin(minX, minY, maxX, maxY, (double x, double y, Set<ShapeControlPoint> val) -> {
+            int oldSize = result.size();
+            result.addAll(ShapeControlPointRefiner.INSTANCE.refine(minX, maxX, minY, maxY, val));
+            if (result.size() == oldSize && !val.isEmpty()) {
+//                System.out.println("Refiner eliminated ALL of " + val.size());
             }
+//            result.addAll(val);
+        });
+        Rectangle2D.Double b = new Rectangle2D.Double();
+        b.setFrameFromDiagonal(minX, minY, maxX, maxY);
+        if (result.isEmpty() && !paintSet.isEmpty()) {
+//            System.out.println("Nothing for " + minX + "," + minY + " -> " + maxX + ", " + maxY
+//                    + " should have found " + paintSet.size() + " items");
+            Rectangle2D.Double r = new Rectangle2D.Double();
+            r.setFrameFromDiagonal(minX, minY, maxX, maxY);
+            CoordinateMap.debug(() -> {
+                Set<ShapeControlPoint> near = points.nearestValueTo(r.getCenterX(), r.getCenterY(), r.width);
+                System.out.println("  Nearest " + near + " for " + r.getBounds());
+            });
+//        } else {
+//            System.out.println("Have result " + result);
         }
-        for (int yk = minYKey; yk <= maxYKey; yk++) {
-            Set<ShapeControlPoint> curr = yPoints.valueAt(yk);
-            if (curr != null) {
-                yps.addAll(curr);
-            }
-        }
-        xps.retainAll(yps);
-        return xps;
+//        System.out.println("Found " + result.size() + " for region "
+//                + GeometryUtils.toString(b));
+        return result;
     }
 
     @Override
@@ -947,6 +965,7 @@ public class ManyControlPointsWidget extends Widget {
 //        revalidate();
         EqPointDouble pt = reverseIndex.get(temp);
         if (pt != null) {
+            cacheLastBounds(temp.owner());
             pointAtDragStart = pt;
             controlPointMoved(temp);
         }
@@ -959,6 +978,8 @@ public class ManyControlPointsWidget extends Widget {
         pointAtDragStart = null;
         this.temp = null;
         setDragging(false);
+        oldShapeBounds.width = 0;
+        oldShapeBounds.height = 0;
         if (cancel) {
             cp.set(atStart.x, atStart.y);
         }
@@ -977,9 +998,26 @@ public class ManyControlPointsWidget extends Widget {
         }
     }
 
+    private Rectangle2D.Double oldShapeBounds = new Rectangle2D.Double();
+
+    private void cacheLastBounds(ShapeElement en) {
+        double factor = 1D / getScene().getZoomFactor();
+        oldShapeBounds.width = 0;
+        oldShapeBounds.height = 0;
+        en.addToBounds(oldShapeBounds);
+        BasicStroke stroke = en.stroke();
+        double add = factor * stroke.getLineWidth();
+        oldShapeBounds.x -= add / 2;
+        oldShapeBounds.y -= add / 2;
+        oldShapeBounds.width += add;
+        oldShapeBounds.height += add;
+    }
+
     void onDrag(Point2D current) {
         if (temp != null) {
+            repaint(oldShapeBounds);
             controlPointMoved(temp);
+            cacheLastBounds(temp.owner());
         }
     }
 }

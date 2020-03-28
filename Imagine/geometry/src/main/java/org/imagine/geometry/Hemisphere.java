@@ -119,8 +119,8 @@ public enum Hemisphere implements Sector {
             }
         }
         Collections.sort(result, (ha, hb) -> {
-            double distA = Math.abs(a - ha.midpoint());
-            double distB = Math.abs(a - hb.midpoint());
+            double distA = Math.abs(a - ha.midPoint());
+            double distB = Math.abs(a - hb.midPoint());
             return Double.compare(distA, distB);
         });
         return result.iterator().next();

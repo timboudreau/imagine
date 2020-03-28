@@ -19,18 +19,18 @@ import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.geometry.util.GeometryUtils;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class RoundRect implements Vector, Volume, Adjustable, Fillable, Strokable, Versioned {
+public class RoundRect implements Vectors, Volume, Adjustable, Fillable, Strokable, Versioned {
 
     private static final long serialVersionUID = 39_201L;
     private double aw;

@@ -3,6 +3,7 @@ package org.imagine.vector.editor.ui.tools.widget;
 import org.imagine.vector.editor.ui.tools.widget.util.OperationListenerBroadcaster;
 import org.imagine.vector.editor.ui.tools.widget.util.OperationListener;
 import com.mastfrog.function.TriConsumer;
+import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -12,6 +13,7 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -264,7 +266,43 @@ public class DesignWidgetManager implements DesignerControl {
         public void onDragCancelled(Lookup lkp) {
             onDragCompleted(lkp);
         }
+    }
 
+    public void centerSelected() {
+        center(selectionLookup.lookupAll(ShapeElement.class));
+    }
+
+    public void center(Collection<? extends ShapeElement> all) {
+        if (all.isEmpty()) {
+            return;
+        }
+        Rectangle bds = new Rectangle();
+        for (ShapeElement el : all) {
+            Widget w = widget.find(el);
+            Rectangle r = w.getClientArea();
+            if (r != null && !r.isEmpty()) {
+                r = w.convertLocalToScene(r);
+                r = scene.convertSceneToView(r);
+                if (bds.isEmpty()) {
+                    bds.setBounds(r);
+                } else {
+                    bds.add(r);
+                }
+            }
+        }
+        if (!bds.isEmpty()) {
+            JComponent view = scene.getView();
+            if (view != null) {
+                double cx = bds.getCenterX();
+                double cy = bds.getCenterY();
+                Rectangle scrolled = view.getVisibleRect();
+                double offX = cx - scrolled.getCenterX();
+                double offY = cy - scrolled.getCenterY();
+                System.out.println("adjust scroll by " + offX + "," + offY);
+                scrolled.translate((int) Math.round(offX), (int) Math.round(offY));
+                view.scrollRectToVisible(scrolled);
+            }
+        }
     }
 
     private void controlPointMoved(ShapeElement shape, ControlPoint cp, Widget w) {
@@ -308,7 +346,7 @@ public class DesignWidgetManager implements DesignerControl {
                 virtuals.clear();
             }
         }
-        */
+         */
         return w;
     }
 
@@ -337,7 +375,7 @@ public class DesignWidgetManager implements DesignerControl {
                     virtuals.clear();
                 }
             }
-            */
+             */
             many.shapeAdded(en);
         });
     }
@@ -395,7 +433,7 @@ public class DesignWidgetManager implements DesignerControl {
             widget.find(el).revalidate();
             scene.validate();
         }
-        */
+         */
     }
 
     @Override
@@ -875,6 +913,8 @@ public class DesignWidgetManager implements DesignerControl {
             if (!uiState.shapesDraggable()) {
                 return;
             }
+            onDrag(w, original, current);
+            System.out.println("onEndDrag " + original + " / " + current);
             try {
                 withShapeInfo(w, original, current, true, (e, osw) -> {
                     // Clears the temporary shape copy we used for
@@ -966,18 +1006,21 @@ public class DesignWidgetManager implements DesignerControl {
                 scratch.y = cp.getY() + dy;
 
                 Point2D prev = null;
-                ShapeControlPoint prevPoint = cp.previous();
+                ShapeControlPoint prevPoint = cp.previousPhysical();
                 if (prevPoint != null) {
                     prev = new Point2D.Double(prevPoint.getX() + dx, prevPoint.getY() + dy);
                 }
                 Point2D next = null;
-                ShapeControlPoint nextPoint = cp.next();
+                ShapeControlPoint nextPoint = cp.nextPhysical();
                 if (nextPoint != null) {
                     next = new Point2D.Double(nextPoint.getX() + dx, nextPoint.getY() + dy);
                 }
 
+                SnapPoints<ShapeSnapPointEntry> snapper = pts.get();
+
+                System.out.println("SNAP " + prev + " / " + scratch + " / " + next);
                 // See if that snaps anywhere
-                Point2D got = pts.get().snapExclusive(prev, scratch,
+                Point2D got = snapper.snapExclusive(prev, scratch,
                         next, gridSize, kinds);
                 if (got != scratch) {
                     double dx1 = scratch.x - got.getX();
@@ -1057,12 +1100,15 @@ public class DesignWidgetManager implements DesignerControl {
             }
             withShapeInfo(w, (controlPoint, cpWidget, shapeWidget) -> {
                 currentProxyControlPoint = shapeWidget.onBeginControlPointDrag(controlPoint);
+                if (currentProxyControlPoint == null) {
+                    abortAllDragOperations();
+                    currentProxyControlPoint = shapeWidget.onBeginControlPointDrag(controlPoint);
+                }
                 assert currentProxyControlPoint != null : "Did not get a control point from " + shapeWidget;
                 cpWidget.onBeginDrag(currentProxyControlPoint);
                 setPoint(current, w);
             });
             opListeners.onDragStarted(w.getLookup());
-            return;
         }
 
         @Override
@@ -1209,12 +1255,14 @@ public class DesignWidgetManager implements DesignerControl {
             if (!uiState.controlPointsDraggable()) {
                 return;
             }
-            withShapeInfo(w, (controlPoint, cpWidget, shapeWidget) -> {
-                ShapeControlPoint proxy = clearProxy();
-                cpWidget.onEndDrag();
-                shapeWidget.onEndControlPointDrag(proxy, true);
+            EventQueue.invokeLater(() -> {
+                withShapeInfo(w, (controlPoint, cpWidget, shapeWidget) -> {
+                    ShapeControlPoint proxy = clearProxy();
+                    cpWidget.onEndDrag();
+                    shapeWidget.onEndControlPointDrag(proxy, true);
+                });
+                opListeners.onDragCompleted(w.getLookup());
             });
-            opListeners.onDragCompleted(w.getLookup());
         }
 
         @Override

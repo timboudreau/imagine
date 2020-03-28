@@ -24,11 +24,11 @@ import net.java.dev.imagine.api.vector.painting.VectorRepaintHandle;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Proxy;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.aggregate.PaintedPrimitive;
 import net.java.dev.imagine.api.vector.aggregate.TransformedPrimitive;
 import net.java.dev.imagine.api.vector.util.Pt;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  * Holder for the stack of vector shapes making up an image
@@ -97,11 +97,11 @@ public final class ShapeStack implements VectorRepaintHandle {
             logger.log(Level.FINE, "Drawn: " + p);
         }
 //        System.err.println("DRAWN: " + p);
-        if (p instanceof Vector) {
-            Pt loc = ((Vector) p).getLocation();
+        if (p instanceof Vectors) {
+            Pt loc = ((Vectors) p).getLocation();
             double x = loc.x - location.x;
             double y = loc.y - location.y;
-            ((Vector) p).setLocation(x, y);
+            ((Vectors) p).setLocation(x, y);
         }
 
         if (p instanceof Attribute) {

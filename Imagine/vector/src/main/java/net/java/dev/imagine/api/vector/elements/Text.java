@@ -20,7 +20,6 @@ import java.util.Objects;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Textual;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.graphics.FontWrapper;
@@ -29,6 +28,7 @@ import org.imagine.geometry.util.DoubleList;
 import org.imagine.geometry.util.GeometryUtils;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.Exceptions;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  * Wraps a string and the font used to render it so it can be turned into a
@@ -36,7 +36,7 @@ import org.openide.util.Exceptions;
  *
  * @author Tim Boudreau
  */
-public class Text implements Primitive, Vector, Adjustable, Textual, Versioned {
+public class Text implements Primitive, Vectors, Adjustable, Textual, Versioned {
 
     private transient static BufferedImage scratch;
     private StringWrapper text;
@@ -253,7 +253,7 @@ public class Text implements Primitive, Vector, Adjustable, Textual, Versioned {
             result = text.as(type);
         }
         if (result == null) {
-            result = Vector.super.as(type);
+            result = Vectors.super.as(type);
         }
         return result;
     }

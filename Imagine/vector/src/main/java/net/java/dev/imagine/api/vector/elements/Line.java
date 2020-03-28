@@ -18,16 +18,16 @@ import static java.lang.Double.doubleToLongBits;
 import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Strokable;
-import net.java.dev.imagine.api.vector.Vector;
 import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
+import net.java.dev.imagine.api.vector.Vectors;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class Line implements Strokable, Adjustable, Vector, Versioned {
+public class Line implements Strokable, Adjustable, Vectors, Versioned {
 
     private double x1;
     private double x2;
@@ -255,7 +255,7 @@ public class Line implements Strokable, Adjustable, Vector, Versioned {
     }
 
     @Override
-    public Vector copy(AffineTransform xform) {
+    public Vectors copy(AffineTransform xform) {
         double[] pts = new double[]{
             x1, y1, x2, y2
         };
