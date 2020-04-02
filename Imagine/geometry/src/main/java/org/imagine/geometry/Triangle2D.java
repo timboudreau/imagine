@@ -27,6 +27,10 @@ public class Triangle2D extends AbstractShape implements EnhancedShape, Tesselab
 
     private double[] points;
 
+    public Triangle2D() {
+        points = new double[6];
+    }
+
     public Triangle2D(double ax, double ay, double bx, double by, double cx, double cy) {
         this.points = new double[]{ax, ay, bx, by, cx, cy};
     }
@@ -427,6 +431,111 @@ public class Triangle2D extends AbstractShape implements EnhancedShape, Tesselab
                         new EqPointDouble(points[4], points[5])
                 );
         return result;
+    }
+
+    public EqPointDouble midA() {
+        return new EqLine(points[0], points[1], points[2], points[3]).midPoint();
+    }
+
+    public EqPointDouble midB() {
+        return new EqLine(points[2], points[3], points[4], points[5]).midPoint();
+    }
+
+    public EqPointDouble midC() {
+        return new EqLine(points[4], points[5], points[0], points[1]).midPoint();
+    }
+
+    public void midPoints(double[] into, int offset) {
+        if (offset < 0 || offset + 6 >= into.length) {
+            throw new IllegalArgumentException(offset + " of " + into.length);
+        }
+        midA().copyInto(into, offset);
+        midB().copyInto(into, offset + 2);
+        midC().copyInto(into, offset + 4);
+    }
+
+    public void setMidPoint(int side, double sx, double sy) {
+        double len;
+        int offset1, offset2;
+        switch (side) {
+            case 0:
+                len = length(0);
+                offset1 = 0;
+                offset2 = 2;
+                break;
+            case 1:
+                len = length(1);
+                offset1 = 2;
+                offset2 = 4;
+                break;
+            case 2:
+                len = length(2);
+                offset1 = 4;
+                offset2 = 0;
+                break;
+            default:
+                throw new IllegalArgumentException("No line " + side + " in a triangle");
+        }
+
+        double ang = angles()[side];
+        Circle circ = new Circle(sx, sy, len / 2);
+        circ.positionOf(ang, Angle.opposite(len / 2), offset1, points);
+        circ.positionOf(ang, len / 2, offset2, points);
+    }
+
+    /**
+     * Move the mid point of one side of this triangle in a direction
+     * perpendicular to the angle of that side by the specified amount.
+     *
+     * @param side - 0, 1 or 2
+     * @param by The amount to move by
+     */
+    public void moveMidPoint(int side, double by) {
+        if (by == 0) {
+            return;
+        }
+        EqPointDouble pt;
+        double len;
+        int offset1, offset2;
+        switch (side) {
+            case 0:
+                len = length(0);
+                pt = midA();
+                offset1 = 0;
+                offset2 = 2;
+                break;
+            case 1:
+                len = length(1);
+                pt = midB();
+                offset1 = 2;
+                offset2 = 4;
+                break;
+            case 2:
+                len = length(2);
+                pt = midC();
+                offset1 = 4;
+                offset2 = 0;
+                break;
+            default:
+                throw new IllegalArgumentException("No line " + side + " in a triangle");
+        }
+        double ang = angles()[side];
+        Circle circ = new Circle(pt, len / 2);
+        double perp = by > 0 ? Angle.perpendicularClockwise(ang)
+                : Angle.perpendicularCounterclockwise(ang);
+        circ.positionOf(perp, by, (nx, ny) -> {
+            double offX = nx - pt.x;
+            double offY = ny - pt.y;
+            points[offset1] += offX;
+            points[offset1 + 1] += offY;
+            points[offset2] += offX;
+            points[offset2 + 1] += offY;
+        });
+    }
+
+    @Override
+    public void visitLines(DoubleQuadConsumer consumer, boolean includeClose) {
+        visitLines(consumer);
     }
 
     @Override

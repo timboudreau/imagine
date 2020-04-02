@@ -12,5 +12,5 @@ package org.imagine.editor.api.snap;
  */
 public interface OnSnap<T> {
 
-    void onSnap(SnapPoint<T> x, SnapPoint<T> y);
+    boolean onSnap(SnapPoint<T> x, SnapPoint<T> y);
 }

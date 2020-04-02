@@ -22,6 +22,7 @@ import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper.PointVisitor;
 import net.java.dev.imagine.api.vector.elements.PathText;
 import net.java.dev.imagine.api.vector.elements.Polygon;
+import net.java.dev.imagine.api.vector.elements.PolygonWrapper;
 import net.java.dev.imagine.api.vector.elements.Polyline;
 import net.java.dev.imagine.api.vector.elements.Rectangle;
 import net.java.dev.imagine.api.vector.elements.RoundRect;
@@ -61,6 +62,7 @@ public class VectorIO {
     private static final byte STRING = 15;
     private static final byte FONT = 16;
     private static final byte PATH_TEXT = 17;
+    private static final byte POLYGON_WRAPPER = 18;
 
     private HashInconsistencyBehavior hashInconsistencyBehavior
             = HashInconsistencyBehavior.defaultBehavior();
@@ -100,6 +102,8 @@ public class VectorIO {
             return IMAGE;
         } else if (shaped instanceof BasicStrokeWrapper) {
             return STROKE;
+        } else if (shaped instanceof PolygonWrapper) {
+            return POLYGON_WRAPPER;
         } else {
             throw new IOException("Unrecognized shape type "
                     + shaped.getClass().getName());
@@ -190,14 +194,17 @@ public class VectorIO {
             case STROKE:
                 result = readStroke(reader);
                 break;
-            case STRING :
+            case STRING:
                 result = readStringWrapper(reader);
                 break;
-            case FONT :
+            case FONT:
                 result = readFontWrapper(reader);
                 break;
-            case PATH_TEXT :
+            case PATH_TEXT:
                 result = readPathText(reader);
+                break;
+            case POLYGON_WRAPPER:
+                result = readPolygonWrapper(reader);
                 break;
             default:
                 throw new AssertionError(type + " unknown ");
@@ -252,15 +259,17 @@ public class VectorIO {
             case STROKE:
                 writeStroke((BasicStrokeWrapper) shape, writer);
                 break;
-            case STRING :
+            case STRING:
                 writeStringWrapper((StringWrapper) shape, writer);
                 break;
-            case FONT :
+            case FONT:
                 writeFontWrapper((FontWrapper) shape, writer);
                 break;
-            case PATH_TEXT :
+            case PATH_TEXT:
                 writePathText((PathText) shape, writer);
                 break;
+            case POLYGON_WRAPPER:
+                writePolygonWrapper((PolygonWrapper) shape, writer);
             default:
                 throw new AssertionError(type + " " + shape);
         }
@@ -617,5 +626,27 @@ public class VectorIO {
             }
         }
         return new AffineTransform(dbl);
+    }
+
+    private static final byte POLY2_MARKER = 121;
+
+    private void writePolygonWrapper(PolygonWrapper polygonWrapper, KeyWriter writer) {
+        writer.writeByte(POLY2_MARKER);
+        writer.writeDoubleArray(polygonWrapper.pointsArray());
+    }
+
+    private PolygonWrapper readPolygonWrapper(KeyReader reader) throws IOException {
+        byte marker = reader.readByte();
+        if (marker != POLY2_MARKER) {
+            throw new IOException("Expecting PolygonWrapper marker "
+                    + Strings.toPaddedHex(new byte[]{POLY2_MARKER})
+                    + " but got "
+                    + Strings.toPaddedHex(new byte[]{marker}));
+        }
+        double[] dbls = reader.readDoubleArray();
+        if (dbls.length % 2 != 0) {
+            throw new IOException("Read odd number of coordinates");
+        }
+        return new PolygonWrapper(dbls);
     }
 }

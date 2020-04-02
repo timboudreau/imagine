@@ -1,5 +1,6 @@
 package org.imagine.geometry;
 
+import com.mastfrog.function.DoubleBiPredicate;
 import java.awt.Shape;
 import org.imagine.geometry.util.GeometryUtils;
 
@@ -24,13 +25,20 @@ public interface Sector {
      */
     double extent();
 
+    default String toShortString() {
+        return GeometryUtils.toDegreesStringShort(start())
+                + " - " + GeometryUtils.toDegreesStringShort(start() + extent())
+                + " (" + GeometryUtils.toDegreesStringShort(extent()) + ")";
+    }
+
+    default CornerAngle toCornerAngle() {
+        return new CornerAngle(start(), extent());
+    }
+
     default boolean isRightAngle() {
         double ext = extent();
-        if (ext < 90) {
-            return false;
-        }
-        double rem = Math.IEEEremainder(extent(), 90);
-        return rem > 0 && rem == 90;
+        double rem = Math.abs(Math.IEEEremainder(ext, 90));
+        return rem + 0.0 == 0;
     }
 
     /**
@@ -38,8 +46,69 @@ public interface Sector {
      *
      * @return The mid point
      */
-    default double midPoint() {
+    default double midAngle() {
         return Angle.normalize(start() + (extent() / 2));
+    }
+
+    /**
+     * Return (possibly) a normalized copy of this Sector, if it is an
+     * implementation which can have a negative extent, so the extent is
+     * positive and the start angle is swapped, if needed, or this if no change
+     * is needed.
+     * <p>
+     * The default implementation simply returns <code>this</code>, and only
+     * <code>{@link CornerAngle}</code> needs use of this method.
+     * </p>
+     *
+     * @return
+     */
+    default Sector normalized() {
+        return this;
+    }
+
+    /**
+     * Encode a sector as a single, sortable double.
+     *
+     * @return
+     */
+    default double encode() {
+        double ext = Math.abs(extent());
+        double angle = start();
+        int angleMult = (int) (angle * 10000000);
+        double extMult = ext * 0.001;
+        // XXX could use the sign to encode whether
+        // the extent is negative
+        return angleMult + extMult;
+    }
+
+    public static Sector ofVector(double ax, double ay,
+            double sx, double sy, double bx, double by) {
+        double a = Angle.ofLine(sx, sy, ax, ay);
+        double b = Angle.ofLine(sx, sy, bx, by);
+        if (a == b) {
+            return Sector.EMPTY;
+        }
+        double maxA = Math.max(a, b);
+        double minA = Math.min(a, b);
+        return create(minA, maxA - minA);
+    }
+
+    /**
+     * Decode a sector from an encoded double. If the value is negative, will
+     * return an instance of CornerAngle to preserve the sign of the extent.
+     *
+     * @param encoded An encoded double
+     * @return A sector
+     */
+    public static Sector decode(double encoded) {
+        if (encoded < 0) {
+            return CornerAngle.decodeCornerAngle(encoded);
+        }
+        double v = Math.abs(encoded);
+        int ival = (int) Math.floor(v);
+        double ext = 1000D * (v - ival);
+        double ang = ival / 10000000D;
+        return Sector.create(ang, ext);
     }
 
     /**
@@ -77,12 +146,76 @@ public interface Sector {
     default Sector union(Sector other) {
         if (other.contains(this)) {
             return other;
+        } else if (contains(other)) {
+            return this;
         }
         double myMax = start() + extent();
         double otherMax = other.start() + other.extent();
         double sta = Math.min(start(), other.start());
         double ext = Math.min(360, Math.max(myMax, otherMax) - sta);
         return new SectorImpl(sta, ext);
+    }
+
+    default double quarterAngle() {
+        double mid = midAngle();
+        double ext4 = Math.abs(extent()) / 4;
+        return Angle.normalize(mid - ext4);
+    }
+
+    default double threeQuarterAngle() {
+        double mid = midAngle();
+        double ext4 = Math.abs(extent()) / 4;
+        return Angle.normalize(mid + ext4);
+    }
+
+    /**
+     * Sample points at the 1/4, 1/2 and 3/4 sub angles relative to the passed
+     * apex point, at a default distance, and return true if the passed
+     * BiPredicate returns true for any of them. This is useful for testing
+     * whether an angle is interior or exterior.
+     *
+     * @param sharedX The apex X coordinate
+     * @param sharedY The apex Y coordinate
+     * @param test A test
+     * @return The number (out of 3) of tests that succeeded
+     */
+    default int sample(double sharedX, double sharedY, DoubleBiPredicate test) {
+        return sample(sharedX, sharedY, 2, test);
+    }
+
+    /**
+     * Sample points at the 1/4, 1/2 and 3/4 sub angles relative to the passed
+     * apex point, at a default distance, and return true if the passed
+     * BiPredicate returns true for any of them. This is useful for testing
+     * whether an angle is interior or exterior.
+     *
+     * @param sharedX The apex X coordinate
+     * @param sharedY The apex Y coordinate
+     * @param atDistance The radius from the apex coordinate at which to
+     * generate the sample points
+     * @param test A test
+     * @return The number (out of 3) of tests that succeeded
+     */
+    default int sample(double sharedX, double sharedY, double atDistance, DoubleBiPredicate test) {
+        Circle circ = new Circle(sharedX, sharedY, atDistance);
+        double[] p = circ.positionOf(quarterAngle());
+        System.out.println("For " + toShortString() + " sample "
+                + GeometryUtils.toShortString(quarterAngle())
+                + " at " + GeometryUtils.toShortString(p[0], p[1]));
+
+        int result = 0;
+        if (test.test(p[0], p[1])) {
+            result++;
+        }
+        p = circ.positionOf(midAngle());
+        if (test.test(p[0], p[1])) {
+            result++;
+        }
+        p = circ.positionOf(threeQuarterAngle());
+        if (test.test(p[0], p[1])) {
+            result++;
+        }
+        return result;
     }
 
     default Sector inverse() {
@@ -93,9 +226,20 @@ public interface Sector {
         return new SectorImpl(maxDegrees(), ext);
     }
 
+    default Sector extInverse() {
+        if (extent() == 360) {
+            return Sector.EMPTY;
+        }
+        double ext = 360 - extent();
+        return new SectorImpl(minDegrees(), ext);
+    }
+
     default Sector intersection(Sector other) {
         if (!overlaps(other) && !other.overlaps(this)) {
             return Sector.EMPTY;
+        }
+        if (other instanceof CornerAngle) {
+            other = other.normalized();
         }
         double startA = other.start();
         double startB = start();
@@ -126,6 +270,11 @@ public interface Sector {
     default Sector rotatedBy(double degrees) {
         if (degrees == 0.0 || degrees == -0.0) {
             return this;
+        }
+        double ext = extent();
+        if (ext < 0) {
+            degrees = Angle.normalize(start() + ext);
+            return create(degrees, -ext);
         }
         degrees = Angle.normalize(start() + degrees);
         return create(degrees, extent());
@@ -233,6 +382,16 @@ public interface Sector {
         return extent() + 0.0 == 0.0;
     }
 
+    default int compare(Sector a, Sector b) {
+        a = a.normalized();
+        b = b.normalized();
+        int result = Double.compare(a.start(), b.start());
+        if (result == 0) {
+            result = Double.compare(a.extent(), b.extent());
+        }
+        return result;
+    }
+
     public static final Sector EMPTY = new Sector() {
         @Override
         public double start() {
@@ -264,6 +423,7 @@ public interface Sector {
             return false;
         }
 
+        @Override
         public String toString() {
             return "<empty-sector>";
         }

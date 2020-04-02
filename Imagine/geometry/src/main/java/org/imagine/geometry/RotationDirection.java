@@ -21,6 +21,20 @@ public enum RotationDirection {
      */
     NONE;
 
+    @Override
+    public String toString() {
+        switch (this) {
+            case CLOCKWISE:
+                return "cw";
+            case COUNTER_CLOCKWISE:
+                return "ccw";
+            case NONE:
+                return "none";
+            default:
+                throw new AssertionError(this);
+        }
+    }
+
     /**
      * Adjust an angle by the passed amount in this direction.
      *
@@ -38,6 +52,22 @@ public enum RotationDirection {
                 return angle;
             default:
                 throw new AssertionError(this);
+        }
+    }
+
+    /**
+     * Get the opposite direction of rotation.
+     *
+     * @return The opposite
+     */
+    public RotationDirection opposite() {
+        switch (this) {
+            case CLOCKWISE:
+                return COUNTER_CLOCKWISE;
+            case COUNTER_CLOCKWISE:
+                return CLOCKWISE;
+            default:
+                return this;
         }
     }
 }

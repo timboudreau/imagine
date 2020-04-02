@@ -15,6 +15,14 @@ public final class EqPointDouble extends Point2D.Double implements Comparable<Po
     public EqPointDouble() {
     }
 
+    public EqPointDouble(double[] coords) {
+        this(coords[0], coords[1]);
+    }
+
+    public EqPointDouble(int offset, double[] coords) {
+        this(coords[offset], coords[offset + 1]);
+    }
+
     public EqPointDouble(double x, double y) {
         super(x, y);
     }
@@ -31,6 +39,11 @@ public final class EqPointDouble extends Point2D.Double implements Comparable<Po
             return (EqPointDouble) p;
         }
         return new EqPointDouble(p);
+    }
+
+    public void copyInto(double[] pts, int at) {
+        pts[at] = x;
+        pts[at + 1] = y;
     }
 
     /**
@@ -69,7 +82,7 @@ public final class EqPointDouble extends Point2D.Double implements Comparable<Po
 
     @Override
     public int hashCode() {
-        return GeometryUtils.pointsHashCode(x, y);
+        return GeometryUtils.pointHashCode(x, y);
     }
 
     @Override

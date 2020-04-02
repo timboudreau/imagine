@@ -14,6 +14,7 @@ import org.openide.util.NbBundle.Messages;
     "DISTANCE=Size",
     "GRID=Grid",
     "ANGLE=Angle",
+    "CORNER=Corner",
     "NONE=None"
 })
 public enum SnapKind {
@@ -21,6 +22,7 @@ public enum SnapKind {
     DISTANCE,
     GRID,
     ANGLE,
+    CORNER,
     NONE;
 
     @Override

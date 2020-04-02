@@ -61,7 +61,7 @@ public class EqPoint extends Point2D.Float implements Comparable<Point2D> {
 
     @Override
     public int hashCode() {
-        return GeometryUtils.pointsHashCode(x, y);
+        return GeometryUtils.pointHashCode(x, y);
     }
 
     @Override

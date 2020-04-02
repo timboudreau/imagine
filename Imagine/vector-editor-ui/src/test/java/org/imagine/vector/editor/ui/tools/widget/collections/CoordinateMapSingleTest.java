@@ -89,28 +89,25 @@ public class CoordinateMapSingleTest {
                 });
     }
 
-    @Test
-    public void testDirtSimple() {
-        DirtSimpleCoordinateMap<String> m = new DirtSimpleCoordinateMap<>(100, 100, 200);
-        System.out.println("ds:");
-        simpleTest(m);
-    }
-
-    @Test
-    public void testDirtSimpleComplex() {
-        DirtSimpleCoordinateMap<Set<Thing>> m = new DirtSimpleCoordinateMap<>(-40, -40, 80);
-        System.out.println("ds-cpl:");
-        complexTest(m, -20, 20);
-    }
-
-    /*
+//    @Test
+//    public void testDirtSimple() {
+//        DirtSimpleCoordinateMap<String> m = new DirtSimpleCoordinateMap<>(100, 100, 200);
+//        System.out.println("ds:");
+//        simpleTest(m);
+//    }
+//
+//    @Test
+//    public void testDirtSimpleComplex() {
+//        DirtSimpleCoordinateMap<Set<Thing>> m = new DirtSimpleCoordinateMap<>(-40, -40, 80);
+//        System.out.println("ds-cpl:");
+//        complexTest(m, -20, 20);
+//    }
     @Test
     public void testBasic() {
         CoordinateMapSingle<String> m = new CoordinateMapSingle<>(100, 100, 200, 200);
         System.out.println("single:");
         simpleTest(m);
     }
-
 
     @Test
     public void testPartitioned() {
@@ -140,7 +137,7 @@ public class CoordinateMapSingleTest {
         testAddressing(100, -100, -100);
         testAddressing(100, -100, 100);
     }
-     */
+
     private void testAddressing(int w, int minX, int minY) {
         double[] scratch = new double[2];
         IntSet dups = IntSet.arrayBased(100);

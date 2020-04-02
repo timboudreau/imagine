@@ -37,6 +37,10 @@ public class Arrow implements Shape {
     public double x2;
     public double y2;
 
+    public Arrow() {
+        this(0D, 0D, 1D, 1D);
+    }
+
     public Arrow(double x1, double y1, double x2, double y2) {
         this(5D, x1, y1, x2, y2);
     }
@@ -67,6 +71,37 @@ public class Arrow implements Shape {
 
     public double length() {
         return Point2D.distance(x1, y1, x2, y2);
+    }
+
+    public EqLine toLine() {
+        return new EqLine(x1, y1, x2, y2);
+    }
+
+    public void setLengthFromPoint1(double newLength) {
+        setLength(newLength, false);
+    }
+
+    public void setLengthFromPoint2(double newLength) {
+        setLength(newLength, true);
+    }
+
+    private void setLength(double length, boolean fromPoint2) {
+        EqLine ln = toLine();
+        ln.setLength(length, !fromPoint2);
+        x1 = ln.x1;
+        y1 = ln.y1;
+        x2 = ln.x2;
+        y2 = ln.y2;
+    }
+
+    public void setPointAndAngle(double x, double y, double angle, double distance) {
+        Circle circ = new Circle(x, y, distance);
+        x1 = x;
+        y1 = y;
+        circ.positionOf(angle, (xb, yb) -> {
+            x2 = xb;
+            y2 = yb;
+        });
     }
 
     double[] headPoints(boolean a) {

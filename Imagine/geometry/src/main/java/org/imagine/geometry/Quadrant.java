@@ -71,7 +71,7 @@ public enum Quadrant implements Sector {
     }
 
     @Override
-    public double midPoint() {
+    public double midAngle() {
         return start() + 45;
     }
 

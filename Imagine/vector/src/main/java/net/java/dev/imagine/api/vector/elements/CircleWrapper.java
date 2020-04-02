@@ -186,7 +186,7 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
 
     @Override
     public ControlPointKind[] getControlPointKinds() {
-        return new ControlPointKind[]{PHYSICAL_POINT, RADIUS};
+        return new ControlPointKind[]{PHYSICAL_POINT, RADIUS, RADIUS, RADIUS, RADIUS};
     }
 
     @Override
@@ -256,19 +256,31 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
 
     @Override
     public int getControlPointCount() {
-        return 2;
+        return 5;
     }
 
     @Override
     public void getControlPoints(double[] xy) {
         xy[0] = centerX;
         xy[1] = centerY;
-        toShape().positionOf(0, radius, 2, xy);
+        Circle circ = toShape();
+        circ.positionOf(0, radius, 2, xy); // 1
+        circ.positionOf(90, radius, 4, xy); // 2
+        circ.positionOf(180, radius, 6, xy); // 3
+        circ.positionOf(270, radius, 8, xy); // 4
+    }
+
+    @Override
+    public void collectSizings(SizingCollector c) {
+        c.dimension(radius, true, 0, 1);
+        c.dimension(radius * 2, true, 1, 3);
+        c.dimension(radius, false, 0, 2);
+        c.dimension(radius * 2, false, 2, 4);
     }
 
     @Override
     public int[] getVirtualControlPointIndices() {
-        return new int[]{1};
+        return new int[]{1, 2, 3, 4};
     }
 
     @Override
@@ -282,6 +294,9 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
                 }
                 break;
             case 1:
+            case 2:
+            case 3:
+            case 4:
                 double newRadius = Point2D.distance(centerX, centerY, location.x,
                         location.y);
                 if (newRadius != radius) {
@@ -336,5 +351,10 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
             default:
                 return true;
         }
+    }
+
+    @Override
+    public void collectAngles(AngleCollector c) {
+        // do nothing
     }
 }

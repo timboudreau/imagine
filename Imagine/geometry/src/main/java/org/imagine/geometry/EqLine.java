@@ -23,6 +23,7 @@
  */
 package org.imagine.geometry;
 
+import com.mastfrog.function.DoubleQuadConsumer;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
@@ -36,7 +37,7 @@ import org.imagine.geometry.util.GeometryUtils;
  *
  * @author Tim Boudreau
  */
-public final class EqLine extends Line2D.Double {
+public final class EqLine extends Line2D.Double implements Intersectable {
 
     private static final DecimalFormat FMT = new DecimalFormat(
             "#####################0.0#####################");
@@ -107,6 +108,31 @@ public final class EqLine extends Line2D.Double {
         EqPointDouble mid = midPoint();
         Circle circ = new Circle(mid.x, mid.y, length() / 2D);
         return circ.line(angle);
+    }
+
+    public double distanceIn(Axis axis) {
+        switch (axis) {
+            case HORIZONTAL:
+                return Math.abs(x2 - x1);
+            case VERTICAL:
+                return Math.abs(y2 - y1);
+            default:
+                throw new AssertionError(axis);
+        }
+    }
+
+    public Axis nearestAxis() {
+        Axis ax = axis();
+        if (ax != null) {
+            return ax;
+        }
+        double ang = angle();
+        Quadrant quad = Quadrant.forAngle(ang);
+        if (ang > quad.midAngle()) {
+            return quad.leadingAxis();
+        } else {
+            return quad.trailingAxis();
+        }
     }
 
     /**
@@ -493,6 +519,16 @@ public final class EqLine extends Line2D.Double {
                 && GeometryUtils.isSameCoordinate(ang1, ang2);
     }
 
+    @Override
+    public boolean intersectsLine(Line2D l) {
+        return GeometryUtils.linesIntersect(this, l);
+    }
+
+    @Override
+    public boolean intersectsLine(double x1, double y1, double x2, double y2) {
+        return GeometryUtils.linesIntersect(this, x1, y1, x2, y2);
+    }
+
     /**
      * Determine if this and another line are equal to each other within the
      * passed tolerance.
@@ -562,5 +598,10 @@ public final class EqLine extends Line2D.Double {
         hash += l3 * 51;
         hash += l4 * 3;
         return hash;
+    }
+
+    @Override
+    public void visitLines(DoubleQuadConsumer consumer, boolean includeClose) {
+        consumer.accept(x1, y1, x2, y2);
     }
 }

@@ -53,7 +53,7 @@ import org.imagine.geometry.util.GeometryUtils;
  *
  * @author Tim Boudreau
  */
-public final class Polygon2D extends AbstractShape implements EnhancedShape {
+public final class Polygon2D extends AbstractShape implements EnhancedShape, Intersectable {
 
     private double[] points;
     private double minX, minY, maxX, maxY;
@@ -64,21 +64,38 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape {
                     + xpoints.length + ", " + ypoints.length);
         }
         points = new double[xpoints.length * 2];
-        for (int i = 0; i < xpoints.length; i++) {
-            int arrOffset = i * 2;
-            points[arrOffset] = xpoints[i];
-            points[arrOffset + 1] = ypoints[i];
+        if (points.length > 0) {
+            minX = Double.MAX_VALUE;
+            minY = Double.MAX_VALUE;
+            maxX = Double.MIN_VALUE;
+            maxY = Double.MIN_VALUE;
+            for (int i = 0; i < xpoints.length; i++) {
+                int arrOffset = i * 2;
+                points[arrOffset] = xpoints[i];
+                points[arrOffset + 1] = ypoints[i];
+                minX = min(xpoints[i], minX);
+                minY = min(ypoints[i], minY);
+                maxX = max(xpoints[i], maxX);
+                maxY = max(ypoints[i], maxY);
+            }
         }
     }
 
     public Polygon2D(double... points) {
-        assert points.length % 2 == 0;
+        if (points.length % 2 != 0) {
+            throw new IllegalArgumentException("Points array has "
+                    + "an odd number of coordinates: " + points.length);
+        }
         this.points = points;
         initMinMax();
     }
 
     public Polygon2D(Polygon2D other) {
         this.points = (double[]) other.points.clone();
+        this.minX = other.minX;
+        this.minY = other.minY;
+        this.maxX = other.maxX;
+        this.maxY = other.maxY;
     }
 
     public Polygon2D(int[] xPoints, int[] yPoints, int nPoints) {
@@ -104,6 +121,11 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape {
         PathIterator iter = shape.getPathIterator(xform);
         DoubleList pts = new DoubleList(30);
         double[] data = new double[6];
+        minX = Double.MAX_VALUE;
+        minY = Double.MAX_VALUE;
+        maxX = Double.MIN_VALUE;
+        maxY = Double.MIN_VALUE;
+
         while (!iter.isDone()) {
             int type = iter.currentSegment(data);
             int dataOffset = 0;
@@ -123,38 +145,138 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape {
             }
             pts.add(data[dataOffset]);
             pts.add(data[dataOffset + 1]);
+            minX = min(minX, data[dataOffset]);
+            minY = min(minY, data[dataOffset + 1]);
+            maxX = max(maxX, data[dataOffset]);
+            maxY = max(maxY, data[dataOffset]);
             iter.next();
         }
         points = pts.toDoubleArray();
-        initMinMax();
+        if (points.length < 2) {
+            minX = minY = maxX = maxY = 0;
+        }
+    }
+
+    private void changed() {
+        calc = null;
+        clockwise = null;
     }
 
     public Polygon2D copy() {
         return new Polygon2D(this);
     }
 
+    public void applyTransform(AffineTransform xform) {
+        if (!xform.isIdentity()) {
+            xform.transform(points, 0, points, 0, points.length / 2);
+            initMinMax();
+        }
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(points.length * 6)
                 .append("Polygon2D(");
-        for (int i = 0; i < points.length; i += 2) {
-            sb.append('<');
-            sb.append(GeometryUtils.toString(",", points[i], points[i + 1]));
-            if (i == points.length - 1) {
-                sb.append('>');
-            } else {
-                sb.append(',');
-            }
-        }
-        return sb.append(')').toString();
+        return GeometryUtils.toStringCoordinates(sb, points)
+                .append(')').toString();
     }
 
+    public void deletePoint(int at) {
+        int currPoints = pointCount();
+        if (at < 0 || at >= currPoints) {
+            throw new IndexOutOfBoundsException("Attempt to insert point "
+                    + at + " of " + currPoints);
+        }
+        int arrayOffset = at * 2;
+        double currX = points[arrayOffset];
+        double currY = points[arrayOffset + 1];
+        if (at == currPoints - 1) {
+            points = Arrays.copyOf(points, points.length - 2);
+        } else {
+            double[] nue = new double[points.length - 1];
+            System.arraycopy(points, 0, nue, 0, arrayOffset);
+            System.arraycopy(points, arrayOffset + 2, nue, arrayOffset,
+                    points.length - (arrayOffset + 2));
+            points = nue;
+        }
+        if (currX == minX || currX == maxX || currY == minY || currY == maxY) {
+            initMinMax();
+        }
+        changed();
+    }
+
+    public void insertPoint(int at, double x, double y) {
+        int currPoints = pointCount();
+        if (at < 0 || at > currPoints) {
+            throw new IndexOutOfBoundsException("Attempt to insert point "
+                    + at + " of " + currPoints);
+        }
+        int arrayOffset = at * 2;
+        double[] nue;
+        if (at == pointCount()) {
+            nue = Arrays.copyOf(points, points.length + 2);
+            nue[nue.length - 2] = x;
+            nue[nue.length - 1] = y;
+        } else {
+            nue = new double[points.length + 1];
+            if (arrayOffset > 0) {
+                System.arraycopy(points, 0, nue, 0, arrayOffset);
+                System.arraycopy(points, arrayOffset, nue, arrayOffset + 2, points.length - arrayOffset);
+                nue[arrayOffset] = x;
+                nue[arrayOffset + 1] = y;
+            }
+        }
+        points = nue;
+        minX = Math.min(x, minX);
+        minY = Math.min(y, minY);
+        maxX = max(x, maxX);
+        maxY = max(y, maxY);
+        changed();
+    }
+
+    public boolean setPoint(int point, double x, double y) {
+        if (point < 0 || point >= pointCount()) {
+            throw new IndexOutOfBoundsException("Attempt to set point " + point
+                    + " of " + pointCount());
+        }
+        int arrayOffset = point * 2;
+        double currX = points[arrayOffset];
+        double currY = points[arrayOffset + 1];
+        if (x != currX || y != currY) {
+            points[arrayOffset] = x;
+            points[arrayOffset + 1] = y;
+            minX = min(minX, x);
+            minY = min(minY, y);
+            maxX = max(maxX, x);
+            maxY = max(maxY, y);
+            changed();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Get the array of coordinates; note that for performance, this returns the
+     * raw internal points array - do not modify it if anything may be caching
+     * the bounds or other information about this shape.
+     *
+     * @return The points array
+     */
     public double[] pointsArray() {
         return points;
     }
 
+    /**
+     * Tests if this polygon is homomorphic with respect to another.
+     *
+     * @param other
+     * @return
+     */
     public boolean isHomomorphic(Polygon2D other) {
-        double[] op = other.pointsArray();
-        if (points.length != op.length) {
+        Polygon2D a = this.normalized();
+        Polygon2D b = other.normalized();
+        double[] op = b.pointsArray();
+        if (a.points.length != op.length) {
             return false;
         }
         if (!GeometryUtils.isSameCoordinate(other.maxX - other.minX, maxX - minX)
@@ -162,8 +284,8 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape {
             return false;
         }
         DoubleSet dists = DoubleSet.create(points.length);
-        for (int i = 0; i < points.length; i++) {
-            dists.add(op[i] - points[i]);
+        for (int i = 0; i < a.points.length; i++) {
+            dists.add(op[i] - a.points[i]);
         }
         if (dists.size() == 1) {
             return true;
@@ -179,14 +301,129 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape {
     }
 
     @Override
+    public boolean isNormalized() {
+        return indexOfTopLeftmostPoint() == 0 && isClockwise();
+    }
+
+    public Polygon2D normalized() {
+        if (!isNormalized()) {
+            Polygon2D result = new Polygon2D(this);
+            result.normalize();
+            return result;
+        }
+        return this;
+    }
+
+    public void add(Line2D line) {
+        points = Arrays.copyOf(points, points.length + 4);
+        points[points.length - 4] = line.getX1();
+        points[points.length - 3] = line.getY1();
+        points[points.length - 2] = line.getX2();
+        points[points.length - 1] = line.getY2();
+        minX = Math.min(Math.min(line.getX1(), line.getX2()), minX);
+        minY = Math.min(Math.min(line.getY1(), line.getY2()), minY);
+        maxX = Math.max(Math.max(line.getX1(), line.getX2()), maxX);
+        maxY = Math.max(Math.max(line.getY1(), line.getY2()), maxY);
+        changed();
+    }
+
+    public void add(Point2D point) {
+        points = Arrays.copyOf(points, points.length + 2);
+        points[points.length - 2] = point.getX();
+        points[points.length - 1] = point.getY();
+        minX = Math.min(minX, point.getX());
+        minY = Math.min(minY, point.getY());
+        maxX = Math.min(maxX, point.getX());
+        maxY = Math.min(maxY, point.getY());
+        clockwise = null;
+        changed();
+    }
+
+    public void add(Polygon2D other) {
+        double[] nue = Arrays.copyOf(points, points.length + other.points.length);
+        System.arraycopy(other.points, 0, nue, points.length, other.points.length);
+        points = nue;
+        clockwise = null;
+        changed();
+        for (int i = 0; i < other.points.length; i += 2) {
+            minX = min(other.points[i], minX);
+            maxX = max(other.points[i], maxX);
+            minY = min(other.points[i + 1], minY);
+            maxY = max(other.points[i + 1], maxY);
+        }
+    }
+
+    private Boolean clockwise;
+
+    private static RotationDirection directionOf(double ax, double ay, double sx, double sy, double bx, double by) {
+        return new CornerAngle(ax, ay, sx, sy, bx, by).direction();
+    }
+
+    private boolean isClockwise() {
+        if (clockwise != null) {
+            return clockwise;
+        }
+        int pc = pointCount();
+        int max = pc * 2;
+        int cwCount = 0;
+        int ccwCount = 0;
+        for (int i = 4; i < max; i += 2) {
+            RotationDirection dir = directionOf(points[i - 4], points[i - 3],
+                    points[i - 2], points[i - 1], points[i], points[i + 1]);
+            switch (dir) {
+                case CLOCKWISE:
+                    cwCount++;
+                    break;
+                case COUNTER_CLOCKWISE:
+                    ccwCount++;
+                    break;
+            }
+            if (i == max - 2) {
+                dir = directionOf(points[i - 2], points[i - 1], points[i],
+                        points[i + 1], points[0], points[1]);
+                switch (dir) {
+                    case CLOCKWISE:
+                        cwCount++;
+                        break;
+                    case COUNTER_CLOCKWISE:
+                        ccwCount++;
+                        break;
+                }
+            }
+        }
+        boolean result = cwCount > ccwCount;
+        clockwise = result;
+        return result;
+    }
+
+    static void reversePointsInPlace(double[] points) {
+        double[] temp = (double[]) points.clone();
+        for (int i = 0, i2 = points.length - 2; i < points.length; i += 2, i2 -= 2) {
+            points[i] = temp[i2];
+            points[i + 1] = temp[i2 + 1];
+        }
+    }
+
+    @Override
     public boolean normalize() {
         int ptix = indexOfTopLeftmostPoint();
-        if (ptix > 0) {
-            int coordOffset = ptix * 2;
-            double[] nue = new double[points.length];
-            System.arraycopy(points, coordOffset, nue, 0, points.length - coordOffset);
-            System.arraycopy(points, 0, nue, points.length - coordOffset, coordOffset);
-            points = nue;
+        boolean isClockwise = isClockwise();
+        if (ptix > 0 || !isClockwise) {
+            if (ptix > 0) {
+                int coordOffset = ptix * 2;
+                double[] nue = new double[points.length];
+                System.arraycopy(points, coordOffset, nue, 0, points.length - coordOffset);
+                System.arraycopy(points, 0, nue, points.length - coordOffset, coordOffset);
+                if (!isClockwise()) {
+                    reversePointsInPlace(nue);
+                    isClockwise = true;
+                }
+                points = nue;
+            } else {
+                reversePointsInPlace(points);
+                isClockwise = true;
+            }
+            changed();
             return true;
         }
         return false;
@@ -216,6 +453,7 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape {
                 }
                 break;
         }
+        changed();
     }
 
     @Override
@@ -244,14 +482,6 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape {
     public void visitPoints(DoubleBiConsumer consumer) {
         for (int i = 0; i < points.length; i += 2) {
             consumer.accept(points[i], points[i + 1]);
-        }
-    }
-
-    @Override
-    public void visitLines(DoubleQuadConsumer consumer) {
-        for (int i = 0; i < points.length; i += 2) {
-            int next = i == points.length - 2 ? 0 : i + 2;
-            consumer.accept(points[i], points[i + 1], points[next], points[next + 1]);
         }
     }
 
@@ -298,7 +528,7 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape {
 
     @Override
     public void visitAdjoiningLines(DoubleSextaConsumer sex) {
-        for (int i = 2; i < points.length + 2; i += 2) {
+        for (int i = 2; i < points.length + 4; i += 4) {
             int prev = (i - 2) % points.length;
             int ix = i % points.length;
             int next = (i + 2) % points.length;
@@ -312,10 +542,18 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape {
         }
     }
 
+    private PolyCalc calc;
+
     @Override
     public boolean contains(double tx, double ty) {
         if ((tx < minX && ty < minY) || (tx > maxX && ty > maxY)) {
             return false;
+        }
+        if (true) {
+            if (calc == null) {
+                calc = new PolyCalc();
+            }
+            return calc.pointInPolygon(tx, ty);
         }
         double testY = ty < minY ? maxY + 1 : minY - 1;
         int count = 0;
@@ -351,9 +589,15 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape {
         return count % 2 == 1;
     }
 
+    public Polygon2D reverse() {
+        reversePointsInPlace(points);
+        return this;
+    }
+
     @Override
     public PathIterator getPathIterator(AffineTransform at) {
         byte[] types = new byte[(points.length / 2) + 1];
+//        Arrays.fill(types, 1, types.length - 2, (byte) SEG_LINETO);
         Arrays.fill(types, (byte) SEG_LINETO);
         types[0] = (byte) SEG_MOVETO;
         types[types.length - 1] = (byte) SEG_CLOSE;
@@ -378,10 +622,6 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape {
             200.232, 200,
             150, 150.77773,
             12, 200,
-            //            150, 50,
-            //            160, 45,
-            //            5, 5,
-            //            150, 40,
             50, 50,
             60, 45,
             50, 40,
@@ -391,10 +631,18 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape {
             100, 10,
             100, 100,};
         Polygon2D p = new Polygon2D(pts);
-        System.out.println("ix " + p.indexOfTopLeftmostPoint());
-        System.out.println("tlm " + p.topLeftPoint());
-        System.out.println("Norm ? " + p.normalize());
         return p;
+    }
+
+    @Override
+    public void visitLines(DoubleQuadConsumer consumer, boolean includeClose) {
+        for (int i = 0; i < points.length; i += 2) {
+            int next = i == points.length - 2 ? 0 : i + 2;
+            consumer.accept(points[i], points[i + 1], points[next], points[next + 1]);
+        }
+        if (includeClose && points.length > 6) {
+            consumer.accept(points[points.length - 2], points[points.length - 1], points[0], points[1]);
+        }
     }
 
     private static final class PolyComp extends JComponent {
@@ -534,23 +782,23 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape {
 //            bds.y += margin;
 //            bds = shape.getBounds();
 //            System.out.println("iter bounds " + bds);
-//            for (int x = 0; x < bds.width; x++) {
-//                for (int y = 0; y < bds.height; y++) {
-//                    try {
-//                        if (shape.contains(x + bds.x, y + bds.y)) {
-////                        g.setColor(Color.GREEN);
-//                            g.setColor(new Color(128, 128, 255, 100));
-//                            g.fillRect(x + margin, y + margin, 1, 1);
-//                        } else {
+            for (int x = 0; x < bds.width; x++) {
+                for (int y = 0; y < bds.height; y++) {
+                    try {
+                        if (shape.contains(x + bds.x, y + bds.y)) {
+//                        g.setColor(Color.GREEN);
+                            g.setColor(new Color(128, 128, 255, 100));
+                            g.fillRect(x, y, 1, 1);
+                        } else {
 //                            g.setColor(new Color(240, 240, 240, 80));
 ////                        g.setColor(Color.WHITE);
 //                            g.fillRect(x + margin, y+margin, 1, 1);
-//                        }
-//                    } catch (Throwable t) {
-//                        t.printStackTrace();
-//                    }
-//                }
-//            }
+                        }
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                }
+            }
             ((EnhancedShape) shape).visitAnglesWithArcs((int angleIndex, double angle1, double x1, double y1,
                     double angle2, double x2, double y2,
                     Rectangle2D bounds, double apexX, double apexY,
@@ -570,5 +818,55 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape {
         }
         private static final Line2D.Double scratchLine = new Line2D.Double();
         private static final PieWedge ang = new PieWedge(0, 0, 1, 1, 1);
+    }
+
+    class PolyCalc {
+
+        // http://alienryderflex.com/polygon/
+        private final double[] constant;
+        private final double[] multiple;
+
+        PolyCalc() {
+            int half = points.length / 2;
+            constant = new double[half];
+            multiple = new double[half];
+            int j = half - 1;
+            for (int i = 0; i < half; i++) {
+                int iOff = i * 2;
+                int jOff = j * 2;
+                double polyXi = points[iOff];
+                double polyYi = points[iOff + 1];
+                double polyXj = points[jOff];
+                double polyYj = points[jOff + 1];
+                if (polyYj == polyYi) {
+                    constant[i] = polyXi;
+                    multiple[i] = 0;
+                } else {
+                    constant[i] = polyXi - (polyYi * polyXj)
+                            / (polyYj - polyYi) + (polyYi * polyXi)
+                            / (polyYj - polyYi);
+                    multiple[i] = (polyXj - polyXi) / (polyYj - polyYi);
+                }
+                j = i;
+            }
+        }
+
+        boolean pointInPolygon(double x, double y) {
+
+            int i, j = (points.length / 2) - 1;
+            boolean oddNodes = false;
+
+            for (i = 0; i < points.length / 2; i++) {
+                double polyYi = points[(i * 2) + 1];
+                double polyYj = points[(j * 2) + 1];
+                if ((polyYi < y && polyYj >= y
+                        || polyYj < y && polyYi >= y)) {
+                    oddNodes ^= (y * multiple[i] + constant[i] < x);
+                }
+                j = i;
+            }
+
+            return oddNodes;
+        }
     }
 }

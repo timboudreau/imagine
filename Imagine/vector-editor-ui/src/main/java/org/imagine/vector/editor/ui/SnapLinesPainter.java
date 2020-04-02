@@ -13,9 +13,13 @@ import org.imagine.editor.api.snap.SnapPoint;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.OnSnap;
 import org.imagine.editor.api.snap.SnapKind;
+import static org.imagine.editor.api.snap.SnapKind.CORNER;
 import org.imagine.geometry.Arrow;
 import org.imagine.geometry.Circle;
+import org.imagine.geometry.CornerAngle;
+import org.imagine.geometry.PieWedge;
 import org.imagine.utils.painting.RepaintHandle;
+import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 
 /**
  *
@@ -38,10 +42,15 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
     private final RepaintHandle handle;
     private final Supplier<Rectangle> bounds;
 
+    private final PieWedge pie1 = new PieWedge();
+    private final PieWedge pie2 = new PieWedge();
+
     public SnapLinesPainter(RepaintHandle handle, Supplier<Rectangle> bounds) {
         this.handle = handle;
         this.bounds = bounds;
     }
+
+    private boolean hasPie1, hasPie2;
 
     void setSnapPoint(SnapPoint<ShapeSnapPointEntry> pt, Line2D.Double line, Arrow arrow) {
         handle.repaintArea(lastBoundsPainted);
@@ -51,6 +60,39 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
         } else {
             Rectangle r = bounds.get();
             switch (pt.kind()) {
+                case CORNER:
+                    ShapeSnapPointEntry en = pt.value();
+                    CornerAngle ca = CornerAngle.decodeCornerAngle(en.sizeOrAngle).normalized();
+                    ShapeEntry se = en.entry;
+                    int ct = se.getControlPointCount();
+                    int px1 = en.controlPoint1;
+                    int px2 = en.controlPoint2;
+                    if (px2 == -1) {
+                        px2 = ct - 1;
+                    }
+                    ShapeControlPoint[] pts = se.controlPoints(0, null);
+                    if (px1 >= 0 && px1 < pts.length) {
+                        ShapeControlPoint pt1 = pts[px1];
+                        pie1.setAngleAndExtent(ca.aDegrees(), ca.extent());
+                        pie1.setRadius(20);
+                        pie1.setCenter(pt1.getX(), pt1.getY());
+                        hasPie1 = true;
+                    } else {
+                        hasPie1 = false;
+                    }
+                    pie2.setAngleAndExtent(ca.aDegrees(), ca.extent());
+                    pie2.setRadius(20);
+//                        pie1.setCenter(pt1.getX(), pt1.getY());
+                    switch (pt.axis()) {
+                        case X:
+                            pie2.setCenterX(pt.coordinate());
+                            break;
+                        case Y:
+                            pie2.setCenterY(pt.coordinate());
+                            break;
+                    }
+                    hasPie2 = true;
+                    break;
                 case DISTANCE:
                     line.x1 = line.x2 = line.y1 = line.y2 = -100000;
                     arrow.headAngleA = RULE_ANGLE;
@@ -164,6 +206,14 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
                 case MATCH:
                     handle.repaintArea(x);
                     break;
+                case CORNER:
+                    if (hasPie1) {
+                        handle.repaintArea(pie1);
+                    }
+                    if (hasPie2) {
+                        handle.repaintArea(pie2);
+                    }
+                    break;
                 case ANGLE:
                 case DISTANCE:
                     handle.repaintArea(xArrow);
@@ -179,6 +229,14 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
                 case MATCH:
                     handle.repaintArea(y);
                     break;
+                case CORNER:
+                    if (hasPie1) {
+                        handle.repaintArea(pie1);
+                    }
+                    if (hasPie2) {
+                        handle.repaintArea(pie2);
+                    }
+                    break;
             }
         }
         if (yp != null && yp.kind() == SnapKind.MATCH) {
@@ -192,6 +250,7 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
     }
 
     private Rectangle lastBoundsPainted = new Rectangle();
+
     public void paint(Graphics2D g, Zoom zoom) {
         lastBoundsPainted.setRect(0, 0, 0, 0);
         if (xp == null && yp == null) {
@@ -203,7 +262,17 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
                 BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL,
                 1F, new float[]{5F * factor, 4F * factor, 5F * factor}, 0);
 
-        g.setColor(Color.WHITE);
+        if (xp != null && xp.kind() == CORNER || yp != null && yp.kind() == CORNER) {
+            g.setColor(Color.BLACK);
+            if (hasPie1) {
+                g.draw(pie1);
+            }
+            if (hasPie2) {
+                g.draw(pie2);
+            }
+        }
+
+        g.setColor(Color.BLACK);
         if (xp != null) {
             switch (xp.kind()) {
                 case GRID:
@@ -216,13 +285,13 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
                     break;
                 case MATCH:
                     g.setStroke(stroke);
-                    g.setColor(Color.WHITE);
+                    g.setColor(Color.BLACK);
                     g.draw(x);
                     lastBoundsPainted.add(x.getBounds());
                     break;
                 case ANGLE:
                 case DISTANCE:
-                    g.setColor(Color.WHITE);
+                    g.setColor(Color.BLACK);
                     g.draw(xArrow);
                     lastBoundsPainted.add(xArrow.getBounds());
                     break;
@@ -232,13 +301,13 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
             switch (yp.kind()) {
                 case ANGLE:
                 case DISTANCE:
-                    g.setColor(Color.WHITE);
+                    g.setColor(Color.BLACK);
                     g.draw(yArrow);
                     lastBoundsPainted.add(yArrow.getBounds());
                     break;
                 case MATCH:
                     g.setStroke(stroke);
-                    g.setColor(Color.WHITE);
+                    g.setColor(Color.BLACK);
                     g.draw(y);
                     lastBoundsPainted.add(y.getBounds());
                     break;
@@ -259,7 +328,7 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
     }
 
     @Override
-    public void onSnap(SnapPoint<ShapeSnapPointEntry> xp, SnapPoint<ShapeSnapPointEntry> yp) {
+    public boolean onSnap(SnapPoint<ShapeSnapPointEntry> xp, SnapPoint<ShapeSnapPointEntry> yp) {
         repaint();
         this.xp = xp;
         this.yp = yp;
@@ -267,5 +336,6 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
         setSnapPoint(yp, y, yArrow);
         repaint();
         SnapStatusLineElementProvider.setSnapPoints(xp, yp);
+        return true;
     }
 }

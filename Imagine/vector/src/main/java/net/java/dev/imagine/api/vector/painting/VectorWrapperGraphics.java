@@ -53,7 +53,7 @@ import net.java.dev.imagine.api.vector.elements.ImageWrapper;
 import net.java.dev.imagine.api.vector.elements.Line;
 import net.java.dev.imagine.api.vector.elements.Oval;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
-import net.java.dev.imagine.api.vector.elements.Polygon;
+import net.java.dev.imagine.api.vector.elements.PolygonWrapper;
 import net.java.dev.imagine.api.vector.elements.Polyline;
 import net.java.dev.imagine.api.vector.elements.Rectangle;
 import net.java.dev.imagine.api.vector.elements.RoundRect;
@@ -149,10 +149,10 @@ public class VectorWrapperGraphics extends Graphics2D {
             return ov;
         } else if (shape instanceof Polygon2D) {
             Polygon2D p = (Polygon2D) shape;
-            return new Polygon(p, fill);
+            return new PolygonWrapper(p, fill);
         } else if (shape instanceof java.awt.Polygon) {
             java.awt.Polygon p = (java.awt.Polygon) shape;
-            Polygon polygon = new Polygon(p.xpoints, p.ypoints, p.npoints, fill);
+            PolygonWrapper polygon = new PolygonWrapper(p.xpoints, p.ypoints, p.npoints, fill);
             return polygon;
         } else if (shape instanceof RoundRectangle2D) {
             RoundRectangle2D r = (RoundRectangle2D) shape;
@@ -730,7 +730,7 @@ public class VectorWrapperGraphics extends Graphics2D {
     @Override
     public void drawPolygon(int xPoints[], int yPoints[], int nPoints) {
         if (!receiving) {
-            push(new Polygon(xPoints, yPoints, nPoints, false));
+            push(new PolygonWrapper(xPoints, yPoints, nPoints, false));
         }
         other.drawPolygon(xPoints, yPoints, nPoints);
         changed(xPoints, yPoints, nPoints);
@@ -741,7 +741,7 @@ public class VectorWrapperGraphics extends Graphics2D {
     @Override
     public void fillPolygon(int xPoints[], int yPoints[], int nPoints) {
         if (!receiving) {
-            push(new Polygon(xPoints, yPoints, nPoints, true));
+            push(new PolygonWrapper(xPoints, yPoints, nPoints, true));
         }
         other.fillPolygon(xPoints, yPoints, nPoints);
         changed(xPoints, yPoints, nPoints);

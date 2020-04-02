@@ -9,12 +9,12 @@ import java.util.Objects;
  */
 public class SnapPoint<T> implements Comparable<SnapPoint<?>> {
 
-    final Axis axis;
+    final SnapAxis axis;
     final double coordinate;
     private final SnapKind kind;
     private final T obj;
 
-    public SnapPoint(Axis axis, double coordinate, SnapKind kind, T obj) {
+    public SnapPoint(SnapAxis axis, double coordinate, SnapKind kind, T obj) {
         this.axis = axis;
         this.coordinate = coordinate;
         this.kind = kind;
@@ -33,12 +33,12 @@ public class SnapPoint<T> implements Comparable<SnapPoint<?>> {
         return coordinate;
     }
 
-    public Axis axis() {
+    public SnapAxis axis() {
         return axis;
     }
 
     public double distance(double x, double y) {
-        double c = axis == Axis.X ? x : y;
+        double c = axis == SnapAxis.X ? x : y;
         return Math.abs(c - coordinate);
     }
 

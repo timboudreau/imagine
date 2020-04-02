@@ -22,7 +22,13 @@ class SnapDecorationsLayer extends LayerWidget implements RepaintHandle {
     public SnapDecorationsLayer(Scene scene) {
         super(scene);
         painter = new SnapLinesPainter(this, () -> {
-            return getScene().getBounds();
+            JComponent v = scene.getView();
+            if (v == null) {
+                return scene.getBounds();
+            }
+            Rectangle bds = v.getVisibleRect();
+            scene.convertViewToScene(bds);
+            return bds;
         });
     }
 

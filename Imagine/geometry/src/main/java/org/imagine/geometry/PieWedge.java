@@ -100,6 +100,22 @@ public class PieWedge extends AbstractShape implements Sector {
         return this;
     }
 
+    public PieWedge setAngleAndExtent(Sector sector) {
+        double ext = sector.extent();
+        if (ext < 0) {
+            // CornerAngle
+            setAngleAndExtent(sector.start() - ext, -ext);
+        } else {
+            setAngleAndExtent(sector.start(), ext);
+        }
+        return this;
+    }
+
+    public PieWedge setFrom(LineVector vect) {
+        setCenter(vect.sharedX(), vect.sharedY());
+        return setAngleAndExtent(vect.corner().toSector());
+    }
+
     public PieWedge setExtent(double ext) {
         this.extent = ext;
         return this;
@@ -108,6 +124,28 @@ public class PieWedge extends AbstractShape implements Sector {
     public PieWedge setCenter(double centerX, double centerY) {
         circ.setCenter(centerX, centerY);
         return this;
+    }
+
+    public PieWedge setCenterX(double centerX) {
+        circ.setCenter(centerX, circ.centerY());
+        return this;
+    }
+
+    public PieWedge setCenterY(double centerY) {
+        circ.setCenter(circ.centerX(), centerY);
+        return this;
+    }
+
+    public double getCenterX() {
+        return circ.centerX();
+    }
+
+    public double getCenterY() {
+        return circ.centerY();
+    }
+
+    public EqPointDouble getCenter() {
+        return new EqPointDouble(circ.centerX(), circ.centerY());
     }
 
     public PieWedge setRadius(double radius) {

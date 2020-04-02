@@ -191,9 +191,10 @@ public class SnapPointsTest {
         }
 
         @Override
-        public void onSnap(SnapPoint<String> x, SnapPoint<String> y) {
+        public boolean onSnap(SnapPoint<String> x, SnapPoint<String> y) {
             this.x = x;
             this.y = y;
+            return true;
         }
     }
 }

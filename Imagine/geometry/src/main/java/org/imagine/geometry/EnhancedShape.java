@@ -24,7 +24,7 @@ import org.imagine.geometry.util.GeometryUtils;
  *
  * @author Tim Boudreau
  */
-public interface EnhancedShape {
+public interface EnhancedShape extends Intersectable {
 
     /**
      * Get one of the points.
@@ -113,6 +113,10 @@ public interface EnhancedShape {
      * @param consumer The consumer
      */
     default void visitLines(DoubleQuadConsumer consumer) {
+        visitLines(consumer, true);
+    }
+
+    default void visitLines(DoubleQuadConsumer consumer, boolean includeClose) {
         boolean[] first = new boolean[]{true};
         double[] firstPoint = new double[2];
         double[] last = new double[2];
@@ -127,7 +131,7 @@ public interface EnhancedShape {
             last[0] = x;
             last[1] = y;
         });
-        if (!first[0]) {
+        if (!first[0] && includeClose) {
             consumer.accept(last[0], last[1], firstPoint[0], firstPoint[1]);
         }
     }

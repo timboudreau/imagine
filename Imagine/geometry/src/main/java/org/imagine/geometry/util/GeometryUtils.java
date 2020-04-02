@@ -5,8 +5,10 @@
  */
 package org.imagine.geometry.util;
 
+import com.mastfrog.function.DoubleBiConsumer;
 import java.awt.Rectangle;
 import java.awt.Shape;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.geom.PathIterator;
 import static java.awt.geom.PathIterator.SEG_CLOSE;
@@ -17,10 +19,13 @@ import static java.awt.geom.PathIterator.SEG_QUADTO;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import static java.lang.Double.doubleToLongBits;
+import static java.lang.Math.pow;
 import java.text.DecimalFormat;
 import org.imagine.geometry.EqPointDouble;
+import org.imagine.geometry.Polygon2D;
 
 /**
+ * Various utilities for geometric functions and dealing with rounding errors.
  *
  * @author Tim Boudreau
  */
@@ -28,21 +33,245 @@ public class GeometryUtils {
 
     private static final float DEFAULT_TOLERANCE = 0.0000000000001F;
     static final DecimalFormat FMT = new DecimalFormat("######################0.0#################################");
+    static final DecimalFormat FMT_SHORT = new DecimalFormat("######################0.00");
+    static final DecimalFormat DEGREES_FMT = new DecimalFormat("######################0.0#################################\u00B0");
+    static final DecimalFormat DEGREES_FMT_2PLACE = new DecimalFormat("######################0.00\u00B0");
+    static final String DEFAULT_COORD_DELIMITER = ", ";
+    static final String DEFAULT_PAIR_DELIMITER = " / ";
+    static final String DEFAULT_WIDTH_HEIGHT_DELIMITER = " * ";
+    private static final double[] APPROXIMATION_POSITIONS
+            = new double[]{0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.825, 1};
+
+    public static int curveApproximationPointCount() {
+        return APPROXIMATION_POSITIONS.length;
+    }
+
     // Line2D.intersects produces erroneous values for certain tests where
     // one coordinate of the tested line is an exact match; so we offset the
     // values we test very slightly in our containment test
     public static final double INTERSECTION_FUDGE_FACTOR = 1.0E-12;
 
+    /**
+     * Determine if two line segments intersect, working around the false
+     * negatives <code>Line2D.linesIntersect()</code> can return.
+     *
+     * @param a The first line segment
+     * @param b The second line segment
+     * @return true if they intersect
+     */
+    public static boolean linesIntersect(Line2D a, Line2D b) {
+        return linesIntersect(a, b.getX1(), b.getY1(), b.getX2(), b.getY2());
+    }
+
+    /**
+     * Determine if two line segments intersect, working around the false
+     * negatives <code>Line2D.linesIntersect()</code> can return.
+     *
+     * @param line A line segment
+     * @param x1 Another line segment's first x coordinate
+     * @param y1 Another line segment's first y coordinate
+     * @param x2 Another line segment's second x coordinate
+     * @param y2 Another line segment's second y coordinate
+     * @return True if they intersect
+     */
+    public static boolean linesIntersect(Line2D line, double x1, double y1, double x2, double y2) {
+        return linesIntersect(line.getX1(), line.getY1(), line.getX2(), line.getY2(),
+                x1, y1, x2, y2);
+    }
+
+    /**
+     * Determine if two line segments intersect, working around the false
+     * negatives <code>Line2D.linesIntersect()</code> can return.
+     *
+     * @param x1 The first line segment's first x coordinate
+     * @param y1 The first line segment's first y coordinate
+     * @param x2 The first line segment's second x coordinate
+     * @param y2 The first line segment's second y coordinate
+     * @param x3 The second line segment's first x coordinate
+     * @param y3 The second line segment's first y coordinate
+     * @param x4 The second line segment's second x coordinate
+     * @param y4 The second line segment's second y coordinate
+     * @return True if the lines intersect
+     */
+    public static boolean linesIntersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
+        if ((x1 == x3 && y1 == y3)
+                || (x2 == x3 && y2 == y3)
+                || (x1 == x4 && y1 == y4)
+                || (x2 == x4 && y2 == y4)) {
+            return true;
+        }
+        if (Line2D.linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4)) {
+            return true;
+        }
+        return Line2D.linesIntersect(x1, y1 + INTERSECTION_FUDGE_FACTOR, x2, y2 - INTERSECTION_FUDGE_FACTOR, x3, y3, x4, y4);
+    }
+
+    /**
+     * Determine if two line segments intersect, working around the false
+     * negatives <code>Line2D.linesIntersect()</code> can return.
+     *
+     * @param x1 The first line segment's first x coordinate
+     * @param y1 The first line segment's first y coordinate
+     * @param x2 The first line segment's second x coordinate
+     * @param y2 The first line segment's second y coordinate
+     * @param x3 The second line segment's first x coordinate
+     * @param y3 The second line segment's first y coordinate
+     * @param x4 The second line segment's second x coordinate
+     * @param y4 The second line segment's second y coordinate
+     * @param ifAbutting The result to return if two of the points are equal
+     * @return True if the lines intersect
+     */
+    public static boolean linesIntersect(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4, boolean ifAbutting) {
+        if ((x1 == x3 && y1 == y3)
+                || (x2 == x3 && y2 == y3)
+                || (x1 == x4 && y1 == y4)
+                || (x2 == x4 && y2 == y4)) {
+            return ifAbutting;
+        }
+        if (Line2D.linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4)) {
+            return true;
+        }
+        return Line2D.linesIntersect(x1, y1 + INTERSECTION_FUDGE_FACTOR, x2, y2 - INTERSECTION_FUDGE_FACTOR, x3, y3, x4, y4);
+    }
+
+    /**
+     * Format an angle in degrees in long decimal format.
+     *
+     * @param degrees An angle
+     * @return A string representation of the angle
+     */
+    public static String toDegreesString(double degrees) {
+        return DEGREES_FMT.format(degrees);
+    }
+
+    /**
+     * Format an angle in degrees to two decimal places.
+     *
+     * @param degrees An angle
+     * @return A string representation of the angle, rounded to two decimal
+     * places
+     */
+    public static String toDegreesStringShort(double degrees) {
+        return DEGREES_FMT_2PLACE.format(degrees);
+    }
+
+    /**
+     * Format a decimal number as a string in long decimal format (no
+     * exponential notation).
+     *
+     * @param value A number
+     * @return A string representation of the number, rounded
+     */
     public static String toString(double value) {
         return FMT.format(value);
     }
 
+    /**
+     * Format a decimal number to two decimal places
+     *
+     * @param value A number
+     * @return A string representation of the number, rounded
+     */
+    public static String toShortString(double value) {
+        String result = FMT_SHORT.format(value);
+        if (result.endsWith(".00")) {
+            result = result.substring(0, result.length() - 3);
+        }
+        return result;
+    }
+
+    /**
+     * Format a pair of coordinates to two decimal places
+     *
+     * @param value A number
+     * @return A string representation of the number, rounded
+     */
+    public static String toShortString(double x, double y) {
+        return toShortString(x) + DEFAULT_COORD_DELIMITER + toShortString(y);
+    }
+
+    public static String toString(Rectangle2D r) {
+        return toString(r.getX(), r.getY()) + " "
+                + toString(DEFAULT_WIDTH_HEIGHT_DELIMITER, r.getWidth(), r.getHeight());
+    }
+
+    public static String toString(Rectangle r) {
+        return r.x + DEFAULT_COORD_DELIMITER + r.y + " " + r.width
+                + DEFAULT_WIDTH_HEIGHT_DELIMITER + r.height;
+    }
+
+    /**
+     * Convert an array of doubles to a comma-delimited, long-format string.
+     *
+     * @param dbls An array of doubles
+     * @return A string
+     */
     public static StringBuilder toString(double... dbls) {
         return toString(new StringBuilder(dbls.length * 8), dbls);
     }
 
+    public static StringBuilder toStringCoordinates(
+            StringBuilder into, double... coords) {
+        return toStringCoordinates(FMT, DEFAULT_COORD_DELIMITER, DEFAULT_PAIR_DELIMITER, into, coords);
+    }
+
+    public static StringBuilder toStringCoordinatesShort(
+            StringBuilder into, double... coords) {
+        return toStringCoordinates(FMT_SHORT, DEFAULT_COORD_DELIMITER, DEFAULT_PAIR_DELIMITER, into, coords);
+    }
+
+    public static String toStringCoordinates(
+            double... coords) {
+        int count = (9 * coords.length) + (DEFAULT_PAIR_DELIMITER.length() * (coords.length - 1))
+                + (DEFAULT_COORD_DELIMITER.length() * coords.length);
+        return toStringCoordinates(FMT, DEFAULT_COORD_DELIMITER, DEFAULT_PAIR_DELIMITER,
+                new StringBuilder(count), coords).toString();
+    }
+
+    public static String toStringCoordinatesShort(
+            double... coords) {
+        int count = (4 * coords.length) + (DEFAULT_PAIR_DELIMITER.length() * (coords.length - 1))
+                + (DEFAULT_COORD_DELIMITER.length() * coords.length);
+        return toStringCoordinates(FMT_SHORT, DEFAULT_COORD_DELIMITER, DEFAULT_PAIR_DELIMITER,
+                new StringBuilder(count), coords).toString();
+    }
+
+    public static StringBuilder toStringCoordinates(
+            String pairDelimiter, StringBuilder into, double... coords) {
+        return toStringCoordinates(FMT, DEFAULT_COORD_DELIMITER, pairDelimiter, into, coords);
+    }
+
+    public static StringBuilder toStringCoordinatesShort(
+            String pairDelimiter, StringBuilder into, double... coords) {
+        return toStringCoordinates(FMT_SHORT, DEFAULT_COORD_DELIMITER, pairDelimiter, into, coords);
+    }
+
+    public static StringBuilder toStringCoordinates(String coordDelimiter,
+            String pairDelimiter, StringBuilder into, double... coords) {
+        return toStringCoordinates(FMT, coordDelimiter, pairDelimiter, into, coords);
+    }
+
+    public static StringBuilder toStringCoordinatesShort(String coordDelimiter,
+            String pairDelimiter, StringBuilder into, double... coords) {
+        return toStringCoordinates(FMT_SHORT, coordDelimiter, pairDelimiter, into, coords);
+    }
+
+    public static StringBuilder toStringCoordinates(DecimalFormat fmt, String coordDelimiter,
+            String pairDelimiter, StringBuilder into, double... coords) {
+        assert coords.length % 2 == 0;
+        for (int i = 0; i < coords.length; i += 2) {
+            into.append(fmt.format(coords[i]));
+            into.append(coordDelimiter);
+            into.append(fmt.format(coords[i + 1]));
+            if (i != coords.length - 2) {
+                into.append(pairDelimiter);
+            }
+        }
+        return into;
+    }
+
     public static StringBuilder toString(StringBuilder sb, double... dbls) {
-        return toString(sb, ", ", dbls);
+        return toString(sb, DEFAULT_COORD_DELIMITER, dbls);
     }
 
     public static StringBuilder toString(StringBuilder sb, String delim, double... dbls) {
@@ -67,13 +296,21 @@ public class GeometryUtils {
     }
 
     public static String toString(double a, double b) {
-        return toString(", ", a, b);
+        return toString(DEFAULT_COORD_DELIMITER, a, b);
     }
 
     public static String toString(String delim, double a, double b) {
         return FMT.format(a) + delim + FMT.format(b);
     }
 
+    /**
+     * Determine if two points are the same point within the default tolerance
+     * to account for rounding errors.
+     *
+     * @param a The first point
+     * @param b The second point
+     * @return True if they match
+     */
     public static boolean isSamePoint(Point2D a, Point2D b) {
         return isSamePoint(a.getX(), a.getY(), b.getX(), b.getY());
     }
@@ -112,10 +349,46 @@ public class GeometryUtils {
         return Math.abs(a - b) < tolerance;
     }
 
+    /**
+     * Get a point equidistant between two points.
+     *
+     * @param x1 The first x coordinate
+     * @param y1 The first y coordinate
+     * @param x2 The second x coordinate
+     * @param y2 The second y coordinate
+     * @return An array of two double coordinates
+     */
     public static double[] equidistantPoint(double x1, double y1, double x2, double y2) {
+        if (x1 == x2 && y1 == y2) {
+            return new double[]{x1, y1};
+        }
         return new double[]{(x1 + x2) / 2D, (y1 + y2) / 2D};
     }
 
+    public static void equidistantPoint(double x1, double y1, double x2, double y2, double[] into, int at) {
+        if (x1 == x2 && y1 == y2) {
+            into[at] = x1;
+            into[at + 1] = y1;
+        }
+        double ex = (x1 + x2) / 2D;
+        double ey = (y1 + y2) / 2D;
+        into[at] = ex;
+        into[at + 1] = ey;
+    }
+
+    /**
+     * Get the intersection point of two lines, or null if they are parallel.
+     *
+     * @param ax The first line segment's first x coordinate
+     * @param ay The first line segment's first y coordinate
+     * @param bx The first line segment's second x coordinate
+     * @param by The first line segment's second y coordinate
+     * @param cx The second line segment's first x coordinate
+     * @param cy The second line segment's first y coordinate
+     * @param dx The second line segment's second x coordinate
+     * @param dy The second line segment's second y coordinate
+     * @return True if they intersect
+     */
     public static EqPointDouble intersection(double ax, double ay, double bx, double by, double cx, double cy, double dx, double dy) {
         double a1 = by - ay;
         double b1 = ax - bx;
@@ -138,7 +411,15 @@ public class GeometryUtils {
         }
     }
 
-    public static int pointsHashCode(double x, double y) {
+    /**
+     * Provides a standard way to compute the hash code of a pair of x/y
+     * coordinates, normalizing the difference between -0.0 and and 0.0.
+     *
+     * @param x An x coordinate
+     * @param y A y coordinate
+     * @return An integer
+     */
+    public static int pointHashCode(double x, double y) {
         double xx = 0.0 + x;
         double yy = 0.0 + y;
         long hash = doubleToLongBits(xx)
@@ -146,6 +427,19 @@ public class GeometryUtils {
         return (int) (hash ^ (hash >> 32));
     }
 
+    /**
+     * Determine if a triangular region contains a test point.
+     *
+     * @param ax The triangle's first point's x coordinate
+     * @param ay The triangle's first point's y coordinate
+     * @param bx The triangle's second point's x coordinate
+     * @param by The triangle's second point's y coordinate
+     * @param cx The triangle's third point's x coordinate
+     * @param cy The triangle's third point's y coordinate
+     * @param tx The test point's x coordinate
+     * @param ty The test point's y coordinate
+     * @return True if the test point is within the triangle
+     */
     public static boolean triangleContains(double ax, double ay, double bx, double by, double cx, double cy, double tx, double ty) {
         double alpha = ((by - cy) * (tx - cx)
                 + (cx - bx) * (ty - cy)) / ((by - cy) * (ax - cx)
@@ -157,10 +451,27 @@ public class GeometryUtils {
         return alpha > 0 && beta > 0 && gamma > 0;
     }
 
+    /**
+     * Provides a standard string representation for a line.
+     *
+     * @param x1 The first x coordinate
+     * @param y1 The first y coordinate
+     * @param x2 The second x coordinate
+     * @param y2 The second y coordinate
+     * @return A string representation of the line
+     */
     public static String lineToString(double x1, double y1, double x2, double y2) {
         return "<-" + toString(x1, y1) + "-" + toString(x2, y2) + "->";
     }
 
+    /**
+     * Provides a standard comparison between points based on y-axis then
+     * x-axis.
+     *
+     * @param a A point
+     * @param b Another point
+     * @return A comparison result
+     */
     public int compare(Point2D a, Point2D b) {
         if (isSamePoint(a, b)) {
             return 0;
@@ -172,6 +483,12 @@ public class GeometryUtils {
         return result;
     }
 
+    /**
+     * Convert an array of ints to an array of bytes, without range checking.
+     *
+     * @param ints An array of ints
+     * @return An array of bytes
+     */
     public static byte[] intArrayToByteArray(int[] ints) {
         byte[] result = new byte[ints.length];
         for (int i = 0; i < ints.length; i++) {
@@ -181,6 +498,14 @@ public class GeometryUtils {
         return result;
     }
 
+    /**
+     * Convert a double to either the floor or ceiling integer value equivalent.
+     *
+     * @param val The value
+     * @param ceil If true, use <code>Math.ceil()</code> instead of
+     * <code>Math.floor()</code>
+     * @return An integer representation of the value
+     */
     public static int toInt(double val, boolean ceil) {
         return (int) (ceil ? Math.ceil(val) : Math.floor(val));
     }
@@ -208,7 +533,19 @@ public class GeometryUtils {
         }
     }
 
+    /**
+     * Determine if an array of points contains any lines that intersect other
+     * lines within that array.
+     *
+     * @param points The points
+     * @return True if there are intersections
+     */
     public static boolean containsIntersectingLines(double[] points) {
+        // triangular and smaller shapes cannot meaningfully self-intersect,
+        // they can only contain the same point
+        if (points.length < 7) {
+            return false;
+        }
         for (int test = 0; test < points.length; test += 2) {
             double tx = points[test];
             double ty = points[test + 1];
@@ -242,11 +579,19 @@ public class GeometryUtils {
                 }
                 against = (against + 2) % points.length;
             } while (against != last);
-
         }
         return false;
     }
 
+    /**
+     * Compute the (sometimes approximate) length of the perimeter of a shape;
+     * lengths for quadratic and cubic curves are approximated by sampling a
+     * series of points from <code>t=0</code> to <code>t=1</code> and taking
+     * their distance.
+     *
+     * @param shape The shape
+     * @return The shape length
+     */
     public static double shapeLength(Shape shape) {
         PathIterator iter = shape.getPathIterator(null);
         double cumulativeResult = 0;
@@ -285,6 +630,216 @@ public class GeometryUtils {
         return cumulativeResult;
     }
 
+    /**
+     * Approximate the shape in the passed iterator as a polygon, iterpolating
+     * some quadratic and cubic curve points.
+     *
+     * @param iter A shape
+     * @return A polygon
+     */
+    public static Polygon2D approximate(Shape shape) {
+        return approximate(shape, null);
+    }
+
+    /**
+     * Approximate the shape in the passed iterator as a polygon, iterpolating
+     * some quadratic and cubic curve points.
+     *
+     * @param iter A shape
+     * @param xform A transform
+     * @return A polygon
+     */
+    public static Polygon2D approximate(Shape shape, AffineTransform xform) {
+        return approximate(shape.getPathIterator(xform));
+    }
+
+    /**
+     * Approximate the shape in the passed iterator as a polygon, iterpolating
+     * some quadratic and cubic curve points.
+     *
+     * @param iter A path iterator
+     * @return A polygon
+     */
+    public static Polygon2D approximate(PathIterator iter) {
+        DoubleList l = new DoubleList(100);
+        double[] data = new double[6];
+        while (!iter.isDone()) {
+            int type = iter.currentSegment(data);
+            double lastStartX = 0;
+            double lastStartY = 0;
+            switch (type) {
+                case SEG_MOVETO:
+                    lastStartX = data[0];
+                    lastStartY = data[1];
+                // fallthrough
+                case SEG_LINETO:
+                    l.add(data[0]);
+                    l.add(data[1]);
+                    break;
+                case SEG_CLOSE:
+                    break;
+                case SEG_CUBICTO:
+                    assert l.size() > 0;
+                    double prevX = l.get(l.size() - 2);
+                    double prevY = l.get(l.size() - 1);
+                    approximateCubicCurve(prevX, prevY, data[0], data[1], data[2], data[3], data[4], data[5], (nx, ny) -> {
+                        l.add(nx);
+                        l.add(ny);
+                    });
+                    break;
+                case SEG_QUADTO:
+                    assert l.size() > 0;
+                    double pX = l.get(l.size() - 2);
+                    double pY = l.get(l.size() - 1);
+                    approximateQuadraticCurve(pX, pY, data[0], data[1], data[2], data[3], (nx, ny) -> {
+                        l.add(nx);
+                        l.add(ny);
+                    });
+            }
+            iter.next();
+        }
+        return new Polygon2D(l.toDoubleArray());
+    }
+
+    /**
+     * Creates a Polygon2D which approximates a cubic curve by sampling points
+     * along it.
+     *
+     * @param ax The curve's initial point's x coordinate
+     * @param ay The curve's initial point's y coordinate
+     * @param bx The curve's first control point's x coordinate
+     * @param by The curve's first control point's y coordinate
+     * @param cx The curve's second control point's x coordinate
+     * @param cy The curve's second control point's y coordinate
+     * @param dx The curve's destination point's x coordinate
+     * @param dy The curve's destination point's xY coordinate
+     * @return A polygon
+     */
+    public static Polygon2D approximateCubicCurve(double ax, double ay,
+            double bx, double by,
+            double cx, double cy,
+            double dx, double dy) {
+        double[] points = new double[APPROXIMATION_POSITIONS.length * 2];
+
+        for (int i = 0; i < APPROXIMATION_POSITIONS.length; i++) {
+            int arrayOffset = i * 2;
+            EqPointDouble pt = cubicPoint(APPROXIMATION_POSITIONS[i], ax, ay, bx, by, cx, cy, dx, dy);
+            points[arrayOffset] = pt.x;
+            points[arrayOffset + 1] = pt.y;
+        }
+        return new Polygon2D(points);
+    }
+
+    /**
+     * Creates a Polygon2D which approximates a cubic curve by sampling points
+     * along it.
+     *
+     * @param ax The curve's initial point's x coordinate
+     * @param ay The curve's initial point's y coordinate
+     * @param bx The curve's first control point's x coordinate
+     * @param by The curve's first control point's y coordinate
+     * @param cx The curve's second control point's x coordinate
+     * @param cy The curve's second control point's y coordinate
+     * @param dx The curve's destination point's x coordinate
+     * @param dy The curve's destination point's xY coordinate
+     * @param c a consumer
+     */
+    public static void approximateCubicCurve(double ax, double ay,
+            double bx, double by,
+            double cx, double cy,
+            double dx, double dy, DoubleBiConsumer c) {
+
+        for (int i = 0; i < APPROXIMATION_POSITIONS.length; i++) {
+            EqPointDouble pt = cubicPoint(APPROXIMATION_POSITIONS[i], ax, ay, bx, by, cx, cy, dx, dy);
+            c.accept(pt.x, pt.y);
+        }
+    }
+
+    /**
+     * Creates a Polygon2D which approximates a cubic curve by sampling points
+     * along it.
+     *
+     * @param ax The curve's initial point's x coordinate
+     * @param ay The curve's initial point's y coordinate
+     * @param bx The curve's first control point's x coordinate
+     * @param by The curve's first control point's y coordinate
+     * @param cx The curve's second control point's x coordinate
+     * @param cy The curve's second control point's y coordinate
+     * @return A polygon
+     */
+    public static Polygon2D approximateQuadraticCurve(double ax, double ay,
+            double bx, double by,
+            double cx, double cy) {
+        double[] points = new double[APPROXIMATION_POSITIONS.length * 2];
+
+        for (int i = 0; i < APPROXIMATION_POSITIONS.length; i++) {
+            int arrayOffset = i * 2;
+            EqPointDouble pt = quadraticPoint(APPROXIMATION_POSITIONS[i], ax, ay, bx, by, cx, cy);
+            points[arrayOffset] = pt.x;
+            points[arrayOffset + 1] = pt.y;
+        }
+        return new Polygon2D(points);
+    }
+
+    /**
+     * Creates a Polygon2D which approximates a cubic curve by sampling points
+     * along it.
+     *
+     * @param ax The curve's initial point's x coordinate
+     * @param ay The curve's initial point's y coordinate
+     * @param bx The curve's first control point's x coordinate
+     * @param by The curve's first control point's y coordinate
+     * @param cx The curve's second control point's x coordinate
+     * @param cy The curve's second control point's y coordinate
+     * @return A polygon
+     */
+    public static void approximateQuadraticCurve(double ax, double ay,
+            double bx, double by,
+            double cx, double cy, DoubleBiConsumer pointConsumer) {
+        for (int i = 0; i < APPROXIMATION_POSITIONS.length; i++) {
+            EqPointDouble pt = quadraticPoint(APPROXIMATION_POSITIONS[i], ax, ay, bx, by, cx, cy);
+            pointConsumer.accept(pt.x, pt.y);
+        }
+    }
+
+    /**
+     * Compute the position of a point along a quadratic curve at the specified
+     * value of t (&gt;=0 and &lt;=1).
+     *
+     * @param t The fraction of the curve to compute for
+     * @param x1 The curve's starting x coordinate
+     * @param y1 The curve's starting y coordinate
+     * @param x2 The curve's control point's x coordinate
+     * @param y2 The curve's control point's y coordinate
+     * @param x3 The curve's destination point's x coordinate
+     * @param y3 The curve's destination point's y coordinate
+     * @return A point
+     */
+    public static EqPointDouble quadraticPoint(double t,
+            double x1, double y1, double x2, double y2, double x3, double y3) {
+        double a = pow((1.0 - t), 2.0);
+        double b = 2.0 * t * (1.0 - t);
+        double c = pow(t, 2.0);
+        double x = a * x1 + b * x2 + c * x3;
+        double y = a * y1 + b * y2 + c * y3;
+        return new EqPointDouble(x, y);
+    }
+
+    /**
+     * Compute the position of a point along a cubic curve at the specified
+     * value of t (&gt;=0 and &lt;=1).
+     *
+     * @param t The fraction of the curve to compute for
+     * @param ax The curve's starting x coordinate
+     * @param ay The curve's starting y coordinate
+     * @param bx The curve's first control point's x coordinate
+     * @param by The curve's first control point's y coordinate
+     * @param cx The curve's second control point's x coordinate
+     * @param cy The curve's second control point's y coordinate
+     * @param d3 The curve's destination point's x coordinate
+     * @param d3 The curve's destination point's y coordinate
+     * @return A point
+     */
     public static EqPointDouble cubicPoint(double t, double ax, double ay,
             double bx, double by,
             double cx, double cy,
@@ -295,6 +850,19 @@ public class GeometryUtils {
         );
     }
 
+    /**
+     * Get the approximate length of a cubic curve.
+     *
+     * @param ax The curve's starting x coordinate
+     * @param ay The curve's starting y coordinate
+     * @param bx The curve's first control point's x coordinate
+     * @param by The curve's first control point's y coordinate
+     * @param cx The curve's second control point's x coordinate
+     * @param cy The curve's second control point's y coordinate
+     * @param d3 The curve's destination point's x coordinate
+     * @param d3 The curve's destination point's y coordinate
+     * @return A length
+     */
     public static double cubicSegmentLength(
             double ax, double ay,
             double bx, double by,
@@ -306,6 +874,21 @@ public class GeometryUtils {
         return cubicSegmentLength(ax, ay, bx, by, cx, cy, dx, dy, samples);
     }
 
+    /**
+     * Get the approximate length of a cubic curve.
+     *
+     * @param ax The curve's starting x coordinate
+     * @param ay The curve's starting y coordinate
+     * @param bx The curve's first control point's x coordinate
+     * @param by The curve's first control point's y coordinate
+     * @param cx The curve's second control point's x coordinate
+     * @param cy The curve's second control point's y coordinate
+     * @param d3 The curve's destination point's x coordinate
+     * @param d3 The curve's destination point's y coordinate
+     * @param samples The number of fractions between 0 and 1 at which to sample
+     * when approximating
+     * @return A length
+     */
     public static double cubicSegmentLength(
             double ax, double ay,
             double bx, double by,
@@ -414,13 +997,20 @@ public class GeometryUtils {
         return (float) ((t1 * t2 - t3 * Math.log(t2 + t1) - (vv * t4 - t3 * Math.log(vv + t4))) / (8 * Math.pow(uu, 1.5)));
     }
 
-    public static String toString(Rectangle2D r) {
-        return toString(r.getX(), r.getY()) + " "
-                + toString(" x ", r.getWidth(), r.getHeight());
+    public static float roundOff(float val) {
+        return roundOff(val, 100000);
     }
 
-    public static String toString(Rectangle r) {
-        return r.x + ", " + r.y + " " + r.width + " x " + r.height;
+    public static float roundOff(double val) {
+        return roundOff(val, 100000);
+    }
+
+    public static float roundOff(float val, int multiplier) {
+        return (float) Math.round(val * multiplier) / multiplier;
+    }
+
+    public static float roundOff(double val, int multiplier) {
+        return (float) Math.round(val * multiplier) / multiplier;
     }
 
     private GeometryUtils() {

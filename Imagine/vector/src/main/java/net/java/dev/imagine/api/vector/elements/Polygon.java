@@ -290,7 +290,7 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vectors
     @Override
     public ControlPointKind[] getControlPointKinds() {
         ControlPointKind[] kinds = new ControlPointKind[xpoints.length];
-        Arrays.fill(kinds, ControlPointKind.PHYSICAL_POINT);
+        Arrays.fill(kinds, ControlPointKind.LINE_TO_DESTINATION);
         return kinds;
     }
 
@@ -337,9 +337,6 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vectors
 
     @Override
     public void setLocation(double xx, double yy) {
-        //XXX do all this double precision?
-        int x = (int) xx;
-        int y = (int) yy;
         double minY = Double.MAX_VALUE;
         double minX = Double.MAX_VALUE;
         for (int i = 0; i < xpoints.length; i++) {
@@ -348,8 +345,8 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vectors
             minX = Math.min(minX, ix);
             minY = Math.min(minY, iy);
         }
-        double offx = x - minX;
-        double offy = y - minY;
+        double offx = xx - minX;
+        double offy = yy - minY;
         if (offx != 0 || offy != 0) {
             for (int i = 0; i < xpoints.length; i++) {
                 xpoints[i] += offx;
@@ -459,6 +456,7 @@ public class Polygon implements Strokable, Fillable, Volume, Adjustable, Vectors
         return bds.getBounds();
     }
 
+    @Override
     public int rev() {
         return rev;
     }

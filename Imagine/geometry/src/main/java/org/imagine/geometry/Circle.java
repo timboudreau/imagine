@@ -46,7 +46,7 @@ import static org.imagine.geometry.util.GeometryUtils.toInt;
  *
  * @author Tim Boudreau
  */
-public class Circle implements Shape, Sector {
+public final strictfp class Circle implements Shape, Sector {
 
     double centerX;
     double centerY;
@@ -61,6 +61,12 @@ public class Circle implements Shape, Sector {
     public Circle(Point2D center) {
         centerX = center.getX();
         centerY = center.getY();
+    }
+
+    public Circle(Point2D center, double radius) {
+        centerX = center.getX();
+        centerY = center.getY();
+        this.radius = radius;
     }
 
     public Circle(Rectangle2D rect) {
@@ -367,6 +373,23 @@ public class Circle implements Shape, Sector {
     public double angleOf(double x, double y) {
         double angle = rotation + ((Math.toDegrees(Math.atan2(x - centerX, centerY - y)) + 360.0) % 360.0);
         return angle;
+    }
+
+    /**
+     * Get the angle in degrees of the second point on a circle
+     * centered on the first point.
+     *
+     * @param cx The center X coordinate
+     * @param cy The center Y coordinate
+     * @param tx The test X coordinate
+     * @param ty The test Y coordinate
+     * @return An angle in degrees, or 0 if both points are the same
+     */
+    public static double angleOf(double cx, double cy, double tx, double ty) {
+        if (cx == tx && cy == ty) {
+            return 0;
+        }
+        return ((Math.toDegrees(Math.atan2(tx - cx, cy - ty)) + 360.0) % 360.0);
     }
 
     public Quadrant quadrantOf(double x, double y) {

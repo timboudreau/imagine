@@ -301,7 +301,7 @@ public class ShapePlotter {
         double lastY = 0;
         boolean first = true;
         double lastTangentAngle = 0;
-        for (double t = 0; t < 1; t += step) {
+        for (double t = 0; t <= 1; t += step) {
             double a = pow((1.0 - t), 2.0);
             double b = 2.0 * t * (1.0 - t);
             double c = pow(t, 2.0);

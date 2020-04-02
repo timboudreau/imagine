@@ -15,10 +15,11 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.function.Consumer;
-import org.imagine.editor.api.snap.Axis;
+import org.imagine.editor.api.snap.SnapAxis;
 import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Shaped;
+import net.java.dev.imagine.api.vector.Textual;
 import net.java.dev.imagine.api.vector.Transformable;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPoint;
@@ -35,6 +36,7 @@ import org.imagine.awt.io.PaintKeyIO;
 import org.imagine.awt.key.PaintKey;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.snap.SnapPointsBuilder;
+import org.imagine.geometry.CornerAngle;
 import org.imagine.io.KeyReader;
 import org.imagine.io.KeyWriter;
 import org.imagine.utils.Holder;
@@ -375,6 +377,9 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
 //                    System.out.println("CHANGED " + pt.getClass().getSimpleName() + " point " + pt.index()
 //                        + " of " + pt.family().length + " with shape family of "
 //                        + h.get().length + " " + Arrays.toString(h.get()));
+                    if (h == null) {
+                        return;
+                    }
                     ShapeControlPoint[] pts = h.get();
                     // If the point count has changed, the
                     // original array will be out-of-date
@@ -509,13 +514,41 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
                 int ptIx = i / 2;
                 if (Arrays.binarySearch(virt, ptIx) < 0) {
                     ShapeSnapPointEntry sn = new ShapeSnapPointEntry(this, ptIx, -1);
-                    bldr.add(Axis.X, pts[i], sn);
-                    bldr.add(Axis.Y, pts[i + 1], sn);
+                    bldr.add(SnapAxis.X, pts[i], sn);
+                    bldr.add(SnapAxis.Y, pts[i + 1], sn);
                 }
             }
         }
+        /*if (vect.is(EnhancedShape.class)) {
+            vect.as(EnhancedShape.class, (sh) -> {
+                sh.visitAnglesWithArcs(new ArcsVisitor() {
+                    @Override
+                    public void visit(int index, double angle1, double x1, double y1, double angle2,
+                            double x2, double y2, Rectangle2D bounds, double apexX, double apexY,
+                            double offsetX, double offsetY, double midAngle) {
+//                    CornerAngle ang = new CornerAngle(x1, y1, apexX, apexY, x2, y2);
+                        CornerAngle ang = new CornerAngle(angle1, angle2);
+                        bldr.addCorner(ang.encodeNormalized(),
+                                new ShapeSnapPointEntry(ShapeEntry.this, index, index - 1, ang.encodeNormalized()));
+                    }
+                }, 0);
+            });
+        } else */ if (!vect.is(Textual.class)) {
+            Shape sh = this.shape();
+            CornerAngle.forShape(sh, (ptIx, ca, x, y, isects) -> {
+                ca = ca.normalized();
+                System.out.println("corner " + getName() + " pt " + ptIx + " " + ca);
+                bldr.addCorner(ca.encodeNormalized(), new ShapeSnapPointEntry(this, ptIx, ptIx - 1, ca.encodeSigned()));
+            });
+        }
+//        if (vect.is(EnhancedShape.class)) {
+//            for (CornerAngle ca : vect.as(EnhancedShape.class).cornerAngles()) {
+//                double norm = ca.encodeNormalized();
+//                bldr.addCorner(norm, new ShapeSnapPointEntry())
+//            }
+//        }
         vect.collectSizings((double size, boolean vertical, int cpIx1, int cpIx2) -> {
-            bldr.addDistance(Axis.forVertical(vertical), size,
+            bldr.addDistance(SnapAxis.forVertical(vertical), size,
                     new ShapeSnapPointEntry(this, cpIx1, cpIx2, size));
         });
         vect.collectAngles((double angle, int cpIx1, int cpIx2) -> {

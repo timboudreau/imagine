@@ -29,13 +29,11 @@ import javax.swing.JToolBar;
 import javax.swing.JViewport;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
-import net.java.dev.imagine.api.vector.elements.CircleWrapper;
 import net.java.dev.imagine.api.vector.elements.ImageWrapper;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
 import net.java.dev.imagine.api.vector.elements.PathText;
+import net.java.dev.imagine.api.vector.elements.PolygonWrapper;
 import net.java.dev.imagine.api.vector.elements.StringWrapper;
-import net.java.dev.imagine.api.vector.elements.Text;
-import net.java.dev.imagine.api.vector.elements.TriangleWrapper;
 import net.java.dev.imagine.api.vector.graphics.FontWrapper;
 import net.java.dev.imagine.ui.toolbar.GridEditor;
 import net.java.dev.imagine.ui.toolbar.SnapEditor;
@@ -46,7 +44,7 @@ import org.imagine.editor.api.grid.SnapSettings;
 import org.imagine.editor.api.snap.SnapKind;
 import org.imagine.editor.api.snap.SnapPointsSupplier;
 import org.imagine.geometry.Circle;
-import org.imagine.geometry.Rhombus;
+import org.imagine.geometry.Polygon2D;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.RepaintProxyShapes;
@@ -69,7 +67,7 @@ public class Demo {
 
     static ChangeListener cl;
 
-    static Random RND = new Random(1592033264732L);
+    static Random RND = new Random(3592033264732L);
 
     static ImageWrapper randomImage() {
         BufferedImage img = GraphicsUtils.newBufferedImage(40, 40, g -> {
@@ -146,7 +144,7 @@ public class Demo {
         SceneRepainter rep = new SceneRepainter(scene);
         Shapes shapes = new Shapes();
         RepaintProxyShapes proxy = new RepaintProxyShapes(shapes, rep);
-        BasicStroke strk = new BasicStroke(8);
+        BasicStroke strk = new BasicStroke(3);
 
         Path2D.Double p2 = new Path2D.Double();
         p2.moveTo(10, 100);
@@ -163,19 +161,43 @@ public class Demo {
                 new StringWrapper("Hello World, how about path text?", 0, 0), FontWrapper.create(
                         "Times New Roman", 30F, Font.BOLD));
 
-        proxy.add(txt, new Color(140, 140, 240), Color.RED,
-                new BasicStroke(0.5f), PaintingStyle.FILL);
+//        proxy.add(txt, new Color(140, 140, 240), Color.RED,
+//                new BasicStroke(0.5f), PaintingStyle.FILL);
 //        proxy.add(new PathIteratorWrapper(new PieWedge(200, 200, 200, 0, 110)), new Color(140, 140, 240), Color.RED,
 //                strk, true, true);
-        proxy.add(randomImage(), Color.BLACK, Color.RED,
-                strk, true, true);
+//        proxy.add(randomImage(), Color.BLACK, Color.RED,
+//                strk, true, true);
+//        proxy.add(new Text("Hello", new Font("Times New Roman", Font.BOLD, 32), 5, 5), randomColor(), randomColor(), strk, PaintingStyle.OUTLINE_AND_FILL);
+//        proxy.add(randomShape(), new Color(128, 128, 255), new Color(0, 0, 128),
+//                strk, true, true);
+        double[] pts = new double[]{
+            200, 20.5,
+            180, 50,
+            200.232, 200,
+            150, 150.77773,
+            12, 200,
+            50, 50,
+            60, 45,
+            50, 40,
+            3, 80,
+            10, 60,
+            10, 10,
+            100, 10,
+            100, 100,};
+        Polygon2D p2d = new Polygon2D(pts);
+        System.out.println("POLY NORM " + p2d.isNormalized());
+        p2d.reverse();
+        p2d.normalize();
+//        System.out.println("POLY NORM NOW " + p2d.isNormalized());
 
-        proxy.add(new Text("Hello", new Font("Times New Roman", Font.BOLD, 32), 5, 5), randomColor(), randomColor(), strk, PaintingStyle.OUTLINE_AND_FILL);
+//        proxy.add(new PolygonWrapper(p2d), Color.ORANGE, Color.BLUE, strk, PaintingStyle.OUTLINE_AND_FILL);
+//        PathIteratorWrapper piw = new PathIteratorWrapper(p2d);
+        PolygonWrapper piw = new PolygonWrapper(p2d);
+        piw.translate(250, 250);
+        proxy.add(piw, Color.ORANGE, Color.BLUE, strk, PaintingStyle.OUTLINE_AND_FILL);
 
-        proxy.add(randomShape(), new Color(128, 128, 255), new Color(0, 0, 128),
-                strk, true, true);
-
-        proxy.add(new CircleWrapper(330, 330, 22), Color.BLUE, Color.YELLOW,
+        /*
+        proxy.add(new CircleWrapper(30, 330, 22), Color.BLUE, Color.YELLOW,
                 strk, true, true);
         proxy.add(new PathIteratorWrapper(new Rhombus(80, 80, 30, 40, 45)),
                 Color.GREEN, Color.GRAY, strk, true, true);
@@ -183,6 +205,7 @@ public class Demo {
         proxy.add(new TriangleWrapper(140, 140, 169, 160, 180, 140), Color.ORANGE,
                 Color.BLUE, strk, true, true);
 
+         */
         JLabel lbl = new JLabel("Status here");
         CtrllrImpl c = new CtrllrImpl(shapes, lbl, scene);
 
@@ -369,6 +392,7 @@ public class Demo {
         public SnapPointsSupplier snapPoints() {
             return shapes.snapPoints(11, (xp, yp) -> {
                 lbl.setText(xp + " / " + yp);
+                return true;
             })::get;
         }
 

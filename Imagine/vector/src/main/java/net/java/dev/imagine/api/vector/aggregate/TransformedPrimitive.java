@@ -25,6 +25,7 @@ import net.java.dev.imagine.api.vector.elements.RoundRect;
 import net.java.dev.imagine.api.vector.elements.StringWrapper;
 import net.java.dev.imagine.api.vector.util.Pt;
 import net.java.dev.imagine.api.vector.Vectors;
+import net.java.dev.imagine.api.vector.elements.PolygonWrapper;
 
 /**
  * Represents a primitive which is transformed using an AffineTransform. Note
@@ -195,6 +196,9 @@ public abstract class TransformedPrimitive implements Primitive, Proxy {
             return piw.copy(xform);
         } else if (primitive instanceof Polygon) {
             Polygon polygon = (Polygon) primitive;
+            return polygon.copy(xform);
+        } else if (primitive instanceof PolygonWrapper) {
+            PolygonWrapper polygon = (PolygonWrapper) primitive;
             return polygon.copy(xform);
         } else if (primitive instanceof Polyline) {
             Polyline polyline = (Polyline) primitive;

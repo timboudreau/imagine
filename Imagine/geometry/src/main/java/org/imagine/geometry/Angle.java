@@ -17,7 +17,7 @@ import org.imagine.geometry.util.GeometryUtils;
  *
  * @author Tim Boudreau
  */
-public final class Angle implements Comparable<Angle> {
+public final strictfp class Angle implements Comparable<Angle> {
 
     private final double degrees;
     public static final Angle ZERO = new Angle(0);

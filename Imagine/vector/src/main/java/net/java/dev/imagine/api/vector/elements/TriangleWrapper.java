@@ -6,6 +6,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
+import java.util.List;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
@@ -17,6 +18,9 @@ import org.imagine.geometry.Angle;
 import org.imagine.geometry.EnhancedShape;
 import org.imagine.geometry.Triangle2D;
 import net.java.dev.imagine.api.vector.Vectors;
+import org.imagine.geometry.Axis;
+import org.imagine.geometry.EqLine;
+import org.imagine.geometry.util.function.Int;
 
 /**
  *
@@ -180,8 +184,9 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
 
     @Override
     public ControlPointKind[] getControlPointKinds() {
-        ControlPointKind[] kinds = new ControlPointKind[3];
-        Arrays.fill(kinds, ControlPointKind.PHYSICAL_POINT);
+        ControlPointKind[] kinds = new ControlPointKind[6];
+        Arrays.fill(kinds, 0, 3, ControlPointKind.PHYSICAL_POINT);
+        Arrays.fill(kinds, 3, 6, ControlPointKind.EDGE_HANDLE);
         return kinds;
     }
 
@@ -202,6 +207,21 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
         return new Triangle2D(ax, ay, bx, by, cx, cy);
     }
 
+    @Override
+    public void collectSizings(SizingCollector c) {
+        Triangle2D t = toShape();
+        List<? extends EqLine> all = t.lines();
+        Int cursor = Int.create();
+        for (EqLine e : all) {
+            Axis axis = e.nearestAxis();
+            c.dimension(e.distanceIn(axis),
+                    axis == Axis.VERTICAL, cursor.getAsInt(),
+                    cursor.getAsInt() + 1);
+            cursor.increment();
+        }
+    }
+
+    @Override
     public double cumulativeLength() {
         return Point2D.distance(ax, ay, bx, by)
                 + Point2D.distance(bx, by, cx, cy)
@@ -333,6 +353,8 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
 
     @Override
     public int getControlPointCount() {
+//        return 6;
+        // XXX get midpoints working
         return 3;
     }
 
@@ -344,11 +366,12 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
         xy[3] = by;
         xy[4] = cx;
         xy[5] = cy;
+//        toShape().midPoints(xy, 5);
     }
 
     @Override
     public int[] getVirtualControlPointIndices() {
-        return new int[0];
+        return new int[]{3, 4, 5};
     }
 
     public void setA(double x, double y) {
@@ -387,9 +410,32 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
             case 2:
                 setC(location.x, location.y);
                 break;
+            case 3 :
+            case 4 :
+            case 5 :
+                setMidPoint(pointIndex - 3, location);
+                break;
             default:
                 throw new IllegalArgumentException("Index out of range " + pointIndex);
         }
+    }
+    
+    private void setPoints(double ax, double ay, double bx, double by, double cx, double cy) {
+        if (this.ax != ax || this.ay != ay || this.bx != bx || this.by != by || this.cx != cx || this.cy != cy) {
+            this.ax = ax;
+            this.ay = ay;
+            this.bx = bx;
+            this.by = by;
+            this.cx = cx;
+            this.cy = cy;
+            change();
+        }
+    }
+
+    private void setMidPoint(int side, Pt location) {
+        Triangle2D shape = toShape();
+        shape.setMidPoint(side, location.x, location.y);
+        setPoints(shape.ax(), shape.ay(), shape.bx(), shape.by(), shape.cx(), shape.cy());
     }
 
     @Override

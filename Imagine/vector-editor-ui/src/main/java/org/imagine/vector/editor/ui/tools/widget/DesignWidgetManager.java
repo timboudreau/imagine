@@ -30,10 +30,12 @@ import java.util.logging.Logger;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
 import org.imagine.awt.key.PaintKey;
+import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.grid.Grid;
 import org.imagine.editor.api.grid.SnapSettings;
 import org.imagine.editor.api.snap.SnapKind;
 import org.imagine.editor.api.snap.SnapPoints;
+import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.ShapeEntry;
 import org.imagine.vector.editor.ui.ShapeSnapPointEntry;
 import org.imagine.vector.editor.ui.palette.PaintPalettes;
@@ -93,7 +95,8 @@ public class DesignWidgetManager implements DesignerControl {
     // layers for painting stuff:
     // Layer which paints snap guides when a drag is in progress
     // with snap-to-grid or similar active
-    private SnapDecorationsLayer snapLayer;
+//    private SnapDecorationsLayer snapLayer;
+    private SnapDecorationsLayer2 snapLayer;
     // During palette drop operations, holds an IconNodeWidget that
     // shows an image of the dragged object
     private LayerWidget dragImageLayer;
@@ -138,6 +141,47 @@ public class DesignWidgetManager implements DesignerControl {
         this(scene, coll, new MutableProxyLookup());
     }
 
+    class SceneRepaintHandle implements RepaintHandle {
+
+        private final Rectangle rect = new Rectangle();
+
+        @Override
+        public void repaintArea(int x, int y, int w, int h) {
+            rect.setBounds(x, y, w, h);
+            if (scene.getView() != null) {
+                Rectangle r = scene.convertSceneToView(rect);
+                scene.getView().repaint(r);
+            }
+        }
+    }
+
+    class SceneZoom implements Zoom, Supplier<Zoom> {
+
+        @Override
+        public float getZoom() {
+            return (float) scene.getZoomFactor();
+        }
+
+        @Override
+        public void setZoom(float val) {
+            scene.setZoomFactor(val);
+        }
+
+        @Override
+        public void addChangeListener(ChangeListener cl) {
+        }
+
+        @Override
+        public void removeChangeListener(ChangeListener cl) {
+        }
+
+        @Override
+        public Zoom get() {
+            return this;
+        }
+
+    }
+
     public HetroObjectLayerWidget getMainWidget() {
         if (widget != null) {
             return widget;
@@ -149,7 +193,11 @@ public class DesignWidgetManager implements DesignerControl {
         });
         nextPrevKeyAction = new NextPrevKeyAction(new NextPrevProviderImpl(selectionLookup, widget, this::onFocusedWidgetChanged));
         LayerWidget selectionLayer = new LayerWidget(scene);
-        widget.addChild(snapLayer = new SnapDecorationsLayer(scene));
+
+        SceneZoom fakeZoom = new SceneZoom();
+//        widget.addChild(snapLayer = new SnapDecorationsLayer(scene));
+        widget.addChild(snapLayer = new SnapDecorationsLayer2(scene,
+                new SceneRepaintHandle(), selectionLookup, fakeZoom));
 
 //        widget.parentFor(ShapeElement.class).getActions().addAction(shapeAcceptAction);
         widget.addPriorAction(shapeAcceptAction);
@@ -1164,8 +1212,19 @@ public class DesignWidgetManager implements DesignerControl {
             }
 
             Grid grid = Grid.getInstance();
+            int gridSize = grid.isEnabled() ? grid.size() : 0;
+            if (currentProxyControlPoint != null) {
+                ShapeControlPoint prev = currentProxyControlPoint.previousPhysical();
+                ShapeControlPoint next = currentProxyControlPoint.nextPhysical();
+                if (prev != null && next != null && prev.isValid() && next.isValid()) {
+                    Point2D result = pts.get().snapExclusive(prev.toPoint(), suggested, next.toPoint(),
+                            gridSize,
+                            snap.getEnabledSnapKinds());
+                    return result;
+                }
+            }
             Point2D result = pts.get().snapExclusive(null, suggested, null,
-                    grid.isEnabled() ? grid.size() : 0,
+                    gridSize,
                     snap.getEnabledSnapKinds());
             return result;
         }

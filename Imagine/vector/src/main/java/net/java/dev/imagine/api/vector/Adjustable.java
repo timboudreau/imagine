@@ -8,6 +8,7 @@
  */
 package net.java.dev.imagine.api.vector;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
@@ -58,6 +59,15 @@ public interface Adjustable extends Primitive {
      */
     ControlPointKind[] getControlPointKinds();
 
+
+    default boolean isVirtualControlPoint(int index) {
+        int[] virts = getVirtualControlPointIndices();
+        if (virts.length == 0) {
+            return false;
+        }
+        return Arrays.binarySearch(virts, index) >= 0;
+    }
+
     /**
      * Get the set of control point kinds this point could be changed to.
      *
@@ -75,4 +85,5 @@ public interface Adjustable extends Primitive {
     default boolean isControlPointReadOnly(int index) {
         return hasReadOnlyControlPoints();
     }
+
 }

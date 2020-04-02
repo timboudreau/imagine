@@ -20,6 +20,8 @@
                     <publicPackages>
                         <publicPackage>org.imagine.geometry</publicPackage>
                         <publicPackage>org.imagine.geometry.util</publicPackage>
+                        <publicPackage>org.imagine.geometry.path</publicPackage>
+                        <publicPackage>org.imagine.geometry.util.function</publicPackage>
                     </publicPackages>
                 </configuration>
             </plugin>

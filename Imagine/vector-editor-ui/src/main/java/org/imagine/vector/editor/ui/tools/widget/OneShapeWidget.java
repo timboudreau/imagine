@@ -1,13 +1,25 @@
 package org.imagine.vector.editor.ui.tools.widget;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Font;
 import org.imagine.vector.editor.ui.tools.widget.painting.DecorationController;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Shape;
+import java.awt.geom.AffineTransform;
 import net.java.dev.imagine.api.vector.elements.ImageWrapper;
 import net.java.dev.imagine.api.vector.elements.PathText;
+import net.java.dev.imagine.api.vector.elements.Text;
+import org.imagine.geometry.AnglesAnalyzer;
+import org.imagine.geometry.PieWedge;
+import org.imagine.geometry.Polygon2D;
+import org.imagine.geometry.RotationDirection;
+import org.imagine.geometry.Sector;
+import org.imagine.geometry.util.GeometryUtils;
+import org.imagine.geometry.util.function.Int;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
@@ -142,7 +154,9 @@ public class OneShapeWidget extends Widget {
             }
         } else {
             System.out.println("NOT A CHANGE");
-            if (true) return temp;
+            if (true) {
+                return temp;
+            }
         }
         return null;
     }
@@ -322,8 +336,112 @@ public class OneShapeWidget extends Widget {
                     g.draw(shape);
                 }
             }
+            if (!el.item().is(Text.class)) {
+                paintCorners(g, el, shape);
+            }
         }
         paintDecorations(g, el, shape);
+    }
+
+    private final PieWedge wedge = new PieWedge();
+
+    private void paintCorners(Graphics2D g, ShapeElement el, Shape shape) {
+        Font f = g.getFont();
+        double scale = 1D / getScene().getZoomFactor();
+        g.setFont(f.deriveFont(AffineTransform.getScaleInstance(scale, scale)));
+        Rectangle r = shape.getBounds();
+
+        BasicStroke scaleStroke = new BasicStroke((float) scale);
+        g.setStroke(scaleStroke);
+        wedge.setRadius((Math.min(r.width, r.height) / 6) * scale);
+
+        AnglesAnalyzer ana = new AnglesAnalyzer();
+        RotationDirection dir = ana.analyzeShape(shape, null);
+
+        Int lastIdHash = Int.of(-1);
+
+        ana.visitAll((int pointIndex, double x, double y, Sector corner,
+                int intersections, RotationDirection subpathRotationDirection, Polygon2D approximate) -> {
+            wedge.setCenter(x, y);
+//            corner = corner.normalized();
+            wedge.setAngleAndExtent(corner);
+
+//            int idHash = System.identityHashCode(approximate);
+//            lastIdHash.ifUpdate(idHash, () -> {
+//                System.out.println("POLY POINTS " + approximate.pointCount()
+//                        + " for " + el.getName());
+//                g.setColor(new Color(20, 150, 20, 200));
+//                g.setStroke(new BasicStroke((float) (scale * 3)));
+//                g.draw(approximate);
+//                g.setStroke(scaleStroke);
+//            });
+            float txtOffset = (float) (scale * 5);
+            g.setColor(new Color(40, 40, 240));
+            g.drawString(Integer.toString(pointIndex)
+                    + " - " + GeometryUtils.toShortString(corner.extent()) + "\u00B0"
+                    + " i:" + intersections + " " + corner.toShortString(),
+                    (float) (x + txtOffset), (float) (y + txtOffset)
+            );
+            g.draw(wedge);
+        });
+
+        /*
+        RotationDirection dir = CornerAngle.forShape(shape, (int apexPointIndexWithinShape, CornerAngle angle, double x, double y, int isects) -> {
+        });
+
+        CornerAngle.forShape(shape, (int apexPointIndexWithinShape, CornerAngle angle, double x, double y, int isects) -> {
+            wedge.setCenter(x, y);
+            RotationDirection d2 = angle.direction();
+            if (isects % 2 != 0) {
+                d2 = d2.opposite();
+            }
+            if (d2 != dir) {
+                System.out.println("Invert " + apexPointIndexWithinShape + " for " + angle);
+                g.setColor(new Color(255, 40, 40));
+                angle = angle.normalized();
+                if (isects % 2 == 1) {
+                    g.setColor(new Color(40, 220, 40));
+                    wedge.setAngleAndExtent(angle.bDegrees(), 360 - Math.abs(angle.extent()));
+                } else {
+                    wedge.setAngleAndExtent(angle.bDegrees(), 360 - Math.abs(angle.extent()));
+//                    wedge.setAngleAndExtent(angle.aDegrees(), angle.extent());
+                }
+            } else {
+                angle = angle.normalized();
+                wedge.setAngleAndExtent(angle.aDegrees(), angle.extent());
+//                angle = angle.normalized();
+                g.setColor(new Color(40, 40, 255));
+            }
+            float txtOffset = (float) (scale * 5);
+            g.drawString(Integer.toString(apexPointIndexWithinShape)
+                    + " - " + GeometryUtils.toShortString(angle.extent()) + "\u00B0"
+                    + " i:" + isects,
+                    (float) (x + txtOffset), (float) (y + txtOffset)
+            );
+            g.draw(wedge);
+//            g.setColor(Color.RED);
+//            g.draw(GeometryUtils.approximate(shape));
+        });
+         */
+
+ /*
+        new MinimalAggregateShapeDouble(shape).visitAnglesWithArcs(new ArcsVisitor() {
+            @Override
+            public void visit(int index, double angle1, double x1, double y1,
+                    double angle2, double x2, double y2, Rectangle2D bounds,
+                    double apexX, double apexY, double offsetX,
+                    double offsetY, double midAngle) {
+                CornerAngle ca = new CornerAngle(angle1, angle2);
+                if (ca.direction() == dir) {
+                    ca = ca.opposite();
+                }
+                String txt = GeometryUtils.toShortString(ca.normalized().extent()) + "\u00B0";
+                g.drawString(txt, (float) offsetX, (float) offsetY);
+                g.setColor(Color.BLUE.brighter());
+                g.draw(ca.toShape(apexX, apexY, 20));
+            }
+        }, 25);
+         */
     }
 
     private void paintDecorations(Graphics2D g, ShapeElement el, Shape shape) {

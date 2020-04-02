@@ -16,6 +16,7 @@ public class SnapPointsBuilder<T> {
     private final DoubleMap<T> yDists = DoubleMap.create(32);
 
     private final DoubleMap<T> angles = DoubleMap.create(16);
+    private final DoubleMap<T> corners = DoubleMap.create(16);
 
     private final double rad;
     private OnSnap notify;
@@ -32,15 +33,20 @@ public class SnapPointsBuilder<T> {
         return this;
     }
 
-    public SnapPointsBuilder addDistance(Axis axis, double distance, T obj) {
-        DoubleMap set = axis == Axis.Y ? yDists : xDists;
+    public SnapPointsBuilder addCorner(double corner, T obj) {
+        corners.put(corner, obj);
+        return this;
+    }
+
+    public SnapPointsBuilder addDistance(SnapAxis axis, double distance, T obj) {
+        DoubleMap set = axis == SnapAxis.Y ? yDists : xDists;
         set.put(distance, obj);
         return this;
     }
 
     public SnapPointsBuilder add(Point2D p2d, T obj) {
-        add(Axis.X, p2d.getX(), obj);
-        add(Axis.Y, p2d.getY(), obj);
+        add(SnapAxis.X, p2d.getX(), obj);
+        add(SnapAxis.Y, p2d.getY(), obj);
         return this;
     }
 
@@ -49,7 +55,7 @@ public class SnapPointsBuilder<T> {
         return this;
     }
 
-    public void add(Axis axis, double coord, T obj) {
+    public void add(SnapAxis axis, double coord, T obj) {
         switch (axis) {
             case X:
                 xs.put(coord, obj);
@@ -63,6 +69,6 @@ public class SnapPointsBuilder<T> {
     }
 
     public SnapPoints build() {
-        return new SnapPoints(rad, notify, xs, ys, xDists, yDists, angles);
+        return new SnapPoints(rad, notify, xs, ys, xDists, yDists, angles, corners);
     }
 }

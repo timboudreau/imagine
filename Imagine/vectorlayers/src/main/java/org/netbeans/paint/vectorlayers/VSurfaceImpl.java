@@ -30,7 +30,7 @@ import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.dev.java.imagine.api.tool.Tool;
-import org.imagine.editor.api.snap.Axis;
+import org.imagine.editor.api.snap.SnapAxis;
 import org.imagine.editor.api.snap.SnapPointsConsumer;
 import org.imagine.editor.api.snap.SnapPoints;
 import org.imagine.editor.api.snap.SnapPointsSupplier;
@@ -271,8 +271,8 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             for (int i = 0; i < cpCount * 2; i += 2) {
                 int ptIx = i / 2;
                 if (Arrays.binarySearch(virt, ptIx) < 0) {
-                    bldr.add(Axis.X, pts[i], null);
-                    bldr.add(Axis.Y, pts[i + 1], null);
+                    bldr.add(SnapAxis.X, pts[i], null);
+                    bldr.add(SnapAxis.Y, pts[i + 1], null);
                 }
             }
         }
