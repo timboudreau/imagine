@@ -1,12 +1,12 @@
-package org.imagine.geometry;
+package org.imagine.geometry.analysis;
 
 import com.mastfrog.function.DoubleBiPredicate;
 import com.mastfrog.util.collections.CollectionUtils;
 import com.mastfrog.util.collections.IntIntMap;
 import com.mastfrog.util.collections.IntMap;
-import com.mastfrog.util.collections.IntMap.IntMapConsumer;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
 import java.awt.geom.PathIterator;
 import static java.awt.geom.PathIterator.SEG_CLOSE;
 import static java.awt.geom.PathIterator.SEG_CUBICTO;
@@ -16,31 +16,32 @@ import static java.awt.geom.PathIterator.SEG_QUADTO;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
+import static org.imagine.geometry.RotationDirection.CLOCKWISE;
+import static org.imagine.geometry.RotationDirection.COUNTER_CLOCKWISE;
 import org.imagine.geometry.util.DoubleList;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
-import org.imagine.geometry.util.function.Bool;
-import org.imagine.geometry.util.function.Int;
-import org.imagine.geometry.util.function.IntWithChildren;
+import com.mastfrog.function.state.Bool;
+import com.mastfrog.function.state.Int;
+import com.mastfrog.function.state.IntWithChildren;
+import org.imagine.geometry.CornerAngle;
+import org.imagine.geometry.EqLine;
+import org.imagine.geometry.Intersectable;
+import org.imagine.geometry.LineVector;
+import org.imagine.geometry.Polygon2D;
+import org.imagine.geometry.RotationDirection;
 
 /**
  *
  * @author Tim Boudreau
  */
-public final class AnglesAnalyzer {
+final class AnglesAnalyzer {
 
     private List<Collector> collectors = new ArrayList<>(5);
     private Collector currentCollector;
 
-    public AnglesAnalyzer() {
+    AnglesAnalyzer() {
         collectors.add(currentCollector = new Collector());
-    }
-
-    @FunctionalInterface
-    public interface V {
-
-        void visit(int pointIndex, double x, double y, CornerAngle angles,
-                int intersections, RotationDirection subpathRotationDirection,
-                Polygon2D approximate);
     }
 
     public RotationDirection analyzeShape(Shape shape, AffineTransform xform) {
@@ -51,11 +52,11 @@ public final class AnglesAnalyzer {
         return forShape(iter);
     }
 
-    public void visitAll(V v) {
+    public void visitAll(VectorVisitor v) {
         for (int i = 0; i < collectors.size(); i++) {
             Collector c = collectors.get(i);
             if (!c.isEmpty()) {
-                c.visitAll(v);
+                c.visitAll(i, v);
             }
         }
     }
@@ -76,7 +77,7 @@ public final class AnglesAnalyzer {
         int lastType = -1;
         double startX, startY, lastX, lastY, secondX, secondY;
         startX = lastX = lastY = startY = secondX = secondY = 0;
-        // Holder for the point index which can be incremented inside a
+        // Holder for the point index which can be incremented inside leading
         // lambda
         IntWithChildren pointIndex = Int.createWithChildren();
         // Holder for the point index within the current shape, which can
@@ -99,36 +100,22 @@ public final class AnglesAnalyzer {
             int type = iter.currentSegment(data);
             switch (type) {
                 case SEG_CLOSE:
-                    System.out.println("FOUND CLOSE AT " + pointIndex
-                            + " last type is close? " + (lastType == SEG_CLOSE)
-                            + " last type is move? " + (lastType == SEG_MOVETO)
-                            + " last type " + lastType);
                     if (lastType != SEG_CLOSE && lastType != SEG_MOVETO) {
-//                        int pix = pointIndex.getAsInt()
-//                                - pointIndexWithinShape.getAsInt();
-//                        if (pix < 0) {
-//                            pix = pointIndex.getAsInt();
-//                        }
-
                         int pix = shapeStart;
                         // Handle the trailing series of lines where the
                         // last point of this sub-path is the apex
-
                         if (lastX != startX || lastY != startY) {
-                            System.out.println("  pass start " + pointIndex.getAsInt());
                             collector.accept(pointIndex.getLess(1), startX, startY, false);
                             // And handle the trailing series of lines where the
                             // 0th point of this sub-path is the apex - that
-                            // provides a corner we will have skipped because
+                            // provides leading corner we will have skipped because
                             // we only had two points when we initially iterated
                             // past it
                             if (hasSecondPoint.getAsBoolean()) {
-                                System.out.println("  pass second " + (shapeStart + 1));
                                 collector.accept(shapeStart, secondX, secondY, false);
                             }
                         } else if (lastX == startX && lastX == startY) {
                             if (hasSecondPoint.getAsBoolean()) {
-                                System.out.println("  pass second b");
                                 collector.prevX = collector.lastX;
                                 collector.prevY = collector.lastY;
                                 collector.lastX = startX;
@@ -136,9 +123,6 @@ public final class AnglesAnalyzer {
                                 collector.accept(pix + 1, secondX, secondY);
                             }
                         }
-                    } else {
-                        System.out.println("no pass start or second, wrong type " + lastType);
-
                     }
                     onNewSubshape.run();
                     break;
@@ -147,7 +131,6 @@ public final class AnglesAnalyzer {
                     onNewSubshape.run();
                     collector = nextCollector();
                     collector.accept(pointIndex.getLess(1), startX = lastX = data[0], startY = lastY = data[1]);
-                    System.out.println("MOVETO AT " + pointIndex.getAsInt());
                     pointIndex.increment();
                     break;
                 // fallthrough
@@ -173,13 +156,17 @@ public final class AnglesAnalyzer {
                     break;
             }
             iter.next();
-            System.out.println("last type now " + type);
             lastType = type;
         }
         return collector.direction();
     }
 
     private static final class Collector {
+
+        private static final double TEST_DIST_1 = 1.5;
+        private static final double TEST_DIST_2 = 0.5;
+        private static final double TEST_DIST_3 = 3;
+        private static final double TEST_DIST_4 = 6;
 
         private double lastX, lastY;
         private double prevX, prevY;
@@ -216,68 +203,67 @@ public final class AnglesAnalyzer {
             return this;
         }
 
-        public RotationDirection visitAll(V v) {
+        private Shape dissectApproximate() {
+            // More accurate but much more expensive:
+//            Path2D.Double pth = approx.toPath();
+//            return new Area(approximation().toPath());
+            return approximation();
+        }
+
+        public RotationDirection visitAll(int subpathIndex, VectorVisitor v) {
             RotationDirection direction = direction();
-            IntIntMap directionByVector = IntIntMap.create();
-            IntIntMap inters = intersectionCounts();
-            Polygon2D approx = approximation();
-            DoubleBiPredicate contains = approx::contains;
-            vectors.forEach((IntMapConsumer<LineVector>) (key, vect) -> {
-                CornerAngle ang;
+            DoubleBiPredicate contains = new Area(dissectApproximate())::contains;
+            if (vectors.isEmpty()) {
+                return RotationDirection.NONE;
+            }
+            LineVector last = vectors.valueAt(vectors.size() - 1);
+            Int prevPointIndex = Int.of(vectors.greatestKey());
+//            Int prevKey = Int.create(vectors.las);
+            vectors.forEachIndexed((ix, key, vect) -> {
                 // Test if the approximated shape contains
                 // points at the 1/4, mid or 3/4 angle from
                 // the center point - if not, then we have
                 // an exterior angle and need the inverse
-                int sam1 = vect.corner().sample(vect.sharedX(), vect.sharedY(), contains);
-                int sam2 = vect.corner().opposite().sample(vect.sharedX(), vect.sharedY(), contains);
-                System.out.println(key + ". corner " + sam1 + " / inv " + sam2);
-                if (sam1 > sam2) {
-                    ang = vect.corner();
-                    System.out.println("\n" + key + ". INTERIOR " + vect + " -> " + ang.toShortString()
-                            + " dir " + ang.direction() + " vs " + direction + " samples " + sam1);
-                } else {
-                    System.out.println("OPPOSITE OF " + vect.corner() + " is "
-                            + vect.corner().opposite());
 
-                    ang = vect.corner().opposite();
-//                    ang = vect.toSector().opposite();
-                    System.out.println("\n" + key + ". NOT INTERIOR " + vect + " -> " + ang.toShortString()
-                            + " dir " + ang.direction() + " vs " + direction + " samples " + sam1);
+                int sam1 = vect.sample(TEST_DIST_1, contains);
+                int sam2 = vect.inverse().sample(TEST_DIST_1, contains);
+                // XXX for very small distances, may need to scale our
+                // test distances by the min length of the preceding vector
+                if (sam1 < 3 && sam2 < 3) {
+                    sam1 = vect.sample(TEST_DIST_2, contains);
+                    sam2 = vect.inverse().sample(TEST_DIST_2, contains);
                 }
-                ang = ang.normalized();
-                RotationDirection dir = vect.corner().direction();
-                System.out.println("DIRECTION " + key + ": " + dir + " and " + direction);
-                if (direction != dir) {
-                    System.out.println("FLIP for " + dir + " and " + direction);
-                    ang = ang.reversed();
+                if (sam1 < 3 && sam2 < 3) {
+                    sam1 = vect.sample(TEST_DIST_3, contains);
+                    sam2 = vect.inverse().sample(TEST_DIST_3, contains);
                 }
-//                if (dir != direction) {
-//                    System.out.println("SWAP DIRECTION FOR " + key + " " + vect);
-//                    ang = ang.opposite();
-//                    dir = dir.opposite();
-//                }
-                directionByVector.put(key, dir.ordinal());
-                int ptIntersections = inters.get(key);
-                boolean oddIntersections = ptIntersections % 2 != 0;
-
-                if (oddIntersections) {
-                    System.out.println("FLIP FOR ODD ISECTS " + ang + " ext (" + ang.extent()
-                            + ") to "
-                            + ang.inverse() + " (" + ang.inverse().extent() + ")"
-                            + " dir " + ang.direction() + " VectorCCW " + vect.ccw()
-                            + " norm " + ang.isNormalized() + " inv norm " + ang.inverse().isNormalized());
-                    ang = ang.inverse().normalized().opposite2();
+                if (sam1 < 3 && sam2 < 3) {
+                    sam1 = vect.sample(TEST_DIST_4, contains);
+                    sam2 = vect.inverse().sample(TEST_DIST_4, contains);
+                }
+                if (sam1 < 3 && sam2 < 3) {
+                    System.err.println(key + ". corner " + sam1 + " / opp " + sam2
+                            + " ICCW " + vect.ccw() + " SUBPATH DIR " + direction
+                            + " angdir " + vect.corner().direction() + " " + vect
+                            + " problem sampling with " + sam1 + " / " + sam2
+                            + ". Approximate: "
+                            + GeometryStrings.toStringCoordinates(
+                                    approx.pointsArray())
+                    );
+                }
+                boolean invert = sam1 < sam2;
+                if (invert) {
+                    vect = vect.inverse();
                 }
 
-                if (dir != direction) {
-//                    ang = ang.inverse();
-//                    ang = new CornerAngle(ang.bDegrees(), 360 - Math.abs(ang.extent()));
-//                    ang = new CornerAngle(ang.aDegrees(), 360 - Math.abs(ang.extent()));
-//                    ang = ang.reversed();
-                }
-                v.visit(key, vect.sharedX(), vect.sharedY(), ang, ptIntersections,
-                        direction, approx);
+                int nextPointIndex = ix == vectors.size() - 1
+                        ? vectors.leastKey() : vectors.key(ix + 1);
 
+                v.visit(key, vect, subpathIndex, direction, approx,
+                        invert ? nextPointIndex : prevPointIndex.getAsInt(),
+                        invert ? prevPointIndex.getAsInt() : nextPointIndex
+                );
+                prevPointIndex.set(key);
             });
             return direction;
         }
@@ -342,7 +328,6 @@ public final class AnglesAnalyzer {
             intersectionCounts = IntIntMap.create(vectors.size());
             vectors.forEachKey((key) -> {
                 int ic = intersectionCount(key);
-                System.out.println("put for " + key + " ic " + ic);
                 intersectionCounts.put(key, ic);
             });
             int sum = 0;
@@ -438,33 +423,16 @@ public final class AnglesAnalyzer {
                     return;
                 case 2:
                     assert pointIndex >= 0 : "Negative point index " + pointIndex;
-                    LineVector vect = new LineVectorImpl(prevX, prevY, lastX, lastY, x, y);
-                    System.out.println("\n" + pointIndex + " - " + GeometryUtils.toShortString(x, y));
+                    LineVector vect = LineVector.of(prevX, prevY, lastX, lastY, x, y);
                     LineVector old = vectors.put(pointIndex, vect);
                     assert old == null : "Clobbering " + old + " at " + pointIndex + " with " + vect;
                     Intersectable oi = intersectors.put(pointIndex, vect);
                     assert oi == null : "Clobbering old intersector at " + pointIndex;
-                    System.out.println("VECTS NOW " + vectors);
-//                    CornerAngle result;
-//                    if (intersections % 2 == 1) {
-//                        result = new CornerAngle(x, y, lastX, lastY, prevX, prevY);
-//                    } else {
-//                        result = new CornerAngle(prevX, prevY, lastX, lastY, x, y);
-//                    }
-//                    switch (result.direction()) {
-//                        case CLOCKWISE:
-//                            cwCount++;
-//                            break;
-//                        case COUNTER_CLOCKWISE:
-//                            ccwCount++;
-//                            break;
-//                    }
                     prevX = lastX;
                     prevY = lastY;
                     lastX = x;
                     lastY = y;
                     break;
-
                 default:
                     throw new AssertionError("Invalid state " + state);
             }

@@ -39,6 +39,7 @@ import static java.lang.Math.min;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 import static org.imagine.geometry.util.GeometryUtils.INTERSECTION_FUDGE_FACTOR;
 
@@ -55,10 +56,10 @@ public final class Rhombus implements Shape, EnhancedShape {
     private double radY;
 
     public String toString() {
-        return "Rhombus(" + GeometryUtils.toString(circ.centerX, circ.centerY)
-                + "  rX " + GeometryUtils.toString(radX)
-                + "  rY " + GeometryUtils.toString(radY)
-                + " rot " + GeometryUtils.toString(circ.rotation()) + "\u00B0 <"
+        return "Rhombus(" + GeometryStrings.toString(circ.centerX, circ.centerY)
+                + "  rX " + GeometryStrings.toString(radX)
+                + "  rY " + GeometryStrings.toString(radY)
+                + " rot " + GeometryStrings.toString(circ.rotation()) + "\u00B0 <"
                 + top() + "> <" + right() + "> <" + bottom() + "> <" + left() + ">)";
     }
 

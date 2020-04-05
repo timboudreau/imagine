@@ -39,7 +39,7 @@ import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import org.imagine.geometry.util.GeometryUtils;
+import org.imagine.geometry.util.GeometryStrings;
 import static org.imagine.geometry.util.GeometryUtils.toInt;
 
 /**
@@ -376,8 +376,8 @@ public final strictfp class Circle implements Shape, Sector {
     }
 
     /**
-     * Get the angle in degrees of the second point on a circle
-     * centered on the first point.
+     * Get the angle in degrees of the second point on a circle centered on the
+     * first point.
      *
      * @param cx The center X coordinate
      * @param cy The center Y coordinate
@@ -444,6 +444,21 @@ public final strictfp class Circle implements Shape, Sector {
         into[offset] = radius * cos(angle) + centerX;
         into[offset + 1] = radius * sin(angle) + centerY;
         return into;
+    }
+
+    /**
+     * Get the position of an angle given a center point and radius.
+     *
+     * @param angle An angle in degrees.
+     * @param cx The center x coordinate
+     * @param cy The center y coordinate
+     * @param radius The radius
+     * @param c A consumer for the result
+     */
+    public static void positionOf(double angle, double cx, double cy, double radius, DoubleBiConsumer c) {
+        angle -= 90D;
+        angle = Math.toRadians(angle);
+        c.accept(radius * cos(angle) + cx, radius * sin(angle) + cy);
     }
 
     /**
@@ -1104,7 +1119,7 @@ public final strictfp class Circle implements Shape, Sector {
         line.x2 += xStep;
         line.y2 += yStep;
 
-        assert line.getP1().distance(line.getP2()) < (radius * 2 + 1) : "Bogus line " + GeometryUtils.lineToString(line.x1, line.y1, line.x2, line.y2);
+        assert line.getP1().distance(line.getP2()) < (radius * 2 + 1) : "Bogus line " + GeometryStrings.lineToString(line.x1, line.y1, line.x2, line.y2);
         //Line2D.Double lastIsect = null;
         Line2D.Double lisect;
         int count = 0;

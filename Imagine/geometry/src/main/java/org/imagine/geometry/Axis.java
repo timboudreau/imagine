@@ -50,6 +50,14 @@ public enum Axis {
         }
     }
 
+    public boolean isVertical() {
+        return this == VERTICAL;
+    }
+
+    public boolean isHorizontal() {
+        return this == HORIZONTAL;
+    }
+
     public static Axis nearestForAngle(double angle) {
         return _forAngle(Angle.normalize(angle));
     }

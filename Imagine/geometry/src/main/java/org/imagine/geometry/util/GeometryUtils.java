@@ -6,7 +6,6 @@
 package org.imagine.geometry.util;
 
 import com.mastfrog.function.DoubleBiConsumer;
-import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
@@ -17,10 +16,8 @@ import static java.awt.geom.PathIterator.SEG_LINETO;
 import static java.awt.geom.PathIterator.SEG_MOVETO;
 import static java.awt.geom.PathIterator.SEG_QUADTO;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import static java.lang.Double.doubleToLongBits;
 import static java.lang.Math.pow;
-import java.text.DecimalFormat;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.Polygon2D;
 
@@ -32,13 +29,6 @@ import org.imagine.geometry.Polygon2D;
 public class GeometryUtils {
 
     private static final float DEFAULT_TOLERANCE = 0.0000000000001F;
-    static final DecimalFormat FMT = new DecimalFormat("######################0.0#################################");
-    static final DecimalFormat FMT_SHORT = new DecimalFormat("######################0.00");
-    static final DecimalFormat DEGREES_FMT = new DecimalFormat("######################0.0#################################\u00B0");
-    static final DecimalFormat DEGREES_FMT_2PLACE = new DecimalFormat("######################0.00\u00B0");
-    static final String DEFAULT_COORD_DELIMITER = ", ";
-    static final String DEFAULT_PAIR_DELIMITER = " / ";
-    static final String DEFAULT_WIDTH_HEIGHT_DELIMITER = " * ";
     private static final double[] APPROXIMATION_POSITIONS
             = new double[]{0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.825, 1};
 
@@ -135,175 +125,6 @@ public class GeometryUtils {
     }
 
     /**
-     * Format an angle in degrees in long decimal format.
-     *
-     * @param degrees An angle
-     * @return A string representation of the angle
-     */
-    public static String toDegreesString(double degrees) {
-        return DEGREES_FMT.format(degrees);
-    }
-
-    /**
-     * Format an angle in degrees to two decimal places.
-     *
-     * @param degrees An angle
-     * @return A string representation of the angle, rounded to two decimal
-     * places
-     */
-    public static String toDegreesStringShort(double degrees) {
-        return DEGREES_FMT_2PLACE.format(degrees);
-    }
-
-    /**
-     * Format a decimal number as a string in long decimal format (no
-     * exponential notation).
-     *
-     * @param value A number
-     * @return A string representation of the number, rounded
-     */
-    public static String toString(double value) {
-        return FMT.format(value);
-    }
-
-    /**
-     * Format a decimal number to two decimal places
-     *
-     * @param value A number
-     * @return A string representation of the number, rounded
-     */
-    public static String toShortString(double value) {
-        String result = FMT_SHORT.format(value);
-        if (result.endsWith(".00")) {
-            result = result.substring(0, result.length() - 3);
-        }
-        return result;
-    }
-
-    /**
-     * Format a pair of coordinates to two decimal places
-     *
-     * @param value A number
-     * @return A string representation of the number, rounded
-     */
-    public static String toShortString(double x, double y) {
-        return toShortString(x) + DEFAULT_COORD_DELIMITER + toShortString(y);
-    }
-
-    public static String toString(Rectangle2D r) {
-        return toString(r.getX(), r.getY()) + " "
-                + toString(DEFAULT_WIDTH_HEIGHT_DELIMITER, r.getWidth(), r.getHeight());
-    }
-
-    public static String toString(Rectangle r) {
-        return r.x + DEFAULT_COORD_DELIMITER + r.y + " " + r.width
-                + DEFAULT_WIDTH_HEIGHT_DELIMITER + r.height;
-    }
-
-    /**
-     * Convert an array of doubles to a comma-delimited, long-format string.
-     *
-     * @param dbls An array of doubles
-     * @return A string
-     */
-    public static StringBuilder toString(double... dbls) {
-        return toString(new StringBuilder(dbls.length * 8), dbls);
-    }
-
-    public static StringBuilder toStringCoordinates(
-            StringBuilder into, double... coords) {
-        return toStringCoordinates(FMT, DEFAULT_COORD_DELIMITER, DEFAULT_PAIR_DELIMITER, into, coords);
-    }
-
-    public static StringBuilder toStringCoordinatesShort(
-            StringBuilder into, double... coords) {
-        return toStringCoordinates(FMT_SHORT, DEFAULT_COORD_DELIMITER, DEFAULT_PAIR_DELIMITER, into, coords);
-    }
-
-    public static String toStringCoordinates(
-            double... coords) {
-        int count = (9 * coords.length) + (DEFAULT_PAIR_DELIMITER.length() * (coords.length - 1))
-                + (DEFAULT_COORD_DELIMITER.length() * coords.length);
-        return toStringCoordinates(FMT, DEFAULT_COORD_DELIMITER, DEFAULT_PAIR_DELIMITER,
-                new StringBuilder(count), coords).toString();
-    }
-
-    public static String toStringCoordinatesShort(
-            double... coords) {
-        int count = (4 * coords.length) + (DEFAULT_PAIR_DELIMITER.length() * (coords.length - 1))
-                + (DEFAULT_COORD_DELIMITER.length() * coords.length);
-        return toStringCoordinates(FMT_SHORT, DEFAULT_COORD_DELIMITER, DEFAULT_PAIR_DELIMITER,
-                new StringBuilder(count), coords).toString();
-    }
-
-    public static StringBuilder toStringCoordinates(
-            String pairDelimiter, StringBuilder into, double... coords) {
-        return toStringCoordinates(FMT, DEFAULT_COORD_DELIMITER, pairDelimiter, into, coords);
-    }
-
-    public static StringBuilder toStringCoordinatesShort(
-            String pairDelimiter, StringBuilder into, double... coords) {
-        return toStringCoordinates(FMT_SHORT, DEFAULT_COORD_DELIMITER, pairDelimiter, into, coords);
-    }
-
-    public static StringBuilder toStringCoordinates(String coordDelimiter,
-            String pairDelimiter, StringBuilder into, double... coords) {
-        return toStringCoordinates(FMT, coordDelimiter, pairDelimiter, into, coords);
-    }
-
-    public static StringBuilder toStringCoordinatesShort(String coordDelimiter,
-            String pairDelimiter, StringBuilder into, double... coords) {
-        return toStringCoordinates(FMT_SHORT, coordDelimiter, pairDelimiter, into, coords);
-    }
-
-    public static StringBuilder toStringCoordinates(DecimalFormat fmt, String coordDelimiter,
-            String pairDelimiter, StringBuilder into, double... coords) {
-        assert coords.length % 2 == 0;
-        for (int i = 0; i < coords.length; i += 2) {
-            into.append(fmt.format(coords[i]));
-            into.append(coordDelimiter);
-            into.append(fmt.format(coords[i + 1]));
-            if (i != coords.length - 2) {
-                into.append(pairDelimiter);
-            }
-        }
-        return into;
-    }
-
-    public static StringBuilder toString(StringBuilder sb, double... dbls) {
-        return toString(sb, DEFAULT_COORD_DELIMITER, dbls);
-    }
-
-    public static StringBuilder toString(StringBuilder sb, String delim, double... dbls) {
-        for (int i = 0; i < dbls.length; i++) {
-            sb.append(FMT.format(dbls[i]));
-            if (i != dbls.length) {
-                sb.append(delim);
-            }
-        }
-        return sb;
-    }
-
-    public static String toString(String delim, double... dbls) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < dbls.length; i++) {
-            sb.append(FMT.format(dbls[i]));
-            if (i != dbls.length) {
-                sb.append(delim);
-            }
-        }
-        return sb.toString();
-    }
-
-    public static String toString(double a, double b) {
-        return toString(DEFAULT_COORD_DELIMITER, a, b);
-    }
-
-    public static String toString(String delim, double a, double b) {
-        return FMT.format(a) + delim + FMT.format(b);
-    }
-
-    /**
      * Determine if two points are the same point within the default tolerance
      * to account for rounding errors.
      *
@@ -350,6 +171,37 @@ public class GeometryUtils {
     }
 
     /**
+     * Reverse an array of point coordinate pairs.
+     *
+     * @param points The points
+     */
+    public static void reversePointsInPlace(double[] points) {
+        double[] temp = (double[]) points.clone();
+        for (int i = 0, i2 = points.length - 2; i < points.length; i += 2, i2 -= 2) {
+            points[i] = temp[i2];
+            points[i + 1] = temp[i2 + 1];
+        }
+    }
+
+    /**
+     * Get the midpoint of a line.
+     *
+     * @param x1 The first x
+     * @param y1 The first y
+     * @param x2 The second x
+     * @param y2 The second y
+     * @return A point
+     */
+    public static EqPointDouble midPoint(double x1, double y1, double x2, double y2) {
+        if (x1 == x2 && y1 == y2) {
+            return new EqPointDouble(x1, y1);
+        }
+        double xm = x1 + ((x2 - x1) / 2);
+        double ym = y1 + ((y2 - y1) / 2);
+        return new EqPointDouble(xm, ym);
+    }
+
+    /**
      * Get a point equidistant between two points.
      *
      * @param x1 The first x coordinate
@@ -365,6 +217,18 @@ public class GeometryUtils {
         return new double[]{(x1 + x2) / 2D, (y1 + y2) / 2D};
     }
 
+    /**
+     * Get a point equidistant between two points into the passed array
+     * at the passed offset.
+     *
+     * @param x1 The first x coordinate
+     * @param y1 The first y coordinate
+     * @param x2 The second x coordinate
+     * @param y2 The second y coordinate
+     * @param at The array offset
+     * @param into The array to modify
+     * @return An array of two double coordinates
+     */
     public static void equidistantPoint(double x1, double y1, double x2, double y2, double[] into, int at) {
         if (x1 == x2 && y1 == y2) {
             into[at] = x1;
@@ -449,19 +313,6 @@ public class GeometryUtils {
                 + (cx - bx) * (ay - cy));
         double gamma = 1.0f - alpha - beta;
         return alpha > 0 && beta > 0 && gamma > 0;
-    }
-
-    /**
-     * Provides a standard string representation for a line.
-     *
-     * @param x1 The first x coordinate
-     * @param y1 The first y coordinate
-     * @param x2 The second x coordinate
-     * @param y2 The second y coordinate
-     * @return A string representation of the line
-     */
-    public static String lineToString(double x1, double y1, double x2, double y2) {
-        return "<-" + toString(x1, y1) + "-" + toString(x2, y2) + "->";
     }
 
     /**

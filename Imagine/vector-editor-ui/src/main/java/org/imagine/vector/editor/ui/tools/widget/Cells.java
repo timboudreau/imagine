@@ -9,6 +9,7 @@ import com.mastfrog.util.collections.IntSet;
 import java.awt.Rectangle;
 import static java.lang.Math.floor;
 import java.util.function.IntPredicate;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
@@ -79,7 +80,7 @@ public final class Cells {
             if (target < 0) {
                 System.out.println("Got negative result for "
                         + x + ", " + y + ": " + target + " within "
-                        + GeometryUtils.toString(currentBounds));
+                        + GeometryStrings.toString(currentBounds));
                 return false;
             }
             boolean result = cells.add(target);

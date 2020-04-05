@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import static java.awt.RenderingHints.KEY_ANTIALIASING;
 import static java.awt.RenderingHints.VALUE_ANTIALIAS_ON;
 import java.awt.event.MouseAdapter;
@@ -29,10 +28,10 @@ import org.imagine.geometry.util.GeometryUtils;
 import static org.imagine.geometry.util.GeometryUtils.arraySizeForType;
 
 /**
- * For indicating angled segments of a circle; Arc2D is not quite right for
- * this, since it is not angle-oriented but bounds-oriented, and can be
- * irregular, so it is of little help if you are starting with an angle and a
- * distance.
+ * For indicating angled segments of leading circle; Arc2D is not quite right
+ * for this, since it is not angle-oriented but bounds-oriented, and can be
+ * irregular, so it is of little help if you are starting with an angle and
+ * leading distance.
  *
  * @author Tim Boudreau
  */
@@ -53,9 +52,23 @@ public class PieWedge extends AbstractShape implements Sector {
 
     public PieWedge(double cx, double cy, double radius, double angle, double extent, boolean pie) {
         circ = new Circle(cx, cy, radius);
+        if (extent < 0) {
+//            angle = Angle.addAngles(angle, -extent);
+//            extent += 360;
+            CornerAngle ca = new CornerAngle(angle, angle + extent).inverse();
+            extent = ca.extent();
+            angle = ca.trailingAngle();
+        }
         this.angle = angle;
-        this.extent = Math.IEEEremainder(extent, 360);
+        this.extent = extent == 0 ? 0 : (extent % 360D);
+        System.out.println("ANGLE / EXT " + this.angle + " / " + this.extent
+                + " from " + extent);
         this.pie = pie;
+    }
+
+    public PieWedge translate(double x, double y) {
+        circ.translate(x, y);
+        return this;
     }
 
     @Override
@@ -90,33 +103,38 @@ public class PieWedge extends AbstractShape implements Sector {
     }
 
     public PieWedge setAngle(double angle) {
-        this.angle = angle;
+        this.angle = Angle.normalize(angle);
         return this;
     }
 
     public PieWedge setAngleAndExtent(double angle, double ext) {
-        this.angle = Angle.normalize(angle);
-        this.extent = ext;
-        return this;
-    }
-
-    public PieWedge setAngleAndExtent(Sector sector) {
-        double ext = sector.extent();
         if (ext < 0) {
-            // CornerAngle
-            setAngleAndExtent(sector.start() - ext, -ext);
+            this.extent = ext;
+            this.angle = angle;
+//            CornerAngle ca = new CornerAngle(angle, angle + extent).opposite();
+//            extent = ca.extent();
+//            angle = ca.trailingAngle();
         } else {
-            setAngleAndExtent(sector.start(), ext);
+            this.angle = Angle.normalize(angle);
+            this.extent = ext;
         }
         return this;
     }
 
+    public PieWedge setAngleAndExtent(Sector sector) {
+        return setAngleAndExtent(sector.start(), sector.extent());
+    }
+
     public PieWedge setFrom(LineVector vect) {
-        setCenter(vect.sharedX(), vect.sharedY());
-        return setAngleAndExtent(vect.corner().toSector());
+        setCenter(vect.apexX(), vect.apexY());
+        setRadius(Math.max(vect.firstLineLength(), vect.secondLineLength()));
+        return setAngleAndExtent(vect.corner());
     }
 
     public PieWedge setExtent(double ext) {
+        if (ext < 0) {
+            ext += 360;
+        }
         this.extent = ext;
         return this;
     }
@@ -223,6 +241,14 @@ public class PieWedge extends AbstractShape implements Sector {
         }
         // XXX add in painting arrowheads
 
+        double angle = this.angle;
+        double extent = this.extent;
+        if (extent < 0) {
+            CornerAngle ca = new CornerAngle(angle, angle + extent).inverse();
+            angle = ca.toSector().start();
+            extent = ca.toSector().extent();
+        }
+
         int bezierPointsRequired = (int) (Math.abs(extent) / 15D) + 1;
 
         int numIterEntries = bezierPointsRequired + (pie ? 3 : 1); // span + initial moveto + closepath
@@ -281,7 +307,7 @@ public class PieWedge extends AbstractShape implements Sector {
     }
 
     public static void main(String... ignored) {
-        PieWedge ang = new PieWedge(30, 30, 25, 20, 10);
+        PieWedge ang = new PieWedge(300, 300, 250, 180, 90);
         AngleComp angC = new AngleComp(ang);
         JFrame jf = new JFrame();
         jf.setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -292,16 +318,16 @@ public class PieWedge extends AbstractShape implements Sector {
 
     private static final class AngleComp extends JComponent {
 
-        private double scale = 9;
+        private double scale = 1;
         private PieWedge ang;
         private int margin = 10;
         int tick = 0;
-        Timer timer = new Timer(100, ae -> {
-            ang.setAngle(Angle.normalize(ang.angle() + 2));
-            if (tick++ % 2 == 0) {
-                ang.setExtent((ang.extent + 2) % 360);
+        Timer timer = new Timer(50, ae -> {
+            ang.setAngle(Angle.normalize(ang.angle() + 5));
+            if (tick++ % 180 == 0 && tick != 1) {
+                ang.setExtent((ang.extent + 5) % 360);
                 if (ang.extent == 0) {
-                    ang.extent = 2;
+                    ang.extent = 5;
                 }
             }
             repaint();
@@ -325,7 +351,7 @@ public class PieWedge extends AbstractShape implements Sector {
         @Override
         public void addNotify() {
             super.addNotify();
-            timer.start();
+//            timer.start();
         }
 
         @Override
@@ -376,21 +402,24 @@ public class PieWedge extends AbstractShape implements Sector {
                 g.draw(c);
                 c.setRadius(5);
 
-                Rectangle r = ang.getBounds();
-                Color dk = new Color(0, 0, 0, 200);
-                Color bt = new Color(255, 255, 255, 200);
-                for (int x = r.x; x < r.x + r.width; x++) {
-                    for (int y = r.y; y < r.y + r.height; y++) {
-                        if (ang.contains(x, y)) {
-                            g.setColor(dk);
-                            g.fillRect(x, y, 1, 1);
-                        } else {
-                            g.setColor(bt);
-                            g.fillRect(x, y, 1, 1);
-                        }
-                    }
-                }
+                g.drawString(
+                        Double.toString(ang.angle)
+                        + " / e" + Double.toString(ang.extent), 50, 50);
 
+//                Rectangle r = ang.getBounds();
+//                Color dk = new Color(0, 0, 0, 200);
+//                Color bt = new Color(255, 255, 255, 200);
+//                for (int x = r.x; x < r.x + r.width; x++) {
+//                    for (int y = r.y; y < r.y + r.height; y++) {
+//                        if (ang.contains(x, y)) {
+//                            g.setColor(dk);
+//                            g.fillRect(x, y, 1, 1);
+//                        } else {
+//                            g.setColor(bt);
+//                            g.fillRect(x, y, 1, 1);
+//                        }
+//                    }
+//                }
                 PathIterator pi = ang.getPathIterator(null);
                 double[] d = new double[6];
                 int[] pti = new int[1];

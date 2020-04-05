@@ -1,34 +1,50 @@
 package org.imagine.geometry;
 
-import com.mastfrog.function.DoubleBiFunction;
+import com.mastfrog.function.DoubleBiPredicate;
 import java.awt.Shape;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
-import java.awt.geom.PathIterator;
-import static java.awt.geom.PathIterator.SEG_CLOSE;
-import static java.awt.geom.PathIterator.SEG_CUBICTO;
-import static java.awt.geom.PathIterator.SEG_LINETO;
-import static java.awt.geom.PathIterator.SEG_MOVETO;
-import static java.awt.geom.PathIterator.SEG_QUADTO;
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.ToIntFunction;
+import org.imagine.geometry.util.DoubleList;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
-import org.imagine.geometry.util.function.Bool;
-import org.imagine.geometry.util.function.Int;
-import org.imagine.geometry.util.function.IntWithChildren;
+import com.mastfrog.function.state.Int;
 
 /**
  * An angle between two vectors; unlike the generic Sector, which has a start
  * and an extent, the salient feature of a CornerAngle is that it represents two
  * angles, which may be clockwise or counter-clockwise from each other.
  * <p>
- * Unlike other Sector implementations, the angles of a CornerAngle have an
- * order, and the extent may be negative.
+ * Unlike other Sector implementations, the angles of CornerAngle have an order,
+ * and the extent may be negative, so CornerAngles have a direction. Angle pairs
+ * which span zero (i.e. the second angle is less than the first) are only
+ * expressible as negative extents with a CornerAngle (the price of preserving
+ * the order of angles); use toSector() to get an equivalent with positive
+ * extents when needed.
  * </p>
+ * <p>
+ * <b>Constraints:</b>
+ * <ul>
+ * <li>A CornerAngle shall never return an angle &gt;=360 or &lt;0</li>
+ * <li>Angles outside the range 0-360 will be normalized on input
+ * <ul>
+ * <li>If <code>(unnormalizedAngleA > unnormalizedAngleB) !=
+ *      (normalizedAngleA > normalizedAngleB)</code>, then the normalized angles are
+ * applied in reverse order (e.g. if you pass in <code>350, 365</code>, that is
+ * the same as passing <code>5, 350</code>, and if you pass in
+ * <code>365, 350</code>, that is the same as passing <code>350, 5</code>)
+ * </ul>
+ * </li>
+ * <li>Extents may be negative (for traversing zero, i.e. to span from 15\u00B0
+ * degrees around to 5\u00B0, you would call the constructor with
+ * <code>15,5</code>),
+ * <i>but extents shall always be <code>&lt; 360 &gt; -360</code>
+ * </li>
+ * <li>The constructor that takes a 3-point vector applies the angles of the
+ * lines in reverse order (it's intuitive once you grok it - the initial line
+ * establishes the angle <i>toward</i> the shared point, and the second point
+ * based on the shared line establishes the angle <i>away from</i>
+ * that same point)</li>
+ * </ul>
  *
  * @author Tim Boudreau
  */
@@ -37,345 +53,110 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
     private final double a;
     private final double b;
 
-    public CornerAngle(double a, double b) {
-        this.a = Angle.normalize(a);
-        this.b = Angle.normalize(b);
+    /**
+     * Create a new corner angle.
+     *
+     * @param trailing The trailing angle
+     * @param leading The leading angle
+     */
+    public CornerAngle(double trailing, double leading) {
+        double aa = Angle.normalize(trailing);
+        double bb = Angle.normalize(leading);
+        // passed an angle > 360 or < 0
+        if ((trailing > leading) != (aa > bb)) {
+            this.b = aa;
+            this.a = bb;
+        } else {
+            this.a = aa;
+            this.b = bb;
+        }
     }
 
+    public double distance(CornerAngle other) {
+        if (other == this || (other.a == a && other.b == b)) {
+            return 0;
+        }
+        double aDist = Math.abs(a - other.a);
+        double bDist = Math.abs(b - other.b);
+        return (aDist + bDist) / 2;
+    }
+
+    /**
+     * Create a new CornerAngle from lines connected by a shared apex point.
+     *
+     * @param start The first line's start point
+     * @param apex The shared apex point
+     * @param end The second line's end point
+     */
     public CornerAngle(Point2D start, Point2D apex, Point2D end) {
         this(start.getX(), start.getY(), apex.getX(), apex.getY(), end.getX(), end.getY());
     }
 
+    /**
+     * Create a new CornerAngle from two extent points and a central point.
+     *
+     * @param ax The first line's start x coordinate
+     * @param ay The first line's start y coordinate
+     * @param sx The first line's end x coordinate and the second line's start x
+     * coordinate
+     * @param sy The first line's end y coordinate and the second line's start y
+     * coordinate
+     * @param bx The second line's end x coordinate
+     * @param by The second line's end y coordinate
+     */
     public CornerAngle(double ax, double ay, double sx, double sy, double bx, double by) {
-        this.a = Angle.ofLine(sx, sy, ax, ay);
-        this.b = Angle.ofLine(sx, sy, bx, by);
+        // okay, say we have a point array
+        // 0, 0 /  10, 0  / 10, 10 - the start of tracing a rectangle
+        // clockwise from the upper left, - across 10 and down 10
+        //
+        // What we have for an angle can be phrased as
+        // "An angle with 90 degrees extent starting at 180 degrees", or
+        // "An angle from 90 degrees to 270 degrees.
+        //
+        // So, get our angles relative to the shared point
+        this.b = Circle.angleOf(sx, sy, ax, ay);
+        this.a = Circle.angleOf(sx, sy, bx, by);
     }
 
+    /**
+     * Create a corner angle from two lines, based on their angles, whether or
+     * not the intersection point is within the bounds of either line segment.
+     * If the lines are parallel, will result in an empty CornerAngle.
+     *
+     * @param a The first line
+     * @param b The second line
+     */
     public CornerAngle(Line2D a, Line2D b) {
         this.a = EqLine.of(a).angle();
         this.b = EqLine.of(b).angle();
     }
 
+    /**
+     * Create a corner angle from two angle objects.
+     *
+     * @param a The trailing angle
+     * @param b The leading angle
+     */
     public CornerAngle(Angle a, Angle b) {
         this(a.degrees(), b.degrees());
     }
 
+    /**
+     * Get a string representation of this angle with values rounded to two
+     * decimal places.
+     *
+     * @return A string
+     */
+    @Override
     public String toShortString() {
-        return GeometryUtils.toDegreesStringShort(a) + "-"
-                + GeometryUtils.toDegreesStringShort(b)
-                + "(" + GeometryUtils.toDegreesStringShort(b - a) + ")";
-    }
-
-    public static Emitter emitter(Point2D initialPoint) {
-        return new Emitter(initialPoint);
-    }
-
-    public static Emitter emitter(double initialX, double initialY) {
-        return new Emitter(initialX, initialY);
-    }
-
-    public static Emitter emitter() {
-        return new Emitter();
+        return GeometryStrings.toDegreesStringShort(a) + "/"
+                + GeometryStrings.toDegreesStringShort(b)
+                + " (" + GeometryStrings.toDegreesStringShort(b - a) + ")";
     }
 
     /**
-     * Consumer which can collect corner angles within a shape.
-     */
-    public interface CornerAngleConsumer {
-
-        /**
-         * Called with one corner angle within the shape. The apex point value
-         * is the index of the <i>logical point</i> within the shape (and will
-         * match control point indices from the vector library) - i.e. it is
-         * incremented once for <i>every x/y coordinate pair</i>
-         * within the shape - so, a SEG_MOVETO starting a shape, followed by a
-         * SEG_CUBICTO, means the index of a subsequent SEG_LINETO will be
-         * <i>4</i> (0 is the initial SEG_MOVETO, and 1, 2 and 3 are the two
-         * control points and destination point of the cubic curve).
-         * <p>
-         * Generally, points should be emitted for consecutive stright-line
-         * segments, not emitted following a SEG_MOVETO or SEG_CLOSE until 3
-         * more straight-line segment points have been collected, and similarly,
-         * stop emitting corners when a SEG_CUBICTO or SEG_QUADTO instruction is
-         * encountered, until once again, a third straight-line segment has been
-         * collected.
-         * </p>
-         *
-         * @param apexPointIndexWithinShape The index of the logical point
-         * within the shape at which the passed corner occurs, to map it back to
-         * information about that point
-         * @param angle The angle of the corner encountered
-         */
-        void accept(int apexPointIndexWithinShape, CornerAngle angle, double x, double y, int shapeSelfIntersections);
-    }
-
-    public static RotationDirection forShape(Shape shape, CornerAngleConsumer c) {
-        return forShape(shape, null, c);
-    }
-
-    public static RotationDirection forShape(Shape shape, AffineTransform xform, CornerAngleConsumer c) {
-        return forShape(shape.getPathIterator(xform), c);
-    }
-
-    public static RotationDirection forShape(PathIterator iter, CornerAngleConsumer c) {
-        double[] data = new double[6];
-        Emitter emitter = new Emitter();
-        int lastType = -1;
-        double startX, startY, lastX, lastY, secondX, secondY;
-        startX = lastX = lastY = startY = secondX = secondY = 0;
-        // Holder for the point index which can be incremented inside a
-        // lambda
-        IntWithChildren pointIndex = Int.createWithChildren();
-        // Holder for the point index within the current shape, which can
-        // be reset independently but will be incremented when pointIndex is
-        Int pointIndexWithinShape = pointIndex.child();
-
-        Bool hasSecondPoint = Bool.create();
-
-        Runnable onNewSubshape = () -> {
-            pointIndexWithinShape.reset();
-            emitter.reset();
-            hasSecondPoint.reset();
-            emitter.intersections = 0;
-        };
-
-        List<Intersectable> lines = new ArrayList<>();
-        ToIntFunction<Intersectable> intersectionCounter = isect -> {
-            if (lines.isEmpty()) {
-                lines.add(isect);
-                return 0;
-            }
-            int result = 0;
-            for (Intersectable i : lines) {
-                result += i.intersectionCount(isect, false);
-            }
-            if (result != 0) {
-                System.out.println("At " + pointIndex + " " + result
-                        + " intersections");
-            } else {
-                System.out.println("No new intersections at "
-                        + pointIndex + " with " + lines.size()
-                );
-            }
-            lines.add(isect);
-            return result;
-        };
-
-        // XXX to do this right, we need to duplicate the
-        // intersection counting code in the com.sun geom Java2D
-        // package
-        while (!iter.isDone()) {
-            int type = iter.currentSegment(data);
-            switch (type) {
-                case SEG_CLOSE:
-                    if (lastType != SEG_CLOSE && lastType != SEG_MOVETO) {
-                        int pix = pointIndex.getAsInt()
-                                - pointIndexWithinShape.getAsInt();
-                        // Handle the trailing series of lines where the
-                        // last point of this sub-path is the apex
-                        if (lastX != startX || lastY != startY) {
-                            EqLine ln = new EqLine(lastX, lastY, startX, startY);
-                            int isects = intersectionCounter.applyAsInt(ln);
-                            CornerAngle ang = emitter.apply(startX, startY);
-                            if (ang != null) {
-                                c.accept(pix, ang, lastX, lastY, emitter.intersections);
-                            }
-                            emitter.intersections += isects;
-                            // And handle the trailing series of lines where the
-                            // 0th point of this sub-path is the apex - that
-                            // provides a corner we will have skipped because
-                            // we only had two points when we initially iterated
-                            // past it
-                            if (hasSecondPoint.getAsBoolean()) {
-                                ln.setLine(startX, startY, secondX, secondY);
-                                isects = intersectionCounter.applyAsInt(ln);
-                                CornerAngle ang2 = emitter.apply(secondX, secondY);
-                                if (ang2 != null) {
-                                    c.accept(pix + 1, ang2, startX, startY, emitter.intersections);
-                                }
-                                emitter.intersections += isects;
-                            }
-                        }
-                    }
-                    onNewSubshape.run();
-                    break;
-                case SEG_MOVETO:
-                    onNewSubshape.run();
-                    emitter.apply(lastX = data[0], lastY = data[1]);
-                    startX = data[0];
-                    startY = data[1];
-                    pointIndex.increment();
-                    break;
-                // fallthrough
-                case SEG_LINETO:
-                    EqLine ln = new EqLine(lastX, lastY, data[0], data[1]);
-                    int isects = intersectionCounter.applyAsInt(ln);
-                    CornerAngle ang = emitter.apply(data[0], data[1]);
-                    if (ang != null) {
-                        c.accept(pointIndex.getAsInt(), ang, lastX, lastY,
-                                emitter.intersections);
-                    }
-                    lastX = data[0];
-                    lastY = data[1];
-                    emitter.intersections += isects;
-                    if (pointIndexWithinShape.equals(1)) {
-                        secondX = data[0];
-                        secondY = data[1];
-                        hasSecondPoint.set();
-                    }
-                    pointIndex.increment();
-                    break;
-                // We are only interested in straight line angles here,
-                // so reset the emitter's state, but not the subshape
-                // state
-                case SEG_QUADTO:
-                    // Increment twice, on the off chance the emitter
-                    // is altered to emit something on quad points, so
-                    // the right point is set at the time we call apply
-                    Polygon2D approximateQ = GeometryUtils.approximateQuadraticCurve(lastX, lastY, data[0], data[1], data[2], data[3]);
-                    int qIsects = intersectionCounter.applyAsInt(approximateQ);
-                    pointIndex.increment();
-                    emitter.reset();
-                    emitter.apply(lastX = data[2], lastY = data[3]);
-                    emitter.intersections += qIsects;
-                    pointIndex.increment();
-                    break;
-                case SEG_CUBICTO:
-                    Polygon2D approximateC = GeometryUtils.approximateCubicCurve(lastX, lastY, data[0], data[1], data[2], data[3], data[4], data[5]);
-                    int cIsects = intersectionCounter.applyAsInt(approximateC);
-                    emitter.reset();
-                    pointIndex.increment(2);
-                    emitter.apply(lastX = data[4], lastY = data[5]);
-                    emitter.intersections += cIsects;
-                    pointIndex.increment();
-                    break;
-            }
-            iter.next();
-            lastType = type;
-        }
-        return emitter.direction();
-    }
-
-    /**
-     * Emits corner angles for points, once it has been passed 3 or more; check
-     * for nulls.
-     */
-    public static final class Emitter implements DoubleBiFunction<CornerAngle>, Function<Point2D, CornerAngle> {
-
-        private double lastX, lastY;
-        private double prevX, prevY;
-        private int state;
-        private int intersections;
-
-        Emitter(Point2D p) {
-            this(p.getX(), p.getY());
-        }
-
-        Emitter(double lastX, double lastY) {
-            this.prevX = lastX;
-            this.prevY = lastY;
-            state = 1;
-        }
-
-        Emitter() {
-
-        }
-
-        public Emitter reset() {
-            state = 0;
-            return this;
-        }
-
-        void emit(double x, double y, Consumer<CornerAngle> into) {
-            CornerAngle angle = apply(x, y);
-            if (angle != null) {
-                into.accept(angle);
-            }
-        }
-
-        public Emitter fullReset() {
-            reset();
-            intersections = 0;
-            return this;
-        }
-
-        public Emitter intersectionEncountered() {
-            intersections++;
-            return this;
-        }
-
-        private int cwCount;
-        private int ccwCount;
-
-        public int clockwiseCount() {
-            return cwCount;
-        }
-
-        public int counterclockwiseCount() {
-            return ccwCount;
-        }
-
-        public RotationDirection direction() {
-            RotationDirection dir = cwCount > ccwCount ? RotationDirection.CLOCKWISE
-                    : RotationDirection.COUNTER_CLOCKWISE;
-            if ((intersections / 2) % 2 == 1) {
-                dir = dir.opposite();
-            }
-            return dir;
-        }
-
-        @Override
-        public CornerAngle apply(double x, double y) {
-            // XXX to get this perfectly right, we need to count
-            // intersections, and reverse the order in which we pass
-            // prevX/Y and x/y when the intesection count is odd
-            switch (state) {
-                case 0:
-                    state++;
-                    prevX = x;
-                    prevY = y;
-                    return null;
-                case 1:
-                    state++;
-                    lastX = x;
-                    lastY = y;
-                    return null;
-                case 2:
-                    CornerAngle result;
-                    if (intersections % 2 == 1) {
-                        result = new CornerAngle(x, y, lastX, lastY, prevX, prevY);
-//                        result = new CornerAngle(prevX, prevY, lastX, lastY, x, y);
-                    } else {
-                        result = new CornerAngle(prevX, prevY, lastX, lastY, x, y);
-                    }
-                    switch (result.direction()) {
-                        case CLOCKWISE:
-                            cwCount++;
-                            break;
-                        case COUNTER_CLOCKWISE:
-                            ccwCount++;
-                            break;
-                    }
-                    prevX = lastX;
-                    prevY = lastY;
-                    lastX = x;
-                    lastY = y;
-                    return result;
-                default:
-                    throw new AssertionError("Invalid state " + state);
-            }
-
-        }
-
-        @Override
-        public CornerAngle apply(Point2D t) {
-            return apply(t.getX(), t.getY());
-        }
-    }
-
-    /**
-     * Determine if this CornerAngle is the same as the passed one with the a
-     * and b angles reversed.
+     * Determine if this CornerAngle is the same as the passed one with the
+     * leading and trailing angles reversed.
      *
      * @param other
      * @return
@@ -386,41 +167,50 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
     }
 
     /**
-     * Get the first angle.
+     * Get the first angle passed to the constructor, which may be greater than
+     * the first.
      *
      * @return The first angle in degrees
      */
-    public double aDegrees() {
+    public double trailingAngle() {
         return a;
+    }
+
+    /**
+     * Get the second angle passed to the constructor, which may be less than
+     * the first.
+     *
+     * @return The second angle in degrees
+     */
+    public double leadingAngle() {
+        return b;
+    }
+
+    /**
+     * Get the first angle.
+     *
+     * @return The first angle
+     */
+    public Angle leading() {
+        return Angle.ofDegrees(a);
     }
 
     /**
      * Get the second angle.
      *
-     * @return The second angle in degrees
-     */
-    public double bDegrees() {
-        return b;
-    }
-
-    /**
-     * Get the first angle
-     *
-     * @return The first angle
-     */
-    public Angle a() {
-        return Angle.ofDegrees(a);
-    }
-
-    /**
-     * Get the second angle
-     *
      * @return The second angle
      */
-    public Angle b() {
+    public Angle trailing() {
         return Angle.ofDegrees(b);
     }
 
+    /**
+     * Get the direction of rotation of this CornerAngle - if the leading angle
+     * is greater than the trailing angle, it will be CLOCKWISE; if the angles
+     * are the same, it will be NONE.
+     *
+     * @return A direction
+     */
     public RotationDirection direction() {
         if (a > b) {
             return RotationDirection.COUNTER_CLOCKWISE;
@@ -436,95 +226,228 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
         return a;
     }
 
+    /**
+     * The extent of this CornerAngle; unlike other implementations of Sector,
+     * with a CornerAngle, which has a direction, the extent may be negative
+     * (indicating that the actual extent as a positive number of degrees is 360
+     * + extent() starting at the <i>leading</i>
+     * rather than the trailing angle).
+     *
+     * @return An extent between -360 and 360
+     */
     @Override
     public double extent() {
         if (b == a) {
             return 0;
         }
-//        if (b < a) {
-//            return 360 - (b - a);
-//        }
-        return b - a;
-//        double a3 = a + 360;
-//        double b3 = b + 360;
-//        double res = b3 - a3;
-//        if (res < 0) {
-//            res = 360 + res;
-//        }
-//        return res;
-//        if (a > 270 && b < 90) {
-//            return -(360 - (a - b));
-//        }
-//        return b - a;
-    }
-
-    public Sector toSector() {
-//        if (b < a) {
-//            double ext = extent();
-//            if (ext < 0) {
-//                ext = 360 - ext;
-//            }
-//            return new SectorImpl(b, ext);
-//        }
-//        return new SectorImpl(a, b - a);
-        return new SectorImpl(Math.min(a, b), Math.abs(extent()));
-    }
-
-    public CornerAngle opposite2() {
-        if (extent() == 360) {
-            return this;
+        if (Math.abs(b - a) == 360) {
+            return 0;
         }
-        double mid = midAngle();
-        double opp = Angle.opposite(mid);
-        System.out.println("Oppsite of " + mid + " is " + opp);
-        double half = extent() / 2;
-        double newA = Angle.subtractAngles(opp, half);
-        double newB = Angle.addAngles(opp, half);
-        CornerAngle result = new CornerAngle(newB, newA);
-//        double oppA = Angle.opposite(a);
-//        double oppB = Angle.opposite(b);
-//        System.out.println("  opp of " + a + " is " + oppA);
-//        System.out.println("  opp of " + b + " is " + oppB);
-//        System.out.println("  old ext " + extent());
-//        System.out.println("  new next " + (oppA + extent()));
-//        CornerAngle result = new CornerAngle(oppA + extent(), oppA);
-        System.out.println("    result extent " + result.extent());
-        return result;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return a == b;
+        return b - a;
     }
 
     /**
-     * Unlike other Sector implementations, opposite() on CornerAngle returns a
-     * 180\u00B0 flipped CornerAngle.
+     * Convert this CornerAngle to a Sector with a positive extent and whichever
+     * of the angles is appropriate for the start angle.
      *
-     * @return A CornerAngle
+     * @return A sector
+     */
+    public Sector toSector() {
+        if (b < a) {
+            return new SectorImpl(a, 360 - (a - b));
+        }
+        return new SectorImpl(a, extent());
+    }
+
+    /**
+     * Overridden to return this.
+     *
+     * @return this
+     */
+    @Override
+    public CornerAngle toCornerAngle() {
+        // already is one
+        return this;
+    }
+
+    /**
+     * Will return true if the extent is (effectively) zero degrees.
+     *
+     * @return True if the extent is 0
+     */
+    @Override
+    public boolean isEmpty() {
+        return a == b || Math.abs(extent() % 360) == 360;
+    }
+
+    /**
+     * Create leading normalized version of this CornerAngle which is consistent
+     * with Sector, where the least angle is the leading angle and the extent is
+     * positive. This can have the effect of returning the inverse of this
+     * angle, if its trailing angle is greater than its leading one.
+     *
+     * @return This angle or its inverse
+     */
+    @Override
+    public CornerAngle normalized() {
+        if (direction() == RotationDirection.COUNTER_CLOCKWISE) {
+            return inverse();
+        }
+        return this;
+    }
+
+    /**
+     * Get the physical extent, in degrees, of this angle - if the extent is
+     * negative, adds 360 to it.
+     *
+     * @return The physical number of degrees out of 360 that this angle takes
+     * up
+     */
+    public double physicalExtent() {
+        double result = extent();
+        if (result < 0) {
+            result = 360 + result;
+        }
+        return result;
+    }
+
+    /**
+     * The sector opposite this one, 180 degrees rotated, with the same physical
+     * extent. In the case of a sector which <i>is</i> leading circle, returns
+     * itself.
+     *
+     * @return A sector
      */
     @Override
     public CornerAngle opposite() {
-        if (extent() == 360) {
+        double ext = extent();
+        if (ext == 0) {
             return this;
         }
-        return new CornerAngle(Angle.opposite(b), Angle.opposite(a));
-//        return new CornerAngle(Angle.opposite(a), Angle.opposite(b));
-    }
-
-    public CornerAngle reversed() {
-        if (!isNormalized()) {
-            System.out.println("inorm " + b + " to " + (b + 360 - extent()));
-            return new CornerAngle(a, a + 360 - extent());
+        double oppA = Angle.opposite(a);
+        double oppB = Angle.opposite(b);
+        if (ext > 0) {
+            // the angle straddles 180, such as 175-185 would
+            // result in 355-5 spanning 350 degrees the wrong direction
+            if (a < 180 && b > 180) {
+                return new CornerAngle(oppA, oppB);
+            }
+            return new CornerAngle(oppB, oppA);
+        } else {
+            // the angle straddles 180 reversed, such as 185-175
+            // would result in 355-5, going from spanning 10 degrees
+            // to spanning 350
+            if (a > 180 && b < 180) {
+                return new CornerAngle(oppA, oppB);
+            }
+            return new CornerAngle(oppB, oppA);
         }
-        return new CornerAngle(b, b + 360 - extent());
     }
 
+    private Shape buildShape(double ax, double ay, double from, double to, Circle circ) {
+        double ext = to < from ? 360 - (from - to) : to - from;
+        int subdivisions = 12;
+        double interval = ext / subdivisions;
+        DoubleList dl = new DoubleList();
+        dl.add(ax);
+        dl.add(ay);
+        for (int i = 0; i < subdivisions + 1; i++) {
+            double ang = Angle.normalize(from + (interval * i));
+            circ.positionOf(ang, (bx, by) -> {
+                dl.add(bx);
+                dl.add(by);
+            });
+        }
+        return new Polygon2D(dl.toDoubleArray());
+    }
+
+    /**
+     * Get a shape for use in tests of point-sampling, which includes all
+     * coordinates that should be reachable from this corner angle out to some
+     * radius from a base point.
+     *
+     * @param ax The base point x
+     * @param ay The base point y
+     * @param radius The radius
+     * @return A shape
+     */
+    Shape boundingShape(double ax, double ay, double radius) {
+        Circle circ = new Circle(ax, ay, radius);
+        if (isNormalized()) {
+            return buildShape(ax, ay, trailingAngle(), leadingAngle(), circ);
+        } else {
+            return buildShape(ax, ay, trailingAngle(), leadingAngle(), circ);
+        }
+    }
+
+    /**
+     * Sample the quarter angle, mid angle and three-quarters angle of this
+     * CornerAngle, passing the coordinates of those angles at the passed
+     * distance relative to the passed location, and return the number of points
+     * which passed the passed test.
+     *
+     * @param sharedX The x coordinate
+     * @param sharedY The y coordinate
+     * @param atDistance The radius
+     * @param test A test which takes a pair of x/y coordinates
+     * @return The number of angles which passed the test - a return value of 3
+     * means all tests passed, 0 means none did. Returns a number from zero
+     * through 3.
+     */
+    public int sample(double sharedX, double sharedY, double atDistance, DoubleBiPredicate test) {
+        Int res = Int.create();
+        assert contains(midAngle()) : "Uh oh " + midAngle() + " not in " + this;
+        assert contains(threeQuarterAngle()) : "Uh oh " + threeQuarterAngle() + " not in " + this;
+        assert contains(quarterAngle()) : "Uh oh " + quarterAngle() + " not in " + this;
+        Circle.positionOf(quarterAngle(), sharedX, sharedY, atDistance, (x1, y1) -> {
+            if (test.test(x1, y1)) {
+                res.increment();
+            }
+            Circle.positionOf(midAngle(), sharedX, sharedY, atDistance, (x2, y2) -> {
+                if (test.test(x2, y2)) {
+                    res.increment();
+                }
+                Circle.positionOf(threeQuarterAngle(), sharedX, sharedY, atDistance, (x3, y3) -> {
+                    if (test.test(x3, y3)) {
+                        res.increment();
+                    }
+                });
+            });
+        });
+        return res.getAsInt();
+    }
+
+    /**
+     * Returns leading sector comprising the degrees of a circle
+     * <i>not</i> contained within this one.
+     *
+     * @return
+     */
     @Override
     public CornerAngle inverse() {
         return new CornerAngle(b, a);
     }
 
+    /**
+     * Create a paintable shape (currently PieWedge) which can visualize this
+     * CornerAngle.
+     *
+     * @param x The apex x coordinate
+     * @param y The apex y coordinate
+     * @param r The radius
+     * @return A shape
+     */
+    @Override
+    public Shape toShape(double x, double y, double r) {
+        return new PieWedge(x, y, r, a, extent());
+    }
+
+    /**
+     * Create a new corner angle rotated by the passed number of degrees.
+     *
+     * @param degrees A number of degrees
+     * @return A corner angle
+     */
     @Override
     public CornerAngle rotatedBy(double degrees) {
         if (degrees == 0) {
@@ -532,14 +455,17 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
         }
         double aa = Angle.addAngles(a, degrees);
         double bb = Angle.addAngles(b, degrees);
+        if ((aa < bb) != (a < b)) {
+            return new CornerAngle(bb, aa);
+        }
         return new CornerAngle(aa, bb);
     }
 
     @Override
     public String toString() {
-        return GeometryUtils.toString(a) + "\u00B0 - "
-                + GeometryUtils.toString(b) + "\u00B0"
-                + " (" + GeometryUtils.toString(extent()) + "\u00B0)";
+        return GeometryStrings.toDegreesString(a) + " / "
+                + GeometryStrings.toDegreesString(b)
+                + " (" + GeometryStrings.toString(extent()) + "\u00B0)";
     }
 
     @Override
@@ -549,11 +475,15 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
         } else if (o == null) {
             return false;
         } else if (o instanceof CornerAngle) {
-            CornerAngle ca = (CornerAngle) this;
+            CornerAngle ca = (CornerAngle) o;
             return GeometryUtils.isSameCoordinate(a, ca.a)
                     && GeometryUtils.isSameCoordinate(b, ca.b);
         } else if (o instanceof Sector) {
             Sector s = (Sector) o;
+            if (isEmpty() && s.isEmpty()) {
+                return true;
+            }
+//            return toSector().equals(s);
             if (GeometryUtils.isSameCoordinate(Math.abs(extent()), s.extent())) {
                 switch (direction()) {
                     case NONE:
@@ -587,12 +517,12 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
     }
 
     /**
-     * Compare such that CornerAngles with a higher first angle follow those
-     * with a second, and if the same, the one with higher second angle comes
-     * first (so CornerAngles that enclose others sort before).
+     * Compare such that CornerAngles with leading higher first angle follow
+     * those with leading second, and if the same, the one with higher second
+     * angle comes first (so CornerAngles that enclose others sort before).
      *
      * @param o Another angle
-     * @return a comparision direction
+     * @return leading comparision direction
      */
     @Override
     public int compareTo(CornerAngle o) {
@@ -605,7 +535,7 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
 
     /**
      * Useful for filtering out extremely tight angles which are generally not
-     * desired to show in a GUI.
+     * desired to show in leading GUI.
      *
      * @return True if the angle is less than two degrees.
      */
@@ -613,25 +543,34 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
         return Math.abs(extent()) < 2;
     }
 
+    private double minimumSpan() {
+        double absExtent = Math.abs(extent());
+        return Math.min(absExtent, 360 - Math.abs(absExtent));
+    }
+
     /**
-     * Create a normalized version of this CornerAngle which is consistent with
-     * Sector, where the least angle is the leading angle and the extent is
-     * positive.
+     * For GUI consumption, where displaying angles that are very small or very
+     * close to 180 degrees is not interesting, test whether the degrees spanned
+     * by this angle (in either direction) are within two degrees of zero or
+     * 180.
      *
-     * @return This angle or its inverse
+     * @return True if the angle is extreme
      */
-    @Override
-    public CornerAngle normalized() {
-        if (direction() == RotationDirection.COUNTER_CLOCKWISE) {
-            return inverse();
+    public boolean isExtreme() {
+        double span = minimumSpan();
+        if (span <= 2) {
+            return true;
         }
-        return this;
+        if (Math.abs(180 - span) <= 2) {
+            return true;
+        }
+        return false;
     }
 
     /**
      * Get the <i>distance of angles</i> between the angles represented in this
      * CornerAngle, and the angles of the past lines, choosing the lines in
-     * whichever order results in a smaller value.
+     * whichever order results in leading smaller value.
      *
      * @param line1 A line
      * @param line2 Another line
@@ -657,9 +596,9 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
     }
 
     /**
-     * Given a line with indication of which point is the apex, and a current
-     * point, returns a point the same distance from the apex which creates a
-     * line which matches this CornerAngle.
+     * Given leading line with indication of which point is the apex, and
+     * leading current point, returns leading point the same distance from the
+     * apex which creates leading line which matches this CornerAngle.
      *
      * @param line A line
      * @param point2isApex If true, use point 2 of the line as the apex rather
@@ -687,9 +626,9 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
      * Encodes this CornerAngle as a single, sortable double value which loses
      * some precision in order to encode the angle and extent. This method does
      * <code>not</code> preserve angle order, so the decoded version may be the
-     * inverse (a and be angles swapped).
+     * inverse (leading and be angles swapped).
      * <p>
-     * This allows a collection of CornerAngles to be stored in a
+     * This allows leading collection of CornerAngles to be stored in leading
      * <code>double[]</code> and use binary search to quickly locate the nearest
      * match.
      * </p>
@@ -704,10 +643,9 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
                 return 0;
             case COUNTER_CLOCKWISE:
                 ca = inverse();
-                System.out.println("invert");
         }
         double ext = Math.abs(ca.extent());
-        double angle = ca.aDegrees();
+        double angle = ca.trailingAngle();
         int angleMult = (int) (angle * 10000000);
         double extMult = ext * 0.001;
 
@@ -717,84 +655,139 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
     }
 
     /**
-     * Encode this angle as a single double, using the sign to indicate which
-     * angle is the first.
+     * Encode this angle as leading single double, using the sign to indicate
+     * which angle is the first.
      *
      * @return A sortable double value
      */
     public double encodeSigned() {
-        double ext = extent();
-        double angle = ext < 0 ? bDegrees() : aDegrees();
-
-        int angleMult = (int) (angle * 10000000);
-        double extMult = Math.abs(ext) * 0.001;
-
-        // XXX could use the sign to encode whether
-        // the extent is negative
-        return angleMult + extMult;
+        long angleMult = (long) (trailingAngle() * 10000000);
+        double extMult = Math.abs(leadingAngle()) * 0.001;
+        double result = angleMult + extMult;
+        return result;
     }
 
     /**
-     * Decode a double created by <code>encodeNormalized()</code> or
-     * <code>encodeSigned()</code> into a CornerAngle.
+     * Decode leading double created by <code>encodeNormalized()</code> or
+     * <code>encodeSigned()</code> into leading CornerAngle.
      *
-     * @param val A value that encodes a CornerAngle - one where the base angle
-     * was encoded by multiplying it by 10000000 to preserve precision, and the
-     * remainder removed, and the extent was multiplied by 0.001 and added to
-     * the munged angle; if the sign is negative, the angle encoded is the
-     * second angle and the resulting CornerAngle will have a negative extent
+     * @param val A value that encodes leading CornerAngle - one where the base
+     * angle was encoded by multiplying it by 10000000 to preserve precision,
+     * and the remainder removed, and the extent was multiplied by 0.001 and
+     * added to the munged angle; if the sign is negative, the angle encoded is
+     * the second angle and the resulting CornerAngle will have leading negative
+     * extent
      * @return A corner angle
      */
     public static CornerAngle decodeCornerAngle(double val) {
         double v = Math.abs(val);
-        int ival = (int) Math.floor(v);
-        double ext = 1000D * (v - ival);
-        System.out.println("  decode ext " + ext);
-        double ang = ival / 10000000D;
-        System.out.println("  decode ang " + ang);
-        if (val < 0) {
-            return new CornerAngle(ang - ext, ang);
-        } else {
-            return new CornerAngle(ang, ang + ext);
-        }
+        long ival = (long) Math.floor(v);
+        double a = 1000D * (v - ival);
+        double b = ival / 10000000D;
+        return new CornerAngle(b, a);
     }
 
     public boolean isNormalized() {
-        return b > a;
+        return b >= a;
     }
 
     @Override
     public boolean isRightAngle() {
         if (!isNormalized()) {
-            return normalized().isRightAngle();
+            return toSector().isRightAngle();
         }
         return Sector.super.isRightAngle();
     }
 
     @Override
+    public boolean contains(double degrees) {
+        degrees = Angle.normalize(degrees);
+        if (a > b) {
+            if (b == 0) {
+                double rangeStart = a;
+                return degrees >= rangeStart && degrees < 360;
+            } else if (degrees < b) {
+                return true;
+            }
+            if (degrees >= a) {
+                return true;
+            }
+            return false;
+        } else if (a == b) {
+            return degrees == a;
+        }
+        if (degrees >= a && degrees < b) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public double midAngle() {
-        return Angle.normalize(a + (extent() / 2));
-//
-//        if (!isNormalized()) {
-//            return normalized().midAngle();
-//        }
-//        return Sector.super.midAngle();
+        int cmp = Double.compare(a, b);
+        double result;
+        switch (cmp) {
+            case 1: // b < a
+                result = mid(a, b);
+                break;
+            case 0: // b == a
+                result = a;
+                break;
+            case -1: // b > a
+                result = mid(a, b);
+                break;
+            default:
+                throw new AssertionError(cmp);
+        }
+        if (!contains(result)) {
+            new Exception("Bad mid result in '" + this + "' with " + result)
+                    .printStackTrace();
+        }
+        return result;
     }
 
+    @Override
     public double quarterAngle() {
-        double ext = Math.abs(extent());
-        return midAngle() - (ext / 4);
+        double ext = extent();
+        if (ext < 0) {
+            ext += 360;
+        }
+        return b > a
+                ? Angle.normalize(midAngle() - (ext * 0.25))
+                : Angle.normalize(midAngle() - (ext * 0.25));
     }
 
+    @Override
     public double threeQuarterAngle() {
-        double ext = Math.abs(extent());
-        return midAngle() + (ext / 4);
+        double ext = extent();
+        if (ext < 0) {
+            ext += 360;
+        }
+        double ma = midAngle();
+        double quarterExt = (ext * 0.25);
+        double result = b < a ? ma + quarterExt : ma + quarterExt;
+        return Angle.normalize(result);
+    }
+
+    private static double mid(double a, double b) {
+        // Skip normalizing, rather than calling Angle,
+        // since we know the values are already normalized
+        if (a == b) {
+            return a;
+        } else if (a < b) {
+            return a + ((b - a) / 2);
+        } else {
+            if (b == 0) {
+                return Angle.normalize(a + ((360 - a) / 2));
+            }
+            return Angle.normalize(a + ((360 - (a - b)) / 2));
+        }
     }
 
     @Override
     public boolean intersects(Sector other) {
         if (!isNormalized()) {
-            return normalized().intersects(other);
+            return toSector().intersects(other);
         }
         return Sector.super.intersects(other);
     }
@@ -802,7 +795,7 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
     @Override
     public boolean abuts(Sector other) {
         if (!isNormalized()) {
-            return normalized().abuts(other);
+            return toSector().abuts(other);
         }
         return Sector.super.abuts(other);
     }
@@ -810,7 +803,7 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
     @Override
     public Sector union(Sector other) {
         if (!isNormalized()) {
-            return normalized().union(other);
+            return toSector().union(other);
         }
         return Sector.super.union(other);
     }
@@ -818,23 +811,15 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
     @Override
     public Sector intersection(Sector other) {
         if (!isNormalized()) {
-            return normalized().intersection(other);
+            return toSector().intersection(other);
         }
         return Sector.super.intersection(other);
     }
 
     @Override
-    public Shape toShape(double x, double y, double radius) {
-        if (!isNormalized()) {
-            return normalized().toShape(x, y, radius);
-        }
-        return Sector.super.toShape(x, y, radius);
-    }
-
-    @Override
     public boolean contains(double x, double y, double radius) {
         if (!isNormalized()) {
-            return normalized().contains(x, y, radius);
+            return toSector().contains(x, y, radius);
         }
         return Sector.super.contains(x, y, radius);
     }
@@ -842,7 +827,7 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
     @Override
     public boolean overlaps(Sector other) {
         if (!isNormalized()) {
-            return normalized().overlaps(other);
+            return toSector().overlaps(other);
         }
         return Sector.super.overlaps(other);
     }
@@ -850,7 +835,7 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
     @Override
     public boolean isSameSector(Sector other) {
         if (!isNormalized()) {
-            return normalized().isSameSector(other);
+            return toSector().isSameSector(other);
         }
         return Sector.super.isSameSector(other);
     }
@@ -858,33 +843,23 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
     @Override
     public boolean contains(Sector sector) {
         if (!isNormalized()) {
-            return normalized().contains(sector);
+            return toSector().contains(sector);
         }
         return Sector.super.contains(sector);
     }
 
     @Override
-    public Sector[] split() {
-        if (!isNormalized()) {
-            return normalized().split();
-        }
-        return Sector.super.split();
+    public CornerAngle[] split() {
+        double ext = extent() / 2;
+        return new CornerAngle[]{
+            new CornerAngle(a, a + ext),
+            new CornerAngle(a + ext, b)
+        };
     }
 
     @Override
     public Sector[] subdivide(int by) {
-        if (!isNormalized()) {
-            return normalized().subdivide(by);
-        }
         return Sector.super.subdivide(by);
-    }
-
-    @Override
-    public boolean contains(double degrees) {
-        if (!isNormalized()) {
-            return normalized().contains(degrees);
-        }
-        return Sector.super.contains(degrees);
     }
 
     @Override

@@ -1,14 +1,17 @@
 package org.imagine.editor.api.snap;
 
+import com.mastfrog.function.state.Bool;
 import com.mastfrog.util.collections.DoubleMap;
+import com.mastfrog.util.collections.DoubleMapConsumer;
+import com.mastfrog.util.collections.IntMap;
 import java.awt.geom.Point2D;
 import java.util.Objects;
 import java.util.Set;
-import org.imagine.geometry.Angle;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.CornerAngle;
 import org.imagine.geometry.EqLine;
 import org.imagine.geometry.EqPointDouble;
+import org.imagine.geometry.LineVector;
 
 /**
  *
@@ -75,112 +78,168 @@ public final class SnapPoints<T> {
         }
     }
 
+    private <T> void visitMiddleOut(IntMap<T> indices, DoubleMap<T> dbls, DoubleMapConsumer<T> c) {
+        switch (indices.size()) {
+            case 0:
+                return;
+            case 1:
+                c.accept(indices.key(0), dbls.key(indices.key(0)), indices.valueAt(0));
+                break;
+            case 2:
+                c.accept(indices.key(0), dbls.key(indices.key(0)), indices.valueAt(0));
+                c.accept(indices.key(1), dbls.key(indices.key(1)), indices.valueAt(1));
+                break;
+            default:
+                int mid = indices.size() / 2;
+                int curUp = mid;
+                int curDown = mid - 1;
+                while (curUp < indices.size() || curDown >= 0) {
+                    if (curUp < indices.size()) {
+                        c.accept(indices.key(curUp), dbls.key(indices.key(curUp)), indices.valueAt(curUp));
+                    }
+                    if (curDown >= 0) {
+                        c.accept(indices.key(curDown), dbls.key(indices.key(curDown)), indices.valueAt(curDown));
+                    }
+                    curUp++;
+                    curDown--;
+                }
+
+        }
+    }
+
     public Point2D snapExclusive(Point2D preceding, Point2D orig, Point2D next, int grid, Set<SnapKind> allowedKinds) {
         if (allowedKinds.isEmpty()) {
             return orig;
         }
         Point2D result = snapExclusive(orig, allowedKinds);
         if (result == orig && allowedKinds.contains(SnapKind.CORNER) && preceding != null && next != null) {
-            CornerAngle ca = new CornerAngle(preceding, orig, next).normalized();
-            double val = ca.encodeNormalized();
-            System.out.println("Try cornerAngle " + ca + " " + val + " in " + corners.keySet());
-            DoubleMap.Entry<? extends T> foundCorner = corners.nearestValueTo(val, 5);
+            LineVector vect = LineVector.of(preceding, orig, next);
+            CornerAngle ca = vect.corner();
+            double val = ca.encodeSigned();
+//            System.out.println("Try cornerAngle " + ca + " " + val + " in " + corners.keySet());
 
-            EqLine lineA = new EqLine(preceding, orig);
-            EqLine lineB = new EqLine(orig, next);
-            if (foundCorner != null) {
-                CornerAngle ang = CornerAngle.decodeCornerAngle(foundCorner.key());
-                double dist = ang.distance(lineA, lineB);
-
-                System.out.println("DIST " + dist + " for " + foundCorner.value() + " with " + ca + " vs " + ang);
-                EqPointDouble snapTo1 = ang.bestMatch(lineA, false, next);
-                EqPointDouble snapTo2 = ang.bestMatch(lineB, false, preceding);
-
-                double ptDist1 = snapTo1.distance(orig);
-                double ptDist2 = snapTo2.distance(orig);
-
-                Point2D candidate = ptDist1 < ptDist2 ? snapTo1 : snapTo2;
-                System.out.println("  best match to " + next + " is " + result);
-                if (notify != null) {
-                    SnapPoint<T> xpt = new SnapPoint<>(SnapAxis.X, result.getX(),
-                            SnapKind.CORNER, foundCorner.value());
-                    SnapPoint<T> ypt = new SnapPoint<>(SnapAxis.Y, result.getY(),
-                            SnapKind.CORNER, foundCorner.value());
-
-                    System.out.println("snap to corner " + ang + " " + foundCorner.value());
-
-                    if (notify.onSnap(xpt, ypt)) {
-                        result = candidate;
-                    }
-                } else {
-                    result = candidate;
+            // Corner angles trailing angles are scaled by 1 million,
+            // the second angle is encoded as the fractional portion
+            double min = val - (10 * 10000000D);
+            double max = val + (10 * 10000000D);
+            IntMap<T> targets = IntMap.create(20);
+            corners.valuesBetween(min, max, (int index, double value, T object) -> {
+                targets.put(index, object);
+            });
+            double threshold = 10; // xxx scale to zoom
+            Bool done = Bool.create();
+            EqPointDouble nue = new EqPointDouble();
+            visitMiddleOut(targets, corners, (ix, key, t) -> {
+                if (done.get()) {
+                    return;
                 }
+                CornerAngle ang = CornerAngle.decodeCornerAngle(key);
+                double dist = ang.distance(ca);
+                if (dist <= 15) {
+                    EqLine ln1 = new EqLine(preceding, orig);
+                    EqLine ln2 = new EqLine(orig, next);
+
+                    ln1.setAngleAndLength(ang.trailingAngle(), ln1.length());
+                    ln2.setAngleAndLength(ang.leadingAngle(), ln2.length());
+
+                    EqPointDouble newCenter = ln1.intersectionPoint(ln2);
+                    if (newCenter.distance(newCenter) < threshold) {
+                        if (notify != null) {
+                            SnapPoint<T> xpt = new SnapPoint<>(SnapAxis.X, newCenter.getX(),
+                                    SnapKind.CORNER, t);
+                            SnapPoint<T> ypt = new SnapPoint<>(SnapAxis.Y, newCenter.getY(),
+                                    SnapKind.CORNER, t);
+
+                            System.out.println("snap to corner " + ang + " " + t);
+
+                            if (notify.onSnap(xpt, ypt)) {
+                                nue.setLocation(newCenter);
+                                done.set();
+                            }
+                        } else {
+                            nue.setLocation(newCenter);
+                            done.set(true);
+                        }
+                    }
+                }
+            });
+            if (done.get()) {
+                result = nue;
             }
         }
 
         if (result == orig && allowedKinds.contains(SnapKind.ANGLE) && preceding != null) {
-            Circle circ = new Circle(preceding.getX(), preceding.getY(),
-                    Point2D.distance(preceding.getX(), preceding.getY(), orig.getX(), orig.getY()));
-            double angle = circ.angleOf(orig.getX(), orig.getY());
-            DoubleMap.Entry<? extends T> foundAng = angles.nearestValueTo(angle, 5);
+            LineVector vect = LineVector.of(preceding, orig, next).inverse();
+            CornerAngle corn = vect.corner();
+            DoubleMap.Entry<? extends T> foundAng1 = angles.nearestValueTo(corn.trailingAngle());
+            DoubleMap.Entry<? extends T> foundAng2 = angles.nearestValueTo(corn.leadingAngle());
 
-            if (foundAng == null) {
-                foundAng = angles.nearestValueTo(Angle.opposite(angle), 5);
+            double diff1 = Math.abs(foundAng1.key() - corn.trailingAngle());
+            double diff2 = Math.abs(foundAng2.key() - corn.leadingAngle());
+            DoubleMap.Entry<? extends T> best;
+            double targetAngle;
+            double diff;
+            double dist;
+            if (diff1 < diff2) {
+                targetAngle = corn.trailingAngle();
+                best = foundAng1;
+                diff = diff1;
+                dist = vect.firstLineLength();
+            } else {
+                targetAngle = corn.leadingAngle();
+                best = foundAng2;
+                diff = diff2;
+                dist = vect.secondLineLength();
             }
+            if (diff < 15) {
+                EqPointDouble pt = new EqPointDouble();
+                Circle.positionOf(targetAngle, orig.getX(), orig.getY(), dist, pt::setLocation);
 
-            System.out.println("Try angle " + angle + " in " + angles.keySet() + " result " + foundAng);
-
-            if (foundAng != null) {
-                Point2D p = circ.getPosition(foundAng.key());
-                if (Point2D.distance(p.getX(), p.getY(), orig.getX(), orig.getY()) <= radius) {
-//                    result = p;
-                    if (notify != null) {
-                        SnapPoint<T> xpt = new SnapPoint<>(SnapAxis.X, result.getX(),
-                                SnapKind.ANGLE, foundAng.value());
-                        SnapPoint<T> ypt = new SnapPoint<>(SnapAxis.Y, result.getY(),
-                                SnapKind.ANGLE, foundAng.value());
-
-                        System.out.println("Snap to angle " + foundAng);
-
-                        if (notify.onSnap(xpt, ypt)) {
-                            result = p;
-                        }
-                    } else {
-                        result = p;
+                // XXX maybe also test the distance to this particular
+                // point, so we don't shove the dragged point WAY off-target?
+                if (notify != null) {
+                    SnapPoint<T> xpt = new SnapPoint<>(SnapAxis.X, pt.getX(),
+                            SnapKind.ANGLE, best.value());
+                    SnapPoint<T> ypt = new SnapPoint<>(SnapAxis.Y, pt.getY(),
+                            SnapKind.ANGLE, best.value());
+                    if (notify.onSnap(xpt, ypt)) {
+                        result = pt;
                     }
+                } else {
+                    result = pt;
                 }
             }
         }
-        if (result == orig && next != null && allowedKinds.contains(SnapKind.ANGLE)) {
-            Circle circ = new Circle(next.getX(), next.getY(),
-                    Point2D.distance(next.getX(), next.getY(), orig.getX(),
-                            orig.getY()));
-            double angle = circ.angleOf(orig.getX(), orig.getY());
-            DoubleMap.Entry<? extends T> foundAng = angles.nearestValueTo(angle, 5);
-
-            if (foundAng == null) {
-                foundAng = angles.nearestValueTo(Angle.opposite(angle), 5);
-            }
-
-            System.out.println("Try angle " + angle + " in " + angles.keySet() + " result " + foundAng);
-
-            if (foundAng != null) {
-                Point2D pos = circ.getPosition(foundAng.key());
-                if (Point2D.distance(pos.getX(), pos.getY(), orig.getX(), orig.getY()) <= radius) {
-                    if (notify != null) {
-                        SnapPoint<T> xpt = new SnapPoint<>(SnapAxis.X, result.getX(),
-                                SnapKind.ANGLE, foundAng.value());
-                        SnapPoint<T> ypt = new SnapPoint<>(SnapAxis.Y, result.getY(),
-                                SnapKind.ANGLE, foundAng.value());
-                        if (notify.onSnap(xpt, ypt)) {
-                            result = pos;
-                        }
-                    } else {
-                        result = pos;
-                    }
-                }
-            }
-        }
+//        if (result == orig && next != null && allowedKinds.contains(SnapKind.ANGLE)) {
+//            Circle circ = new Circle(next.getX(), next.getY(),
+//                    Point2D.distance(next.getX(), next.getY(), orig.getX(),
+//                            orig.getY()));
+//            double angle = circ.angleOf(orig.getX(), orig.getY());
+//            DoubleMap.Entry<? extends T> foundAng = angles.nearestValueTo(angle, 5);
+//
+//            if (foundAng == null) {
+//                foundAng = angles.nearestValueTo(Angle.opposite(angle), 5);
+//            }
+//
+//            System.out.println("Try angle " + angle + " in " + angles.keySet() + " result " + foundAng);
+//
+//            if (foundAng != null) {
+//                Point2D pos = circ.getPosition(foundAng.key());
+//                if (Point2D.distance(pos.getX(), pos.getY(), orig.getX(), orig.getY()) <= radius) {
+//                    if (notify != null) {
+//                        SnapPoint<T> xpt = new SnapPoint<>(SnapAxis.X, result.getX(),
+//                                SnapKind.ANGLE, foundAng.value());
+//                        SnapPoint<T> ypt = new SnapPoint<>(SnapAxis.Y, result.getY(),
+//                                SnapKind.ANGLE, foundAng.value());
+//                        if (notify.onSnap(xpt, ypt)) {
+//                            result = pos;
+//                        }
+//                    } else {
+//                        result = pos;
+//                    }
+//                }
+//            }
+//        }
         if (grid > 2 && result == orig && allowedKinds.contains(SnapKind.GRID)) {
             double prevX = grid * ((int) (Math.round(orig.getX()) / grid));
             double prevY = grid * ((int) (Math.round(orig.getY()) / grid));

@@ -5,7 +5,7 @@ import com.mastfrog.function.DoubleQuadConsumer;
 import java.util.function.BiConsumer;
 
 /**
- * Represents two angles, as in a CornerAngle, with lengths.
+ * Represents two angles, as in leading CornerAngle, with lengths.
  *
  * @author Tim Boudreau
  */
@@ -17,20 +17,30 @@ public interface AngleVector {
 
     double secondLineLength();
 
+    default LineVector toLineVector(double atX, double atY) {
+        LineVector[] result = new LineVector[1];
+        Circle.positionOf(firstLineAngle(), atX, atY, firstLineLength(), (ax, ay) -> {
+            Circle.positionOf(secondLineAngle(), atX, atY, secondLineLength(), (bx, by) -> {
+                result[0] = new LineVectorImpl(ax, ay, atX, atY, bx, by);
+            });
+        });
+        return result[0];
+    }
+
     default double firstLineAngle() {
-        return corner().aDegrees();
+        return corner().trailingAngle();
     }
 
     default double secondLineAngle() {
-        return corner().aDegrees();
+        return corner().trailingAngle();
     }
 
     default void firstPositionAt(double sharedX, double sharedY, DoubleBiConsumer c) {
-        new Circle(sharedX, sharedY, firstLineLength()).positionOf(corner().aDegrees(), c);
+        new Circle(sharedX, sharedY, firstLineLength()).positionOf(corner().trailingAngle(), c);
     }
 
     default void secondPositionAt(double sharedX, double sharedY, DoubleBiConsumer c) {
-        new Circle(sharedX, sharedY, secondLineLength()).positionOf(corner().bDegrees(), c);
+        new Circle(sharedX, sharedY, secondLineLength()).positionOf(corner().leadingAngle(), c);
     }
 
     default void linesAt(double x, double y, BiConsumer<? super EqLine, ? super EqLine> c) {
@@ -42,8 +52,8 @@ public interface AngleVector {
     default void positionsAt(double x, double y, DoubleQuadConsumer c) {
         Circle circ = new Circle(x, y);
         CornerAngle corner = corner();
-        circ.positionOf(corner.aDegrees(), firstLineLength(), (x1, y1) -> {
-            circ.positionOf(corner.bDegrees(), secondLineLength(), (x2, y2) -> {
+        circ.positionOf(corner.trailingAngle(), firstLineLength(), (x1, y1) -> {
+            circ.positionOf(corner.leadingAngle(), secondLineLength(), (x2, y2) -> {
                 c.accept(x1, y1, x2, y2);
             });
         });

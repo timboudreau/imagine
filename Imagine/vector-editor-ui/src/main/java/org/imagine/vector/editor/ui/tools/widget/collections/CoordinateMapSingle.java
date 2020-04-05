@@ -18,6 +18,7 @@ import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.imagine.geometry.EqPointDouble;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 import org.imagine.utils.Holder;
 
@@ -151,10 +152,10 @@ public class CoordinateMapSingle<T> implements CoordinateMap<T> {
             double[] d2 = new double[2];
             fromAddress(maxAddress, d2);
             return "\nScan address range " + minAddress + " to " + maxAddress
-                    + " bound " + GeometryUtils.toString(
+                    + " bound " + GeometryStrings.toString(
                             fromDiagonal(scratch[0], scratch[1], d2[0], d2[1]))
-                    + " ending at " + GeometryUtils.toString(d2[0], d2[1])
-                    + " passed bounds " + GeometryUtils.toString(
+                    + " ending at " + GeometryStrings.toString(d2[0], d2[1])
+                    + " passed bounds " + GeometryStrings.toString(
                             fromDiagonal(tMinX, tMinY, tMaxX, tMaxY));
         });
         int result = map.valuesBetween(minAddress, maxAddress, (int value, T object) -> {

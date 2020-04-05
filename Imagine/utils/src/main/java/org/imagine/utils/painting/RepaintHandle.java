@@ -8,6 +8,7 @@
  */
 package org.imagine.utils.painting;
 
+import java.awt.BasicStroke;
 import java.awt.Cursor;
 import java.awt.Rectangle;
 import java.awt.Shape;
@@ -26,6 +27,14 @@ public interface RepaintHandle {
 
     public void repaintArea(int x, int y, int w, int h);
 
+    default void repaintArea(double x, double y, double w, double h) {
+        int xx = (int) Math.floor(x);
+        int yy = (int) Math.floor(y);
+        int ww = (int) Math.ceil(w + (x - xx));
+        int hh = (int) Math.ceil(w + (y - yy));
+        repaintArea(xx, yy, ww, hh);
+    }
+
     default void repaintArea(Rectangle r) {
         repaintArea(r.x, r.y, r.width, r.height);
     }
@@ -40,11 +49,26 @@ public interface RepaintHandle {
         repaintArea(x, y, w, h);
     }
 
+    default void repaintArea(Shape shape, double strokeWidth) {
+        Rectangle2D r = shape.getBounds2D();
+        r.add(r.getX() - strokeWidth, r.getY() - strokeWidth);
+        r.add(r.getX() + r.getWidth() + (strokeWidth * 2),
+                r.getY() + r.getHeight() + (strokeWidth * 2));
+    }
+
+    default void repaintArea(Shape shape, BasicStroke stroke) {
+        if (stroke == null) {
+            repaintArea(shape);
+        } else {
+            repaintArea(shape, stroke.getLineWidth());
+        }
+    }
+
     default void repaintArea(Shape shape) {
         repaintArea(shape.getBounds2D());
     }
 
     default void setCursor(Cursor cursor) {
-        
+
     }
 }

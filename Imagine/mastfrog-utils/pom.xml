@@ -20,6 +20,7 @@
                         <publicPackage>com.mastfrog.abstractions</publicPackage>
                         <publicPackage>com.mastfrog.abstractions.list</publicPackage>
                         <publicPackage>com.mastfrog.function</publicPackage>
+                        <publicPackage>com.mastfrog.function.state</publicPackage>
                         <publicPackage>com.mastfrog.function.throwing</publicPackage>
                         <publicPackage>com.mastfrog.function.throwing.io</publicPackage>
                         <publicPackage>com.mastfrog.util.cache</publicPackage>

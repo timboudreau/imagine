@@ -17,6 +17,7 @@ import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.OnSnap;
 import org.imagine.editor.api.snap.SnapKind;
 import org.imagine.editor.api.snap.SnapPoint;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.ShapeEntry;
 import org.imagine.vector.editor.ui.ShapeSnapPointEntry;
@@ -103,7 +104,20 @@ public class SnapPainter implements OnSnap<ShapeSnapPointEntry> {
 
     @Override
     public boolean onSnap(SnapPoint<ShapeSnapPointEntry> x, SnapPoint<ShapeSnapPointEntry> y) {
+        if ((x != null && Math.abs(x.coordinate()) > 10000)
+                || (y != null && Math.abs(y.coordinate()) > 10000)) {
+            // XXX some kind of wraparound to extreme values happening in
+            // corner snap computation
+            System.err.println("Given insane snap coordinates: "
+                    + GeometryStrings.toString(x == null ? -1 : x.coordinate(),
+                            y == null ? -1 : y.coordinate())
+                    + " - aborting snap."
+            );
+            setBothPainters(null);
+            return false;
+        }
         try {
+            setBothPainters(null);
             if (x != null) {
                 if (isPointOnSelection(x)) {
                     if (!isVirtual(x)) {
@@ -119,7 +133,7 @@ public class SnapPainter implements OnSnap<ShapeSnapPointEntry> {
                 }
             }
             if (x == null && y == null) {
-                setBothPainters(null);
+//                setBothPainters(null);
                 return false;
             } else if (x != null && y != null) {
                 if (y.kind() == x.kind()) {
@@ -150,6 +164,7 @@ public class SnapPainter implements OnSnap<ShapeSnapPointEntry> {
     private boolean snapX(SnapPoint<ShapeSnapPointEntry> x) {
         OneTypePainter p = find(x);
         if (p != null) {
+            setYPainter(null);
             boolean result = p.onSnap(x, null, zoomSupplier.get(), selected);
             if (result) {
                 setYPainter(p);
@@ -188,31 +203,48 @@ public class SnapPainter implements OnSnap<ShapeSnapPointEntry> {
 
     private void setXPainter(OneTypePainter p) {
         if (lastX != null) {
+            lastX.resign();
             lastX.requestRepaint(handle);
         }
         lastX = p;
+        if (lastX != null) {
+            lastX.activate();
+        }
     }
 
     private void setYPainter(OneTypePainter p) {
         if (lastY != null) {
+            lastY.resign();
             lastY.requestRepaint(handle);
         }
         lastY = p;
+        if (lastY != null) {
+            lastY.activate();
+        }
     }
 
     private void setBothPainters(OneTypePainter p) {
         if (lastX != null) {
+            lastX.resign();
             lastX.requestRepaint(handle);
             if (lastY != null && lastY != lastX) {
                 lastY.requestRepaint(handle);
                 lastY = null;
             }
             lastY = null;
-        }
-        if (lastY != null) {
+        } else if (lastY != null) {
+            lastY.resign();
             lastY.requestRepaint(handle);
         }
         lastX = p;
         lastY = p;
+        if (lastX != null) {
+            lastX.activate();
+            lastX.requestRepaint(handle);
+        }
+        if (lastY != null) {
+            lastX.activate();
+            lastY.requestRepaint(handle);
+        }
     }
 }

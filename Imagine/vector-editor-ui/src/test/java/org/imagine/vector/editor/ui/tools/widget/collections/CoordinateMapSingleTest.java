@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import org.imagine.geometry.EqPointDouble;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -67,7 +68,7 @@ public class CoordinateMapSingleTest {
                     }
                     Rectangle bds = new Rectangle(xStart, yStart, size, size);
                     if (!(bds.contains(xCoord, yCoord))) {
-                        fail("Partition bounds " + GeometryUtils.toString(bds) + " "
+                        fail("Partition bounds " + GeometryStrings.toString(bds) + " "
                                 + "does not contain requested point " + xCoord + "," + yCoord);
                     }
                     CoordinateMap<String> partm = p.partitionFor(xCoord, yCoord, true);
@@ -308,7 +309,7 @@ public class CoordinateMapSingleTest {
         assertSets(exp, got);
         assertFalse(gotPoints.isEmpty(), "Found no points within "
                 + subStartX + "," + subStartY + " to " + subEndX + ", " + subEndY
-                + " in bounds " + GeometryUtils.toString(m.bounds()));
+                + " in bounds " + GeometryStrings.toString(m.bounds()));
 
         Refiner<Set<Thing>> ref = m instanceof DirtSimpleCoordinateMap<?>
                 ? new R(origMapping) : new NoR();

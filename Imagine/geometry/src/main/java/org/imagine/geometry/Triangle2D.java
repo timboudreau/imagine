@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
@@ -328,10 +329,7 @@ public class Triangle2D extends AbstractShape implements EnhancedShape, Tesselab
 
     @Override
     public String toString() {
-        return "Tri"
-                + "<" + points[0] + "," + points[1] + ">"
-                + "<" + points[2] + "," + points[3] + ">"
-                + "<" + points[4] + "," + points[5] + ">";
+        return "Tri(" + GeometryStrings.toStringCoordinates(points) + ")";
     }
 
     public static Triangle2D[] fromRectangle(RectangularShape rect) {

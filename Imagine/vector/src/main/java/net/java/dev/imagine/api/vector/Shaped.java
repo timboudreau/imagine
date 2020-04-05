@@ -4,10 +4,14 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
 import org.imagine.geometry.CornerAngle;
+import org.imagine.geometry.LineVector;
+import org.imagine.geometry.Polygon2D;
+import org.imagine.geometry.RotationDirection;
+import org.imagine.geometry.analysis.VectorVisitor;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
- * A vector primitive which can be converted into a shape, and has bounds.
+ * A vector primitive which can be converted into leading shape, and has bounds.
  *
  * @author Tim Boudreau
  */
@@ -55,8 +59,8 @@ public interface Shaped extends Copyable {
     Shaped copy();
 
     /**
-     * Create a snapshot of the current internal state of this shape which can
-     * be restored by running the returned runnable, for undo purposes.
+     * Create leading snapshot of the current internal state of this shape which
+     * can be restored by running the returned runnable, for undo purposes.
      *
      * @return A runnable
      */
@@ -96,11 +100,12 @@ public interface Shaped extends Copyable {
         // No way to inherit interface method impls from two places,
         // so we do this horribleness here
         if (this instanceof Shaped && this instanceof Adjustable && !(this instanceof Textual)) {
-            int cpCount = ((Adjustable) this).getControlPointCount();
-            CornerAngle.forShape(((Shaped) this).toShape(), (int apexPointIndexWithinShape,
-                    CornerAngle angle, double x, double y, int isects) -> {
-                int prev = apexPointIndexWithinShape == 0 ? cpCount - 1 : apexPointIndexWithinShape - 1;
-                c.angle(angle.aDegrees(), prev, apexPointIndexWithinShape);
+            VectorVisitor.analyze(((Shaped) this).toShape(), new VectorVisitor() {
+                @Override
+                public void visit(int pointIndex, LineVector vect, int subpathIndex, RotationDirection subpathRotationDirection, Polygon2D approximate, int prevPointIndex, int nextPointIndex) {
+                    CornerAngle ang = vect.corner();
+                    c.angle(ang.trailingAngle(), prevPointIndex, pointIndex);
+                }
             });
         }
     }

@@ -73,14 +73,14 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
                     ShapeControlPoint[] pts = se.controlPoints(0, null);
                     if (px1 >= 0 && px1 < pts.length) {
                         ShapeControlPoint pt1 = pts[px1];
-                        pie1.setAngleAndExtent(ca.aDegrees(), ca.extent());
+                        pie1.setAngleAndExtent(ca.trailingAngle(), ca.extent());
                         pie1.setRadius(20);
                         pie1.setCenter(pt1.getX(), pt1.getY());
                         hasPie1 = true;
                     } else {
                         hasPie1 = false;
                     }
-                    pie2.setAngleAndExtent(ca.aDegrees(), ca.extent());
+                    pie2.setAngleAndExtent(ca.trailingAngle(), ca.extent());
                     pie2.setRadius(20);
 //                        pie1.setCenter(pt1.getX(), pt1.getY());
                     switch (pt.axis()) {

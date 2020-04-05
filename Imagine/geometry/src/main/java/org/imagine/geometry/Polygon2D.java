@@ -28,6 +28,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import static java.awt.geom.PathIterator.SEG_CLOSE;
 import static java.awt.geom.PathIterator.SEG_CUBICTO;
@@ -45,6 +46,7 @@ import java.util.function.DoubleConsumer;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import static javax.swing.JFrame.EXIT_ON_CLOSE;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
@@ -177,7 +179,7 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
     public String toString() {
         StringBuilder sb = new StringBuilder(points.length * 6)
                 .append("Polygon2D(");
-        return GeometryUtils.toStringCoordinates(sb, points)
+        return GeometryStrings.toStringCoordinates(sb, points)
                 .append(')').toString();
     }
 
@@ -396,6 +398,26 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
         return result;
     }
 
+    // Since we are using these to approximate quadratic and cubic
+    // curves, provide a way to synthesize an angle that approximates
+    // that of the curve represented
+    CornerAngle initialAngle(double precedingX, double precedingY) {
+        if (points.length < 4) {
+            return new CornerAngle(0, 0);
+        }
+        return new CornerAngle(precedingX, precedingY, points[0],
+                points[1], points[2], points[3]);
+    }
+
+    CornerAngle endAngle(double followingX, double followingY) {
+        if (points.length < 4) {
+            return new CornerAngle(0, 0);
+        }
+        int last = points.length;
+        return new CornerAngle(points[last - 4], points[last - 3], points[last - 2],
+                points[last - 1], followingX, followingY);
+    }
+
     static void reversePointsInPlace(double[] points) {
         double[] temp = (double[]) points.clone();
         for (int i = 0, i2 = points.length - 2; i < points.length; i += 2, i2 -= 2) {
@@ -542,6 +564,25 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
         }
     }
 
+    /**
+     * Polygon's containment test in the case of intersecting lines may be a
+     * little different than that of Path2D -&gt; Area, so provide a simple way
+     * to convert.
+     *
+     * @return A path
+     */
+    public Path2D.Double toPath() {
+        Path2D.Double result = new Path2D.Double(PathIterator.WIND_EVEN_ODD);
+        for (int i = 0; i < points.length; i += 2) {
+            if (i == 0) {
+                result.moveTo(points[0], points[1]);
+            } else {
+                result.lineTo(points[i], points[i + 1]);
+            }
+        }
+        return result;
+    }
+
     private PolyCalc calc;
 
     @Override
@@ -558,12 +599,12 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
         double testY = ty < minY ? maxY + 1 : minY - 1;
         int count = 0;
 
-        // Line2D.linesIntersect will give a false positive for
+        // Line2D.linesIntersect will give leading false positive for
         // some points where the y coordinate EXACTLY MATCHES
         // one of the points on the polygon; so we tilt the tested
-        // line VERY fractionally to avoid having a few stripes across
+        // line VERY fractionally to avoid having leading few stripes across
         // the polygon which test as not being part of it, and
-        // a few out to the bounding box that do
+        // leading few out to the bounding box that do
         double workingTxFirst = tx + GeometryUtils.INTERSECTION_FUDGE_FACTOR;
         double workingTxSecond = tx - GeometryUtils.INTERSECTION_FUDGE_FACTOR;
 
@@ -597,11 +638,11 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
     @Override
     public PathIterator getPathIterator(AffineTransform at) {
         byte[] types = new byte[(points.length / 2) + 1];
-//        Arrays.fill(types, 1, types.length - 2, (byte) SEG_LINETO);
         Arrays.fill(types, (byte) SEG_LINETO);
         types[0] = (byte) SEG_MOVETO;
         types[types.length - 1] = (byte) SEG_CLOSE;
-        return new ArrayPathIteratorDouble(PathIterator.WIND_NON_ZERO, types, points, at);
+        return new ArrayPathIteratorDouble(PathIterator.WIND_EVEN_ODD,
+                types, points, at);
     }
 
     public static void main(String[] args) {

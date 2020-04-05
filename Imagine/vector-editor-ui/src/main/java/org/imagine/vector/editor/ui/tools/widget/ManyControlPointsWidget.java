@@ -27,6 +27,7 @@ import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.design.ShapeNames;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.EqPointDouble;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
@@ -96,7 +97,7 @@ public class ManyControlPointsWidget extends Widget {
                     ShapeControlPoint cp = cps.iterator().next();
                     String info = cp.kind().toString() + " "
                             + cp.index() + " @ "
-                            + GeometryUtils.toString(cp.getX(), cp.getY())
+                            + GeometryStrings.toString(cp.getX(), cp.getY())
                             + " of " + ShapeNames.infoString(cp.getPrimitive());
                     if (!cp.isValid()) {
                         info = "INVALID " + info;

@@ -13,13 +13,14 @@ import java.awt.geom.AffineTransform;
 import net.java.dev.imagine.api.vector.elements.ImageWrapper;
 import net.java.dev.imagine.api.vector.elements.PathText;
 import net.java.dev.imagine.api.vector.elements.Text;
-import org.imagine.geometry.AnglesAnalyzer;
 import org.imagine.geometry.PieWedge;
 import org.imagine.geometry.Polygon2D;
 import org.imagine.geometry.RotationDirection;
-import org.imagine.geometry.Sector;
-import org.imagine.geometry.util.GeometryUtils;
-import org.imagine.geometry.util.function.Int;
+import org.imagine.geometry.util.GeometryStrings;
+import com.mastfrog.function.state.Int;
+import org.imagine.geometry.CornerAngle;
+import org.imagine.geometry.LineVector;
+import org.imagine.geometry.analysis.VectorVisitor;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
@@ -337,7 +338,7 @@ public class OneShapeWidget extends Widget {
                 }
             }
             if (!el.item().is(Text.class)) {
-                paintCorners(g, el, shape);
+//                debugPaintCorners(g, el, shape);
             }
         }
         paintDecorations(g, el, shape);
@@ -345,7 +346,7 @@ public class OneShapeWidget extends Widget {
 
     private final PieWedge wedge = new PieWedge();
 
-    private void paintCorners(Graphics2D g, ShapeElement el, Shape shape) {
+    private void debugPaintCorners(Graphics2D g, ShapeElement el, Shape shape) {
         Font f = g.getFont();
         double scale = 1D / getScene().getZoomFactor();
         g.setFont(f.deriveFont(AffineTransform.getScaleInstance(scale, scale)));
@@ -355,35 +356,35 @@ public class OneShapeWidget extends Widget {
         g.setStroke(scaleStroke);
         wedge.setRadius((Math.min(r.width, r.height) / 6) * scale);
 
-        AnglesAnalyzer ana = new AnglesAnalyzer();
-        RotationDirection dir = ana.analyzeShape(shape, null);
-
         Int lastIdHash = Int.of(-1);
-
-        ana.visitAll((int pointIndex, double x, double y, Sector corner,
-                int intersections, RotationDirection subpathRotationDirection, Polygon2D approximate) -> {
+        VectorVisitor vv = (int pointIndex, LineVector vect, int subpathIndex, RotationDirection subpathRotationDirection, Polygon2D approximate, int prevPointIndex, int nextPointIndex) -> {
+            double x = vect.apexX();
+            double y = vect.apexY();
+            CornerAngle corner = vect.corner();
             wedge.setCenter(x, y);
 //            corner = corner.normalized();
-            wedge.setAngleAndExtent(corner);
+            wedge.setAngleAndExtent(corner.toSector());
 
-//            int idHash = System.identityHashCode(approximate);
-//            lastIdHash.ifUpdate(idHash, () -> {
-//                System.out.println("POLY POINTS " + approximate.pointCount()
-//                        + " for " + el.getName());
-//                g.setColor(new Color(20, 150, 20, 200));
-//                g.setStroke(new BasicStroke((float) (scale * 3)));
-//                g.draw(approximate);
-//                g.setStroke(scaleStroke);
-//            });
+            int idHash = System.identityHashCode(approximate);
+            lastIdHash.ifUpdate(idHash, () -> {
+                System.out.println("POLY POINTS " + approximate.pointCount()
+                        + " for " + el.getName());
+                g.setColor(new Color(20, 150, 20, 200));
+                g.setStroke(new BasicStroke((float) (scale * 3)));
+                g.draw(approximate);
+                g.setStroke(scaleStroke);
+            });
             float txtOffset = (float) (scale * 5);
             g.setColor(new Color(40, 40, 240));
             g.drawString(Integer.toString(pointIndex)
-                    + " - " + GeometryUtils.toShortString(corner.extent()) + "\u00B0"
-                    + " i:" + intersections + " " + corner.toShortString(),
+                    + " - " + GeometryStrings.toShortString(corner.extent()) + "\u00B0"
+                    + corner.toShortString(),
                     (float) (x + txtOffset), (float) (y + txtOffset)
             );
             g.draw(wedge);
-        });
+        };
+        RotationDirection dir = vv.analyze(shape);
+
 
         /*
         RotationDirection dir = CornerAngle.forShape(shape, (int apexPointIndexWithinShape, CornerAngle angle, double x, double y, int isects) -> {

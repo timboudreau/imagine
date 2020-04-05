@@ -23,6 +23,7 @@ public class SnapUISettings {
     private BasicStroke decorationStroke;
     private double pointRadius = 11;
     private double originPointRadius = 7;
+    private float wedgeStrokeSize = 2;
 
     private SnapUISettings() {
         lastIndicatorZoom = 1;
@@ -114,6 +115,11 @@ public class SnapUISettings {
     }
 
     public float pointStrokeSize(SnapKind kind) {
-        return 0.75F;
+        switch (kind) {
+            case CORNER:
+                return 2;
+            default:
+                return 0.75F;
+        }
     }
 }

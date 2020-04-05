@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.imagine.vector.editor.ui.tools.widget.snap;
 
 import com.mastfrog.function.DoubleBiConsumer;
@@ -158,26 +153,29 @@ public class PositionPainter extends OneTypePainter {
         }
 
         protected void requestRepaint(RepaintHandle handle) {
-            handle.repaintArea(arrow);
-            handle.repaintArea(line);
+            handle.repaintArea(arrow, indicatorStroke);
+            handle.repaintArea(line, indicatorStroke);
             text.requestRepaint(handle);
             if (circleActive) {
-                handle.repaintArea(circle);
+                handle.repaintArea(circle, decorationStroke);
             }
         }
+
+        private BasicStroke indicatorStroke;
+        private BasicStroke decorationStroke;
 
         protected void paint(Graphics2D g, Zoom zoom, ShapeElement selected) {
             SnapUISettings settings = SnapUISettings.getInstance();
             arrow.headLength = zoom.inverseScale(ARROW_HEAD_BASE_SIZE);
             g.draw(arrow);
             g.setPaint(settings.indicatorLineColor(SnapKind.MATCH, selected));
-            g.setStroke(settings.indicatorStroke(SnapKind.MATCH, selected, zoom));
+            g.setStroke(indicatorStroke = settings.indicatorStroke(SnapKind.MATCH, selected, zoom));
             g.draw(line);
 
             if (circleActive) {
                 g.setPaint(settings.originFillColor(SnapKind.MATCH, selected));
                 g.fill(circle);
-                g.setStroke(settings.decorationStroke(SnapKind.MATCH, selected, zoom));
+                g.setStroke(decorationStroke = settings.decorationStroke(SnapKind.MATCH, selected, zoom));
                 g.setPaint(settings.originDrawColor(SnapKind.MATCH, selected));
                 g.draw(circle);
             }

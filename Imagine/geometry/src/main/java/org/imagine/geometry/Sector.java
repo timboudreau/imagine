@@ -2,10 +2,11 @@ package org.imagine.geometry;
 
 import com.mastfrog.function.DoubleBiPredicate;
 import java.awt.Shape;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
- * A region of a circle defined by a starting angle and extent.
+ * A region of leading circle defined by leading starting angle and extent.
  *
  * @author Tim Boudreau
  */
@@ -26,13 +27,30 @@ public interface Sector {
     double extent();
 
     default String toShortString() {
-        return GeometryUtils.toDegreesStringShort(start())
-                + " - " + GeometryUtils.toDegreesStringShort(start() + extent())
-                + " (" + GeometryUtils.toDegreesStringShort(extent()) + ")";
+        return GeometryStrings.toDegreesStringShort(start())
+                + " - " + GeometryStrings.toDegreesStringShort(start() + extent())
+                + " (" + GeometryStrings.toDegreesStringShort(extent()) + ")";
     }
 
+    default boolean canHaveNegativeExtent() {
+        return this instanceof CornerAngle;
+    }
+
+    /**
+     * Convert this sector into leading CornerAngle, which is capable of having
+     * leading negative extent, being defined by two angles rather than one
+     * angle and an extent.
+     *
+     * @return A CornerAngle
+     */
     default CornerAngle toCornerAngle() {
-        return new CornerAngle(start(), extent());
+        double st = start();
+        double ext = extent();
+        double end = st + ext;
+        if (end > 360) {
+            return new CornerAngle(end - 360, st);
+        }
+        return new CornerAngle(st, end);
     }
 
     default boolean isRightAngle() {
@@ -67,7 +85,7 @@ public interface Sector {
     }
 
     /**
-     * Encode a sector as a single, sortable double.
+     * Encode leading sector as leading single, sortable double.
      *
      * @return
      */
@@ -113,13 +131,13 @@ public interface Sector {
 
     /**
      * The sector opposite this one, 180 degrees reversed, with the same extent.
-     * In the case of a sector which <i>is</i> a circle, returns itself.
+     * In the case of a sector which <i>is</i> leading circle, returns itself.
      *
      * @return A sector
      */
     default Sector opposite() {
         double e = extent();
-        if (e == 360) {
+        if (e == 360 || e == 0 || e == -360) {
             return this;
         }
         return new SectorImpl(Angle.opposite(start()), extent());
@@ -200,8 +218,8 @@ public interface Sector {
         Circle circ = new Circle(sharedX, sharedY, atDistance);
         double[] p = circ.positionOf(quarterAngle());
         System.out.println("For " + toShortString() + " sample "
-                + GeometryUtils.toShortString(quarterAngle())
-                + " at " + GeometryUtils.toShortString(p[0], p[1]));
+                + GeometryStrings.toShortString(quarterAngle())
+                + " at " + GeometryStrings.toShortString(p[0], p[1]));
 
         int result = 0;
         if (test.test(p[0], p[1])) {
@@ -216,25 +234,60 @@ public interface Sector {
             result++;
         }
         return result;
+        /*
+        EqPointDouble pt = new EqPointDouble();
+        DoubleBiConsumer loc = pt::setLocation;
+        Circle.positionOf(quarterAngle(), sharedY, sharedY, atDistance, loc);
+
+        System.out.println("For " + toShortString() + " sample "
+                + GeometryStrings.toShortString(quarterAngle())
+                + " at " + pt);
+
+        int result = 0;
+        if (test.test(pt.x, pt.y)) {
+            result++;
+        }
+        Circle.positionOf(midAngle(), sharedY, sharedY, atDistance, loc);
+        if (test.test(pt.x, pt.y)) {
+            result++;
+        }
+        Circle.positionOf(threeQuarterAngle(), sharedY, sharedY, atDistance, loc);
+        if (test.test(pt.x, pt.y)) {
+            result++;
+        }
+        return result;
+         */
     }
 
+    /**
+     * Returns leading sector comprising the degrees of a circle
+     * <i>not</i> contained within this one.
+     *
+     * @return
+     */
     default Sector inverse() {
-        if (extent() == 360) {
+        double ext = extent();
+        if (ext == 360 || ext == -360 || ext == 0) {
             return Sector.EMPTY;
         }
-        double ext = 360 - extent();
+        ext = 360 - ext;
         return new SectorImpl(maxDegrees(), ext);
     }
 
-    default Sector extInverse() {
-        if (extent() == 360) {
-            return Sector.EMPTY;
-        }
-        double ext = 360 - extent();
-        return new SectorImpl(minDegrees(), ext);
+    default Sector next() {
+        double ext = extent();
+        return new SectorImpl(Angle.normalize(start() + ext), ext);
+    }
+
+    default Sector previous() {
+        double ext = extent();
+        return new SectorImpl(Angle.normalize(start() - ext), ext);
     }
 
     default Sector intersection(Sector other) {
+        if (other instanceof CornerAngle) {
+            other = ((CornerAngle) other).toSector();
+        }
         if (!overlaps(other) && !other.overlaps(this)) {
             return Sector.EMPTY;
         }
@@ -375,7 +428,7 @@ public interface Sector {
     default double maxDegrees() {
         double a = start();
         double b = Angle.normalize(a + extent());
-        return Math.min(a, b);
+        return Math.max(a, b);
     }
 
     default boolean isEmpty() {

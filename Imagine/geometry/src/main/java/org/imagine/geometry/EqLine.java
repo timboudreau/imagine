@@ -28,6 +28,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.text.DecimalFormat;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
@@ -108,6 +109,14 @@ public final class EqLine extends Line2D.Double implements Intersectable {
         EqPointDouble mid = midPoint();
         Circle circ = new Circle(mid.x, mid.y, length() / 2D);
         return circ.line(angle);
+    }
+
+    public EqLine setAngleAndLength(double angle, double length) {
+        Circle.positionOf(angle, x1, y1, length, (x, y) -> {
+            x2 = x;
+            y2 = y;
+        });
+        return this;
     }
 
     public double distanceIn(Axis axis) {
@@ -557,7 +566,7 @@ public final class EqLine extends Line2D.Double implements Intersectable {
 
     @Override
     public String toString() {
-        return GeometryUtils.lineToString(x1, y1, x2, y2);
+        return GeometryStrings.lineToString(x1, y1, x2, y2);
     }
 
     public boolean equalsNormalized(Line2D other) {

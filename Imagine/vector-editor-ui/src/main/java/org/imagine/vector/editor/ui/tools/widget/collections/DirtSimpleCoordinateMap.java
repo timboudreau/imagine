@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
@@ -40,7 +41,7 @@ public class DirtSimpleCoordinateMap<T> implements CoordinateMap<T> {
         StringBuilder sb = new StringBuilder("DirtSimpleCoordinateMap:");
         for (Map.Entry<Rectangle, T> e : buckets.entrySet()) {
             sb.append("\n  ");
-            sb.append(GeometryUtils.toString(e.getKey()));
+            sb.append(GeometryStrings.toString(e.getKey()));
             sb.append(": ").append(e.getValue());
         }
         return sb.toString();

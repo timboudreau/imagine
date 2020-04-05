@@ -27,6 +27,7 @@ import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.geometry.EnhancedShape;
 import org.imagine.geometry.Polygon2D;
 import org.imagine.geometry.path.PathElementKind;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
@@ -277,7 +278,7 @@ public class PolygonWrapper implements Strokable, Fillable,
                 .append("Polygon(");
         double[] pts = poly.pointsArray();
         for (int i = 0; i < pts.length; i += 2) {
-            sb.append(GeometryUtils.toString(pts[i], pts[i + 1]));
+            sb.append(GeometryStrings.toString(pts[i], pts[i + 1]));
             if (i != pts.length - 2) {
                 sb.append(" / ");
             }

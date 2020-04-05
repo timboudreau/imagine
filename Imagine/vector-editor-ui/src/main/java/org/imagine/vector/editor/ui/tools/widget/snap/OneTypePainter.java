@@ -21,25 +21,60 @@ abstract class OneTypePainter {
 
     protected abstract void requestRepaint(RepaintHandle handle);
 
+    protected final void paintDecorations(Graphics2D g, Zoom zoom, ShapeElement selected) {
+        if (!active) {
+            return;
+        }
+        paint(g, zoom, selected);
+    }
+
     protected abstract void paint(Graphics2D g, Zoom zoom, ShapeElement selected);
 
+    private boolean active = false;
+
+    void activate() {
+        active = true;
+    }
+
+    protected boolean active() {
+        return active;
+    }
+
+    protected void resign() {
+        active = false;
+    }
+
     public boolean onSnap(SnapPoint<ShapeSnapPointEntry> x, SnapPoint<ShapeSnapPointEntry> y, Zoom zoom, ShapeElement selection) {
+        active = x != null || y != null;
         if (x != null && y != null) {
             assert x.axis() == SnapAxis.X;
             assert y.axis() == SnapAxis.Y;
-            return snapBoth(x, y, zoom, selection);
+            active = true;
+            return doSnapBoth(x, y, zoom, selection);
         } else if (x != null) {
             assert x.axis() == SnapAxis.X;
-            return snapX(x, zoom, selection);
+            active = true;
+            return doSnapX(x, zoom, selection);
         } else if (y != null) {
             assert y.axis() == SnapAxis.Y;
-            return snapY(y, zoom, selection);
+            active = true;
+            return doSnapY(y, zoom, selection);
+        } else {
+            active = false;
         }
         return false;
     }
 
+    private boolean doSnapX(SnapPoint<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
+        return active = snapX(s, zoom, selection);
+    }
+
     protected boolean snapX(SnapPoint<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
         return snapOne(s, zoom, selection);
+    }
+
+    private boolean doSnapY(SnapPoint<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
+        return active = snapY(s, zoom, selection);
     }
 
     protected boolean snapY(SnapPoint<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
@@ -48,6 +83,10 @@ abstract class OneTypePainter {
 
     protected boolean snapOne(SnapPoint<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
         return false;
+    }
+
+    protected boolean doSnapBoth(SnapPoint<ShapeSnapPointEntry> x, SnapPoint<ShapeSnapPointEntry> y, Zoom zoom, ShapeElement selection) {
+        return active = snapBoth(x, y, zoom, selection);
     }
 
     protected boolean snapBoth(SnapPoint<ShapeSnapPointEntry> x, SnapPoint<ShapeSnapPointEntry> y, Zoom zoom, ShapeElement selection) {

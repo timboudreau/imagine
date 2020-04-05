@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.imagine.vector.editor.ui.tools.widget.snap;
 
 import java.awt.BasicStroke;
@@ -24,16 +19,17 @@ public class GridPainter extends OneTypePainter {
 
     private final Circle circ = new Circle();
     private final EqLine line = new EqLine();
+    private BasicStroke stroke;
 
     @Override
     protected void requestRepaint(RepaintHandle handle) {
-        handle.repaintArea(circ);
+        handle.repaintArea(circ, stroke);
     }
 
     @Override
     protected void paint(Graphics2D g, Zoom zoom, ShapeElement selected) {
         SnapUISettings settings = SnapUISettings.getInstance();
-        BasicStroke stroke = settings.decorationStroke(SnapKind.GRID, selected, zoom);
+        stroke = settings.decorationStroke(SnapKind.GRID, selected, zoom);
         g.setStroke(stroke);
         g.setPaint(settings.fillColor(SnapKind.GRID, selected));
         g.fill(circ);

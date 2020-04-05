@@ -17,6 +17,7 @@ import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.imagine.geometry.EqPointDouble;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 import org.imagine.utils.Holder;
 
@@ -223,8 +224,8 @@ public class CoordinateMapPartitioned<T> implements CoordinateMap<T> {
         int minAddr = addressOf(mix, miy);
         int maxAddr = addressOf(max, may);
         int result = 0;
-        int minValue = partitions.nearest(minAddr, Bias.FORWARD);
-        int maxValue = partitions.nearest(maxAddr, Bias.BACKWARD);
+        int minValue = partitions.nearestKey(minAddr, Bias.FORWARD);
+        int maxValue = partitions.nearestKey(maxAddr, Bias.BACKWARD);
 
         int minIndex = partitions.indexOf(minValue);
         int maxIndex = partitions.indexOf(maxValue);
@@ -256,7 +257,7 @@ public class CoordinateMapPartitioned<T> implements CoordinateMap<T> {
                 bestDist[0] = dist;
                 h.set(val);
             }
-//            debugLog(() -> "nearest " + val + " best? " + isBest + " dist " + dist);
+//            debugLog(() -> "nearestKey " + val + " best? " + isBest + " dist " + dist);
         });
 //        debugLog(() -> "Visited " + visited);
         return visited == 0 ? null : h.get();
@@ -345,7 +346,7 @@ public class CoordinateMapPartitioned<T> implements CoordinateMap<T> {
             sb.append(i).append(". ")
                     .append(partitions.key(i))
                     .append("k ")
-                    .append(GeometryUtils.toString(partitions.valueAt(i).bounds()))
+                    .append(GeometryStrings.toString(partitions.valueAt(i).bounds()))
                     .append(partitions.valueAt(i));
         }
         return sb.toString();

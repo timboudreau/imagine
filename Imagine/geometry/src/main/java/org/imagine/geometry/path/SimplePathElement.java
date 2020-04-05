@@ -1,6 +1,7 @@
 package org.imagine.geometry.path;
 
 import java.util.Arrays;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
@@ -39,7 +40,7 @@ final class SimplePathElement implements PathElement {
         for (int i = 0; i < count; i++) {
             int ix = i;
             point(i, (x, y) -> {
-                GeometryUtils.toString(sb, x, y);
+                GeometryStrings.toString(sb, x, y);
                 if (ix != count - 1) {
                     sb.append(",");
                 }

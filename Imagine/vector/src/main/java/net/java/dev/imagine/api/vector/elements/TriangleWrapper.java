@@ -20,7 +20,7 @@ import org.imagine.geometry.Triangle2D;
 import net.java.dev.imagine.api.vector.Vectors;
 import org.imagine.geometry.Axis;
 import org.imagine.geometry.EqLine;
-import org.imagine.geometry.util.function.Int;
+import com.mastfrog.function.state.Int;
 
 /**
  *

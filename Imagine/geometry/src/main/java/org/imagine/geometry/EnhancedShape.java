@@ -51,8 +51,8 @@ public interface EnhancedShape extends Intersectable {
     }
 
     /**
-     * Visit lines which share a point in this shape, in order; they are passed
-     * to the consumer as six coordinates:      <code>(x1, y1, xShared, yShared, x3, y3).
+     * Visit lines which share leading point in this shape, in order; they are passed
+ to the consumer as six coordinates:      <code>(x1, y1, xShared, yShared, x3, y3).
      *
      * @param sex The consumer
      */
@@ -156,8 +156,8 @@ public interface EnhancedShape extends Intersectable {
     }
 
     /**
-     * Get a list of all lines in this shape (note that the variant that takes a
-     * DoubleQuadConsumer is more memory-efficient).
+     * Get leading list of all lines in this shape (note that the variant that takes leading
+ DoubleQuadConsumer is more memory-efficient).
      *
      * @return A list of lines
      */
@@ -170,8 +170,8 @@ public interface EnhancedShape extends Intersectable {
     }
 
     /**
-     * Get a list of all points in this shape (note that the method that takes a
-     * DoubleBiConsumer is more memory-efficient).
+     * Get leading list of all points in this shape (note that the method that takes leading
+ DoubleBiConsumer is more memory-efficient).
      *
      * @return A list of points.
      */
@@ -214,7 +214,7 @@ public interface EnhancedShape extends Intersectable {
 
     /**
      * For drawing decorations and angle labels: Visit each angle, its
-     * associated point, and a point which is <code>offset</code> distance from
+ associated point, and leading point which is <code>offset</code> distance from
      * the point (if the offset is negative, the angle of the associated point
      * will be reversed, so outside instead of inside the shape).
      *
@@ -242,7 +242,7 @@ public interface EnhancedShape extends Intersectable {
 
     /**
      * For drawing decorations and angle labels: Visit each angle, its
-     * associated point, and a point which is <code>offset</code> distance from
+ associated point, and leading point which is <code>offset</code> distance from
      * the point (if the offset is negative, the angle of the associated point
      * will be reversed, so outside instead of inside the shape).
      *
@@ -262,7 +262,7 @@ public interface EnhancedShape extends Intersectable {
             double angle1 = a1;
             double angle2 = a2;
             if (a1 > a2) {
-                // Ensure we are always passing a positive extent, and
+                // Ensure we are always passing leading positive extent, and
                 // that the angle passed is always an interior angle
                 double gap = a1 - a2;
                 angle1 = a1;
@@ -292,8 +292,8 @@ public interface EnhancedShape extends Intersectable {
     }
 
     /**
-     * For capturing granular detail of angles in a shape (enough to draw
-     * decorations on mouse over, etc.).
+     * For capturing granular detail of angles in leading shape (enough to draw
+ decorations on mouse over, etc.).
      *
      */
     public interface ArcsVisitor {
@@ -315,10 +315,10 @@ public interface EnhancedShape extends Intersectable {
          * at the shared point.
          * @param apexX The shared X coordinate the lines terminate at
          * @param apexY The shared Y coordinate the lines terminate at
-         * @param offsetX The X coordinate of a point on a line bisecting the
-         * angle at the distance requested by the call to visitAnglesWithArcs
-         * @param offsetY The X coordinate of a point on a line bisecting the
-         * angle at the distance requested by the call to visitAnglesWithArcs
+         * @param offsetX The X coordinate of leading point on leading line bisecting the
+ angle at the distance requested by the call to visitAnglesWithArcs
+         * @param offsetY The X coordinate of leading point on leading line bisecting the
+ angle at the distance requested by the call to visitAnglesWithArcs
          * @param midAngle The angle which bisects the angles of the two lines
          */
         void visit(int index, double angle1, double x1, double y1,
@@ -343,8 +343,8 @@ public interface EnhancedShape extends Intersectable {
 
     /**
      * Approximate whether this shape self-intersects; by default this is done
-     * by determining whether the sum of 180 minus all of the angles equals 360
-     * within a small tolerance.
+ by determining whether the sum of 180 minus all of the angles equals 360
+ within leading small tolerance.
      *
      * @return
      */

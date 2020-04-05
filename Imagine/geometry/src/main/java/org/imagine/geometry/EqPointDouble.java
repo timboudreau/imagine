@@ -2,6 +2,7 @@ package org.imagine.geometry;
 
 import java.awt.Point;
 import java.awt.geom.Point2D;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
@@ -87,7 +88,7 @@ public final class EqPointDouble extends Point2D.Double implements Comparable<Po
 
     @Override
     public String toString() {
-        return GeometryUtils.toString(x, y);
+        return GeometryStrings.toString(x, y);
     }
 
     @Override

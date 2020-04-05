@@ -8,6 +8,7 @@ package org.imagine.geometry;
 import com.mastfrog.function.DoubleQuadConsumer;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
@@ -25,6 +26,36 @@ final class LineVectorImpl implements LineVector {
         this.sy = sy;
         this.bx = bx;
         this.by = by;
+    }
+
+    @Override
+    public LineVector withAlternatePoints(double newAx, double newAy, double newBx, double newBy) {
+        CornerAngle ang = corner();
+        double a = ang.trailingAngle();
+        double l1 = firstLineLength();
+        EqLine lnA = new EqLine(newAx, newAy, 0, 0);
+        lnA.setAngleAndLength(a, l1);
+
+        double b = ang.leadingAngle();
+        double l2 = secondLineLength();
+        EqLine lnB = new EqLine(newBx, newBy, 0, 0);
+        lnB.setAngleAndLength(b, l2);
+
+        EqPointDouble apex = lnA.intersection(lnB);
+        return new LineVectorImpl(newAx, newAy, apex.x, apex.y, newBx, newBy);
+    }
+
+    @Override
+    public LineVector inverse() {
+        return new LineVectorImpl(bx, by, sx, sy, ax, ay);
+    }
+
+    @Override
+    public LineVector toLineVector(double atX, double atY) {
+        if (atX == apexX() && atY == apexY()) {
+            return this;
+        }
+        return LineVector.super.toLineVector(atX, atY);
     }
 
     public int intersectionCount(Intersectable other, boolean includeClose) {
@@ -49,12 +80,12 @@ final class LineVectorImpl implements LineVector {
 
     @Override
     public CornerAngle corner() {
-        return new CornerAngle(secondLineAngle(), firstLineAngle());
+        return new CornerAngle(ax, ay, sx, sy, bx, by);
     }
 
     @Override
     public CornerAngle inverseCorner() {
-        return new CornerAngle(firstLineAngle(), secondLineAngle());
+        return new CornerAngle(bx, by, sx, sy, ax, ay);
     }
 
     @Override
@@ -68,11 +99,11 @@ final class LineVectorImpl implements LineVector {
 
     @Override
     public String toString() {
-        return "<--" + GeometryUtils.toShortString(ax, bx)
-                + " -> " + GeometryUtils.toShortString(sx, sy)
-                + " <- " + GeometryUtils.toShortString(bx, by)
-                + " (" + GeometryUtils.toDegreesString(firstLineAngle())
-                + ":" + GeometryUtils.toDegreesString(secondLineAngle())
+        return "<--" + GeometryStrings.toShortString(ax, bx)
+                + " -> " + GeometryStrings.toShortString(sx, sy)
+                + " <- " + GeometryStrings.toShortString(bx, by)
+                + " (" + GeometryStrings.toDegreesString(firstLineAngle())
+                + ":" + GeometryStrings.toDegreesString(secondLineAngle())
                 + ")-->";
     }
 
@@ -141,12 +172,12 @@ final class LineVectorImpl implements LineVector {
     }
 
     @Override
-    public double sharedX() {
+    public double apexX() {
         return sx;
     }
 
     @Override
-    public double sharedY() {
+    public double apexY() {
         return sy;
     }
 

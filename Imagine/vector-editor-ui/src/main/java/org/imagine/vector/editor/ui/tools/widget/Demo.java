@@ -34,6 +34,7 @@ import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
 import net.java.dev.imagine.api.vector.elements.PathText;
 import net.java.dev.imagine.api.vector.elements.PolygonWrapper;
 import net.java.dev.imagine.api.vector.elements.StringWrapper;
+import net.java.dev.imagine.api.vector.elements.TriangleWrapper;
 import net.java.dev.imagine.api.vector.graphics.FontWrapper;
 import net.java.dev.imagine.ui.toolbar.GridEditor;
 import net.java.dev.imagine.ui.toolbar.SnapEditor;
@@ -45,6 +46,7 @@ import org.imagine.editor.api.snap.SnapKind;
 import org.imagine.editor.api.snap.SnapPointsSupplier;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.Polygon2D;
+import org.imagine.geometry.Rhombus;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.RepaintProxyShapes;
@@ -199,13 +201,16 @@ public class Demo {
         /*
         proxy.add(new CircleWrapper(30, 330, 22), Color.BLUE, Color.YELLOW,
                 strk, true, true);
-        proxy.add(new PathIteratorWrapper(new Rhombus(80, 80, 30, 40, 45)),
-                Color.GREEN, Color.GRAY, strk, true, true);
+
+         */
 
         proxy.add(new TriangleWrapper(140, 140, 169, 160, 180, 140), Color.ORANGE,
                 Color.BLUE, strk, true, true);
 
-         */
+
+        proxy.add(new PathIteratorWrapper(new Rhombus(80, 80, 30, 40, 45)),
+                Color.GREEN.darker(), Color.GRAY, strk, true, true);
+
         JLabel lbl = new JLabel("Status here");
         CtrllrImpl c = new CtrllrImpl(shapes, lbl, scene);
 

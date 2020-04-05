@@ -37,7 +37,7 @@ public final class ArrayPathIteratorDouble implements PathIterator {
 
     @Override
     public int getWindingRule() {
-        return windingRules.nearest(0, true);
+        return windingRules.nearestKey(0, true);
     }
 
     @Override

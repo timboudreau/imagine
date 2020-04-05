@@ -1,5 +1,6 @@
 package org.imagine.geometry;
 
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
@@ -28,11 +29,14 @@ final class SectorImpl implements Sector {
 
     @Override
     public String toString() {
-        return "Sector(" + extent + "\u00B0 from " + startingAngle
-                + "\u00B0)";
+        return GeometryStrings.toDegreesString(startingAngle)
+                + " / " + GeometryStrings.toDegreesString(Angle.normalize(startingAngle + extent))
+                + " (" + GeometryStrings.toDegreesString(extent) + ")";
     }
 
+    @Override
     public PieWedge toShape(double x, double y, double radius) {
+        System.out.println("CREATE SHAPE FOR " + start() + " / " + extent());
         return new PieWedge(x, y, radius, start(), extent());
     }
 

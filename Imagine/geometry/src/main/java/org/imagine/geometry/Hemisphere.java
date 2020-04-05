@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.imagine.geometry;
 
 import java.util.Collections;
@@ -12,13 +7,27 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * A semicirclular sector aligned on the 0-180 or 90-270 degree axis of a
+ * circle.
  *
  * @author Tim Boudreau
  */
 public enum Hemisphere implements Sector {
+    /**
+     * The hemisphere starting at 270\u00B0 and ending at 90\u00B0.
+     */
     NORTH(Quadrant.NORTHWEST, Quadrant.NORTHEAST),
+    /**
+     * The hemisphere starting at 0\u00B0 and ending at 180\u00B0.
+     */
     EAST(Quadrant.NORTHEAST, Quadrant.SOUTHEAST),
+    /**
+     * The hemisphere starting at 90\u00B0 and ending at 270\u00B0.
+     */
     SOUTH(Quadrant.SOUTHEAST, Quadrant.SOUTHWEST),
+    /**
+     * The hemisphere starting at 180\u00B0 and ending at 360\u00B0 / 0\u00B0.
+     */
     WEST(Quadrant.SOUTHWEST, Quadrant.NORTHWEST);
 
     private final Quadrant leadingQuadrant;
@@ -29,6 +38,21 @@ public enum Hemisphere implements Sector {
         this.trailingQuadrant = trailingQuadrant;
         assert leadingQuadrant != trailingQuadrant;
         assert leadingQuadrant.isAdjacentTo(trailingQuadrant);
+    }
+
+    public static Hemisphere startingWith(Quadrant quadrant) {
+        switch (quadrant) {
+            case NORTHEAST:
+                return EAST;
+            case NORTHWEST:
+                return NORTH;
+            case SOUTHEAST:
+                return SOUTH;
+            case SOUTHWEST:
+                return WEST;
+            default:
+                throw new AssertionError(quadrant);
+        }
     }
 
     public Quadrant[] quadrants() {

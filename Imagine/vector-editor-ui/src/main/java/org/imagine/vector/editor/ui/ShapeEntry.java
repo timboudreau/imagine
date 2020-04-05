@@ -36,7 +36,13 @@ import org.imagine.awt.io.PaintKeyIO;
 import org.imagine.awt.key.PaintKey;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.snap.SnapPointsBuilder;
+import org.imagine.geometry.Axis;
 import org.imagine.geometry.CornerAngle;
+import org.imagine.geometry.EqLine;
+import org.imagine.geometry.LineVector;
+import org.imagine.geometry.Polygon2D;
+import org.imagine.geometry.RotationDirection;
+import org.imagine.geometry.analysis.VectorVisitor;
 import org.imagine.io.KeyReader;
 import org.imagine.io.KeyWriter;
 import org.imagine.utils.Holder;
@@ -535,11 +541,41 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
             });
         } else */ if (!vect.is(Textual.class)) {
             Shape sh = this.shape();
-            CornerAngle.forShape(sh, (ptIx, ca, x, y, isects) -> {
-                ca = ca.normalized();
-                System.out.println("corner " + getName() + " pt " + ptIx + " " + ca);
-                bldr.addCorner(ca.encodeNormalized(), new ShapeSnapPointEntry(this, ptIx, ptIx - 1, ca.encodeSigned()));
+            VectorVisitor.analyze(sh, (int pointIndex, LineVector vect, 
+                    int subpathIndex, RotationDirection subpathRotationDirection,
+                    Polygon2D approximate, int prevPointIndex, int nextPointIndex) -> {
+                CornerAngle corner = vect.corner();
+                if (!corner.isExtreme()) {
+                    double enc = corner.encode();
+                    bldr.addCorner(enc, new ShapeSnapPointEntry(ShapeEntry.this,
+                            pointIndex, nextPointIndex, enc));
+                    bldr.addAngle(vect.firstLineAngle(), 
+                            new ShapeSnapPointEntry(ShapeEntry.this,
+                                    pointIndex, nextPointIndex, corner.leadingAngle()));
+                    bldr.addAngle(vect.secondLineAngle(), 
+                            new ShapeSnapPointEntry(ShapeEntry.this,
+                                    prevPointIndex, pointIndex, corner.leadingAngle()));
+
+                    EqLine line = vect.firstLine();
+                    Axis ax = line.nearestAxis();
+                    bldr.addDistance(SnapAxis.forVertical(ax.isVertical()),
+                            line.distanceIn(ax),
+                            new ShapeSnapPointEntry(this, prevPointIndex, pointIndex,
+                                    line.distanceIn(ax)));
+
+                    line = vect.secondLine();
+                    ax = line.nearestAxis();
+                    bldr.addDistance(SnapAxis.forVertical(ax.isVertical()),
+                            line.distanceIn(ax),
+                            new ShapeSnapPointEntry(this, pointIndex, nextPointIndex,
+                                    line.distanceIn(ax)));
+                }
             });
+//            CornerAngle.forShape(sh, (ptIx, ca, x, y, isects) -> {
+//                ca = ca.normalized();
+//                System.out.println("corner " + getName() + " pt " + ptIx + " " + ca);
+//                bldr.addCorner(ca.encodeNormalized(), new ShapeSnapPointEntry(this, ptIx, ptIx - 1, ca.encodeSigned()));
+//            });
         }
 //        if (vect.is(EnhancedShape.class)) {
 //            for (CornerAngle ca : vect.as(EnhancedShape.class).cornerAngles()) {
@@ -547,14 +583,14 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
 //                bldr.addCorner(norm, new ShapeSnapPointEntry())
 //            }
 //        }
-        vect.collectSizings((double size, boolean vertical, int cpIx1, int cpIx2) -> {
-            bldr.addDistance(SnapAxis.forVertical(vertical), size,
-                    new ShapeSnapPointEntry(this, cpIx1, cpIx2, size));
-        });
-        vect.collectAngles((double angle, int cpIx1, int cpIx2) -> {
-            System.out.println("ANGLE " + getName() + " " + angle + " " + cpIx1 + " to " + cpIx2);
-            bldr.addAngle(angle, new ShapeSnapPointEntry(this, cpIx1, cpIx2, angle));
-        });
+//        vect.collectSizings((double size, boolean vertical, int cpIx1, int cpIx2) -> {
+//            bldr.addDistance(SnapAxis.forVertical(vertical), size,
+//                    new ShapeSnapPointEntry(this, cpIx1, cpIx2, size));
+//        });
+//        vect.collectAngles((double angle, int cpIx1, int cpIx2) -> {
+//            System.out.println("ANGLE " + getName() + " " + angle + " " + cpIx1 + " to " + cpIx2);
+//            bldr.addAngle(angle, new ShapeSnapPointEntry(this, cpIx1, cpIx2, angle));
+//        });
     }
 
     @Override

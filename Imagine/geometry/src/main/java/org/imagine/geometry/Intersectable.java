@@ -7,9 +7,12 @@ package org.imagine.geometry;
 
 import com.mastfrog.function.DoubleQuadConsumer;
 import org.imagine.geometry.util.GeometryUtils;
-import org.imagine.geometry.util.function.Int;
+import com.mastfrog.function.state.Int;
 
 /**
+ * Interface with default implementations for shapes which can count how many
+ * times they are intersected by other shapes; used for computing interiority
+ * with some shapes.
  *
  * @author Tim Boudreau
  */

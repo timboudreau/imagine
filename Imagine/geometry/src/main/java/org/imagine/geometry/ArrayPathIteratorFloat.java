@@ -67,7 +67,7 @@ public final class ArrayPathIteratorFloat implements PathIterator {
 
     @Override
     public int getWindingRule() {
-        return rules.nearest(typeCursor, Bias.BACKWARD);
+        return rules.nearestKey(typeCursor, Bias.BACKWARD);
     }
 
     @Override

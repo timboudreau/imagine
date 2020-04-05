@@ -10,6 +10,7 @@ import static java.lang.Math.sin;
 import static java.lang.Math.toDegrees;
 import static java.lang.Math.toRadians;
 import java.util.function.Consumer;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
@@ -95,10 +96,44 @@ public final strictfp class Angle implements Comparable<Angle> {
         return new Angle(normalize(degrees));
     }
 
+    /**
+     * Create an angle equivalent to this one, but with an angle less than 180.
+     *
+     * @return this or an equivalent angle
+     */
+    public Angle toCanonicalAngle() {
+        if (degrees >= 180) {
+            return ofDegrees(degrees - 180);
+        }
+        return this;
+    }
+
+    /**
+     * Normalize an angle in degrees, then subtract 180 if it is greater than
+     * 180.
+     *
+     * @param angle An angle
+     * @return An angle between 0 and 180
+     */
+    public static double canonicalize(double angle) {
+        angle = normalize(angle);
+        if (angle > 180) {
+            angle -= 180;
+        }
+        return angle;
+    }
+
     public static Angle zero() {
         return ZERO;
     }
 
+    /**
+     * Convert an angle to a fraction between 0 and 1 which can be multiplied by
+     * 360.
+     *
+     * @param degrees An angle in degrees
+     * @return A fraction
+     */
     public static double asFraction(double degrees) {
         return normalize(degrees) / 360;
     }
@@ -116,21 +151,34 @@ public final strictfp class Angle implements Comparable<Angle> {
                 : qb.trailingAxis() == axis;
     }
 
+    /**
+     * Normalize an angle into the range 0 to 360.
+     *
+     * @param degrees An angle in degrees
+     * @return The same angle, normalized
+     */
     public static double normalize(double degrees) {
-        if (degrees == 0 || degrees == -0.0) {
+        if (degrees == 0 || degrees == -0.0 || degrees == 360 || degrees == -360) {
             return 0;
         }
-        if (degrees == 360 || degrees == -360) {
-            degrees = 0;
-        }
-        if (degrees < -360) {
-            degrees = 360 - (degrees % -360);
+        if (degrees >= 0 && degrees < 360) {
+            return degrees;
         }
         if (degrees < 0) {
-            degrees = 360 + degrees;
-        }
-        if (degrees > 360) {
-            degrees = degrees % 360;
+            long integralPortion = (long) Math.ceil(degrees);
+            double fractionalPortion = integralPortion - degrees;
+            integralPortion %= 360;
+            if (integralPortion == 0) {
+                return fractionalPortion == 0 ? 0 : 360 - fractionalPortion;
+            } else if (fractionalPortion == 0) {
+                return integralPortion == 0 ? 0 : 360 + integralPortion;
+            }
+            degrees = 360D + (integralPortion - fractionalPortion);
+        } else {
+            long integralPortion = (long) Math.floor(degrees);
+            double frationalPortion = degrees - integralPortion;
+            integralPortion %= 360;
+            degrees = integralPortion + frationalPortion;
         }
         return degrees;
     }
@@ -392,7 +440,7 @@ public final strictfp class Angle implements Comparable<Angle> {
 
     @Override
     public String toString() {
-        return GeometryUtils.toString(degrees) + "\u00B0";
+        return GeometryStrings.toString(degrees) + "\u00B0";
     }
 
     @Override
