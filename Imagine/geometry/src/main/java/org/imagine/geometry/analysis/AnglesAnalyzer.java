@@ -308,7 +308,7 @@ final class AnglesAnalyzer {
         public int totalIntersections() {
             Int result = Int.create();
             vectors.forEachIndexed((ix, key, vect) -> {
-                EqLine first = vect.firstLine();
+                EqLine first = vect.trailingLine();
                 intersectors.forEachIndexed((iix, ikey, ivect) -> {
                     if (key == ikey) {
                         return;
@@ -346,14 +346,14 @@ final class AnglesAnalyzer {
                 return 0;
             }
             Int result = Int.create();
-            EqLine fl = lv.firstLine();
+            EqLine fl = lv.trailingLine();
             intersectors.forEachIndexed((ix, key, isector) -> {
                 if (key == pointIndex) {
                     return;
                 }
                 if (isector instanceof LineVector) {
                     LineVector o = (LineVector) isector;
-                    if (fl.intersectsLine(o.secondLine())) {
+                    if (fl.intersectsLine(o.leadingLine())) {
                         result.increment();
                     }
                 } else {

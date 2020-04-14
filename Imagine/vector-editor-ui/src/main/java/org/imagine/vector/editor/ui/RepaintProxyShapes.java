@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.imagine.vector.editor.ui;
 
 import org.imagine.vector.editor.ui.undo.SingleShapeEdit;
@@ -38,6 +33,7 @@ import org.imagine.utils.Holder;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
+import org.imagine.vector.editor.ui.spi.ShapeInfo;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
 import org.imagine.vector.editor.ui.tools.CSGOperation;
 import org.imagine.vector.editor.ui.undo.ContentsEdit;
@@ -389,6 +385,11 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
 
         public WrapperShapeEntry(ShapeEntry entry) {
             this.entry = entry;
+        }
+
+        @Override
+        public ShapeInfo shapeInfo() {
+            return entry.shapeInfo();
         }
 
         @Override

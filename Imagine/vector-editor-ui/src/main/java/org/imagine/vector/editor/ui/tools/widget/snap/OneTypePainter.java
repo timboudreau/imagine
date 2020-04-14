@@ -8,7 +8,7 @@ package org.imagine.vector.editor.ui.tools.widget.snap;
 import java.awt.Graphics2D;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.SnapAxis;
-import org.imagine.editor.api.snap.SnapPoint;
+import org.imagine.editor.api.snap.SnapCoordinate;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.ShapeSnapPointEntry;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
@@ -44,7 +44,7 @@ abstract class OneTypePainter {
         active = false;
     }
 
-    public boolean onSnap(SnapPoint<ShapeSnapPointEntry> x, SnapPoint<ShapeSnapPointEntry> y, Zoom zoom, ShapeElement selection) {
+    public boolean onSnap(SnapCoordinate<ShapeSnapPointEntry> x, SnapCoordinate<ShapeSnapPointEntry> y, Zoom zoom, ShapeElement selection) {
         active = x != null || y != null;
         if (x != null && y != null) {
             assert x.axis() == SnapAxis.X;
@@ -65,31 +65,31 @@ abstract class OneTypePainter {
         return false;
     }
 
-    private boolean doSnapX(SnapPoint<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
+    private boolean doSnapX(SnapCoordinate<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
         return active = snapX(s, zoom, selection);
     }
 
-    protected boolean snapX(SnapPoint<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
+    protected boolean snapX(SnapCoordinate<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
         return snapOne(s, zoom, selection);
     }
 
-    private boolean doSnapY(SnapPoint<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
+    private boolean doSnapY(SnapCoordinate<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
         return active = snapY(s, zoom, selection);
     }
 
-    protected boolean snapY(SnapPoint<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
+    protected boolean snapY(SnapCoordinate<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
         return snapOne(s, zoom, selection);
     }
 
-    protected boolean snapOne(SnapPoint<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
+    protected boolean snapOne(SnapCoordinate<ShapeSnapPointEntry> s, Zoom zoom, ShapeElement selection) {
         return false;
     }
 
-    protected boolean doSnapBoth(SnapPoint<ShapeSnapPointEntry> x, SnapPoint<ShapeSnapPointEntry> y, Zoom zoom, ShapeElement selection) {
+    private final boolean doSnapBoth(SnapCoordinate<ShapeSnapPointEntry> x, SnapCoordinate<ShapeSnapPointEntry> y, Zoom zoom, ShapeElement selection) {
         return active = snapBoth(x, y, zoom, selection);
     }
 
-    protected boolean snapBoth(SnapPoint<ShapeSnapPointEntry> x, SnapPoint<ShapeSnapPointEntry> y, Zoom zoom, ShapeElement selection) {
+    protected boolean snapBoth(SnapCoordinate<ShapeSnapPointEntry> x, SnapCoordinate<ShapeSnapPointEntry> y, Zoom zoom, ShapeElement selection) {
         return false;
     }
 }

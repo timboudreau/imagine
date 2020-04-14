@@ -125,4 +125,6 @@ public interface ShapeElement {
     Runnable restorableSnapshot();
 
     Runnable geometrySnapshot();
+
+    ShapeInfo shapeInfo();
 }

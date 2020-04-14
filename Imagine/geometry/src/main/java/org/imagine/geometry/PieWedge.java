@@ -32,6 +32,16 @@ import static org.imagine.geometry.util.GeometryUtils.arraySizeForType;
  * for this, since it is not angle-oriented but bounds-oriented, and can be
  * irregular, so it is of little help if you are starting with an angle and
  * leading distance.
+ * <p>
+ * <b>Negative angles and extents:</b> Angles and extents may be negative; a
+ * negative angle is converted to its positive equivalent via Angle.normalize()
+ * (so an angle of -10 degrees is equivalent to 350 degrees). A negative extent
+ * indicates that the sweep of degrees covered is the inverted, starting at
+ * <code>angle + extent</code> (which will be less than <code>angle</code>) and
+ * extending through <code>angle</code>.
+ * </p><p>
+ * Values for extent and angle &gt;360 or &lt;-360 will be normalized.
+ * </p>
  *
  * @author Tim Boudreau
  */
@@ -52,17 +62,7 @@ public class PieWedge extends AbstractShape implements Sector {
 
     public PieWedge(double cx, double cy, double radius, double angle, double extent, boolean pie) {
         circ = new Circle(cx, cy, radius);
-        if (extent < 0) {
-//            angle = Angle.addAngles(angle, -extent);
-//            extent += 360;
-            CornerAngle ca = new CornerAngle(angle, angle + extent).inverse();
-            extent = ca.extent();
-            angle = ca.trailingAngle();
-        }
-        this.angle = angle;
-        this.extent = extent == 0 ? 0 : (extent % 360D);
-        System.out.println("ANGLE / EXT " + this.angle + " / " + this.extent
-                + " from " + extent);
+        setAngleAndExtent(angle, extent);
         this.pie = pie;
     }
 
@@ -109,14 +109,14 @@ public class PieWedge extends AbstractShape implements Sector {
 
     public PieWedge setAngleAndExtent(double angle, double ext) {
         if (ext < 0) {
-            this.extent = ext;
-            this.angle = angle;
-//            CornerAngle ca = new CornerAngle(angle, angle + extent).opposite();
-//            extent = ca.extent();
-//            angle = ca.trailingAngle();
+            while (ext < 0) { // XXX
+                ext += 360;
+            }
+            this.extent = Angle.normalize(ext);
+            this.angle = Angle.normalize(angle);
         } else {
             this.angle = Angle.normalize(angle);
-            this.extent = ext;
+            this.extent = Angle.normalize(ext);
         }
         return this;
     }
@@ -127,12 +127,12 @@ public class PieWedge extends AbstractShape implements Sector {
 
     public PieWedge setFrom(LineVector vect) {
         setCenter(vect.apexX(), vect.apexY());
-        setRadius(Math.max(vect.firstLineLength(), vect.secondLineLength()));
+        setRadius(Math.max(vect.trailingLineLength(), vect.leadingLineLength()));
         return setAngleAndExtent(vect.corner());
     }
 
     public PieWedge setExtent(double ext) {
-        if (ext < 0) {
+        while (ext < 0) {
             ext += 360;
         }
         this.extent = ext;

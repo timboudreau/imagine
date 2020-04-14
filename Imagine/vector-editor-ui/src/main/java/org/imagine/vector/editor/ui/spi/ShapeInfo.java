@@ -5,8 +5,10 @@
  */
 package org.imagine.vector.editor.ui.spi;
 
+import com.mastfrog.util.collections.DoubleMap;
 import com.mastfrog.util.collections.IntMap;
 import java.awt.Shape;
+import java.util.function.Consumer;
 import org.imagine.geometry.CornerAngle;
 import org.imagine.geometry.LineVector;
 import org.imagine.geometry.Polygon2D;
@@ -14,6 +16,8 @@ import org.imagine.geometry.RotationDirection;
 import org.imagine.geometry.analysis.VectorVisitor;
 
 /**
+ * Caches info derived from a shape about its interior angles and other
+ * expensive-to-compute information.
  *
  * @author Tim Boudreau
  */
@@ -27,6 +31,60 @@ public final class ShapeInfo {
 
     public int size() {
         return map.size();
+    }
+
+    public void forEachPoint(Consumer<PointInfo> c) {
+        map.forEachValue(c);
+    }
+
+    public boolean hasInfo(int pointIndex) {
+        return map.containsKey(pointIndex);
+    }
+
+    private DoubleMap<PointInfo> infoForCornerAngle;
+    private DoubleMap<PointInfo> infoForTrailingLineAngle;
+
+    public PointInfo forTrailingLineAngle(double ang) {
+        if (infoForTrailingLineAngle == null) {
+            infoForTrailingLineAngle = DoubleMap.create(map.size());
+            map.forEachValue(pi -> {
+                infoForTrailingLineAngle.put(pi.angle.trailingAngle(), pi);
+            });
+        }
+        DoubleMap.Entry<? extends PointInfo> e
+                = infoForTrailingLineAngle.nearestValueTo(
+                        ang, 0.00000000001D);
+        PointInfo result = e == null ? null : e.value();
+//        if (result == null) {
+//            System.out.println("No angle "
+//                    + GeometryStrings.toDegreesString(ang)
+//                    + " in " + infoForTrailingLineAngle.keySet());
+//        }
+        return result;
+    }
+
+    public PointInfo forCornerAngle(CornerAngle ang) {
+        return ShapeInfo.this.forCornerAngle(ang.encodeSigned());
+    }
+
+    public PointInfo forCornerAngle(double angle) {
+        if (infoForCornerAngle == null) {
+            infoForCornerAngle
+                    = DoubleMap.create(map.size());
+            map.forEachValue(pi -> {
+                infoForCornerAngle.put(pi.angle.encodeSigned(), pi);
+            });
+        }
+        DoubleMap.Entry<? extends PointInfo> e
+                = infoForCornerAngle.nearestValueTo(angle,
+                        0.00000000001D);
+        PointInfo result = e == null ? null : e.value();
+//        if (result == null) {
+//            System.out.println("No angle "
+//                    + GeometryStrings.toDegreesString(angle)
+//                    + " in " + infoForCornerAngle.keySet());
+//        }
+        return result;
     }
 
     public PointInfo forIndex(int ix) {
@@ -43,10 +101,13 @@ public final class ShapeInfo {
                 int subpathIndex, RotationDirection subpathRotationDirection,
                 Polygon2D approximate, int prevPointIndex, int nextPointIndex) -> {
             CornerAngle ang = vect.corner();
-            map.put(pointIndex, new PointInfo(pointIndex, vect, ang, subpathIndex, subpathRotationDirection, prevPointIndex, nextPointIndex));
+            map.put(pointIndex, new PointInfo(pointIndex,
+                    vect, ang, subpathIndex,
+                    subpathRotationDirection, prevPointIndex,
+                    nextPointIndex));
         });
         map.trim();
-        return null;
+        return new ShapeInfo(map);
     }
 
     public static final class PointInfo {

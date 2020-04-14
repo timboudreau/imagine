@@ -11,6 +11,7 @@ package net.java.dev.imagine.api.vector.design;
 import java.awt.geom.Point2D;
 import java.util.Set;
 import net.java.dev.imagine.api.vector.Adjustable;
+import org.imagine.geometry.EqPointDouble;
 
 /**
  * Provides a wrapper for one point in a shape, to allow for mutating it with
@@ -150,7 +151,7 @@ public interface ControlPoint extends Comparable<ControlPoint> {
     Set<ControlPointKind> availableControlPointKinds();
 
     default Point2D toPoint() {
-        return new Point2D.Double(getX(), getY());
+        return new EqPointDouble(getX(), getY());
     }
 
     default double distance(double x, double y) {

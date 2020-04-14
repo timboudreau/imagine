@@ -66,9 +66,6 @@ public class CornerAngleTest {
 
     @Test
     public void testProblematicSampling() {
-//        if (true) {
-//            return;
-//        }
         // Test that we can really sample points correctly
         // and that the points sampled are actually within the angle
         // in question
@@ -609,6 +606,84 @@ public class CornerAngleTest {
                                         .assertEquals(new CornerAngle(100, 10));
                             });
                 });
+    }
+
+    private void doTestOneVector(LineVector orig) {
+        CornerAngle ca = orig.corner();
+        LineVector lv = ca.toLineVector(orig.trailingPoint(),
+                orig.leadingPoint());
+        CornerAngle lc = lv.corner();
+        assertVectorsEqual(orig, lv, ca + " vs " + lc);
+        assertCornersEqual(ca, lc, lv.toString());
+    }
+
+    private void testOneVector(LineVector orig) {
+        doTestOneVector(orig);
+        doTestOneVector(orig.inverse());
+    }
+
+    private static void assertVectorsEqual(LineVector a, LineVector b, String msg) {
+        assertTrue(a.equals(b, 0.000000000001),
+                "Should be equal: " + a + " vs. " + b + ": "
+                + msg);
+    }
+
+    private static void assertCornersEqual(CornerAngle a, CornerAngle b, String msg) {
+        assertTrue(a.equals(b, 000001),
+                "Should be equal: " + a + " vs. " + b + ": "
+                + msg);
+    }
+
+    @Test
+    public void testEncode() {
+        for (int a1 = 0; a1 < 360; a1++) {
+            for (int a2 = 0; a2 < 360; a2++) {
+                CornerAngle ca = new CornerAngle(a1, a2);
+                double enc = ca.encodeSigned();
+                CornerAngle dec = CornerAngle.decodeCornerAngle(enc);
+                assertCornersEqual(ca, dec, "Should match");
+
+                ca = new CornerAngle(a2, a1);
+                enc = ca.encodeSigned();
+                dec = CornerAngle.decodeCornerAngle(enc);
+                assertCornersEqual(ca, dec, "Inverse should match");
+            }
+        }
+    }
+
+    @Test
+    public void testToLineVector() {
+
+        testOneVector(LineVector.of(-10, 5, 0, 0, 5, -3));
+
+        testOneVector(LineVector.of(-5, 5, 0, 0, 5, 5));
+
+        testOneVector(LineVector.of(0, -10, 0, 0, 0, 10));
+
+        testOneVector(LineVector.of(0, -10, 0, 0, 0, 10).inverse());
+
+        testOneVector(LineVector.of(-5, -5, 0, 0, 5, -5));
+
+        for (int x1 = 1; x1 < 11; x1++) {
+            for (int y1 = 1; y1 < 11; y1++) {
+                for (int x2 = -11; x2 < 0; x2++) {
+                    for (int y2 = -11; y2 < 0; y2++) {
+                        if (x2 == x1 && y2 == y1) {
+                            continue;
+                        }
+                        if ((x1 == 0 && y1 == 0) || (x2 == 0 && y2 == 0)) {
+                            continue;
+                        }
+                        LineVector lv = LineVector.of(x1, y1, 0, 0, x2, y2);
+                        double ext = Math.abs(lv.corner().extent());
+                        if (ext > 179 && ext < 181 || ext > -1 && ext < 1) {
+                            continue;
+                        }
+                        testOneVector(lv);
+                    }
+                }
+            }
+        }
     }
 
     static final class CAComp extends JComponent {

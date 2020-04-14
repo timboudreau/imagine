@@ -24,6 +24,12 @@ public class SnapUISettings {
     private double pointRadius = 11;
     private double originPointRadius = 7;
     private float wedgeStrokeSize = 2;
+    private double wedgeSize = 37;
+    private double captionLineOffset = 7;
+    private double lineOffset = 9;
+    private double sizingHeadLength = 6.5;
+    private double arrowHeadLength = 5;
+    private double captionMargin = 3;
 
     private SnapUISettings() {
         lastIndicatorZoom = 1;
@@ -31,6 +37,30 @@ public class SnapUISettings {
 
     public static SnapUISettings getInstance() {
         return INSTANCE;
+    }
+
+    public double captionLineOffset(Zoom zoom) {
+        return zoom.inverseScale(captionLineOffset);
+    }
+
+    public double wedgeSize(SnapKind kind, Zoom zoom) {
+        return zoom.inverseScale(wedgeSize);
+    }
+
+    public double lineOffset(Zoom zoom) {
+        return zoom.inverseScale(lineOffset);
+    }
+
+    public double sizingHeadLength(Zoom zoom) {
+        return zoom.inverseScale(sizingHeadLength);
+    }
+
+    public double arrowHeadLength(Zoom zoom) {
+        return zoom.inverseScale(arrowHeadLength);
+    }
+
+    public double captionMargin(Zoom zoom) {
+        return zoom.inverseScale(captionMargin);
     }
 
     public BasicStroke decorationStroke(SnapKind kind, ShapeElement selection, Zoom zoom) {
@@ -71,7 +101,7 @@ public class SnapUISettings {
     }
 
     public Paint drawColor(SnapKind kind, ShapeElement selection) {
-        return new Color(80, 80, 80, 140);
+        return new Color(60, 60, 80, 182);
     }
 
     public Paint captionColor(SnapKind kind) {
@@ -91,7 +121,15 @@ public class SnapUISettings {
     }
 
     public Paint indicatorLineColor(SnapKind kind, ShapeElement selection) {
-        return new Color(100, 100, 130, 80);
+        return new Color(100, 100, 130, 140);
+    }
+
+    public Paint drawShadowColor(SnapKind kind, ShapeElement selection) {
+        return new Color(255, 255, 255, 182);
+    }
+
+    public double drawShadowOffset(SnapKind kind, Zoom zoom) {
+        return zoom.inverseScale(1.5);
     }
 
     public double targetPointRadius(SnapKind kind, ShapeElement selection, Zoom zoom) {
@@ -117,9 +155,10 @@ public class SnapUISettings {
     public float pointStrokeSize(SnapKind kind) {
         switch (kind) {
             case CORNER:
+            case EXTENT:
                 return 2;
             default:
-                return 0.75F;
+                return 1.125F;
         }
     }
 }

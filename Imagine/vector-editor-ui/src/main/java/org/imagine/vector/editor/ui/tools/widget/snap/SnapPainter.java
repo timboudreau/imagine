@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.imagine.vector.editor.ui.tools.widget.snap;
 
 import java.awt.Graphics2D;
@@ -16,7 +11,7 @@ import net.java.dev.imagine.api.vector.Adjustable;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.OnSnap;
 import org.imagine.editor.api.snap.SnapKind;
-import org.imagine.editor.api.snap.SnapPoint;
+import org.imagine.editor.api.snap.SnapCoordinate;
 import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.ShapeEntry;
@@ -52,8 +47,10 @@ public class SnapPainter implements OnSnap<ShapeSnapPointEntry> {
         painters.put(SnapKind.GRID, new GridPainter());
         painters.put(SnapKind.ANGLE, new AnglePainter());
         painters.put(SnapKind.CORNER, new CornerPainter());
-        painters.put(SnapKind.MATCH, new PositionPainter(bounds));
+        painters.put(SnapKind.POSITION, new PositionPainter(bounds));
         painters.put(SnapKind.DISTANCE, new DistancePainter(bounds));
+        painters.put(SnapKind.EXTENT, new ExtentPainter());
+        painters.put(SnapKind.LENGTH, new LengthPainter());
     }
 
     private final LookupListener ll = new LookupListener() {
@@ -64,7 +61,7 @@ public class SnapPainter implements OnSnap<ShapeSnapPointEntry> {
         }
     };
 
-    private boolean isPointOnSelection(SnapPoint<ShapeSnapPointEntry> point) {
+    private boolean isPointOnSelection(SnapCoordinate<ShapeSnapPointEntry> point) {
         ShapeSnapPointEntry ssp = point.value();
         if (ssp == null) {
             return false;
@@ -73,7 +70,7 @@ public class SnapPainter implements OnSnap<ShapeSnapPointEntry> {
         return Objects.equals(selected, en);
     }
 
-    private OneTypePainter find(SnapPoint<ShapeSnapPointEntry> e) {
+    private OneTypePainter find(SnapCoordinate<ShapeSnapPointEntry> e) {
         assert e != null;
         return painters.get(e.kind());
     }
@@ -91,7 +88,7 @@ public class SnapPainter implements OnSnap<ShapeSnapPointEntry> {
         }
     }
 
-    private boolean isVirtual(SnapPoint<ShapeSnapPointEntry> p) {
+    private boolean isVirtual(SnapCoordinate<ShapeSnapPointEntry> p) {
         if (p.value() == null || p.value().entry == null) {
             return false;
         }
@@ -103,7 +100,18 @@ public class SnapPainter implements OnSnap<ShapeSnapPointEntry> {
     }
 
     @Override
-    public boolean onSnap(SnapPoint<ShapeSnapPointEntry> x, SnapPoint<ShapeSnapPointEntry> y) {
+    public boolean onSnap(SnapCoordinate<ShapeSnapPointEntry> x, SnapCoordinate<ShapeSnapPointEntry> y) {
+        // Queue up clearing the wrong rectangles
+        if (lastX != null) {
+            lastX.requestRepaint(handle);
+        }
+        if (lastY != null) {
+            lastY.requestRepaint(handle);
+        }
+        if (x == null && y == null) {
+            setBothPainters(null);
+            return false;
+        }
         if ((x != null && Math.abs(x.coordinate()) > 10000)
                 || (y != null && Math.abs(y.coordinate()) > 10000)) {
             // XXX some kind of wraparound to extreme values happening in
@@ -117,7 +125,7 @@ public class SnapPainter implements OnSnap<ShapeSnapPointEntry> {
             return false;
         }
         try {
-            setBothPainters(null);
+//            setBothPainters(null);
             if (x != null) {
                 if (isPointOnSelection(x)) {
                     if (!isVirtual(x)) {
@@ -133,7 +141,7 @@ public class SnapPainter implements OnSnap<ShapeSnapPointEntry> {
                 }
             }
             if (x == null && y == null) {
-//                setBothPainters(null);
+                setBothPainters(null);
                 return false;
             } else if (x != null && y != null) {
                 if (y.kind() == x.kind()) {
@@ -161,23 +169,16 @@ public class SnapPainter implements OnSnap<ShapeSnapPointEntry> {
         }
     }
 
-    private boolean snapX(SnapPoint<ShapeSnapPointEntry> x) {
+    private boolean snapX(SnapCoordinate<ShapeSnapPointEntry> x) {
         OneTypePainter p = find(x);
         if (p != null) {
-            setYPainter(null);
-            boolean result = p.onSnap(x, null, zoomSupplier.get(), selected);
-            if (result) {
-                setYPainter(p);
+            if (lastY != null) {
+                lastY.requestRepaint(handle);
             }
-            return result;
-        }
-        return false;
-    }
-
-    private boolean snapY(SnapPoint<ShapeSnapPointEntry> y) {
-        OneTypePainter p = find(y);
-        if (p != null) {
-            boolean result = p.onSnap(null, y, zoomSupplier.get(), selected);
+            if (lastX != null) {
+                lastX.requestRepaint(handle);
+            }
+            boolean result = p.onSnap(x, null, zoomSupplier.get(), selected);
             if (result) {
                 setXPainter(p);
             }
@@ -186,12 +187,39 @@ public class SnapPainter implements OnSnap<ShapeSnapPointEntry> {
         return false;
     }
 
-    private boolean snapBoth(SnapPoint<ShapeSnapPointEntry> x, SnapPoint<ShapeSnapPointEntry> y) {
+    private boolean snapY(SnapCoordinate<ShapeSnapPointEntry> y) {
+        OneTypePainter p = find(y);
+        if (p != null) {
+            if (lastY != null) {
+                lastY.requestRepaint(handle);
+            }
+            if (lastX != null) {
+                lastX.requestRepaint(handle);
+            }
+            boolean result = p.onSnap(null, y, zoomSupplier.get(), selected);
+            if (result) {
+                setYPainter(p);
+            }
+            return result;
+        }
+        return false;
+    }
+
+    private boolean snapBoth(SnapCoordinate<ShapeSnapPointEntry> x, SnapCoordinate<ShapeSnapPointEntry> y) {
         assert x != null;
         assert y != null;
         assert x.kind() == y.kind();
         OneTypePainter p = find(x);
         if (p != null) {
+            if (lastX != null) {
+                lastX.requestRepaint(handle);
+            }
+            if (lastY != null && lastX != lastY) {
+                lastY.requestRepaint(handle);
+            }
+            if (p != lastX && p != lastY) {
+                p.requestRepaint(handle);
+            }
             boolean result = p.onSnap(x, y, zoomSupplier.get(), selected);
             if (result) {
                 setBothPainters(p);
@@ -203,48 +231,51 @@ public class SnapPainter implements OnSnap<ShapeSnapPointEntry> {
 
     private void setXPainter(OneTypePainter p) {
         if (lastX != null) {
-            lastX.resign();
             lastX.requestRepaint(handle);
+            lastX.resign();
         }
         lastX = p;
         if (lastX != null) {
             lastX.activate();
+        }
+        if (p != null) {
+            setYPainter(null);
         }
     }
 
     private void setYPainter(OneTypePainter p) {
         if (lastY != null) {
-            lastY.resign();
             lastY.requestRepaint(handle);
+            lastY.resign();
         }
         lastY = p;
         if (lastY != null) {
             lastY.activate();
         }
+        if (p != null) {
+            setXPainter(null);
+        }
     }
 
     private void setBothPainters(OneTypePainter p) {
         if (lastX != null) {
-            lastX.resign();
             lastX.requestRepaint(handle);
+            lastX.resign();
             if (lastY != null && lastY != lastX) {
                 lastY.requestRepaint(handle);
                 lastY = null;
             }
             lastY = null;
-        } else if (lastY != null) {
-            lastY.resign();
+        }
+        if (lastY != null && lastY != lastX) {
             lastY.requestRepaint(handle);
+            lastY.resign();
         }
         lastX = p;
         lastY = p;
-        if (lastX != null) {
-            lastX.activate();
-            lastX.requestRepaint(handle);
-        }
-        if (lastY != null) {
-            lastX.activate();
-            lastY.requestRepaint(handle);
+        if (p != null) {
+            p.activate();
+            p.requestRepaint(handle);
         }
     }
 }

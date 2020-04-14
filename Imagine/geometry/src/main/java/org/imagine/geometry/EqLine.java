@@ -27,7 +27,6 @@ import com.mastfrog.function.DoubleQuadConsumer;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
-import java.text.DecimalFormat;
 import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
@@ -40,22 +39,28 @@ import org.imagine.geometry.util.GeometryUtils;
  */
 public final class EqLine extends Line2D.Double implements Intersectable {
 
-    private static final DecimalFormat FMT = new DecimalFormat(
-            "#####################0.0#####################");
-
     public EqLine() {
     }
 
-    public EqLine(double d, double d1, double d2, double d3) {
-        super(d, d1, d2, d3);
+    public EqLine(double x1, double y1, double x2, double y2) {
+        this.x1 = x1 == -0.0 ? 0 : x1;
+        this.y1 = y1 == -0.0 ? 0 : y1;
+        this.x2 = x2 == -0.0 ? 0 : x2;
+        this.y2 = y2 == -0.0 ? 0 : y2;
     }
 
     public EqLine(Line2D line) {
-        super(line.getX1(), line.getY1(), line.getX2(), line.getY2());
+        this(line.getX1(), line.getY1(), line.getX2(), line.getY2());
     }
 
     public EqLine(Point2D pd, Point2D pd1) {
-        super(pd, pd1);
+        this(pd.getX(), pd.getY(), pd1.getX(), pd1.getY());
+    }
+
+    public static EqLine forAngleAndLength(double x, double y, double angle, double length) {
+        EqLine ln = new EqLine(x, y, 1, 1);
+        ln.setAngleAndLength(angle, length);
+        return ln;
     }
 
     public static EqLine of(Line2D line) {
@@ -66,6 +71,16 @@ public final class EqLine extends Line2D.Double implements Intersectable {
             return (EqLine) line;
         }
         return new EqLine(line);
+    }
+
+    public void shiftPerpendicular(double by) {
+        if (by == 0) {
+            return;
+        }
+        double ang = angle();
+        double perp = by > 0 ? Angle.perpendicularClockwise(ang)
+                : Angle.perpendicularCounterclockwise(ang);
+        Circle.positionOf(perp, 0, 0, Math.abs(by), this::translate);
     }
 
     /**
@@ -96,6 +111,48 @@ public final class EqLine extends Line2D.Double implements Intersectable {
     }
 
     /**
+     * Create a copy of this line translated by the passed x and y offsets.
+     *
+     * @param deltaX The x axis offset
+     * @param deltaY The y axis offset
+     * @return A line
+     */
+    public EqLine translatedBy(double deltaX, double deltaY) {
+        return new EqLine(x1 + deltaX, y1 + deltaY,
+                x2 + deltaX, y2 + deltaY);
+    }
+
+    /**
+     * Returns a copy of this line with point one moved to the passed
+     * coordinates, and point two moved so it has the same relationship to point
+     * one as in this line.
+     *
+     * @param newX The new x coordinate
+     * @param newY The new y coordinate
+     * @return A new line
+     */
+    public EqLine withPoint1(double newX, double newY) {
+        double newX2 = x2 + (newX - x1);
+        double newY2 = y2 + (newY - y1);
+        return new EqLine(newX, newY, newX2, newY2);
+    }
+
+    /**
+     * Returns a copy of this line with point two moved to the passed
+     * coordinates, and point one moved so it has the same relationship to point
+     * two as in this line.
+     *
+     * @param newX The new x coordinate
+     * @param newY The new y coordinate
+     * @return A new line
+     */
+    public EqLine withPoint2(double newX, double newY) {
+        double newX1 = x1 + (newX - x2);
+        double newY1 = y1 + (newY - y2);
+        return new EqLine(newX1, newY1, newX, newY);
+    }
+
+    /**
      * Create a new line with the same length as this one, rotated by the passed
      * angle in degrees around its center point.
      *
@@ -104,7 +161,7 @@ public final class EqLine extends Line2D.Double implements Intersectable {
      */
     public EqLine rotatedBy(double angle) {
         if (angle == 0D || angle == 360D || angle % 360D == 0) {
-            return this;
+            return new EqLine(this);
         }
         EqPointDouble mid = midPoint();
         Circle circ = new Circle(mid.x, mid.y, length() / 2D);
@@ -131,16 +188,11 @@ public final class EqLine extends Line2D.Double implements Intersectable {
     }
 
     public Axis nearestAxis() {
-        Axis ax = axis();
-        if (ax != null) {
-            return ax;
-        }
-        double ang = angle();
-        Quadrant quad = Quadrant.forAngle(ang);
-        if (ang > quad.midAngle()) {
-            return quad.leadingAxis();
+        double ang = Angle.canonicalize(angle());
+        if (ang >= 45 && ang < 135) {
+            return Axis.VERTICAL;
         } else {
-            return quad.trailingAxis();
+            return Axis.HORIZONTAL;
         }
     }
 
@@ -322,7 +374,42 @@ public final class EqLine extends Line2D.Double implements Intersectable {
         if (isEmpty()) {
             return java.lang.Double.NaN;
         }
-        return angle(!isNormalized());
+        return Angle.canonicalize(angle());
+    }
+
+    public void setAngle(double angle) {
+        setAngle(angle, false);
+    }
+
+    public void setAngle(double angle, boolean fromSecondPoint) {
+        angle = Angle.normalize(angle);
+        double len = length();
+        if (len == 0) {
+            return;
+        }
+        if (fromSecondPoint) {
+            Circle.positionOf(angle, x2, y2, len, this::setPoint1);
+        } else {
+            Circle.positionOf(angle, x1, y1, len, this::setPoint2);
+        }
+    }
+
+    public void setPoint1(double x, double y) {
+        x1 = x == -0.0 ? 0 : x;
+        y1 = y == -0.0 ? 0 : y;
+    }
+
+    public void setPoint2(double x, double y) {
+        x2 = x == -0.0 ? 0 : x;
+        y2 = y == -0.0 ? 0 : y;
+    }
+
+    public void setPoint1(Point2D pt) {
+        setPoint1(pt.getX(), pt.getY());
+    }
+
+    public void setPoint2(Point2D pt) {
+        setPoint2(pt.getX(), pt.getY());
     }
 
     /**
@@ -335,6 +422,10 @@ public final class EqLine extends Line2D.Double implements Intersectable {
         return angle(false);
     }
 
+    public double canonicalAngle() {
+        return Angle.canonicalize(angle());
+    }
+
     /**
      * Get the angle of this line, in a coordinate space where 0° is 12:00.
      *
@@ -343,9 +434,9 @@ public final class EqLine extends Line2D.Double implements Intersectable {
      */
     public double angle(boolean fromSecondPoint) {
         if (fromSecondPoint) {
-            return Angle.ofLine(x1, y1, x2, y2);
-        } else {
             return Angle.ofLine(x2, y2, x1, y1);
+        } else {
+            return Angle.ofLine(x1, y1, x2, y2);
         }
     }
 
@@ -382,12 +473,12 @@ public final class EqLine extends Line2D.Double implements Intersectable {
 
     @Override
     public EqPointDouble getP2() {
-        return new EqPointDouble(x1, y1);
+        return new EqPointDouble(x2, y2);
     }
 
     @Override
     public EqPointDouble getP1() {
-        return new EqPointDouble(x2, y2);
+        return new EqPointDouble(x1, y1);
     }
 
     /**
@@ -484,6 +575,14 @@ public final class EqLine extends Line2D.Double implements Intersectable {
     public EqPointDouble intersectionPoint(Line2D other) {
         if (other == this || equalsNormalized(other) || isHomomorphic(other)) {
             return null;
+        } else if (other.getX1() == getX1() && other.getY1() == getY1()) {
+            return getP1();
+        } else if (other.getX1() == getX2() && other.getY1() == getY2()) {
+            return getP2();
+        } else if (other.getX2() == getX1() && other.getY2() == getY1()) {
+            return getP1();
+        } else if (other.getX2() == getX2() && other.getY2() == getY2()) {
+            return getP2();
         }
         return GeometryUtils.intersection(x1, y1, x2, y2, other.getX1(),
                 other.getY1(), other.getX2(), other.getY2());

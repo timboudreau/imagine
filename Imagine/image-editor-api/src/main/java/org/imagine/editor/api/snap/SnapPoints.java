@@ -5,8 +5,10 @@ import com.mastfrog.util.collections.DoubleMap;
 import com.mastfrog.util.collections.DoubleMapConsumer;
 import com.mastfrog.util.collections.IntMap;
 import java.awt.geom.Point2D;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
+import org.imagine.geometry.Angle;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.CornerAngle;
 import org.imagine.geometry.EqLine;
@@ -25,15 +27,19 @@ public final class SnapPoints<T> {
     private final OnSnap notify;
 
     private static final DoubleMap<Object> EMPTY_DBLS = DoubleMap.emptyDoubleMap();
-    public static final SnapPoints<Object> EMPTY = new SnapPoints(0, null, EMPTY_DBLS, EMPTY_DBLS, EMPTY_DBLS, EMPTY_DBLS, EMPTY_DBLS, EMPTY_DBLS);
+    public static final SnapPoints<Object> EMPTY = new SnapPoints(0, null,
+            EMPTY_DBLS, EMPTY_DBLS, EMPTY_DBLS, EMPTY_DBLS, EMPTY_DBLS,
+            EMPTY_DBLS, EMPTY_DBLS, EMPTY_DBLS);
     private final DoubleMap<T> xDists;
     private final DoubleMap<T> yDists;
     private final DoubleMap<T> angles;
     private final DoubleMap<T> corners;
+    private final DoubleMap<T> extents;
+    private final DoubleMap<T> lengths;
 
     SnapPoints(double radius, OnSnap<T> notify, DoubleMap<T> xs, DoubleMap<T> ys,
             DoubleMap<T> xDists, DoubleMap<T> yDists, DoubleMap<T> angles,
-            DoubleMap<T> corners) {
+            DoubleMap<T> corners, DoubleMap<T> extents, DoubleMap<T> lengths) {
         this.xs = xs;
         this.ys = ys;
         this.radius = radius;
@@ -42,6 +48,63 @@ public final class SnapPoints<T> {
         this.yDists = yDists;
         this.angles = angles;
         this.corners = corners;
+        this.extents = extents;
+        this.lengths = lengths;
+    }
+
+    double radius() {
+        return radius;
+    }
+
+    DoubleMap mapFor(SnapKind kind) {
+        switch (kind) {
+            case ANGLE:
+                return angles;
+            case CORNER:
+                return corners;
+            case EXTENT:
+                return extents;
+            case LENGTH :
+                return lengths;
+            case GRID:
+            case NONE:
+            case DISTANCE:
+            case POSITION:
+            default:
+                throw new UnsupportedOperationException(kind.name());
+        }
+    }
+
+    DoubleMap<T> lengths() {
+        return lengths;
+    }
+
+    DoubleMap<T> extents() {
+        return extents;
+    }
+
+    DoubleMap<T> xs() {
+        return xs;
+    }
+
+    DoubleMap<T> ys() {
+        return ys;
+    }
+
+    DoubleMap<T> xDists() {
+        return xDists;
+    }
+
+    DoubleMap<T> yDists() {
+        return yDists;
+    }
+
+    DoubleMap<T> angles() {
+        return angles;
+    }
+
+    DoubleMap<T> corners() {
+        return corners;
     }
 
     @SuppressWarnings("unchecked")
@@ -59,18 +122,18 @@ public final class SnapPoints<T> {
         DoubleMap.Entry<? extends T> nearY = ys.nearestValueTo(orig.getY(), radius);
         if (nearX == null && nearY != null) {
             if (notify != null) {
-                notify.onSnap(null, new SnapPoint<>(SnapAxis.Y, nearY.key(), SnapKind.MATCH, nearY.value()));
+                notify.onSnap(null, new SnapCoordinate<>(SnapAxis.Y, nearY.key(), SnapKind.POSITION, nearY.value()));
             }
             return new Point2D.Double(orig.getX(), nearY.key());
         } else if (nearY == null && nearX != null) {
             if (notify != null) {
-                notify.onSnap(new SnapPoint<>(SnapAxis.X, nearX.key(), SnapKind.MATCH, nearX.value()), null);
+                notify.onSnap(new SnapCoordinate<>(SnapAxis.X, nearX.key(), SnapKind.POSITION, nearX.value()), null);
             }
             return new Point2D.Double(nearX.key(), orig.getY());
         } else if (nearY != null && nearX != null) {
             if (notify != null) {
-                notify.onSnap(new SnapPoint<>(SnapAxis.X, nearX.key(), SnapKind.MATCH, nearX.value()),
-                        new SnapPoint<>(SnapAxis.Y, nearY.key(), SnapKind.MATCH, nearY.value()));
+                notify.onSnap(new SnapCoordinate<>(SnapAxis.X, nearX.key(), SnapKind.POSITION, nearX.value()),
+                        new SnapCoordinate<>(SnapAxis.Y, nearY.key(), SnapKind.POSITION, nearY.value()));
             }
             return new Point2D.Double(nearX.key(), nearY.key());
         } else {
@@ -107,11 +170,35 @@ public final class SnapPoints<T> {
         }
     }
 
-    public Point2D snapExclusive(Point2D preceding, Point2D orig, Point2D next, int grid, Set<SnapKind> allowedKinds) {
+    private final Snappers snappers = new Snappers();
+
+    public Point2D snapExclusive(Point2D preceding, Point2D orig, Point2D next,
+            int grid, Set<SnapKind> allowedKinds, Thresholds thresholds) {
+        EqPointDouble result = new EqPointDouble(orig);
+        boolean res = snappers.snap(preceding, orig, next, grid, allowedKinds, thresholds, this, (xpt, ypt) -> {
+            boolean snapResult = true;
+            if (notify != null) {
+                snapResult = notify.onSnap(xpt, ypt);
+            }
+            if (snapResult) {
+                if (xpt != null) {
+                    result.x = xpt.coordinate();
+                }
+                if (ypt != null) {
+                    result.y = ypt.coordinate();
+                }
+            }
+            return snapResult;
+        });
+        return res ? result : orig;
+    }
+
+    public Point2D xsnapExclusive(Point2D preceding, Point2D orig, Point2D next,
+            int grid, Set<SnapKind> allowedKinds, Thresholds thresholds) {
         if (allowedKinds.isEmpty()) {
             return orig;
         }
-        Point2D result = snapExclusive(orig, allowedKinds);
+        Point2D result = snapSeparateXYTypes(preceding, orig, next, allowedKinds, thresholds);
         if (result == orig && allowedKinds.contains(SnapKind.CORNER) && preceding != null && next != null) {
             LineVector vect = LineVector.of(preceding, orig, next);
             CornerAngle ca = vect.corner();
@@ -120,37 +207,47 @@ public final class SnapPoints<T> {
 
             // Corner angles trailing angles are scaled by 1 million,
             // the second angle is encoded as the fractional portion
-            double min = val - (10 * 10000000D);
-            double max = val + (10 * 10000000D);
+            double scanThreshold = thresholds.threshold(SnapKind.CORNER);
+//            double min = val - (10 * 10000000D);
+//            double max = val + (10 * 10000000D);
+            double min = val - (scanThreshold);
+            double max = val + (scanThreshold);
             IntMap<T> targets = IntMap.create(20);
             corners.valuesBetween(min, max, (int index, double value, T object) -> {
                 targets.put(index, object);
             });
-            double threshold = 10; // xxx scale to zoom
+            double threshold = thresholds.pointThreshold();
             Bool done = Bool.create();
             EqPointDouble nue = new EqPointDouble();
+            double degreesThreshold = thresholds.threshold(SnapKind.ANGLE);
             visitMiddleOut(targets, corners, (ix, key, t) -> {
                 if (done.get()) {
                     return;
                 }
                 CornerAngle ang = CornerAngle.decodeCornerAngle(key);
+                CornerAngle workingAngle = ang;
                 double dist = ang.distance(ca);
-                if (dist <= 15) {
+                if (dist > degreesThreshold) {
+                    workingAngle = ang.inverse();
+                    dist = workingAngle.distance(ca);
+                }
+                if (dist <= degreesThreshold) {
                     EqLine ln1 = new EqLine(preceding, orig);
                     EqLine ln2 = new EqLine(orig, next);
 
-                    ln1.setAngleAndLength(ang.trailingAngle(), ln1.length());
-                    ln2.setAngleAndLength(ang.leadingAngle(), ln2.length());
+                    double trailing = workingAngle.trailingAngle();
+                    double leading = workingAngle.leadingAngle();
+
+                    ln1.setAngle(trailing);
+                    ln2.setAngle(leading);
 
                     EqPointDouble newCenter = ln1.intersectionPoint(ln2);
                     if (newCenter.distance(newCenter) < threshold) {
                         if (notify != null) {
-                            SnapPoint<T> xpt = new SnapPoint<>(SnapAxis.X, newCenter.getX(),
+                            SnapCoordinate<T> xpt = new SnapCoordinate<>(SnapAxis.X, newCenter.getX(),
                                     SnapKind.CORNER, t);
-                            SnapPoint<T> ypt = new SnapPoint<>(SnapAxis.Y, newCenter.getY(),
+                            SnapCoordinate<T> ypt = new SnapCoordinate<>(SnapAxis.Y, newCenter.getY(),
                                     SnapKind.CORNER, t);
-
-                            System.out.println("snap to corner " + ang + " " + t);
 
                             if (notify.onSnap(xpt, ypt)) {
                                 nue.setLocation(newCenter);
@@ -168,96 +265,113 @@ public final class SnapPoints<T> {
             }
         }
 
-        if (result == orig && allowedKinds.contains(SnapKind.ANGLE) && preceding != null) {
+        if (result == orig && allowedKinds.contains(SnapKind.ANGLE) && preceding != null && !angles.isEmpty()) {
+            // Get a vector for the corner whose apex is being dragged
             LineVector vect = LineVector.of(preceding, orig, next).inverse();
             CornerAngle corn = vect.corner();
-            DoubleMap.Entry<? extends T> foundAng1 = angles.nearestValueTo(corn.trailingAngle());
-            DoubleMap.Entry<? extends T> foundAng2 = angles.nearestValueTo(corn.leadingAngle());
+            // We only pass angles 0-180 into the collector, since
+            // we're interested in the relative angle, notwithstanding
+            // whether the start or end point comes first
+            double trailingCanon = Angle.canonicalize(corn.trailingAngle());
+            double leadingCanon = Angle.canonicalize(corn.leadingAngle());
+            // Find stored angles within our threshold
 
-            double diff1 = Math.abs(foundAng1.key() - corn.trailingAngle());
-            double diff2 = Math.abs(foundAng2.key() - corn.leadingAngle());
+            // XXX complex shapes suck all the oxygen out of the room,
+            // so most angle matches when adjusting a point on them
+            // are against another point on them, and will be rejected
+            // Need to find the range of possible angles and loop until
+            // we find a usable one
+            // XXX need DoubleMap.nearestIndexTo
+            DoubleMap.Entry<? extends T> foundAng1 = angles.nearestValueTo(trailingCanon);
+            DoubleMap.Entry<? extends T> foundAng2 = angles.nearestValueTo(leadingCanon);
+
+            // Take whichever has the smallest diff to the target angle
+            double diff1 = Math.abs(foundAng1.key() - trailingCanon);
+            double diff2 = Math.abs(foundAng2.key() - leadingCanon);
+            double thresh = thresholds.threshold(SnapKind.ANGLE);
             DoubleMap.Entry<? extends T> best;
             double targetAngle;
             double diff;
             double dist;
             if (diff1 < diff2) {
-                targetAngle = corn.trailingAngle();
+                targetAngle = trailingCanon;
                 best = foundAng1;
                 diff = diff1;
-                dist = vect.firstLineLength();
+                dist = vect.trailingLineLength();
             } else {
-                targetAngle = corn.leadingAngle();
+                targetAngle = leadingCanon;
                 best = foundAng2;
                 diff = diff2;
-                dist = vect.secondLineLength();
+                dist = vect.leadingLineLength();
             }
-            if (diff < 15) {
-                EqPointDouble pt = new EqPointDouble();
-                Circle.positionOf(targetAngle, orig.getX(), orig.getY(), dist, pt::setLocation);
+            if (diff < thresh) {
+                // Collect 4 points - those of the angle in question relative
+                // to the previous and next points, and the inverse angle
+                // relative to those - we'll take whichever has the smallest
+                // diff
 
-                // XXX maybe also test the distance to this particular
-                // point, so we don't shove the dragged point WAY off-target?
-                if (notify != null) {
-                    SnapPoint<T> xpt = new SnapPoint<>(SnapAxis.X, pt.getX(),
-                            SnapKind.ANGLE, best.value());
-                    SnapPoint<T> ypt = new SnapPoint<>(SnapAxis.Y, pt.getY(),
-                            SnapKind.ANGLE, best.value());
-                    if (notify.onSnap(xpt, ypt)) {
-                        result = pt;
+                EqPointDouble rel1 = new EqPointDouble();
+                EqPointDouble rel2 = new EqPointDouble();
+                EqPointDouble rel3 = new EqPointDouble();
+                EqPointDouble rel4 = new EqPointDouble();
+                double opp = Angle.opposite(targetAngle);
+                Circle.positionOf(targetAngle, preceding.getX(), preceding.getY(),
+                        dist, rel1::setLocation);
+                Circle.positionOf(targetAngle, next.getX(), next.getY(),
+                        dist, rel2::setLocation);
+                Circle.positionOf(opp, preceding.getX(), preceding.getY(),
+                        dist, rel3::setLocation);
+                Circle.positionOf(opp, next.getX(), next.getY(),
+                        dist, rel4::setLocation);
+
+                EqPointDouble[] pts = new EqPointDouble[]{
+                    rel1, rel2, rel3, rel4
+                };
+                // Sort by nearest to the original point
+                Arrays.sort(pts, (a, b) -> {
+                    return Double.compare(a.distance(orig), b.distance(orig));
+                });
+                // Nearest point will be sorted
+                EqPointDouble target = pts[0];
+
+                double threshold = thresholds.pointThreshold();
+                double targetDistance = target.distance(orig);
+
+                // If it is close enough, snap
+                if (targetDistance <= threshold) {
+                    if (notify != null) {
+                        SnapCoordinate<T> xpt = new SnapCoordinate<>(SnapAxis.X, target.getX(),
+                                SnapKind.ANGLE, best.value());
+                        SnapCoordinate<T> ypt = new SnapCoordinate<>(SnapAxis.Y, target.getY(),
+                                SnapKind.ANGLE, best.value());
+                        if (notify.onSnap(xpt, ypt)) {
+                            result = target;
+                        }
+                    } else {
+                        result = target;
                     }
-                } else {
-                    result = pt;
                 }
             }
         }
-//        if (result == orig && next != null && allowedKinds.contains(SnapKind.ANGLE)) {
-//            Circle circ = new Circle(next.getX(), next.getY(),
-//                    Point2D.distance(next.getX(), next.getY(), orig.getX(),
-//                            orig.getY()));
-//            double angle = circ.angleOf(orig.getX(), orig.getY());
-//            DoubleMap.Entry<? extends T> foundAng = angles.nearestValueTo(angle, 5);
-//
-//            if (foundAng == null) {
-//                foundAng = angles.nearestValueTo(Angle.opposite(angle), 5);
-//            }
-//
-//            System.out.println("Try angle " + angle + " in " + angles.keySet() + " result " + foundAng);
-//
-//            if (foundAng != null) {
-//                Point2D pos = circ.getPosition(foundAng.key());
-//                if (Point2D.distance(pos.getX(), pos.getY(), orig.getX(), orig.getY()) <= radius) {
-//                    if (notify != null) {
-//                        SnapPoint<T> xpt = new SnapPoint<>(SnapAxis.X, result.getX(),
-//                                SnapKind.ANGLE, foundAng.value());
-//                        SnapPoint<T> ypt = new SnapPoint<>(SnapAxis.Y, result.getY(),
-//                                SnapKind.ANGLE, foundAng.value());
-//                        if (notify.onSnap(xpt, ypt)) {
-//                            result = pos;
-//                        }
-//                    } else {
-//                        result = pos;
-//                    }
-//                }
-//            }
-//        }
         if (grid > 2 && result == orig && allowedKinds.contains(SnapKind.GRID)) {
             double prevX = grid * ((int) (Math.round(orig.getX()) / grid));
             double prevY = grid * ((int) (Math.round(orig.getY()) / grid));
             double nextX = grid * ((int) (Math.round(orig.getX()) / grid) + 1);
             double nextY = grid * ((int) (Math.round(orig.getY()) / grid) + 1);
-            double targetRadius = Math.min(radius, grid / 4);
-            SnapPoint<T> xp = null;
-            SnapPoint<T> yp = null;
+            double targetRadius = Math.min(thresholds.threshold(SnapKind.GRID),
+                    grid / 4);
+            SnapCoordinate<T> xp = null;
+            SnapCoordinate<T> yp = null;
 
             if (Math.abs(orig.getX() - prevX) <= targetRadius) {
-                xp = new SnapPoint<>(SnapAxis.X, prevX, SnapKind.GRID, null);
+                xp = new SnapCoordinate<>(SnapAxis.X, prevX, SnapKind.GRID, null);
             } else if (Math.abs(orig.getX() - nextX) <= targetRadius) {
-                xp = new SnapPoint<>(SnapAxis.X, nextX, SnapKind.GRID, null);
+                xp = new SnapCoordinate<>(SnapAxis.X, nextX, SnapKind.GRID, null);
             }
             if (Math.abs(orig.getY() - prevY) <= targetRadius) {
-                yp = new SnapPoint<>(SnapAxis.Y, prevY, SnapKind.GRID, null);
+                yp = new SnapCoordinate<>(SnapAxis.Y, prevY, SnapKind.GRID, null);
             } else if (Math.abs(orig.getY() - nextY) <= targetRadius) {
-                yp = new SnapPoint<>(SnapAxis.Y, nextY, SnapKind.GRID, null);
+                yp = new SnapCoordinate<>(SnapAxis.Y, nextY, SnapKind.GRID, null);
             }
             Point2D candidate = null;
             if (xp != null && yp != null) {
@@ -278,143 +392,150 @@ public final class SnapPoints<T> {
         return result;
     }
 
-    public Point2D snapExclusive(Point2D orig, Set<SnapKind> allowedKinds) {
+    public Point2D snapSeparateXYTypes(Point2D preceding, Point2D orig, Point2D next, Set<SnapKind> allowedKinds, Thresholds thresholds) {
         DoubleMap.Entry<? extends T> nearX
-                = allowedKinds.contains(SnapKind.MATCH)
-                ? xs.nearestValueExclusive(orig.getX(), radius)
+                = allowedKinds.contains(SnapKind.POSITION)
+                ? xs.nearestValueExclusive(orig.getX(), thresholds.threshold(SnapKind.POSITION))
                 : null;
         DoubleMap.Entry<? extends T> nearY
-                = allowedKinds.contains(SnapKind.MATCH)
-                ? ys.nearestValueExclusive(orig.getY(), radius)
+                = allowedKinds.contains(SnapKind.POSITION)
+                ? ys.nearestValueExclusive(orig.getY(), thresholds.threshold(SnapKind.POSITION))
                 : null;
-        SnapKind xKind = SnapKind.MATCH;
-        SnapKind yKind = SnapKind.MATCH;
+        SnapKind xKind = SnapKind.POSITION;
+        SnapKind yKind = SnapKind.POSITION;
         T xObj = nearX == null ? null : nearX.value();
         T yObj = nearY == null ? null : nearY.value();
-        if (nearX == null && allowedKinds.contains(SnapKind.DISTANCE)) {
-            for (int i = 0; i < xDists.size(); i++) {
+        double distanceThreshold = thresholds.threshold(SnapKind.DISTANCE);
 
-                double dist = xDists.key(i);
-                if (dist <= 0) {
-                    continue;
+        if (nearX == null && allowedKinds.contains(SnapKind.DISTANCE) && preceding != null && next != null) {
+            double dist = Math.abs(preceding.getX() - orig.getX());
+            DoubleMap.Entry<? extends T> en = xDists.nearestValueExclusive(dist, distanceThreshold);
+            if (en != null) {
+                nearX = xs.nearestValueExclusive(orig.getX() + dist, distanceThreshold);
+                if (nearX == null) {
+                    nearX = xs.nearestValueExclusive(orig.getX() - dist, distanceThreshold);
                 }
-                double d1 = orig.getX() + dist;
-
-                nearX = xs.nearestValueExclusive(d1, radius);
                 if (nearX != null) {
+                    xObj = nearX.value();
                     xKind = SnapKind.DISTANCE;
-                    xObj = xDists.valueAt(i);
-                    break;
                 }
-
-                double d2 = orig.getX() - dist;
-                nearX = xs.nearestValueExclusive(d2, radius);
-                if (nearX != null) {
-                    xKind = SnapKind.DISTANCE;
-                    xObj = xDists.valueAt(i);
-                    break;
+            }
+            if (nearX == null) {
+                dist = Math.abs(next.getX() - orig.getX());
+                en = xDists.nearestValueExclusive(dist, distanceThreshold);
+                if (en != null) {
+                    nearX = xs.nearestValueExclusive(orig.getX() + dist, distanceThreshold);
+                    if (nearX == null) {
+                        nearX = xs.nearestValueExclusive(orig.getX() - dist, distanceThreshold);
+                    }
+                    if (nearX != null) {
+                        xObj = nearX.value();
+                        xKind = SnapKind.DISTANCE;
+                    }
                 }
             }
         }
-        if (nearY == null && allowedKinds.contains(SnapKind.DISTANCE)) {
-            for (int i = 0; i < yDists.size(); i++) {
-                double dist = yDists.key(i);
-                if (dist <= 0) {
-                    continue;
+        if (nearY == null && allowedKinds.contains(SnapKind.DISTANCE) && preceding != null && next != null) {
+            double dist = Math.abs(preceding.getY() - orig.getY());
+            DoubleMap.Entry<? extends T> en = yDists.nearestValueExclusive(dist, distanceThreshold);
+            if (en != null) {
+                nearY = ys.nearestValueExclusive(orig.getY() + dist, distanceThreshold);
+                if (nearY == null) {
+                    nearY = ys.nearestValueExclusive(orig.getY() - dist, distanceThreshold);
                 }
-                double d1 = orig.getY() + dist;
-
-                nearY = ys.nearestValueExclusive(d1, radius);
                 if (nearY != null) {
+                    yObj = nearY.value();
                     yKind = SnapKind.DISTANCE;
-                    yObj = yDists.valueAt(i);
-                    break;
                 }
-
-                double d2 = orig.getY() - dist;
-                nearY = ys.nearestValueExclusive(d2, radius);
-                if (nearY != null) {
-                    yKind = SnapKind.DISTANCE;
-                    yObj = yDists.valueAt(i);
-                    break;
+            }
+            if (nearY == null) {
+                dist = Math.abs(next.getY() - orig.getY());
+                en = yDists.nearestValueExclusive(dist, distanceThreshold);
+                if (en != null) {
+                    nearY = ys.nearestValueExclusive(orig.getY() + dist, distanceThreshold);
+                    if (nearY == null) {
+                        nearY = ys.nearestValueExclusive(orig.getY() - dist, distanceThreshold);
+                    }
+                    if (nearY != null) {
+                        yObj = nearY.value();
+                        yKind = SnapKind.DISTANCE;
+                    }
                 }
             }
         }
 
         if (nearX == null && nearY != null) {
             if (notify != null) {
-                if (!notify.onSnap(null, new SnapPoint<>(SnapAxis.Y, nearY.key(), yKind, yObj))) {
+                if (!notify.onSnap(null, new SnapCoordinate<>(SnapAxis.Y, nearY.key(), yKind, yObj))) {
                     return orig;
                 }
             }
-//            System.out.println("SNAP-Y " + notify + " " + yKind);
-            return new Point2D.Double(orig.getX(), nearY.key());
+            return new EqPointDouble(orig.getX(), nearY.key());
         } else if (nearY == null && nearX != null) {
             if (notify != null) {
-                if (!notify.onSnap(new SnapPoint<>(SnapAxis.X, nearX.key(), xKind, xObj), null)) {
+                if (!notify.onSnap(new SnapCoordinate<>(SnapAxis.X, nearX.key(), xKind, xObj), null)) {
                     return orig;
                 }
             }
-//            System.out.println("SNAP-X " + notify + " " + xKind);
-            return new Point2D.Double(nearX.key(), orig.getY());
+            return new EqPointDouble(nearX.key(), orig.getY());
         } else if (nearY != null && nearX != null) {
             if (notify != null) {
-                if (!notify.onSnap(new SnapPoint<>(SnapAxis.X, nearX.key(), xKind, xObj),
-                        new SnapPoint<>(SnapAxis.Y, nearY.key(), yKind, yObj))) {
+                if (!notify.onSnap(new SnapCoordinate<>(SnapAxis.X, nearX.key(), xKind, xObj),
+                        new SnapCoordinate<>(SnapAxis.Y, nearY.key(), yKind, yObj))) {
                     return orig;
                 }
             }
-//            System.out.println("SNAP-X/Y " + notify);
             return new EqPointDouble(nearX.key(), nearY.key());
         } else {
             return orig;
         }
     }
 
-    public SnapPoint nearestWithinRadius(Point2D p) {
+    public SnapCoordinate nearestWithinRadius(Point2D p, Thresholds thresholds) {
+        double radius = thresholds.threshold(SnapKind.POSITION);
         DoubleMap.Entry<? extends T> nearX = xs.nearestValueTo(p.getX(), radius);
         DoubleMap.Entry<? extends T> nearY = ys.nearestValueTo(p.getY(), radius);
         if (nearX == null && nearY != null) {
-            return new SnapPoint<>(SnapAxis.Y, nearY.key(), SnapKind.MATCH, nearY.value());
+            return new SnapCoordinate<>(SnapAxis.Y, nearY.key(), SnapKind.POSITION, nearY.value());
         } else if (nearY == null && nearX != null) {
-            return new SnapPoint<>(SnapAxis.X, nearX.key(), SnapKind.MATCH, nearX.value());
+            return new SnapCoordinate<>(SnapAxis.X, nearX.key(), SnapKind.POSITION, nearX.value());
         } else if (nearY != null && nearX != null) {
             double distX = Math.abs(p.getX() - nearX.key());
             double distY = Math.abs(p.getY() - nearY.key());
             if (distY < distX) {
-                return new SnapPoint<>(SnapAxis.Y, nearY.key(), SnapKind.MATCH, nearY.value());
+                return new SnapCoordinate<>(SnapAxis.Y, nearY.key(), SnapKind.POSITION, nearY.value());
             } else {
-                return new SnapPoint<>(SnapAxis.X, nearX.key(), SnapKind.MATCH, nearX.value());
+                return new SnapCoordinate<>(SnapAxis.X, nearX.key(), SnapKind.POSITION, nearX.value());
             }
         } else {
             return null;
         }
     }
 
-    public SnapPoint nearest(Point2D p) {
-        SnapPoint a = nearest(SnapAxis.X, p);
-        SnapPoint b = nearest(SnapAxis.X, p);
+    public SnapCoordinate nearest(Point2D p) {
+        SnapCoordinate a = nearest(SnapAxis.X, p);
+        SnapCoordinate b = nearest(SnapAxis.X, p);
         double da = a.distance(p);
         double db = b.distance(p);
         return da < db ? a : b;
     }
 
-    public SnapPoint nearestWithinRadius(SnapAxis axis, Point2D p) {
+    public SnapCoordinate nearestWithinRadius(SnapAxis axis, Point2D p) {
         DoubleMap<T> pts = axis == SnapAxis.X ? xs : ys;
         DoubleMap.Entry<? extends T> val = pts.nearestValueTo(axis.value(p), radius);
         if (val == null) {
             return null;
         }
-        return new SnapPoint<>(axis, val.key(), SnapKind.MATCH, val.value());
+        return new SnapCoordinate<>(axis, val.key(), SnapKind.POSITION, val.value());
     }
 
-    public SnapPoint nearest(SnapAxis axis, Point2D p) {
+    public SnapCoordinate nearest(SnapAxis axis, Point2D p) {
         DoubleMap<T> pts = axis == SnapAxis.X ? xs : ys;
         DoubleMap.Entry<? extends T> val = pts.nearestValueTo(axis.value(p));
         if (val == null) {
             return null;
         }
-        return new SnapPoint<>(axis, val.key(), SnapKind.MATCH, val.value());
+        return new SnapCoordinate<>(axis, val.key(), SnapKind.POSITION, val.value());
     }
 
     public static <T> SnapPointsBuilder<T> builder(double radius) {

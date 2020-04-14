@@ -10,20 +10,46 @@ import org.openide.util.NbBundle.Messages;
  * @author Tim Boudreau
  */
 @Messages({
-    "MATCH=Position",
+    "POSITION=Position",
     "DISTANCE=Size",
     "GRID=Grid",
     "ANGLE=Angle",
     "CORNER=Corner",
+    "EXTENT=Extent",
+    "LENGTH=Lengths",
     "NONE=None"
 })
 public enum SnapKind {
-    MATCH,
-    DISTANCE,
     GRID,
+    POSITION,
     ANGLE,
+    EXTENT,
+    LENGTH,
+    DISTANCE,
     CORNER,
     NONE;
+
+    public boolean canSnapSingleAxis() {
+        return this == POSITION || this == DISTANCE;
+    }
+
+    boolean requiresVector() {
+        switch (this) {
+            case POSITION:
+            case GRID:
+                return false;
+            case LENGTH:
+            case ANGLE:
+            case CORNER:
+            case DISTANCE:
+            case EXTENT :
+                return true;
+            case NONE:
+                return false;
+            default:
+                throw new AssertionError(this);
+        }
+    }
 
     @Override
     public String toString() {

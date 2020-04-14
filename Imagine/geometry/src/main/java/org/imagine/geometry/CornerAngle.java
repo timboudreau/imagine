@@ -50,6 +50,12 @@ import com.mastfrog.function.state.Int;
  */
 public final strictfp class CornerAngle implements Sector, Comparable<CornerAngle> {
 
+    /**
+     * The multiplier applied to the trailing angle when encoding as a single
+     * double, for use when determining the range to binary search in a
+     * collection of angles to match.
+     */
+    public static final int ENCODING_MULTIPLIER = 10000000;
     private final double a;
     private final double b;
 
@@ -142,6 +148,33 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
     }
 
     /**
+     * Create a LineVector for the two passed points whose angles will (modulo
+     * rounding errors) match this one's, computing the apex based on the angles
+     * of this corner.
+     *
+     * @param trailing The trailing point
+     * @param leading The leading point
+     * @return A line vector
+     */
+    public LineVector toLineVector(EqPointDouble trailing, EqPointDouble leading) {
+        if (trailing.equals(leading)) {
+            return LineVector.of(trailing, trailing, trailing);
+        }
+        EqLine firstLine = EqLine.forAngleAndLength(trailing.x, trailing.y,
+                leadingAngle(), 100000);
+        EqLine secondLine = EqLine.forAngleAndLength(leading.x, leading.y,
+                trailingAngle(), 100000);
+        secondLine.swap();
+
+        EqPointDouble apex = firstLine.intersectionPoint(secondLine);
+        if (apex == null) {
+            EqLine ln = new EqLine(trailing, leading);
+            return LineVector.of(trailing, ln.midPoint(), leading);
+        }
+        return LineVector.of(firstLine.getP1(), apex, secondLine.getP2());
+    }
+
+    /**
      * Get a string representation of this angle with values rounded to two
      * decimal places.
      *
@@ -184,6 +217,10 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
      */
     public double leadingAngle() {
         return b;
+    }
+
+    public double throughAngle() {
+        return 180 - a - b;
     }
 
     /**
@@ -468,6 +505,11 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
                 + " (" + GeometryStrings.toString(extent()) + "\u00B0)";
     }
 
+    public boolean equals(CornerAngle other, double tolerance) {
+        return GeometryUtils.isSameCoordinate(leadingAngle(), other.leadingAngle(), tolerance)
+                && GeometryUtils.isSameCoordinate(trailingAngle(), other.trailingAngle(), tolerance);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == this) {
@@ -646,7 +688,7 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
         }
         double ext = Math.abs(ca.extent());
         double angle = ca.trailingAngle();
-        int angleMult = (int) (angle * 10000000);
+        int angleMult = (int) (angle * ENCODING_MULTIPLIER);
         double extMult = ext * 0.001;
 
         // XXX could use the sign to encode whether
@@ -739,10 +781,10 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
             default:
                 throw new AssertionError(cmp);
         }
-        if (!contains(result)) {
-            new Exception("Bad mid result in '" + this + "' with " + result)
-                    .printStackTrace();
-        }
+//        if (!contains(result)) {
+//            new Exception("Bad mid result in '" + this + "' with " + result)
+//                    .printStackTrace();
+//        }
         return result;
     }
 
@@ -775,12 +817,12 @@ public final strictfp class CornerAngle implements Sector, Comparable<CornerAngl
         if (a == b) {
             return a;
         } else if (a < b) {
-            return a + ((b - a) / 2);
+            return a + ((b - a) / 2D);
         } else {
             if (b == 0) {
-                return Angle.normalize(a + ((360 - a) / 2));
+                return Angle.normalize(a + ((360D - a) / 2D));
             }
-            return Angle.normalize(a + ((360 - (a - b)) / 2));
+            return Angle.normalize(a + ((360D - (a - b)) / 2D));
         }
     }
 

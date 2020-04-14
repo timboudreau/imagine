@@ -1,11 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.imagine.geometry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -18,7 +14,75 @@ public class AngleTest {
     private static final double AMT = 0.41225;
 
     @Test
-    public void testSomeMethod() {
+    public void testForLine() {
+        EqLine ln;
+        Angle ang;
+
+        ln = new EqLine(0, 0, 10, 0);
+        ang = Angle.forLine(ln);
+        assertEquals(90, ang.degrees(), TOL);
+
+        ln = new EqLine(0, 0, 0, 10);
+        ang = Angle.forLine(ln);
+        assertEquals(180, ang.degrees(), TOL);
+
+        ln = new EqLine(0, 10, 10, 0);
+        ang = Angle.forLine(ln);
+        assertEquals(45, ang.degrees(), TOL);
+
+        ln = new EqLine(0, 0, 10, 10);
+        ang = Angle.forLine(ln);
+        assertEquals(135, ang.degrees(), TOL);
+
+        ln = new EqLine(0, 0, -10, 0);
+        ang = Angle.forLine(ln);
+        assertEquals(270, ang.degrees(), TOL);
+
+        assertEquals(90, Angle.canonicalize(270));
+
+        assertEquals(270, ln.angle(), TOL);
+
+        assertEquals(0, ln.x1, TOL);
+        assertEquals(0, ln.y1, TOL);
+        assertEquals(-10, ln.x2, TOL);
+        assertEquals(0, ln.y2, TOL);
+
+        System.out.println("Was " + ln);
+        ln.setAngle(90);
+        System.out.println("Is " + ln);
+        assertEquals(90, ln.angle(), TOL);
+
+        ln.setAngle(45);
+        System.out.println("NOW " + ln);
+
+        ln.setAngle(90);
+        System.out.println("AND NOW " + ln);
+    }
+
+    @Test
+    public void testLineIntersection() {
+        EqLine a = new EqLine(90, 100, 110, 100);
+        EqLine b = new EqLine(100, 90, 100, 110);
+        EqPointDouble pt = a.intersection(b);
+        System.out.println("ISECT " + pt);
+        assertEquals(new EqPointDouble(100, 100), pt);
+
+        EqLine c = new EqLine(90, 100, 57, 32);
+        assertEquals(a.getP1(), a.intersection(c));
+        assertEquals(a.getP1(), c.intersection(a));
+        assertNull(a.intersection(a));
+    }
+
+    public void testCanonicalize() {
+        for (int i = 0; i < 360; i++) {
+            int exp = i % 180;
+            double deg = Angle.canonicalize(i);
+            assertEquals(exp, deg, TOL, i + " should canonicalize to " + exp);
+        }
+    }
+
+    @Test
+    public void testNormalize() {
         assertEquals(0D, Angle.normalize(-360), TOL);
         assertEquals(0D, Angle.normalize(360), TOL);
         assertEquals(1D, Angle.normalize(361), TOL);
@@ -50,4 +114,21 @@ public class AngleTest {
         }
     }
 
+    @Test
+    public void testPerpendicular() {
+        for (int ang = 0; ang < 361; ang++) {
+            double cw = Angle.perpendicularClockwise(ang);
+            int expCw = (ang + 90) % 360;
+
+            double ccw = Angle.perpendicularCounterclockwise(ang);
+            int expCcw = (ang - 90);
+            if (expCcw < 0) {
+                expCcw = 360 + expCcw;
+            }
+            expCcw %= 360;
+
+            assertEquals((double) expCw, cw, "Clockwise of " + ang + " wrong");
+            assertEquals((double) expCcw, ccw, "Counter-Clockwise of " + ang + " wrong");
+        }
+    }
 }

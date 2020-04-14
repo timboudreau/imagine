@@ -17,6 +17,8 @@ public class SnapPointsBuilder<T> {
 
     private final DoubleMap<T> angles = DoubleMap.create(16);
     private final DoubleMap<T> corners = DoubleMap.create(16);
+    private final DoubleMap<T> extents = DoubleMap.create(16);
+    private final DoubleMap<T> lengths = DoubleMap.create(16);
 
     private final double rad;
     private OnSnap notify;
@@ -26,6 +28,16 @@ public class SnapPointsBuilder<T> {
             throw new IllegalArgumentException("" + rad);
         }
         this.rad = rad;
+    }
+
+    public SnapPointsBuilder addExtent(double extent, T obj) {
+        extents.put(extent, obj);
+        return this;
+    }
+
+    public SnapPointsBuilder addLength(double length, T obj) {
+        lengths.put(length, obj);
+        return this;
     }
 
     public SnapPointsBuilder addAngle(double angle, T obj) {
@@ -69,6 +81,7 @@ public class SnapPointsBuilder<T> {
     }
 
     public SnapPoints build() {
-        return new SnapPoints(rad, notify, xs, ys, xDists, yDists, angles, corners);
+        return new SnapPoints(rad, notify, xs, ys, xDists,
+                yDists, angles, corners, extents, lengths);
     }
 }

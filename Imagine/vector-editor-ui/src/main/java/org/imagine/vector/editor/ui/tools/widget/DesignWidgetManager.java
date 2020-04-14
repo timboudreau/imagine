@@ -3,10 +3,10 @@ package org.imagine.vector.editor.ui.tools.widget;
 import org.imagine.vector.editor.ui.tools.widget.util.OperationListenerBroadcaster;
 import org.imagine.vector.editor.ui.tools.widget.util.OperationListener;
 import com.mastfrog.function.TriConsumer;
-import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -18,7 +18,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import org.imagine.vector.editor.ui.tools.widget.util.WeakDependency;
 import org.imagine.vector.editor.ui.tools.widget.painting.DesignerProperties;
 import org.imagine.vector.editor.ui.tools.widget.actions.RectSelectAction;
 import org.imagine.vector.editor.ui.tools.widget.actions.FocusAction;
@@ -35,9 +34,13 @@ import org.imagine.editor.api.grid.Grid;
 import org.imagine.editor.api.grid.SnapSettings;
 import org.imagine.editor.api.snap.SnapKind;
 import org.imagine.editor.api.snap.SnapPoints;
+import org.imagine.editor.api.snap.Thresholds;
+import org.imagine.geometry.EqPointDouble;
+import org.imagine.geometry.LineVector;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.ShapeEntry;
 import org.imagine.vector.editor.ui.ShapeSnapPointEntry;
+import org.imagine.vector.editor.ui.ThresholdsOverZoom;
 import org.imagine.vector.editor.ui.palette.PaintPalettes;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
@@ -87,7 +90,6 @@ public class DesignWidgetManager implements DesignerControl {
     private Supplier<SnapPoints<ShapeSnapPointEntry>> pts;
     // Action handlers
     private final ShapeDragHandler shapeDrag = new ShapeDragHandler();
-    private final ControlPointDragHandler cpDrag = new ControlPointDragHandler();
     private final ManyControlPointWidgetDragHandler manyCpDrag = new ManyControlPointWidgetDragHandler();
     private final ShapeAdjustmentKeyHandler shapeKeyHandler = new ShapeAdjustmentKeyHandler();
     private final ControlPointKeyHandler controlPointKeyHandler = new ControlPointKeyHandler();
@@ -126,6 +128,7 @@ public class DesignWidgetManager implements DesignerControl {
     private final UIStateListener uiListener = new UIStateListenerImpl();
     private Widget temporaryDragImageWidget;
     private final ShapeActions shapeActions = new ShapeActions(this);
+    private final Thresholds thresholds;
 
     public DesignWidgetManager(Scene scene, ShapesCollection coll, MutableProxyLookup lookup) {
         this.scene = scene;
@@ -135,6 +138,7 @@ public class DesignWidgetManager implements DesignerControl {
         moveAction = new MoveInSceneCoordinateSpaceAction();
 //        popupAction = ShapePopupActions.popupMenuAction(this);
         popupAction = shapeActions.popupMenuAction();
+        thresholds = new ThresholdsOverZoom(new SceneZoom());
     }
 
     public DesignWidgetManager(Scene scene, ShapesCollection coll) {
@@ -219,10 +223,6 @@ public class DesignWidgetManager implements DesignerControl {
         shapeActions.applyKeyboardActions(many);
 
         widget.addChild(many);
-
-        SnapDecorationsLayer snaps = new SnapDecorationsLayer(scene);
-        widget.addChild(snaps);
-
         widget.addChild(selectionLayer);
 
         anim = new AnimationLayer(scene);
@@ -252,7 +252,8 @@ public class DesignWidgetManager implements DesignerControl {
             if (focused != null) {
                 focused.revalidate(true);
                 if (focused instanceof ControlPointWidget) {
-                    anim.setShape(((ControlPointWidget) focused).controlPointShape(true));
+                    anim.setShape(((ControlPointWidget) focused)
+                            .controlPointShape(true));
                     scene.validate();
                 } else {
                     ShapeElement el = focused.getLookup().lookup(ShapeElement.class);
@@ -346,7 +347,7 @@ public class DesignWidgetManager implements DesignerControl {
                 Rectangle scrolled = view.getVisibleRect();
                 double offX = cx - scrolled.getCenterX();
                 double offY = cy - scrolled.getCenterY();
-                System.out.println("adjust scroll by " + offX + "," + offY);
+//                System.out.println("adjust scroll by " + offX + "," + offY);
                 scrolled.translate((int) Math.round(offX), (int) Math.round(offY));
                 view.scrollRectToVisible(scrolled);
             }
@@ -355,7 +356,6 @@ public class DesignWidgetManager implements DesignerControl {
 
     private void controlPointMoved(ShapeElement shape, ControlPoint cp, Widget w) {
         w.revalidate();
-//        w.getScene().validate();
     }
 
     private <T> boolean withWidgetFor(T obj, Consumer<Widget> c) {
@@ -376,25 +376,6 @@ public class DesignWidgetManager implements DesignerControl {
         ShapeControlPoint[] cps = en.controlPoints(9, cp -> {
             controlPointMoved(en, cp, w);
         });
-        /*
-        List<Widget> virtuals = new ArrayList<>(4);
-        for (ShapeControlPoint cp : cps) {
-            Widget w2 = widget.add(cp);
-            if (cp.isVirtual()) {
-                virtuals.add(w2);
-            } else {
-                // Since we draw connector lines from virtual points
-                // to the physical point they relate to (i.e. the
-                // control points of a cubic curve), we need the virtual
-                // points to recompute the connector line when the
-                // physical point moves
-                for (Widget w3 : virtuals) {
-                    WeakDependency.attach(w3, w2);
-                }
-                virtuals.clear();
-            }
-        }
-         */
         return w;
     }
 
@@ -402,32 +383,11 @@ public class DesignWidgetManager implements DesignerControl {
         trackingSelection(tracker -> {
 
             Widget w = tracker.addToScene(en);
-            /*
-            ShapeControlPoint[] cps = en.controlPoints(9, cp -> {
-                controlPointMoved(en, cp, w);
-            });
-            List<Widget> virtuals = new ArrayList<>(4);
-            for (ShapeControlPoint cp : cps) {
-                Widget w2 = tracker.addToScene(cp);
-                if (cp.isVirtual()) {
-                    virtuals.add(w2);
-                } else {
-                    // Since we draw connector lines from virtual points
-                    // to the physical point they relate to (i.e. the
-                    // control points of a cubic curve), we need the virtual
-                    // points to recompute the connector line when the
-                    // physical point moves
-                    for (Widget w3 : virtuals) {
-                        WeakDependency.attach(w3, w2);
-                    }
-                    virtuals.clear();
-                }
-            }
-             */
             many.shapeAdded(en);
         });
     }
 
+    @Override
     public void shapeGeometryChanged(ShapeElement el) {
         Widget w = widget.find(el);
         if (w != null) {
@@ -458,30 +418,6 @@ public class DesignWidgetManager implements DesignerControl {
     @Override
     public void pointCountMayBeChanged(ShapeElement el) {
         many.syncOne(el);
-        /*
-        Set<ShapeControlPoint> toRemove = new HashSet<>();
-        Set<ShapeControlPoint> representedControlPointsFromShape = new HashSet<>();
-        ShapeControlPoint[] thisShapesPoints = el.controlPoints(0, DesignWidgetManager::nullConsumer);
-        widget.allWidgets(ShapeControlPoint.class, (cp, widget) -> {
-            if (!cp.isValid() || shapes.indexOf(cp.owner()) < 0) {
-                toRemove.add(cp);
-            } else if (cp.owner().equals(el)) {
-                representedControlPointsFromShape.add(cp);
-            }
-        });
-        if (trackingSelection(tracker -> {
-            if (representedControlPointsFromShape.size() < thisShapesPoints.length) {
-                for (int i = representedControlPointsFromShape.size(); i < thisShapesPoints.length; i++) {
-                    tracker.addToScene(thisShapesPoints[i]);
-                }
-            }
-            toRemove.forEach(tracker::removeFromScene);
-        })) {
-            el.changed();
-            widget.find(el).revalidate();
-            scene.validate();
-        }
-         */
     }
 
     @Override
@@ -530,10 +466,6 @@ public class DesignWidgetManager implements DesignerControl {
         return trackingSelection(tracker -> {
             tracker.removeFromScene(el);
             many.shapeDeleted(el);
-//            ShapeControlPoint[] cps = el.controlPoints(0, DesignWidgetManager::nullConsumer);
-//            for (ShapeControlPoint cp : cps) {
-//                tracker.removeFromScene(cp);
-//            }
         });
     }
 
@@ -543,10 +475,6 @@ public class DesignWidgetManager implements DesignerControl {
             widget.allWidgetsMatching(sh -> shapes.indexOf(sh) < 0, ShapeElement.class, (sh, wid) -> {
                 tracker.removeFromScene(sh);
                 many.shapeDeleted(sh);
-//                ShapeControlPoint[] cps = sh.controlPoints(0, DesignWidgetManager::nullConsumer);
-//                for (ShapeControlPoint cp : cps) {
-//                    tracker.removeFromScene(cp);
-//                }
             });
         });
     }
@@ -693,15 +621,11 @@ public class DesignWidgetManager implements DesignerControl {
     }
 
     public void revalidateControlPoints(ShapeElement e) {
-//        widget.allWidgetsMatching(cp -> cp.owner().equals(e), ShapeControlPoint.class, (cp, w) -> {
-//            w.revalidate();
-//        });
         Widget w = widget.find(e);
         if (w != null) {
             w.revalidate();
         }
         many.revalidate();
-//        scene.revalidate();
     }
 
     OneShapeWidget createShapeWidget(Scene scene, ShapeElement entry) {
@@ -719,26 +643,6 @@ public class DesignWidgetManager implements DesignerControl {
         return result;
     }
 
-    ControlPointWidget createControlPointWidget(Scene scene, ShapeControlPoint cp) {
-        if (true) {
-            throw new AssertionError("Why is this being called?");
-        }
-        ControlPointWidget result = new ControlPointWidget(cp, shapes, scene,
-                props.decorationController(), this.cpDrag, uiState,
-                controlPointKeyHandler, selectionLookup);
-        withWidgetFor(cp.owner(), owner -> {
-            WeakDependency.attachBiDirectional(owner, result);
-        });
-        WidgetAction.Chain actions = result.getActions();
-        actions.addAction(popupAction);
-        actions.addAction(nextPrevKeyAction);
-        actions.addAction(focusAction);
-        actions.addAction(moveAction);
-        actions.addAction(keyMoveAction);
-        shapeActions.applyKeyboardActions(result);
-        return result;
-    }
-
     public Runnable onOperation(OperationListener listener) {
         return opListeners.add(listener);
     }
@@ -746,7 +650,6 @@ public class DesignWidgetManager implements DesignerControl {
     private void abortAllDragOperations() {
         moveAction.abort();
         shapeDrag.clearDragState();
-        cpDrag.clearDragState();
         manyCpDrag.clearDragState();
     }
 
@@ -962,7 +865,7 @@ public class DesignWidgetManager implements DesignerControl {
                 return;
             }
             onDrag(w, original, current);
-            System.out.println("onEndDrag " + original + " / " + current);
+//            System.out.println("onEndDrag " + original + " / " + current);
             try {
                 withShapeInfo(w, original, current, true, (e, osw) -> {
                     // Clears the temporary shape copy we used for
@@ -1032,6 +935,12 @@ public class DesignWidgetManager implements DesignerControl {
             if (kinds.isEmpty()) {
                 return suggested;
             }
+            // Don't need these for shape dragging,
+            // and they don't make any sense here
+            kinds.remove(SnapKind.CORNER);
+            kinds.remove(SnapKind.ANGLE);
+            kinds.remove(SnapKind.EXTENT);
+            kinds.remove(SnapKind.LENGTH);
 
             Grid grid = Grid.getInstance();
             boolean gridEnabled = grid.isEnabled();
@@ -1056,20 +965,20 @@ public class DesignWidgetManager implements DesignerControl {
                 Point2D prev = null;
                 ShapeControlPoint prevPoint = cp.previousPhysical();
                 if (prevPoint != null) {
-                    prev = new Point2D.Double(prevPoint.getX() + dx, prevPoint.getY() + dy);
+                    prev = new EqPointDouble(prevPoint.getX() + dx, prevPoint.getY() + dy);
                 }
                 Point2D next = null;
                 ShapeControlPoint nextPoint = cp.nextPhysical();
                 if (nextPoint != null) {
-                    next = new Point2D.Double(nextPoint.getX() + dx, nextPoint.getY() + dy);
+                    next = new EqPointDouble(nextPoint.getX() + dx, nextPoint.getY() + dy);
                 }
 
                 SnapPoints<ShapeSnapPointEntry> snapper = pts.get();
 
-                System.out.println("SNAP " + prev + " / " + scratch + " / " + next);
+//                System.out.println("SNAP " + prev + " / " + scratch + " / " + next);
                 // See if that snaps anywhere
                 Point2D got = snapper.snapExclusive(prev, scratch,
-                        next, gridSize, kinds);
+                        next, gridSize, kinds, thresholds);
                 if (got != scratch) {
                     double dx1 = scratch.x - got.getX();
                     double dy1 = scratch.y - got.getY();
@@ -1077,7 +986,7 @@ public class DesignWidgetManager implements DesignerControl {
                     double fx = suggested.getX() - dx1;
                     double fy = suggested.getY() - dy1;
 
-                    return new Point2D.Double(fx, fy);
+                    return new EqPointDouble(fx, fy);
                 }
             }
             return suggested;
@@ -1216,20 +1125,38 @@ public class DesignWidgetManager implements DesignerControl {
             if (currentProxyControlPoint != null) {
                 ShapeControlPoint prev = currentProxyControlPoint.previousPhysical();
                 ShapeControlPoint next = currentProxyControlPoint.nextPhysical();
+
+                // For angle and extent matching to be correct, we need to
+                // order the prev and next points such that we have an interior,
+                // not exterior angle, or we'll match the outsides of things
+                LineVector vect = LineVector.of(prev.toPoint(), suggested, next.toPoint());
+                Shape owner = currentProxyControlPoint.owner().shape();
+                if (vect.sample(owner::contains) != 3) {
+                    vect = vect.inverse();
+                }
+
                 if (prev != null && next != null && prev.isValid() && next.isValid()) {
-                    Point2D result = pts.get().snapExclusive(prev.toPoint(), suggested, next.toPoint(),
+                    Point2D result = pts.get().snapExclusive(vect.trailingPoint(),
+                            suggested, vect.leadingPoint(),
                             gridSize,
-                            snap.getEnabledSnapKinds());
+                            snap.getEnabledSnapKinds(), thresholds);
+                    if (result == null) {
+                        snapLayer.snapListener().onSnap(null, null);
+                    }
                     return result;
                 }
             }
             Point2D result = pts.get().snapExclusive(null, suggested, null,
                     gridSize,
-                    snap.getEnabledSnapKinds());
+                    snap.getEnabledSnapKinds(), thresholds);
+            if (result == null) {
+                snapLayer.snapListener().onSnap(null, null);
+            }
             return result;
         }
     }
 
+    /*
     class ControlPointDragHandler implements DragHandler {
 
         private ShapeControlPoint currentProxyControlPoint;
@@ -1355,7 +1282,7 @@ public class DesignWidgetManager implements DesignerControl {
             return result;
         }
     }
-
+     */
     private static void nullConsumer(ControlPoint c) {
         // fetching control points takes a callback that is notified when the
         // control point is moved - when dragging a shape, not its control

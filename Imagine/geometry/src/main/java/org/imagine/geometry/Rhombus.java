@@ -83,25 +83,20 @@ public final class Rhombus implements Shape, EnhancedShape {
 
     public static Rhombus fromPoints(Point2D a, Point2D b, Point2D c, Point2D d) {
         if (isLesser(a, c)) {
-            System.out.println("swap c, a");
             Point2D hold = a;
             a = c;
             c = hold;
         }
         if (isLesser(b, d)) {
-            System.out.println("swap d, b");
             Point2D hold = b;
             b = d;
             d = hold;
         }
-        System.out.println("FROM " + a + " / " + b + " / " + c + " / " + d);
 
         EqLine ln1 = new EqLine(a, c);
         EqLine ln2 = new EqLine(b, d);
         ln1.normalize();
         ln2.normalize();
-        System.out.println("LINE1 " + ln1 + " mid " + ln1.midPoint() + " ang " + ln1.angleNormalized());
-        System.out.println("LINE2 " + ln2 + " mid " + ln2.midPoint() + " ang " + ln2.angleNormalized());
         EqPointDouble mid1 = ln1.midPoint();
         EqPointDouble mid2 = ln2.midPoint();
         if (mid1.distance(mid2) > 2) { // XXX arbitrary
@@ -114,9 +109,6 @@ public final class Rhombus implements Shape, EnhancedShape {
     public static void main(String[] args) {
         Rhombus rhom = new Rhombus(100, 100, 10, 20, 0);
         Rhombus nue = fromPoints(rhom.top(), rhom.right(), rhom.bottom(), rhom.left());
-        System.out.println("ORIG: " + rhom);
-        System.out.println("NUE:  " + nue);
-        System.out.println("HOMO: " + nue.isHomomorphic(rhom));
     }
 
     public Angle getRotation() {

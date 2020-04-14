@@ -4,21 +4,40 @@ import java.awt.geom.Point2D;
 import java.util.Objects;
 
 /**
+ * One coordinate on one axis, to snap to.
  *
  * @author Tim Boudreau
  */
-public class SnapPoint<T> implements Comparable<SnapPoint<?>> {
+public class SnapCoordinate<T> implements Comparable<SnapCoordinate<?>> {
 
     final SnapAxis axis;
     final double coordinate;
     private final SnapKind kind;
     private final T obj;
+    private final double basis;
 
-    public SnapPoint(SnapAxis axis, double coordinate, SnapKind kind, T obj) {
+    public SnapCoordinate(SnapAxis axis, double coordinate, SnapKind kind, T obj) {
+        this(axis, coordinate, kind, obj, Double.MIN_VALUE);
+    }
+
+    public SnapCoordinate(SnapAxis axis, double coordinate, SnapKind kind, T obj,
+            double basis) {
         this.axis = axis;
         this.coordinate = coordinate;
         this.kind = kind;
         this.obj = obj;
+        this.basis = basis;
+    }
+
+    /**
+     * The original coordinate (type dependent) this coordinate was derived
+     * based on, for this point's axis, for drawing visual feedback on what size
+     * or position is being snapped to.
+     *
+     * @return The basis coordinate, or Double.MIN_VALUE if unset
+     */
+    public double basis() {
+        return basis;
     }
 
     public T value() {
@@ -71,7 +90,7 @@ public class SnapPoint<T> implements Comparable<SnapPoint<?>> {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final SnapPoint other = (SnapPoint) obj;
+        final SnapCoordinate other = (SnapCoordinate) obj;
         if (Math.abs(this.coordinate - other.coordinate) < 0.5) {
             return true;
         }
@@ -79,7 +98,7 @@ public class SnapPoint<T> implements Comparable<SnapPoint<?>> {
     }
 
     @Override
-    public int compareTo(SnapPoint<?> o) {
+    public int compareTo(SnapCoordinate<?> o) {
         int result = axis.compareTo(o.axis);
         if (result == 0) {
             result = Double.compare(coordinate, o.coordinate);

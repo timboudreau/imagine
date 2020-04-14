@@ -54,6 +54,7 @@ public interface RepaintHandle {
         r.add(r.getX() - strokeWidth, r.getY() - strokeWidth);
         r.add(r.getX() + r.getWidth() + (strokeWidth * 2),
                 r.getY() + r.getHeight() + (strokeWidth * 2));
+        repaintArea(r);
     }
 
     default void repaintArea(Shape shape, BasicStroke stroke) {

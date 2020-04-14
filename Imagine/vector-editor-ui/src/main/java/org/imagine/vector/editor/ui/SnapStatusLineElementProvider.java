@@ -14,7 +14,7 @@ import java.awt.geom.AffineTransform;
 import java.text.DecimalFormat;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
-import org.imagine.editor.api.snap.SnapPoint;
+import org.imagine.editor.api.snap.SnapCoordinate;
 import org.openide.awt.StatusLineElementProvider;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.lookup.ServiceProvider;
@@ -35,7 +35,7 @@ public class SnapStatusLineElementProvider implements StatusLineElementProvider 
         INSTANCE = this;
     }
 
-    static void setSnapPoints(SnapPoint<ShapeSnapPointEntry> xp, SnapPoint<ShapeSnapPointEntry> yp) {
+    static void setSnapPoints(SnapCoordinate<ShapeSnapPointEntry> xp, SnapCoordinate<ShapeSnapPointEntry> yp) {
         if (INSTANCE != null) {
             INSTANCE._setSnapPoints(xp, yp);
         }
@@ -97,7 +97,7 @@ public class SnapStatusLineElementProvider implements StatusLineElementProvider 
         "# {1} - y",
         "GRID=Grid {0}, {1}"
     })
-    private void _setSnapPoints(SnapPoint<ShapeSnapPointEntry> xp, SnapPoint<ShapeSnapPointEntry> yp) {
+    private void _setSnapPoints(SnapCoordinate<ShapeSnapPointEntry> xp, SnapCoordinate<ShapeSnapPointEntry> yp) {
         String snapKind = "";
         String axes = "";
         String targetInfo = "";
@@ -109,7 +109,7 @@ public class SnapStatusLineElementProvider implements StatusLineElementProvider 
                     case ANGLE:
                         targetInfo = Bundle.ANGLE_FROM(xp.value().sizeOrAngle, xp.value().entry.getName());
                         break;
-                    case MATCH:
+                    case POSITION:
                         if (xp.value().entry.equals(yp.value().entry)) {
                             targetInfo = Bundle.COORD_FROM(Bundle.POINT(
                                     xp.coordinate(), yp.coordinate()), xp.value().entry.getName());

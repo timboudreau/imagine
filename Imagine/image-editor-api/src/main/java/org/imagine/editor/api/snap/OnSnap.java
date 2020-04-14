@@ -1,16 +1,17 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.imagine.editor.api.snap;
+
+import java.util.function.BiPredicate;
 
 /**
  *
  * @author Tim Boudreau
  */
-public interface OnSnap<T> {
+public interface OnSnap<T> extends BiPredicate<SnapCoordinate<T>, SnapCoordinate<T>> {
 
-    boolean onSnap(SnapPoint<T> x, SnapPoint<T> y);
+    boolean onSnap(SnapCoordinate<T> x, SnapCoordinate<T> y);
+
+    @Override
+    default boolean test(SnapCoordinate<T> x, SnapCoordinate<T> y) {
+        return onSnap(x, y);
+    }
 }

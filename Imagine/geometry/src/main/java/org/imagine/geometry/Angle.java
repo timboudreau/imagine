@@ -196,6 +196,12 @@ public final strictfp class Angle implements Comparable<Angle> {
         return degrees >= 180;
     }
 
+    /**
+     * Return the angle 180 degrees opposite to the passed one.
+     *
+     * @param angle An angle in degrees
+     * @return The opposite angle in degrees between 0 and 360.
+     */
     public static double opposite(double angle) {
         if (!Double.isFinite(angle)) {
             return angle;
@@ -232,12 +238,7 @@ public final strictfp class Angle implements Comparable<Angle> {
     }
 
     public static double ofLine(double x1, double y1, double x2, double y2) {
-        double[] db = GeometryUtils.equidistantPoint(x1, y1, x2, y2);
-        double result = Math.round(new Circle(db[0], db[1]).angleOf(x2, y2) - 180);
-        if (result < 0) {
-            result += 360;
-        }
-        return result;
+        return normalize(Circle.angleOf(x1, y1, x2, y2));
     }
 
     public static void angles(int count, Consumer<Angle> c) {
@@ -368,34 +369,26 @@ public final strictfp class Angle implements Comparable<Angle> {
         if (!Double.isFinite(angle)) {
             return angle;
         }
-        if (angle < 0) {
-            angle = 360D + angle;
-        }
-        if (angle > 360) {
-            angle = 360D % angle;
-        }
+        angle = normalize(angle);
         if (angle + 90D > 360) {
-            return (angle + 90D) - (angle % 360);
+            angle = (angle + 90D) - 360;
         } else {
-            return angle + 90D;
+            angle = angle + 90D;
         }
+        return normalize(angle);
     }
 
     public static double perpendicularCounterclockwise(double angle) {
         if (!Double.isFinite(angle)) {
             return angle;
         }
-        if (angle < 0) {
-            angle = 360D + angle;
-        }
-        if (angle > 360) {
-            angle = 360D % angle;
-        }
+        angle = normalize(angle);
         if (angle - 90D < 0) {
-            return 360D + (angle - 90D);
+            angle = 360D + (angle - 90D);
         } else {
-            return angle - 90D;
+            angle = angle - 90D;
         }
+        return normalize(angle);
     }
 
     public Angle minus(double degrees) {

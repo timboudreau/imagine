@@ -15,19 +15,19 @@ final class AngleVectorImpl implements AngleVector {
     private final double lengthA;
     private final double lengthB;
 
-    public AngleVectorImpl(CornerAngle corner, double lengthA, double lengthB) {
+    AngleVectorImpl(CornerAngle corner, double lengthA, double lengthB) {
         this.corner = corner;
         this.lengthA = lengthA;
         this.lengthB = lengthB;
     }
 
     @Override
-    public double firstLineLength() {
+    public double trailingLineLength() {
         return lengthA;
     }
 
     @Override
-    public double secondLineLength() {
+    public double leadingLineLength() {
         return lengthB;
     }
 

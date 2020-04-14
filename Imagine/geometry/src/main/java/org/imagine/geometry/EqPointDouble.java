@@ -32,6 +32,10 @@ public final class EqPointDouble extends Point2D.Double implements Comparable<Po
         this(p.getX(), p.getY());
     }
 
+    public EqPoint toFloat() {
+        return new EqPoint(getX(), getY());
+    }
+
     public static EqPointDouble of(Point2D p) {
         if (p == null) {
             return null;

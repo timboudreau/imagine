@@ -218,8 +218,8 @@ public class GeometryUtils {
     }
 
     /**
-     * Get a point equidistant between two points into the passed array
-     * at the passed offset.
+     * Get a point equidistant between two points into the passed array at the
+     * passed offset.
      *
      * @param x1 The first x coordinate
      * @param y1 The first y coordinate
@@ -265,8 +265,7 @@ public class GeometryUtils {
         double determinant = a1 * b2 - a2 * b1;
 
         if (determinant == 0) {
-            // The lines are parallel. This is simplified
-            // by returning a pair of FLT_MAX
+            // The lines are parallel
             return null;
         } else {
             double x = (b2 * c1 - b1 * c2) / determinant;

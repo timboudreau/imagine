@@ -217,10 +217,6 @@ public interface Sector {
     default int sample(double sharedX, double sharedY, double atDistance, DoubleBiPredicate test) {
         Circle circ = new Circle(sharedX, sharedY, atDistance);
         double[] p = circ.positionOf(quarterAngle());
-        System.out.println("For " + toShortString() + " sample "
-                + GeometryStrings.toShortString(quarterAngle())
-                + " at " + GeometryStrings.toShortString(p[0], p[1]));
-
         int result = 0;
         if (test.test(p[0], p[1])) {
             result++;
@@ -234,29 +230,6 @@ public interface Sector {
             result++;
         }
         return result;
-        /*
-        EqPointDouble pt = new EqPointDouble();
-        DoubleBiConsumer loc = pt::setLocation;
-        Circle.positionOf(quarterAngle(), sharedY, sharedY, atDistance, loc);
-
-        System.out.println("For " + toShortString() + " sample "
-                + GeometryStrings.toShortString(quarterAngle())
-                + " at " + pt);
-
-        int result = 0;
-        if (test.test(pt.x, pt.y)) {
-            result++;
-        }
-        Circle.positionOf(midAngle(), sharedY, sharedY, atDistance, loc);
-        if (test.test(pt.x, pt.y)) {
-            result++;
-        }
-        Circle.positionOf(threeQuarterAngle(), sharedY, sharedY, atDistance, loc);
-        if (test.test(pt.x, pt.y)) {
-            result++;
-        }
-        return result;
-         */
     }
 
     /**
@@ -349,10 +322,11 @@ public interface Sector {
     static Sector create(double degrees, double extent) {
         if (extent < 0) {
             degrees += extent;
+            extent += 360;
         }
         degrees = Angle.normalize(degrees);
-        extent = Math.max(360, Math.abs(extent));
-        if (extent == 0) {
+        extent = Math.min(360, Math.abs(extent));
+        if (extent == 0 || extent == 360) {
             return Sector.EMPTY;
         } else if (extent == 90) {
             if (degrees == 0) {

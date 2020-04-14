@@ -11,6 +11,20 @@ import org.junit.jupiter.api.Test;
  */
 public class SnapPointsTest {
 
+    static class FakeThresholds implements Thresholds {
+
+        @Override
+        public double threshold(SnapKind kind) {
+            return 11;
+        }
+
+        @Override
+        public double pointThreshold() {
+            return 11;
+        }
+    }
+    private final Thresholds thresh = new FakeThresholds();
+
     @Test
     public void testSomeMethod() {
         N n = new N();
@@ -21,9 +35,9 @@ public class SnapPointsTest {
                 .notifying(n)
                 .build();
         assertNotNull(pts);
-        SnapPoint sp = pts.nearestWithinRadius(new Point(0, 0));
+        SnapCoordinate sp = pts.nearestWithinRadius(new Point(0, 0), thresh);
         assertNull(sp);
-        sp = pts.nearestWithinRadius(new Point(110, 110));
+        sp = pts.nearestWithinRadius(new Point(110, 110), thresh);
         assertNotNull(sp);
 
         Point p = new Point(0, 0);
@@ -105,8 +119,8 @@ public class SnapPointsTest {
 
     private static class N implements OnSnap<String> {
 
-        SnapPoint x;
-        SnapPoint y;
+        SnapCoordinate x;
+        SnapCoordinate y;
 
         N reset() {
             x = null;
@@ -151,7 +165,7 @@ public class SnapPointsTest {
         }
 
         N assertX(String msg) {
-            SnapPoint s = x;
+            SnapCoordinate s = x;
             x = null;
             assertNotNull(s, s + ", " + y + " " + msg);
             return this;
@@ -162,7 +176,7 @@ public class SnapPointsTest {
         }
 
         N assertY(String msg) {
-            SnapPoint s = y;
+            SnapCoordinate s = y;
             y = null;
             assertNotNull(s, x + ", " + s + " " + msg);
             return this;
@@ -173,7 +187,7 @@ public class SnapPointsTest {
         }
 
         N assertNotY(String msg) {
-            SnapPoint s = y;
+            SnapCoordinate s = y;
             y = null;
             assertNull(s, x + ", " + s + " " + msg);
             return this;
@@ -184,14 +198,14 @@ public class SnapPointsTest {
         }
 
         N assertNotX(String msg) {
-            SnapPoint s = x;
+            SnapCoordinate s = x;
             x = null;
             assertNull(s, s + ", " + y + " " + msg);
             return this;
         }
 
         @Override
-        public boolean onSnap(SnapPoint<String> x, SnapPoint<String> y) {
+        public boolean onSnap(SnapCoordinate<String> x, SnapCoordinate<String> y) {
             this.x = x;
             this.y = y;
             return true;

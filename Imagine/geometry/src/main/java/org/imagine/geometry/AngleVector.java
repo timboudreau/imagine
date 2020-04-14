@@ -2,10 +2,12 @@ package org.imagine.geometry;
 
 import com.mastfrog.function.DoubleBiConsumer;
 import com.mastfrog.function.DoubleQuadConsumer;
+import com.mastfrog.function.state.Obj;
 import java.util.function.BiConsumer;
 
 /**
- * Represents two angles, as in leading CornerAngle, with lengths.
+ * Represents two angles, as in leading CornerAngle, with lengths, but without a
+ * specific location.
  *
  * @author Tim Boudreau
  */
@@ -13,47 +15,53 @@ public interface AngleVector {
 
     CornerAngle corner();
 
-    double firstLineLength();
+    double trailingLineLength();
 
-    double secondLineLength();
+    double leadingLineLength();
 
-    default LineVector toLineVector(double atX, double atY) {
-        LineVector[] result = new LineVector[1];
-        Circle.positionOf(firstLineAngle(), atX, atY, firstLineLength(), (ax, ay) -> {
-            Circle.positionOf(secondLineAngle(), atX, atY, secondLineLength(), (bx, by) -> {
-                result[0] = new LineVectorImpl(ax, ay, atX, atY, bx, by);
-            });
-        });
-        return result[0];
+    default LineVector toLineVector(double apexX, double apexY) {
+        Obj<LineVector> result = Obj.create();
+        Circle.positionOf(trailingLineAngle(), apexX, apexY,
+                trailingLineLength(), (ax, ay) -> {
+                    Circle.positionOf(leadingLineAngle(), apexX, apexY,
+                            leadingLineLength(), (bx, by) -> {
+                                result.set(new LineVectorImpl(ax, ay,
+                                        apexX, apexY, bx, by));
+                            });
+                });
+        return result.get();
     }
 
-    default double firstLineAngle() {
+    default double trailingLineAngle() {
         return corner().trailingAngle();
     }
 
-    default double secondLineAngle() {
-        return corner().trailingAngle();
+    default double leadingLineAngle() {
+        return corner().leadingAngle();
     }
 
-    default void firstPositionAt(double sharedX, double sharedY, DoubleBiConsumer c) {
-        new Circle(sharedX, sharedY, firstLineLength()).positionOf(corner().trailingAngle(), c);
+    default void trailingPositionAt(double apexX, double apexY,
+            DoubleBiConsumer c) {
+        Circle.positionOf(corner().trailingAngle(), apexX, apexY,
+                trailingLineLength(), c);
     }
 
-    default void secondPositionAt(double sharedX, double sharedY, DoubleBiConsumer c) {
-        new Circle(sharedX, sharedY, secondLineLength()).positionOf(corner().leadingAngle(), c);
+    default void leadingPositionAt(double apexX, double apexY,
+            DoubleBiConsumer c) {
+        Circle.positionOf(corner().leadingAngle(), apexX, apexY,
+                leadingLineLength(), c);
     }
 
     default void linesAt(double x, double y, BiConsumer<? super EqLine, ? super EqLine> c) {
         positionsAt(x, y, (x1, y1, x2, y2) -> {
-            c.accept(new EqLine(x, y, x1, y1), new EqLine(x, y, x2, y2));
+            c.accept(new EqLine(x1, y1, x, y), new EqLine(x, y, x2, y2));
         });
     }
 
     default void positionsAt(double x, double y, DoubleQuadConsumer c) {
-        Circle circ = new Circle(x, y);
         CornerAngle corner = corner();
-        circ.positionOf(corner.trailingAngle(), firstLineLength(), (x1, y1) -> {
-            circ.positionOf(corner.leadingAngle(), secondLineLength(), (x2, y2) -> {
+        Circle.positionOf(corner.trailingAngle(), x, y, trailingLineLength(), (x1, y1) -> {
+            Circle.positionOf(corner.leadingAngle(), x, y, leadingLineLength(), (x2, y2) -> {
                 c.accept(x1, y1, x2, y2);
             });
         });

@@ -1,7 +1,10 @@
 package org.imagine.geometry;
 
 import com.mastfrog.function.DoubleBiPredicate;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
+import static java.lang.Math.max;
 import static java.lang.Math.min;
 import org.imagine.geometry.util.GeometryUtils;
 
@@ -13,23 +16,228 @@ import org.imagine.geometry.util.GeometryUtils;
  */
 public interface LineVector extends AngleVector, Intersectable {
 
+    /**
+     * Create a LineVector from three points.
+     *
+     * @param a The trailing point
+     * @param apex The apex point
+     * @param b The leading point
+     * @return A vector
+     */
     public static LineVector of(Point2D a, Point2D apex, Point2D b) {
         return of(a.getX(), a.getY(), apex.getX(), apex.getY(), b.getX(), b.getY());
     }
 
+    /**
+     * Create a LineVector from three points.
+     *
+     * @param ax The trailing x coordinate
+     * @param ay The trailing y coordinate
+     * @param sharedX The apex x coordinate
+     * @param sharedY The apex y coordinate
+     * @param bx The leading x coordinate
+     * @param by The trailing y coordinate
+     * @return A vector
+     */
     public static LineVector of(double ax, double ay, double sharedX, double sharedY, double bx, double by) {
         return new LineVectorImpl(ax, ay, sharedX, sharedY, bx, by);
     }
 
-    default boolean intersectsFirst(double x1, double y1, double x2, double y2) {
-        return GeometryUtils.linesIntersect(x1, y1, x2, y2, firstX(), firstY(), apexX(), apexY());
+    /**
+     * Returns a circle in which any point within one hemisphere of it results
+     * in an angle with the same extent as this LineVector's corner angle.
+     *
+     * @return A circle
+     */
+    Circle extentCircle();
+
+    /**
+     * Returns a circle where which any point within one hemisphere of results
+     * in an angle with the passed extent.
+     *
+     * @return A circle
+     */
+    Circle extentCircle(double ext);
+
+    /**
+     * Determine if the passed line intersects the trailing line of this vector.
+     *
+     * @param x1 the line x1
+     * @param y1 The line y1
+     * @param x2 The line x2
+     * @param y2 The line y2
+     * @return True if they intersect
+     */
+    default boolean intersectsTrailingLine(double x1, double y1, double x2, double y2) {
+        return GeometryUtils.linesIntersect(x1, y1, x2, y2, trailingX(), trailingY(), apexX(), apexY());
     }
 
-    default boolean intersectsSecond(double x1, double y1, double x2, double y2) {
-        return GeometryUtils.linesIntersect(x1, y1, x2, y2, apexX(), apexY(), secondX(), secondY(), false);
+    /**
+     * Determine if the passed line intersects the leading line of this vector.
+     *
+     * @param x1 the line x1
+     * @param y1 The line y1
+     * @param x2 The line x2
+     * @param y2 The line y2
+     * @return True if they intersect
+     */
+    default boolean intersectsLeadingLine(double x1, double y1, double x2, double y2) {
+        return GeometryUtils.linesIntersect(x1, y1, x2, y2, apexX(), apexY(), leadingX(), leadingY(), false);
     }
 
-    LineVector withAlternatePoints(double newAx, double newAy, double newBx, double newBy);
+    /**
+     * Determine if the passed line intersects the trailing line of this vector.
+     *
+     * @param line A line
+     * @return True if they intersect
+     */
+    default boolean intersectsTrailingLine(Line2D line) {
+        return GeometryUtils.linesIntersect(line.getX1(), line.getY1(),
+                line.getX2(), line.getY2(), trailingX(), trailingY(), apexX(), apexY());
+    }
+
+    /**
+     * Determine if the passed line intersects the leading line of this vector.
+     *
+     * @param line A line
+     * @return True if they intersect
+     */
+    default boolean intersectsLeadingLine(Line2D line) {
+        return GeometryUtils.linesIntersect(line.getX1(), line.getY1(),
+                line.getX2(), line.getY2(), apexX(), apexY(), leadingX(),
+                leadingY(), false);
+    }
+
+    /**
+     * Create a copy of this vector translated such that the apex point is the
+     * passed one.
+     *
+     * @param newApexX The new apex x coordinate
+     * @param newApexY The new apex y coordinate
+     * @return A new line vector with the same angles as this one, translated so
+     * that the apex point is based on the passed value
+     */
+    default LineVector withApex(double newApexX, double newApexY) {
+        double ax = apexX();
+        double ay = apexY();
+        if (ax == newApexX && ay == newApexY) {
+            return this;
+        }
+        double xDiff = newApexX - ax;
+        double yDiff = newApexY - ay;
+        return transformedBy(AffineTransform.getTranslateInstance(xDiff, yDiff));
+    }
+
+    /**
+     * Create a copy of this vector translated such that the trailing point is
+     * the passed one.
+     *
+     * @param newApexX The new trailing x coordinate
+     * @param newApexY The new trailing y coordinate
+     * @return A new line vector with the same angles as this one, translated so
+     * that the trailing point is based on the passed value
+     */
+    default LineVector withTrailing(double newTrailingX, double newTrailingY) {
+        double tx = trailingX();
+        double ty = trailingY();
+        if (tx == newTrailingX && ty == newTrailingY) {
+            return this;
+        }
+        double xDiff = tx - newTrailingX;
+        double yDiff = ty - newTrailingY;
+        return transformedBy(AffineTransform.getTranslateInstance(xDiff, yDiff));
+    }
+
+    /**
+     * Create a copy of this vector translated such that the apex point is the
+     * passed one.
+     *
+     * @param newApexX The new leading x coordinate
+     * @param newApexY The new leading y coordinate
+     * @return A new line vector with the same angles as this one, translated so
+     * that the leading point is based on the passed value
+     */
+    default LineVector withLeading(double newLeadingX, double newLeadingY) {
+        double ly = leadingY();
+        double lx = leadingX();
+        if (lx == newLeadingX && ly == newLeadingY) {
+            return this;
+        }
+        double xDiff = lx - newLeadingX;
+        double yDiff = ly - newLeadingY;
+        return transformedBy(AffineTransform.getTranslateInstance(xDiff, yDiff));
+    }
+
+    /**
+     * Create a new LineVector based on this one, processed by the passed
+     * AffineTransform.
+     *
+     * @param xform A transform
+     * @return A new line vector
+     */
+    default LineVector transformedBy(AffineTransform xform) {
+        double[] pts = new double[]{trailingX(), trailingY(),
+            apexX(), apexY(), leadingX(), leadingY()};
+        xform.transform(pts, 0, pts, 0, 3);
+        return new LineVectorImpl(pts[0], pts[1], pts[2], pts[3], pts[4],
+                pts[5]);
+    }
+
+    /**
+     * Create a new LineVector based on this one, with its points translated by
+     * the passed offsets.
+     *
+     * @param dx The xOffset
+     * @param dy The y offset
+     * @return A new line vector
+     */
+    default LineVector translatedBy(double dx, double dy) {
+        return transformedBy(AffineTransform.getTranslateInstance(dx, dy));
+    }
+
+    /**
+     * Create a new LineVector based on this one, with a different length for
+     * the trailing line, but the same angles (modulo rounding errors).
+     *
+     * @param newLength The new length
+     * @return A new line vector
+     */
+    default LineVector withTrailingLineLength(double newLength) {
+        EqLine ln = trailingLine();
+        ln.setLength(Math.abs(newLength), true);
+        return new LineVectorImpl(ln.getX1(), ln.getY1(),
+                apexX(), apexY(), leadingX(), leadingY());
+    }
+
+    /**
+     * Create a new LineVector based on this one, with a different length for
+     * the leading line, but the same angles (modulo rounding errors).
+     *
+     * @param newLength The new length
+     * @return A new line vector
+     */
+    default LineVector withLeadingLineLength(double newLength) {
+        EqLine ln = leadingLine();
+        ln.setLength(Math.abs(newLength), false);
+        return new LineVectorImpl(trailingX(), trailingY(),
+                apexX(), apexY(), ln.getX2(), ln.getY2());
+    }
+
+    /**
+     * Create a new LineVector based on this one, with a different length for
+     * the leading line, but the same angles (modulo rounding errors).
+     *
+     * @param newLeading The new length
+     * @return A new line vector
+     */
+    default LineVector withLineLengths(double newTrailing, double newLeading) {
+        EqLine trail = trailingLine();
+        trail.setLength(Math.abs(newTrailing), true);
+        EqLine lead = leadingLine();
+        lead.setLength(Math.abs(newLeading), false);
+        return new LineVectorImpl(trail.getX1(), trail.getY1(),
+                apexX(), apexY(), lead.getX2(), lead.getY2());
+    }
 
     /**
      * Get the inverse of this LineVector, swapping the start and end points.
@@ -90,7 +298,7 @@ public interface LineVector extends AngleVector, Intersectable {
      * @return A length
      */
     default double minLength() {
-        return min(firstLineLength(), secondLineLength());
+        return min(trailingLineLength(), leadingLineLength());
     }
 
     /**
@@ -99,7 +307,7 @@ public interface LineVector extends AngleVector, Intersectable {
      * @return A length
      */
     default double maxLength() {
-        return min(firstLineLength(), secondLineLength());
+        return max(trailingLineLength(), leadingLineLength());
     }
 
     /**
@@ -108,14 +316,12 @@ public interface LineVector extends AngleVector, Intersectable {
      * @return A sector
      */
     default Sector toSector() {
-        double ang1 = Circle.angleOf(apexX(), apexY(), firstX(), firstY());
-        double ang2 = Circle.angleOf(apexX(), apexY(), secondX(), secondY());
+        double ang1 = Circle.angleOf(apexX(), apexY(), trailingX(), trailingY());
+        double ang2 = Circle.angleOf(apexX(), apexY(), leadingX(), leadingY());
         double ext = ang2 - ang1;
         if (ext < 0) {
-            System.out.println("A " + toString());
             return new SectorImpl(ang2, 360 + ext);
         } else {
-            System.out.println("B " + toString());
             return new SectorImpl(ang2, ext);
         }
     }
@@ -148,8 +354,14 @@ public interface LineVector extends AngleVector, Intersectable {
         return corner().sample(apexX(), apexY(), atDistance, test);
     }
 
-    default EqLine firstLine() {
-        return new EqLine(firstX(), firstY(), apexX(), apexY());
+    /**
+     * Get the trailing line - the line between the first and apex points passed
+     * to the constructor.
+     *
+     * @return A line
+     */
+    default EqLine trailingLine() {
+        return new EqLine(trailingX(), trailingY(), apexX(), apexY());
     }
 
     /**
@@ -157,24 +369,47 @@ public interface LineVector extends AngleVector, Intersectable {
      *
      * @return A point
      */
-    default EqPointDouble location() {
+    default EqPointDouble apex() {
         return new EqPointDouble(apexX(), apexY());
     }
 
-    default EqLine secondLine() {
-        return new EqLine(apexX(), apexY(), secondX(), secondY());
+    /**
+     * Get the leading line - the line between the apex and third point passed
+     * to the constructor.
+     *
+     * @return A line
+     */
+    default EqLine leadingLine() {
+        return new EqLine(apexX(), apexY(), leadingX(), leadingY());
     }
 
-    default EqPointDouble firstPoint() {
-        return new EqPointDouble(firstX(), firstY());
+    /**
+     * Get the first point passed to the constructor, forming the initial point
+     * of the initial line.
+     *
+     * @return The trailing point
+     */
+    default EqPointDouble trailingPoint() {
+        return new EqPointDouble(trailingX(), trailingY());
     }
 
-    default EqPointDouble secondPoint() {
-        return new EqPointDouble(secondX(), secondY());
+    /**
+     * Get the last point passed to the costructor, forming the final point of
+     * this vector.
+     *
+     * @return A point
+     */
+    default EqPointDouble leadingPoint() {
+        return new EqPointDouble(leadingX(), leadingY());
     }
 
+    /**
+     * Get the line that conects the leading and trailing points.
+     *
+     * @return A line
+     */
     default EqLine throughLine() {
-        return new EqLine(firstX(), firstY(), secondX(), secondY());
+        return new EqLine(trailingX(), trailingY(), leadingX(), leadingY());
     }
 
     /**
@@ -183,19 +418,57 @@ public interface LineVector extends AngleVector, Intersectable {
      * @return Triangle
      */
     default Triangle2D toTriangle() {
-        return new Triangle2D(firstX(), firstY(), apexX(), apexY(), secondX(), secondY());
+        return new Triangle2D(trailingX(), trailingY(), apexX(), apexY(), leadingX(), leadingY());
     }
 
-    double firstX();
+    /**
+     * Get the trailing x coordinate.
+     *
+     * @return A coordinate
+     */
+    double trailingX();
 
-    double firstY();
+    /**
+     * Get the trailing y coordinate.
+     *
+     * @return A coordinate
+     */
+    double trailingY();
 
-    double secondX();
+    /**
+     * Get the leading x coordinate.
+     *
+     * @return A coordinate
+     */
+    double leadingX();
 
-    double secondY();
+    /**
+     * Get the trailing y coordinate.
+     *
+     * @return A coordinate
+     */
+    double leadingY();
 
+    /**
+     * Get the apex x coordinate.
+     *
+     * @return A coordinate
+     */
     double apexX();
 
+    /**
+     * Get the trailing y coordinate.
+     *
+     * @return A coordinate
+     */
     double apexY();
 
+    /**
+     * Equality test with rounding-error tolerance.
+     *
+     * @param other Another vector
+     * @param tolerance The tolerance
+     * @return True if all coordinates match within the tolerance
+     */
+    boolean equals(LineVector other, double tolerance);
 }

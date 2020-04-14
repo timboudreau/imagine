@@ -36,19 +36,18 @@ import org.imagine.awt.io.PaintKeyIO;
 import org.imagine.awt.key.PaintKey;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.snap.SnapPointsBuilder;
+import org.imagine.geometry.Angle;
 import org.imagine.geometry.Axis;
 import org.imagine.geometry.CornerAngle;
 import org.imagine.geometry.EqLine;
-import org.imagine.geometry.LineVector;
-import org.imagine.geometry.Polygon2D;
-import org.imagine.geometry.RotationDirection;
-import org.imagine.geometry.analysis.VectorVisitor;
 import org.imagine.io.KeyReader;
 import org.imagine.io.KeyWriter;
 import org.imagine.utils.Holder;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.vector.editor.ui.io.VectorIO;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
+import org.imagine.vector.editor.ui.spi.ShapeInfo;
+import org.imagine.vector.editor.ui.spi.ShapeInfo.PointInfo;
 import org.openide.util.WeakSet;
 
 /**
@@ -71,7 +70,9 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
     private final long id;
     private final ShapeElementControlPointFactory CPF
             = new ShapeElementControlPointFactory();
-
+    private final RevCache shapeInfoCache = new RevCache(this::item, () -> {
+        return ShapeInfo.create(shape());
+    });
     private static final byte IO_REV = 1;
 
     public void writeTo(VectorIO io, KeyWriter writer) throws IOException {
@@ -509,6 +510,11 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
         }
     }
 
+    @Override
+    public ShapeInfo shapeInfo() {
+        return shapeInfoCache.get();
+    }
+
     void addTo(SnapPointsBuilder<ShapeSnapPointEntry> bldr) {
         if (vect instanceof Adjustable) {
             Adjustable adj = (Adjustable) vect;
@@ -540,8 +546,78 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
                 }, 0);
             });
         } else */ if (!vect.is(Textual.class)) {
+            ShapeInfo info = shapeInfo();
+
+            info.forEachPoint((PointInfo pi) -> {
+                CornerAngle corner = pi.angle;
+                if (!corner.isExtreme()) {
+                    // Note:  Every line we receive in a vector as a
+                    // leading line, we will receive as the next trailing
+                    // line, so we only need to care about the trailing
+                    // items here
+                    double enc = corner.encode();
+                    boolean flipped = !corner.isNormalized();
+                    bldr.addCorner(enc, new ShapeSnapPointEntry(
+                            ShapeEntry.this,
+                            pi.controlPointIndex,
+                            pi.nextControlPointIndex,
+                            enc));
+
+                    double ext = corner.extent();
+                    bldr.addExtent(ext,
+                            new ShapeSnapPointEntry(ShapeEntry.this,
+                                    pi.previousControlPointIndex,
+                                    pi.nextControlPointIndex,
+                                    ext));
+
+                    double len = pi.vector.trailingLineLength();
+                    if (len > 5) {
+                        bldr.addLength(len,
+                                new ShapeSnapPointEntry(ShapeEntry.this,
+                                        pi.previousControlPointIndex,
+                                        pi.controlPointIndex, len));
+                    }
+
+                    double trailing = Angle.canonicalize(corner.trailingAngle());
+                    bldr.addAngle(trailing,
+                            new ShapeSnapPointEntry(ShapeEntry.this,
+                                    flipped
+                                            ? pi.previousControlPointIndex
+                                            : pi.controlPointIndex,
+                                    flipped
+                                            ? pi.controlPointIndex
+                                            : pi.nextControlPointIndex,
+                                    trailing));
+                }
+
+                EqLine line = pi.vector.trailingLine();
+                Axis ax = line.nearestAxis();
+
+                double axDist = line.distanceIn(ax);
+                double ayDist = line.distanceIn(ax.opposite());
+
+                if (axDist > 5) {
+                    bldr.addDistance(
+                            SnapAxis.forVertical(ax.isVertical()),
+                            axDist,
+                            new ShapeSnapPointEntry(this,
+                                    pi.previousControlPointIndex,
+                                    pi.controlPointIndex,
+                                    axDist));
+                }
+                if (axDist > 5) {
+                    bldr.addDistance(
+                            SnapAxis.forVertical(!ax.isVertical()),
+                            ayDist,
+                            new ShapeSnapPointEntry(this, pi.controlPointIndex,
+                                    pi.nextControlPointIndex,
+                                    ayDist));
+                }
+
+            });
+            /*
             Shape sh = this.shape();
-            VectorVisitor.analyze(sh, (int pointIndex, LineVector vect, 
+            VectorVisitor.analyze(sh, (int pointIndex, LineVector vect,
                     int subpathIndex, RotationDirection subpathRotationDirection,
                     Polygon2D approximate, int prevPointIndex, int nextPointIndex) -> {
                 CornerAngle corner = vect.corner();
@@ -549,21 +625,22 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
                     double enc = corner.encode();
                     bldr.addCorner(enc, new ShapeSnapPointEntry(ShapeEntry.this,
                             pointIndex, nextPointIndex, enc));
-                    bldr.addAngle(vect.firstLineAngle(), 
+                    bldr.addAngle(Angle.canonicalize(vect.firstLineAngle()),
                             new ShapeSnapPointEntry(ShapeEntry.this,
                                     pointIndex, nextPointIndex, corner.leadingAngle()));
-                    bldr.addAngle(vect.secondLineAngle(), 
+
+                    bldr.addAngle(Angle.canonicalize(vect.secondLineAngle()),
                             new ShapeSnapPointEntry(ShapeEntry.this,
                                     prevPointIndex, pointIndex, corner.leadingAngle()));
 
-                    EqLine line = vect.firstLine();
+                    EqLine line = vect.trailingLine();
                     Axis ax = line.nearestAxis();
                     bldr.addDistance(SnapAxis.forVertical(ax.isVertical()),
                             line.distanceIn(ax),
                             new ShapeSnapPointEntry(this, prevPointIndex, pointIndex,
                                     line.distanceIn(ax)));
 
-                    line = vect.secondLine();
+                    line = vect.leadingLine();
                     ax = line.nearestAxis();
                     bldr.addDistance(SnapAxis.forVertical(ax.isVertical()),
                             line.distanceIn(ax),
@@ -571,6 +648,7 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
                                     line.distanceIn(ax)));
                 }
             });
+             */
 //            CornerAngle.forShape(sh, (ptIx, ca, x, y, isects) -> {
 //                ca = ca.normalized();
 //                System.out.println("corner " + getName() + " pt " + ptIx + " " + ca);

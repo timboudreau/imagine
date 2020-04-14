@@ -713,7 +713,6 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
         public Dimension getPreferredSize() {
             Rectangle r = shape.getBounds();
             r = xform.createTransformedShape(shape).getBounds();
-            System.out.println("POLY BOUNDS " + r);
             return new Dimension(r.width + (margin * 2), r.height + (margin * 2));
         }
 
@@ -721,7 +720,6 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
 
         @Override
         protected void paintComponent(Graphics gr) {
-            System.out.println("SHAPE " + shape);
             Graphics2D g = (Graphics2D) gr;
             g.setColor(Color.GRAY);
             g.fillRect(0, 0, getWidth(), getHeight());
@@ -753,7 +751,6 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
             int[] lc = new int[1];
 //            g.setStroke(new BasicStroke(1.5F));
             ((EnhancedShape) shape).visitLines((x1, y1, x2, y2) -> {
-                System.out.println("LINE " + lc[0] + ". " + x1 + ", " + y1 + ", " + x2 + ", " + y2);
                 lc[0]++;
                 scratchLine.setLine(x1, y1, x2, y2);
                 g.setColor(Color.WHITE);
@@ -762,13 +759,13 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
 
             int[] ptt = new int[1];
             ((EnhancedShape) shape).visitPoints((x, y) -> {
-                System.out.println("P-" + ptt[0]++ + ". " + x + ", " + y);
+//                System.out.println("P-" + ptt[0]++ + ". " + x + ", " + y);
             });
 
             g.setStroke(new BasicStroke(0.35F));
             int[] adjl = new int[1];
             ((EnhancedShape) shape).visitAdjoiningLines((x1, y1, xs, ys, x2, y2) -> {
-                System.out.println("ADJ " + adjl[0] + ". " + x1 + ", " + y1 + ", " + xs + ", " + ys + ", " + x2 + ", " + y2);
+//                System.out.println("ADJ " + adjl[0] + ". " + x1 + ", " + y1 + ", " + xs + ", " + ys + ", " + x2 + ", " + y2);
                 adjl[0]++;
                 g.setStroke(new BasicStroke(3));
                 scratchLine.setLine(x1, y1, xs, ys);
@@ -783,9 +780,9 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
 
             int[] ac = new int[1];
             double[] asum = new double[1];
-            System.out.println("ANGLES: ");
+//            System.out.println("ANGLES: ");
             ((EnhancedShape) shape).visitAnglesWithOffsets((angle, absX, absY, px, py) -> {
-                System.out.println(ac[0] + ". " + angle + " @ " + absX + ", " + absY);
+//                System.out.println(ac[0] + ". " + angle + " @ " + absX + ", " + absY);
 
                 ac[0]++;
                 double norm = 180D - angle;
@@ -807,7 +804,7 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
 
             int[] lns = new int[1];
             ((EnhancedShape) shape).visitLines((x1, y1, x2, y2) -> {
-                System.out.println(lns[0] + ". " + x1 + ", " + y1 + ", " + x2 + ", " + y2);
+//                System.out.println(lns[0] + ". " + x1 + ", " + y1 + ", " + x2 + ", " + y2);
                 lns[0]++;
                 g.setColor(Color.WHITE);
                 scratchLine.setLine(x1, y1, x2, y2);
@@ -853,7 +850,7 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
                 ang.setRadius(12 * (1D / xform.getScaleX()));
                 ang.setAngle(angle1);
                 ang.setExtent(angle2 - angle1);
-                System.out.println(ang);
+//                System.out.println(ang);
                 g.draw(ang);
             }, 4 * (1D / xform.getScaleX()));
         }

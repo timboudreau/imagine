@@ -91,6 +91,11 @@ public class GeometryStrings {
         return toString(r.getX(), r.getY()) + " " + toString(DEFAULT_WIDTH_HEIGHT_DELIMITER, r.getWidth(), r.getHeight());
     }
 
+    public static String toCoordinatesString(Rectangle2D r) {
+        return toString(r.getX(), r.getY())
+                + " / " + toString(r.getX() + r.getWidth(), r.getY() + r.getHeight());
+    }
+
     /**
      * Convert an array of doubles to a comma-delimited, long-format string.
      *
@@ -155,7 +160,7 @@ public class GeometryStrings {
      * @return A string representation of the line
      */
     public static String lineToString(double x1, double y1, double x2, double y2) {
-        return "<-" + toString(x1, y1) + "-" + toString(x2, y2) + "->";
+        return "<" + toString(x1, y1) + " : " + toString(x2, y2) + ">";
     }
 
     public static StringBuilder toStringCoordinatesShort(StringBuilder into, double... coords) {

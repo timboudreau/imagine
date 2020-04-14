@@ -4,7 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.SnapKind;
-import org.imagine.editor.api.snap.SnapPoint;
+import org.imagine.editor.api.snap.SnapCoordinate;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.EqLine;
 import org.imagine.utils.painting.RepaintHandle;
@@ -42,7 +42,7 @@ public class GridPainter extends OneTypePainter {
     }
 
     @Override
-    protected boolean snapBoth(SnapPoint<ShapeSnapPointEntry> x, SnapPoint<ShapeSnapPointEntry> y, Zoom zoom, ShapeElement selection) {
+    protected boolean snapBoth(SnapCoordinate<ShapeSnapPointEntry> x, SnapCoordinate<ShapeSnapPointEntry> y, Zoom zoom, ShapeElement selection) {
         circ.setCenter(x.coordinate(), y.coordinate());
         circ.setRadius(zoom.inverseScale(SnapUISettings.getInstance().targetPointRadius(SnapKind.GRID, selection)));
         return true;

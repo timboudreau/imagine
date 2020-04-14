@@ -9,7 +9,7 @@ import java.awt.geom.Arc2D;
 import java.awt.geom.Line2D;
 import java.util.function.Supplier;
 import net.java.dev.imagine.api.vector.Adjustable;
-import org.imagine.editor.api.snap.SnapPoint;
+import org.imagine.editor.api.snap.SnapCoordinate;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.OnSnap;
 import org.imagine.editor.api.snap.SnapKind;
@@ -37,8 +37,8 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
     private final Arc2D.Double arc = new Arc2D.Double(0, 0, 1, 0, 0, 90, Arc2D.PIE);
     private static final Circle circle = new Circle(0, 0, 1);
 
-    private SnapPoint<ShapeSnapPointEntry> xp;
-    private SnapPoint<ShapeSnapPointEntry> yp;
+    private SnapCoordinate<ShapeSnapPointEntry> xp;
+    private SnapCoordinate<ShapeSnapPointEntry> yp;
     private final RepaintHandle handle;
     private final Supplier<Rectangle> bounds;
 
@@ -52,7 +52,7 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
 
     private boolean hasPie1, hasPie2;
 
-    void setSnapPoint(SnapPoint<ShapeSnapPointEntry> pt, Line2D.Double line, Arrow arrow) {
+    void setSnapPoint(SnapCoordinate<ShapeSnapPointEntry> pt, Line2D.Double line, Arrow arrow) {
         handle.repaintArea(lastBoundsPainted);
         if (pt == null) {
             line.x1 = line.x2 = line.y1 = line.y2 = -100000;
@@ -152,7 +152,7 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
                             break;
                     }
                     break;
-                case MATCH:
+                case POSITION:
                     arrow.headAngleA = ARROW_ANGLE;
                     arrow.headAngleB = ARROW_ANGLE;
                     switch (pt.axis()) {
@@ -203,7 +203,7 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
                 case GRID:
                     handle.repaintArea(circle);
                     break;
-                case MATCH:
+                case POSITION:
                     handle.repaintArea(x);
                     break;
                 case CORNER:
@@ -226,7 +226,7 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
                 case DISTANCE:
                     handle.repaintArea(yArrow);
                     break;
-                case MATCH:
+                case POSITION:
                     handle.repaintArea(y);
                     break;
                 case CORNER:
@@ -239,7 +239,7 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
                     break;
             }
         }
-        if (yp != null && yp.kind() == SnapKind.MATCH) {
+        if (yp != null && yp.kind() == SnapKind.POSITION) {
             if (xp != null) {
                 handle.repaintArea(xArrow);
             }
@@ -283,7 +283,7 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
                     lastBoundsPainted.add(circle.getBounds());
                     g.setPaintMode();
                     break;
-                case MATCH:
+                case POSITION:
                     g.setStroke(stroke);
                     g.setColor(Color.BLACK);
                     g.draw(x);
@@ -305,7 +305,7 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
                     g.draw(yArrow);
                     lastBoundsPainted.add(yArrow.getBounds());
                     break;
-                case MATCH:
+                case POSITION:
                     g.setStroke(stroke);
                     g.setColor(Color.BLACK);
                     g.draw(y);
@@ -314,7 +314,7 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
             }
         }
         g.setStroke(old);
-        if (yp != null && yp.kind() == SnapKind.MATCH) {
+        if (yp != null && yp.kind() == SnapKind.POSITION) {
             g.setColor(Color.GRAY);
             if (xp != null) {
                 g.draw(xArrow);
@@ -328,7 +328,7 @@ public final class SnapLinesPainter implements OnSnap<ShapeSnapPointEntry> {
     }
 
     @Override
-    public boolean onSnap(SnapPoint<ShapeSnapPointEntry> xp, SnapPoint<ShapeSnapPointEntry> yp) {
+    public boolean onSnap(SnapCoordinate<ShapeSnapPointEntry> xp, SnapCoordinate<ShapeSnapPointEntry> yp) {
         repaint();
         this.xp = xp;
         this.yp = yp;

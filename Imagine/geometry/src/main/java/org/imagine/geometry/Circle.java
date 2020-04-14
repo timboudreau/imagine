@@ -289,6 +289,81 @@ public final strictfp class Circle implements Shape, Sector {
     }
 
     /**
+     * Create a circle in which the three passed points are all exactly on the
+     * circumference.
+     *
+     * @param x1 The first x coordinate
+     * @param y1 The first y coordinate
+     * @param x2 The second x coordinate
+     * @param y2 The second y coordinate
+     * @param x3 The third x coordinate
+     * @param y3 The third y coordinate
+     * @return A circle
+     */
+    public static Circle fromPoints(double x1, double y1, double x2, double y2, double x3, double y3) {
+        double xDiff1to2 = x1 - x2;
+        double xDiff1to3 = x1 - x3;
+
+        double yDiff1to2 = y1 - y2;
+        double yDiff1to3 = y1 - y3;
+
+        double yDiff3to1 = y3 - y1;
+        double yDiff2to1 = y2 - y1;
+
+        double xDiff3to1 = x3 - x1;
+        double xDiff2to1 = x2 - x1;
+
+        double x1squared = x1 * x1;
+        double y1squared = y1 * y1;
+
+        double xSquared1to3 = (x1squared
+                - Math.pow(x3, 2));
+
+        double ySquard1to3 = (y1squared
+                - Math.pow(y3, 2));
+        double xSquared2to1 = (Math.pow(x2, 2)
+                - x1squared);
+        double ySquared2to1 = (Math.pow(y2, 2)
+                - Math.pow(y1, 2));
+        double vx = (xSquared1to3 * xDiff1to2
+                + ySquard1to3 * xDiff1to2
+                + xSquared2to1 * xDiff1to3
+                + ySquared2to1 * xDiff1to3)
+                / (2 * (yDiff3to1 * xDiff1to2 - yDiff2to1 * xDiff1to3));
+        double vy = (xSquared1to3 * yDiff1to2
+                + ySquard1to3 * yDiff1to2
+                + xSquared2to1 * yDiff1to3
+                + ySquared2to1 * yDiff1to3)
+                / (2 * (xDiff3to1 * yDiff1to2 - xDiff2to1 * yDiff1to3));
+
+        double c = -x1squared - y1squared
+                - 2 * vy * x1 - 2 * vx * y1;
+
+        // eqn of circle be x^2 + y^2 + 2*g*x + 2*f*y + c = 0
+        // where centre is (h = -g, k = -f) and radius r
+        // as r^2 = h^2 + k^2 - c
+        double cx = -vy;
+        double cy = -vx;
+        double rSquared = cx * cx + cy * cy - c;
+
+        // r is the radius
+        double r = Math.sqrt(rSquared);
+        return new Circle(cx, cy, r);
+
+    }
+
+    public void nearestPoint(double toX, double toY, DoubleBiConsumer c) {
+        double ang = angleOf(toX, toY);
+        positionOf(ang, c);
+    }
+
+    public EqPointDouble nearestPointTo(double toX, double toY) {
+        EqPointDouble result = new EqPointDouble();
+        nearestPoint(toX, toY, result::setLocation);
+        return result;
+    }
+
+    /**
      * Get the distance of a point to the edge of this circle (will be negative
      * for points outside the circle).
      *
@@ -459,6 +534,13 @@ public final strictfp class Circle implements Shape, Sector {
         angle -= 90D;
         angle = Math.toRadians(angle);
         c.accept(radius * cos(angle) + cx, radius * sin(angle) + cy);
+    }
+
+    public static void positionOf(double angle, double cx, double cy, double radius, double[] into, int offset) {
+        positionOf(angle, cx, cy, radius, (x, y) -> {
+            into[offset] = x;
+            into[offset + 1] = y;
+        });
     }
 
     /**

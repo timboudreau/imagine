@@ -11,6 +11,7 @@ import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -18,6 +19,7 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.Timer;
 import javax.swing.WindowConstants;
+import org.imagine.geometry.util.GeometryStrings;
 
 /**
  * A shape for drawing arrows and rules without recapitulating the code to do it
@@ -69,32 +71,88 @@ public class Arrow implements Shape {
         this.y2 = y2;
     }
 
+    /**
+     * Get the length of this arrow.
+     * @return the length
+     */
     public double length() {
         return Point2D.distance(x1, y1, x2, y2);
     }
 
+    /**
+     * Get this arrow's line as a line.
+     *
+     * @return A line
+     */
     public EqLine toLine() {
         return new EqLine(x1, y1, x2, y2);
     }
 
-    public void setLengthFromPoint1(double newLength) {
-        setLength(newLength, false);
+    /**
+     * Set the length of this arrow, retaining its current angle and potentially
+     * changing the coordinates of the second point.
+     *
+     * @param newLength The new length
+     * @return this
+     */
+    public Arrow setLengthFromPoint1(double newLength) {
+        return setLength(newLength, false);
     }
 
-    public void setLengthFromPoint2(double newLength) {
-        setLength(newLength, true);
+    /**
+     * Set the length of this arrow, retaining its current angle and potentially
+     * changing the coordinates of the
+     * <i>first</i> point.
+     *
+     * @param newLength The new length
+     * @return this
+     */
+    public Arrow setLengthFromPoint2(double newLength) {
+        return setLength(newLength, true);
     }
 
-    private void setLength(double length, boolean fromPoint2) {
+    /**
+     * Get the angle of this line in degrees, from first point to the second
+     * point, in a coordinate space where 0\u00B0 equals 12:00.
+     *
+     * @return The angle
+     */
+    public double angle() {
+        return Circle.angleOf(x1, y1, x2, y2);
+    }
+
+    private Arrow setLength(double length, boolean fromPoint2) {
         EqLine ln = toLine();
         ln.setLength(length, !fromPoint2);
         x1 = ln.x1;
         y1 = ln.y1;
         x2 = ln.x2;
         y2 = ln.y2;
+        return this;
     }
 
-    public void setPointAndAngle(double x, double y, double angle, double distance) {
+    /**
+     * Set the starting point, angle and length.
+     *
+     * @param start The starting point
+     * @param angle The angle in degrees (0\u00B0 degrees equals 12:00)
+     * @param distance The length along the angle from the starting point
+     * @return this
+     */
+    public Arrow setPointAndAngle(Point2D start, double angle, double distance) {
+        return setPointAndAngle(start.getX(), start.getY(), angle, distance);
+    }
+
+    /**
+     * Set the starting point, angle and length.
+     *
+     * @param x The starting x coordinate
+     * @param y The starting y coordinate
+     * @param angle The angle in degrees (0\u00B0 degrees equals 12:00)
+     * @param distance The length along the angle from the starting point
+     * @return this
+     */
+    public Arrow setPointAndAngle(double x, double y, double angle, double distance) {
         Circle circ = new Circle(x, y, distance);
         x1 = x;
         y1 = y;
@@ -102,6 +160,7 @@ public class Arrow implements Shape {
             x2 = xb;
             y2 = yb;
         });
+        return this;
     }
 
     double[] headPoints(boolean a) {
@@ -109,36 +168,56 @@ public class Arrow implements Shape {
             if (!aHead) {
                 return new double[0];
             }
-            Circle circle = new Circle(x1, y1, headLength);
-            double ang = circle.angleOf(x2, y2);
-            double[] pos1 = circle.positionOf(ang + headAngleA);
-            double[] pos2 = circle.positionOf(ang - headAngleA);
-            return new double[]{pos1[0], pos1[1], x1, y1, pos2[0], pos2[1]};
+            double ang = Circle.angleOf(x1, y1, x2, y2);
+            double[] result = new double[6];
+            Circle.positionOf(ang + headAngleA, x1, y1, headLength, result, 0);
+            Circle.positionOf(ang - headAngleA, x1, y1, headLength, result, 4);
+            result[2] = x1;
+            result[3] = y1;
+            return result;
         } else {
             if (!bHead) {
                 return new double[0];
             }
-            Circle circle = new Circle(x2, y2, headLength);
-            double ang = circle.angleOf(x1, y1);
-            double[] pos1 = circle.positionOf(ang + headAngleB);
-            double[] pos2 = circle.positionOf(ang - headAngleB);
-            return new double[]{pos1[0], pos1[1], x2, y2, pos2[0], pos2[1]};
+            double ang = Circle.angleOf(x2, y2, x1, y1);
+            double[] result = new double[6];
+            Circle.positionOf(ang + headAngleB, x2, y2, headLength, result, 0);
+            Circle.positionOf(ang - headAngleB, x2, y2, headLength, result, 4);
+            result[2] = x2;
+            result[3] = y2;
+            return result;
         }
     }
 
-    private <R extends Rectangle2D> R addToBounds(R result) {
-        result.add(x1, y1);
+    public <R extends Rectangle2D> R addToBounds(R result) {
+        if (result.isEmpty()) {
+            result.setFrame(x1, y1, 1, 1);
+        } else {
+            result.add(x1, y1);
+        }
         result.add(x2, y2);
         double[] hp = headPoints(true);
         for (int i = 0; i < hp.length; i += 2) {
-            result.add(hp[i], hp[i + 1]);
+            result.add(hp[i] + headLength, hp[i + 1] + headLength);
+            result.add(hp[i] - headLength, hp[i + 1] - headLength);
         }
         hp = headPoints(false);
         for (int i = 0; i < hp.length; i += 2) {
-            result.add(hp[i], hp[i + 1]);
+            result.add(hp[i] + headLength, hp[i + 1] + headLength);
+            result.add(hp[i] + headLength, hp[i + 1] + headLength);
         }
         return result;
+    }
 
+    @Override
+    public String toString() {
+        return "Arrow("
+                + GeometryStrings.lineToString(x1, y1, x2, y2)
+                + " aa " + GeometryStrings.toString(headAngleA)
+                + " ab " + GeometryStrings.toString(headAngleB)
+                + " hl " + GeometryStrings.toString(headLength)
+                + " ang " + Circle.angleOf(x1, y1, x2, y2)
+                + ")";
     }
 
     @Override
@@ -199,6 +278,44 @@ public class Arrow implements Shape {
     @Override
     public PathIterator getPathIterator(AffineTransform at, double flatness) {
         return getPathIterator(at);
+    }
+
+    /**
+     * Set the points of this line.
+     *
+     * @param pt1 The first point
+     * @param pt2 The second point
+     * @return this
+     */
+    public Arrow setPoints(Point2D pt1, Point2D pt2) {
+        return setPoints(pt1.getX(), pt1.getY(), pt2.getX(), pt2.getY());
+    }
+
+    /**
+     * Set the line this arrow spans.
+     *
+     * @param line A line
+     * @return this
+     */
+    public Arrow setLine(Line2D line) {
+        return setPoints(line.getX1(), line.getY1(), line.getX2(), line.getY2());
+    }
+
+    /**
+     * Set the points of the line this arrow spans.
+     *
+     * @param x1 The first x coordinate
+     * @param y1 The first y coordinate
+     * @param x2 The second x coordinate
+     * @param y2 The second y coordinate
+     * @return this
+     */
+    public Arrow setPoints(double x1, double y1, double x2, double y2) {
+        this.x1 = x1;
+        this.y1 = y1;
+        this.x2 = x2;
+        this.y2 = y2;
+        return this;
     }
 
     static class PI implements PathIterator {
@@ -292,7 +409,6 @@ public class Arrow implements Shape {
             double[] a = circ.positionOf(angle);
             double[] b = circ.positionOf(angle + 180);
             Arrow result = new Arrow(a[0], a[1], b[0], b[1]);
-//            Arrow result = new Arrow(a[0], a[1], circ.centerX, circ.centerY);
             result.aHead = true;
             result.bHead = true;
             result.headAngleB = 335;
@@ -310,8 +426,13 @@ public class Arrow implements Shape {
             g.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, getWidth(), getHeight());
-            g.setColor(Color.WHITE);
+            g.setColor(new Color(100, 100, 255, 128));
             Arrow arr = arrow();
+            g.fill(arr.getBounds2D());
+            g.setColor(new Color(255, 100, 100, 128));
+            g.fill(arr.toLine().getBounds2D());
+
+            g.setColor(Color.WHITE);
             g.draw(arr);
             tick++;
         }
