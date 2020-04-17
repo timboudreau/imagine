@@ -270,6 +270,7 @@ public class VectorIO {
                 break;
             case POLYGON_WRAPPER:
                 writePolygonWrapper((PolygonWrapper) shape, writer);
+                break;
             default:
                 throw new AssertionError(type + " " + shape);
         }

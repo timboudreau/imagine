@@ -83,9 +83,13 @@ public class ExtentPainter extends OneTypePainter {
         wedge1.setRadius(rad);
         wedge1.setAngleAndExtent(ca);
 
-        wedge2.setAngleAndExtent(pt.angle);
-        wedge2.setCenter(pt.vector.apexX(), pt.vector.apexY());
-        wedge2.setRadius(rad);
+        if (pt != null) {
+            wedge2.setAngleAndExtent(pt.angle);
+            wedge2.setCenter(pt.vector.apexX(), pt.vector.apexY());
+            wedge2.setRadius(rad);
+        } else {
+            wedge2.setRadius(0);
+        }
         return true;
     }
 }

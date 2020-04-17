@@ -9,13 +9,11 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import static java.awt.RenderingHints.KEY_ALPHA_INTERPOLATION;
 import static java.awt.RenderingHints.KEY_ANTIALIASING;
 import static java.awt.RenderingHints.KEY_COLOR_RENDERING;
 import static java.awt.RenderingHints.KEY_FRACTIONALMETRICS;
 import static java.awt.RenderingHints.KEY_INTERPOLATION;
-import static java.awt.RenderingHints.KEY_RENDERING;
 import static java.awt.RenderingHints.KEY_STROKE_CONTROL;
 import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
 import static java.awt.RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY;
@@ -23,7 +21,6 @@ import static java.awt.RenderingHints.VALUE_ANTIALIAS_ON;
 import static java.awt.RenderingHints.VALUE_COLOR_RENDER_QUALITY;
 import static java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_ON;
 import static java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC;
-import static java.awt.RenderingHints.VALUE_RENDER_QUALITY;
 import static java.awt.RenderingHints.VALUE_STROKE_PURE;
 import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
 import java.awt.TexturePaint;
@@ -32,7 +29,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.text.DecimalFormat;
-import java.util.HashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.imagine.utils.painting.RepaintHandle;
@@ -44,8 +40,6 @@ import org.openide.util.ImageUtilities;
  * @author Tim Boudreau
  */
 public final class GraphicsUtils {
-
-    private static final RenderingHints HQ_HINTS = new RenderingHints(KEY_RENDERING, VALUE_RENDER_QUALITY);
 
     private GraphicsUtils() {
         throw new AssertionError();
@@ -61,15 +55,6 @@ public final class GraphicsUtils {
         BufferedImage img = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(1, 1, TRANSLUCENT);
         DEFAULT_BUFFERED_IMAGE_TYPE = img.getType();
         img.flush();
-        HQ_HINTS.put(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
-        HQ_HINTS.put(KEY_TEXT_ANTIALIASING, VALUE_TEXT_ANTIALIAS_ON);
-        HQ_HINTS.put(KEY_INTERPOLATION, VALUE_INTERPOLATION_BICUBIC);
-        HQ_HINTS.put(KEY_STROKE_CONTROL, VALUE_STROKE_PURE);
-        HQ_HINTS.put(KEY_FRACTIONALMETRICS, VALUE_FRACTIONALMETRICS_ON);
-        HQ_HINTS.put(KEY_ALPHA_INTERPOLATION, VALUE_ALPHA_INTERPOLATION_QUALITY);
-        HQ_HINTS.put(KEY_COLOR_RENDERING, VALUE_COLOR_RENDER_QUALITY);
-        // Note: Do not turn on the general render quality hint
-        // or painting on Linux gets very glitchy
     }
 
     /**
@@ -112,7 +97,15 @@ public final class GraphicsUtils {
      * @param g A graphics
      */
     public static void setHighQualityRenderingHints(Graphics2D g) {
-        g.setRenderingHints(new HashMap<>(HQ_HINTS));
+        g.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(KEY_TEXT_ANTIALIASING, VALUE_TEXT_ANTIALIAS_ON);
+        g.setRenderingHint(KEY_INTERPOLATION, VALUE_INTERPOLATION_BICUBIC);
+        g.setRenderingHint(KEY_STROKE_CONTROL, VALUE_STROKE_PURE);
+        g.setRenderingHint(KEY_FRACTIONALMETRICS, VALUE_FRACTIONALMETRICS_ON);
+        g.setRenderingHint(KEY_ALPHA_INTERPOLATION, VALUE_ALPHA_INTERPOLATION_QUALITY);
+        g.setRenderingHint(KEY_COLOR_RENDERING, VALUE_COLOR_RENDER_QUALITY);
+        // Note:  Setting the general RENDER_QUALITY hint here seriously degrades
+        // performance
     }
 
     /**

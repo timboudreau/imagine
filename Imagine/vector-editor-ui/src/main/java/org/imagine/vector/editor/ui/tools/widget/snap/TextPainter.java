@@ -51,6 +51,18 @@ class TextPainter {
         handle.repaintArea(lastBounds);
     }
 
+    static void paintCenteredText(String txt, Graphics2D g, double xx, double yy, Rectangle2D adjust) {
+        FontMetrics fm = g.getFontMetrics();
+        int txtW = fm.stringWidth(txt);
+        int txtH = fm.getMaxAscent();
+        int txtFullHeight = fm.getMaxAscent() + fm.getMaxDescent();
+        float y = (float) ((xx - (txtFullHeight / 2D))
+                + fm.getAscent());
+        float x = (float) (yy - (txtW / 2));
+        g.drawString(txt, x, y);
+        adjust.setFrame(x, y + txtH, txtW, txtFullHeight);
+    }
+
     String text() {
         if (degrees) {
             String result = GeometryStrings.toDegreesStringShort(val);

@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.imagine.geometry.util;
 
 import com.mastfrog.function.DoubleBiConsumer;
@@ -761,13 +756,36 @@ public class GeometryUtils {
         return dist;
     }
 
-    private static double cubicPosition(double t, double ax, double bx, double cx, double dx) {
+    /**
+     * Get the position of a coordinate between t=0 and t=1 on a cubic curve
+     * (call once with x and y coordinate info to compute a point).
+     *
+     * @param t The coordinate position along the curve between 0.0 and 1.0 to
+     * indicate the distance along the curve
+     * @param ax The preceding coordinate
+     * @param bx The first control coordinate
+     * @param cx The second control coordinate
+     * @param dx The destination coordinate
+     * @return The coordinate at position t in a quadratic curve
+     */
+    public static double cubicPosition(double t, double ax, double bx, double cx, double dx) {
         return ((1 - t) * (1 - t) * (1 - t)) * ax
                 + 3 * ((1 - t) * (1 - t)) * t * bx
                 + 3 * (1 - t) * (t * t) * cx
                 + (t * t * t) * dx;
     }
 
+    /**
+     * Estimates the length of a quadratic segment.
+     *
+     * @param ax Preceding point x
+     * @param ay Preceding point y
+     * @param bx Second control point x
+     * @param by Second control point y
+     * @param cx Destination point x
+     * @param cy Destination point y
+     * @return A length
+     */
     public static double quadraticSegmentLength2(double ax, double ay, double bx, double by, double cx, double cy) {
         double axSquared = Math.pow(ax, 2);
         double aySquared = Math.pow(ay, 2);
@@ -824,6 +842,17 @@ public class GeometryUtils {
         return result;
     }
 
+    /**
+     * Estimates the length of a quadratic segment.
+     *
+     * @param ax Preceding point x
+     * @param ay Preceding point y
+     * @param bx Second control point x
+     * @param by Second control point y
+     * @param cx Destination point x
+     * @param cy Destination point y
+     * @return A length
+     */
     public static double quadraticSegmentLength(double ax, double ay, double bx, double by, double cx, double cy) {
         double vx = 2 * (bx - ax);
         double vy = 2 * (by - ay);
@@ -847,20 +876,92 @@ public class GeometryUtils {
         return (float) ((t1 * t2 - t3 * Math.log(t2 + t1) - (vv * t4 - t3 * Math.log(vv + t4))) / (8 * Math.pow(uu, 1.5)));
     }
 
+    /**
+     * Round a float to 6 decimal places.
+     *
+     * @param val A float
+     * @return That float, rounded
+     */
     public static float roundOff(float val) {
         return roundOff(val, 100000);
     }
 
+    /**
+     * Round a double to 6 decimal places.
+     *
+     * @param val A double
+     * @return That double, rounded
+     */
     public static float roundOff(double val) {
         return roundOff(val, 100000);
     }
 
+    /**
+     * Round a float arbitrarily.
+     *
+     * @param val The float
+     * @param multiplier The multiplier to multiply and then divide by
+     * @return That float, rounded
+     */
     public static float roundOff(float val, int multiplier) {
         return (float) Math.round(val * multiplier) / multiplier;
     }
 
+    /**
+     * Round a double arbitrarily.
+     *
+     * @param val The double
+     * @param multiplier The multiplier to multiply and then divide by
+     * @return That double, rounded
+     */
     public static float roundOff(double val, int multiplier) {
         return (float) Math.round(val * multiplier) / multiplier;
+    }
+
+    /**
+     * Get the greatest common divisor of two numbers.
+     *
+     * @param first The first number
+     * @param second The second number
+     * @return The greatest common divisor
+     */
+    public static int greatestCommonDivisor(int first, int second) {
+        first = Math.abs(first);
+        second = Math.abs(second);
+        if (first == 0) {
+            return second;
+        } else if (second == 0) {
+            return first;
+        }
+        int shiftBy;
+        for (shiftBy = 0; ((first | second) & 1) == 0; shiftBy++) {
+            first >>= 1;
+            second >>= 1;
+        }
+        while ((first & 1) == 0) {
+            first >>= 1;
+            if (first == 1) {
+                break;
+            }
+        }
+        do {
+            while ((second & 1) == 0) {
+                second >>= 1;
+                if (second == 1) {
+                    break;
+                }
+            }
+            if (first > second) {
+                int swap = first;
+                first = second;
+                second = swap;
+            }
+            second = (second - first);
+            if (second == 1) {
+                break;
+            }
+        } while (second != 0);
+        return first << shiftBy;
     }
 
     private GeometryUtils() {

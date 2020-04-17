@@ -1,8 +1,8 @@
 package org.imagine.vector.editor.ui.palette;
 
+import org.netbeans.paint.api.components.TilingLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.LayoutManager;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.swing.BorderFactory;
@@ -22,7 +22,9 @@ class PaletteItemsPanel<T> extends JPanel {
 
     @SuppressWarnings("LeakingThisInConstructor")
     PaletteItemsPanel(AbstractTileFactory<T, ?> tileFactory) {
-        super(new TilingLayout(tileFactory::getPreferredTileSize));
+        super(new TilingLayout(() -> {
+            return tileFactory.getPreferredTileSize().width;
+        }));
         this.tileFactory = tileFactory;
         this.tileFactory.attachPaletteComponent(this);
     }
@@ -135,8 +137,7 @@ class PaletteItemsPanel<T> extends JPanel {
     }
 
     public static void main(String[] args) {
-
-        JPanel pnl = new JP(new TilingLayout(new Dimension(96, 96)));
+        JPanel pnl = new JP(new TilingLayout(() -> 96));
         for (int i = 0; i < 64; i++) {
             pnl.add(new TestTile());
         }

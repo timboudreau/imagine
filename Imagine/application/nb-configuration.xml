@@ -19,6 +19,6 @@ Any value defined here will override the pom.xml file value but is only applicab
         <org-netbeans-modules-apisupport-installer.os-linux>true</org-netbeans-modules-apisupport-installer.os-linux>
         <org-netbeans-modules-apisupport-installer.os-macosx>false</org-netbeans-modules-apisupport-installer.os-macosx>
         <org-netbeans-modules-apisupport-installer.pack200-enabled>true</org-netbeans-modules-apisupport-installer.pack200-enabled>
-        <netbeans.hint.jdkPlatform>JDK_12</netbeans.hint.jdkPlatform>
+        <netbeans.hint.jdkPlatform>JDK_1.8</netbeans.hint.jdkPlatform>
     </properties>
 </project-shared-configuration>

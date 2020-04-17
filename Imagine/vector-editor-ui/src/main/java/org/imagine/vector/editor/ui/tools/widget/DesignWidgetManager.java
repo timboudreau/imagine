@@ -14,6 +14,7 @@ import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -1119,13 +1120,32 @@ public class DesignWidgetManager implements DesignerControl {
             if (kinds.isEmpty()) {
                 return suggested;
             }
+            switch (currentProxyControlPoint.kind()) {
+                case CUBIC_CONTROL_POINT:
+                case QUADRATIC_CONTROL_POINT:
+                case EDGE_HANDLE:
+                    // Remove things that don't make sense - angles relative to
+                    // cubic and quadratic would show angle indicators over
+                    // nothing, and a corner is nonsensical in the middle of
+                    // a line
+                    kinds.remove(SnapKind.EXTENT);
+                    kinds.remove(SnapKind.CORNER);
+                    break;
+                case RADIUS:
+                    // An angle relative to a radius means nothing
+                    kinds.retainAll(EnumSet.of(SnapKind.DISTANCE, SnapKind.LENGTH, SnapKind.GRID));
+                    break;
+            }
+
+            if (kinds.isEmpty()) {
+                return original;
+            }
 
             Grid grid = Grid.getInstance();
             int gridSize = grid.isEnabled() ? grid.size() : 0;
             if (currentProxyControlPoint != null) {
                 ShapeControlPoint prev = currentProxyControlPoint.previousPhysical();
                 ShapeControlPoint next = currentProxyControlPoint.nextPhysical();
-
                 // For angle and extent matching to be correct, we need to
                 // order the prev and next points such that we have an interior,
                 // not exterior angle, or we'll match the outsides of things

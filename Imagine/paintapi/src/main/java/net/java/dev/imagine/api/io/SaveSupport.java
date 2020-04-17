@@ -5,6 +5,7 @@
  */
 package net.java.dev.imagine.api.io;
 
+import com.mastfrog.function.state.Obj;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -113,15 +114,25 @@ public abstract class SaveSupport<P, I extends PictureImplementation> {
 
     public static <C extends WritableByteChannel & SeekableByteChannel> long save(Picture picture, Path path) throws IOException {
         List<String> avail = new ArrayList<>(5);
+        Obj<SaveSupport> last = Obj.create();
         for (SaveSupport supp : Lookup.getDefault().lookupAll(SaveSupport.class)) {
             avail.add(supp.ext);
             boolean canSave = supp.canSavePicture(picture);
+            if (canSave) {
+                last.set(supp);
+            }
             boolean extMatches = path.getFileName().toString().endsWith("." + supp.ext);
             fine(() -> "Try save support " + supp + " can save? " + canSave + " ext " + supp.ext + " path " + path
                     + " ext matches " + extMatches);
             if (canSave && extMatches) {
                 return supp.doSave(picture, path);
             }
+        }
+        if (last.isSet()) {
+            SaveSupport supp = last.get();
+            Path pth = path.getParent().resolve(path.getFileName() + "." + supp.ext);
+            fine(() -> "Try save support " + supp + " with added extension " + supp.ext + " path " + pth);
+            return supp.doSave(picture, pth);
         }
         throw new IOException("No SaveSupport can save " + Accessor.pictureImplFor(picture)
                 + " to the file extension of " + path + ". Available extensions: " + avail);
