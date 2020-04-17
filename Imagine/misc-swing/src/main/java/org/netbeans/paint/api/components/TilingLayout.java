@@ -27,6 +27,7 @@ import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.border.Border;
+import static org.imagine.geometry.util.GeometryUtils.greatestCommonDivisor;
 
 /**
  *
