@@ -77,6 +77,11 @@
             </exclusions>
         </dependency>
         
+<!--        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-util-ui-svg</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>branding</artifactId>
@@ -125,15 +130,15 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>io</artifactId>
         </dependency>
-        
         <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>svg-io</artifactId>
+        </dependency>
+        <!--        <dependency>
             <groupId>org.netbeans.contrib</groupId>
             <artifactId>org-netbeans-modules-paintcatcher</artifactId>
             <version>1.5</version>
-        </dependency>
-        
-        
-        
+        </dependency>-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>misc-swing</artifactId>

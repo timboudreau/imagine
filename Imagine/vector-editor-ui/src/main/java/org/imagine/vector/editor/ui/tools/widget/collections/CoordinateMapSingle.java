@@ -19,7 +19,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.util.GeometryStrings;
-import org.imagine.geometry.util.GeometryUtils;
 import org.imagine.utils.Holder;
 
 /**

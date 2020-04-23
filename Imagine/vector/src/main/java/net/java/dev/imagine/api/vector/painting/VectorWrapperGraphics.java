@@ -56,6 +56,7 @@ import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
 import net.java.dev.imagine.api.vector.elements.PolygonWrapper;
 import net.java.dev.imagine.api.vector.elements.Polyline;
 import net.java.dev.imagine.api.vector.elements.Rectangle;
+import net.java.dev.imagine.api.vector.elements.RhombusWrapper;
 import net.java.dev.imagine.api.vector.elements.RoundRect;
 import net.java.dev.imagine.api.vector.elements.StringWrapper;
 import net.java.dev.imagine.api.vector.elements.Text;
@@ -72,6 +73,7 @@ import net.java.dev.imagine.api.vector.graphics.TexturePaintWrapper;
 import net.java.dev.imagine.api.vector.util.ShapeCharacteristics;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.Polygon2D;
+import org.imagine.geometry.Rhombus;
 import org.imagine.geometry.Triangle2D;
 import org.imagine.utils.java2d.GraphicsUtils;
 
@@ -122,7 +124,9 @@ public class VectorWrapperGraphics extends Graphics2D {
     }
 
     public static Shaped primitiveFor(Shape shape, boolean fill) {
-        if (shape instanceof java.awt.Rectangle) {
+        if (shape instanceof Rhombus) {
+            return new RhombusWrapper((Rhombus) shape, fill);
+        } else if (shape instanceof java.awt.Rectangle) {
             java.awt.Rectangle r = (java.awt.Rectangle) shape;
             Rectangle rect = new Rectangle(r.x, r.y, r.width, r.height, fill);
             return rect;

@@ -208,7 +208,6 @@
                 <attr name="position" intvalue="100"/>
             </file>
 
-
             <file name="net-java-dev-imagine-ui-actions-ZoomInAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomInAction.instance"/>
                 <attr name="position" intvalue="200"/>
@@ -219,6 +218,19 @@
                 <attr name="position" intvalue="300"/>
             </file>
 
+            <file name="net-java-dev-imagine-ui-actions-ZoomFullAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomFullAction.instance"/>
+                <attr name="position" intvalue="400"/>
+            </file>
+
+            <file name="net-java-dev-imagine-ui-actions-ZoomSubmenuAction.instance">
+                <attr name="position" intvalue="500"/>
+            </file>
+            
+            <file name="net-java-dev-imagine-ui-actions-ImageEditorBackgroundAction.instance">
+                <attr name="position" intvalue="500"/>
+            </file>
+            
         </folder>
 
         <folder name="Window">
@@ -227,7 +239,9 @@
             <file name="ProgressListAction.shadow_hidden"/>
             <file name="ViewFavoritesTabAction.shadow_hidden"/>
             <file name="ViewRuntimeTabAction.shadow_hidden"/>
-
+            <file name="net-java-dev-imagine-ui-actions-NewCanvasAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ImageEditorBackgroundAction.instance"/>
+            </file>
         </folder>
 
     </folder>
@@ -260,9 +274,9 @@
             <file name="net-java-dev-imagine-ui-actions-ZoomInAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomInAction.instance"/>
             </file>
-            <!--   <file name="net-java-dev-imagine-ui-actions-ZoomFullAction.shadow">
+            <file name="net-java-dev-imagine-ui-actions-ZoomFullAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomFullAction.instance"/>
-            </file>-->
+            </file>
         </folder>
         <attr name="Snap/Zoom" boolvalue="true"/>
         <folder name="Snap">
@@ -274,6 +288,9 @@
             <file name="net-java-dev-imagine-ui-toolbar-SnapEditorAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Snap/net-java-dev-imagine-ui-toolbar-SnapEditorAction.instance"/>
                 <attr name="position" intvalue="1300"/>
+            </file>
+            <file name="net-java-dev-imagine-ui-actions-ImageEditorBackgroundAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ImageEditorBackgroundAction.instance"/>
             </file>
         </folder>
 

@@ -27,6 +27,7 @@ import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.selection.PictureSelection;
 import net.dev.java.imagine.api.selection.Selection;
 import net.java.dev.imagine.api.image.Hibernator;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
@@ -186,7 +187,7 @@ public abstract class AbstractPictureImplementation extends PictureImplementatio
                     + "paint into");
         } else {
             undoables.inUndoableOperation(false, msg, () -> {
-                paint(surface.getGraphics(), null, true, Zoom.ONE_TO_ONE);
+                paint(RenderingGoal.PRODUCTION, surface.getGraphics(), null, true, Zoom.ONE_TO_ONE);
                 state().setLayers(nue);
             });
         }

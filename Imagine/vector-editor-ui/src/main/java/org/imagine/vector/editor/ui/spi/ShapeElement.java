@@ -14,7 +14,9 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.api.vector.Shaped;
+import net.java.dev.imagine.api.vector.graphics.BasicStrokeWrapper;
 import net.java.dev.imagine.api.vector.painting.VectorWrapperGraphics;
 import org.imagine.awt.key.PaintKey;
 import org.imagine.editor.api.PaintingStyle;
@@ -47,6 +49,8 @@ public interface ShapeElement {
      */
     ShapeElement copy();
 
+    boolean isNameExplicitlySet();
+
     Rectangle getBounds();
 
     boolean isDraw();
@@ -60,6 +64,12 @@ public interface ShapeElement {
     Shape shape();
 
     BasicStroke stroke();
+
+    boolean setStroke(BasicStrokeWrapper wrapper);
+
+    default boolean setStroke(BasicStroke stroke) {
+        return setStroke(new BasicStrokeWrapper(stroke));
+    }
 
     void toPaths();
 
@@ -94,7 +104,7 @@ public interface ShapeElement {
 
     boolean canApplyTransform(AffineTransform xform);
 
-    boolean paint(Graphics2D g, Rectangle clip);
+    boolean paint(RenderingGoal goal, Graphics2D g, Rectangle clip);
 
     Paint fill();
 

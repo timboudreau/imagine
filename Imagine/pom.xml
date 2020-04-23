@@ -8,7 +8,7 @@
     <packaging>pom</packaging>
     <name>Imagine - NB App Parent</name>
     <properties>
-        <netbeans.version>RELEASE112</netbeans.version>
+        <netbeans.version>RELEASE113</netbeans.version>
         <brandingToken>imagine</brandingToken>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <nbcluster>imagine</nbcluster>
@@ -138,6 +138,7 @@
         <module>gradients</module>
         <module>borrowed</module>
         <module>io</module>
+        <module>svg-io</module>
     </modules>
     <repositories>
         <repository>
@@ -174,6 +175,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>visual-library-layer-spi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>svg-io</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -418,6 +424,11 @@
             </dependency>
             <dependency>
                 <groupId>org.netbeans.api</groupId>
+                <artifactId>org-openide-util-ui-svg</artifactId>
+                <version>${netbeans.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.netbeans.api</groupId>
                 <artifactId>org-netbeans-api-progress-nb</artifactId>
                 <version>${netbeans.version}</version>
             </dependency>
@@ -517,13 +528,18 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.xmlgraphics</groupId>
+                <artifactId>batik-svg-dom</artifactId>
+                <version>${batik.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.xmlgraphics</groupId>
                 <artifactId>batik-awt-util</artifactId>
                 <version>${batik.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.xmlgraphics</groupId>
                 <artifactId>xmlgraphics-commons</artifactId>
-                <version>${batik.version}</version>
+                <version>2.4</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.xmlgraphics</groupId>
@@ -548,11 +564,6 @@
             <dependency>
                 <groupId>org.apache.xmlgraphics</groupId>
                 <artifactId>batik-bridge</artifactId>
-                <version>${batik.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.xmlgraphics</groupId>
-                <artifactId>batik-svg-dom</artifactId>
                 <version>${batik.version}</version>
             </dependency>
             <dependency>

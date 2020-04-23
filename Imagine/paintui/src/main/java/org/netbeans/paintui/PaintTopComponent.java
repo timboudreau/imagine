@@ -108,10 +108,10 @@ public class PaintTopComponent extends TopComponent implements ChangeListener,
     }
 
     @Override
-    public void resizePicture(int w, int h) {
+    public void resizePicture(int w, int h, boolean resizeCanvasOnly) {
         Picture target = canvas.getPicture().getPicture();
         for (Layer l : target.getLayers()) {
-            l.resize(w, h);
+            l.resize(w, h, resizeCanvasOnly);
         }
         pictureResized(w, h);
     }

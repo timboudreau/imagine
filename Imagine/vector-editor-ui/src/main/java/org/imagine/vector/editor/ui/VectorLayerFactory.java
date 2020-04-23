@@ -22,7 +22,7 @@ public class VectorLayerFactory extends LayerFactory {
 
     @Override
     public LayerImplementation createLayer(String name, RepaintHandle handle, Dimension size) {
-        return new VectorLayer(name, handle, this);
+        return new VectorLayer(name, handle, size, this);
     }
 
     @Override

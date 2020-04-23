@@ -54,6 +54,7 @@ import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.imagine.editor.api.Zoom;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.ui.common.PositionStatusLineElementProvider;
 import org.imagine.editor.api.AspectRatio;
 import org.imagine.utils.java2d.GraphicsUtils;
@@ -216,7 +217,7 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
         scratchAt3.concatenate(getCurrentTransform());
         g2d.setTransform(scratchAt3);
 
-        boolean painted = picture.paint(g2d, null, true, zoomImpl);
+        boolean painted = picture.paint(RenderingGoal.EDITING, g2d, null, true, zoomImpl);
         if (tool != null) {
             PaintParticipant participant = get(tool, PaintParticipant.class);
             if (participant != null) {
@@ -272,10 +273,9 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
 
     public BufferedImage getImage() {
         Dimension d = picture.getSize();
-        BufferedImage result = new BufferedImage(d.width, d.height,
-                GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
-        picture.paint((Graphics2D) result.createGraphics(), null, true, Zoom.ONE_TO_ONE);
-        return result;
+        return GraphicsUtils.newBufferedImage(d.width, d.height, g -> {
+            picture.paint(RenderingGoal.PRODUCTION, g, null, true, Zoom.ONE_TO_ONE);
+        });
     }
     private Tool tool;
 

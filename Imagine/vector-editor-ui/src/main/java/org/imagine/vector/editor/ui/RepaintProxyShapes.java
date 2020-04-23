@@ -21,10 +21,12 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.Supplier;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.api.vector.Adjustable;
 import org.imagine.editor.api.snap.SnapPoints;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
+import net.java.dev.imagine.api.vector.graphics.BasicStrokeWrapper;
 import org.imagine.awt.key.PaintKey;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.Zoom;
@@ -252,8 +254,8 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
     }
 
     @Override
-    public boolean paint(Graphics2D g, Rectangle bounds, Zoom zoom) {
-        return shapes.paint(g, bounds, zoom);
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, Zoom zoom) {
+        return shapes.paint(goal, g, bounds, zoom);
     }
 
     @Override
@@ -388,6 +390,21 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
         }
 
         @Override
+        public boolean setStroke(BasicStroke stroke) {
+            return entry.setStroke(stroke);
+        }
+
+        @Override
+        public boolean setStroke(BasicStrokeWrapper wrapper) {
+            return entry.setStroke(wrapper);
+        }
+
+        @Override
+        public boolean isNameExplicitlySet() {
+            return entry.isNameExplicitlySet();
+        }
+
+        @Override
         public ShapeInfo shapeInfo() {
             return entry.shapeInfo();
         }
@@ -513,8 +530,8 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
         }
 
         @Override
-        public boolean paint(Graphics2D g, Rectangle clip) {
-            return entry.paint(g, clip);
+        public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle clip) {
+            return entry.paint(goal, g, clip);
         }
 
         @Override

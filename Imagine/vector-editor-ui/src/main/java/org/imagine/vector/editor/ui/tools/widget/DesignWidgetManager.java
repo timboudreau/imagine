@@ -10,6 +10,7 @@ import java.awt.Shape;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,6 +30,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeListener;
+import net.java.dev.imagine.api.vector.Centered;
+import net.java.dev.imagine.api.vector.Shaped;
+import net.java.dev.imagine.api.vector.Transformable;
 import org.imagine.awt.key.PaintKey;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.grid.Grid;
@@ -36,6 +40,7 @@ import org.imagine.editor.api.grid.SnapSettings;
 import org.imagine.editor.api.snap.SnapKind;
 import org.imagine.editor.api.snap.SnapPoints;
 import org.imagine.editor.api.snap.Thresholds;
+import org.imagine.geometry.Circle;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.LineVector;
 import org.imagine.utils.painting.RepaintHandle;
@@ -52,6 +57,8 @@ import org.imagine.vector.editor.ui.tools.widget.actions.MoveInSceneCoordinateSp
 import org.imagine.vector.editor.ui.tools.widget.actions.DragHandler;
 import org.imagine.vector.editor.ui.tools.widget.actions.HideNoiseAction;
 import org.imagine.vector.editor.ui.tools.widget.actions.NextPrevKeyAction;
+import org.imagine.vector.editor.ui.tools.widget.actions.RotateInSceneCoordinateSpaceAction;
+import org.imagine.vector.editor.ui.tools.widget.actions.RotationHandler;
 import org.imagine.vector.editor.ui.tools.widget.actions.ShapeActions;
 import org.imagine.vector.editor.ui.tools.widget.util.UIState;
 import org.imagine.vector.editor.ui.tools.widget.util.UIState.UIStateListener;
@@ -92,6 +99,7 @@ public class DesignWidgetManager implements DesignerControl {
     // Action handlers
     private final ShapeDragHandler shapeDrag = new ShapeDragHandler();
     private final ManyControlPointWidgetDragHandler manyCpDrag = new ManyControlPointWidgetDragHandler();
+    private final ManyControlPointWidgetRotationHandler manyCpRotate = new ManyControlPointWidgetRotationHandler();
     private final ShapeAdjustmentKeyHandler shapeKeyHandler = new ShapeAdjustmentKeyHandler();
     private final ControlPointKeyHandler controlPointKeyHandler = new ControlPointKeyHandler();
     private ManyControlPointsWidget many;
@@ -214,12 +222,13 @@ public class DesignWidgetManager implements DesignerControl {
         grid = new GridWidget(scene);
         widget.addChild(grid);
 
-        many = new ManyControlPointsWidget(scene, shapes, props, uiState, selectionLookup, manyCpDrag);
+        many = new ManyControlPointsWidget(scene, shapes, props, uiState, selectionLookup, manyCpDrag, manyCpRotate);
         WidgetAction.Chain manyLayerActions = many.getActions();
         manyLayerActions.addAction(popupAction);
         manyLayerActions.addAction(nextPrevKeyAction);
 //        manyLayerActions.addAction(focusAction);
         manyLayerActions.addAction(moveAction);
+        manyLayerActions.addAction(new RotateInSceneCoordinateSpaceAction());
         manyLayerActions.addAction(keyMoveAction);
         shapeActions.applyKeyboardActions(many);
 
@@ -994,6 +1003,141 @@ public class DesignWidgetManager implements DesignerControl {
         }
     }
 
+    class ManyControlPointWidgetRotationHandler implements RotationHandler {
+
+        private ShapeControlPoint currentProxyControlPoint;
+
+        private void withShapeInfo(Widget w, Point2D original, TriConsumer<ShapeControlPoint, ManyControlPointsWidget, OneShapeWidget> c) {
+            assert w instanceof ManyControlPointsWidget : "Unexpected widget type " + w.getClass().getName() + ": " + w;
+            ShapeControlPoint e = w.getLookup().lookup(ShapeControlPoint.class);
+            assert e != null : "No shape control point in lookup of " + w;
+            if (!e.isValid()) {
+//                System.err.println("Abort dragging invalid control point");
+                abortAllDragOperations();
+                return;
+            }
+            OneShapeWidget shapeWidget = widget.find(e.owner(), OneShapeWidget.class);
+            assert shapeWidget != null : "No shape widget for owner " + e.owner()
+                    + " of " + e.getClass().getName()
+                    + " - " + e + " widget type "
+                    + w.getClass().getName()
+                    + " owner type " + e.owner().getClass().getName()
+                    + " owner id " + Long.toString(e.owner().id(), 36)
+                    + "(" + e.owner().id() + ")";
+
+            ShapeElement el = shapeWidget.getLookup().lookup(ShapeElement.class);
+            assert el != null : "No shape";
+
+            ManyControlPointsWidget cpw = (ManyControlPointsWidget) w;
+            c.apply(e, cpw, shapeWidget);
+            shapeWidget.onRotated();
+        }
+
+        private AffineTransform angle(Point2D original, Point2D current, OneShapeWidget widget) {
+            Centered cen = widget.realShape().item().as(Centered.class);
+            assert cen != null;
+            Point2D center = cen.center();
+            double origAngle = Circle.angleOf(center, original);
+            double currentAngle = Circle.angleOf(center, current);
+            double diff = currentAngle - origAngle;
+            return AffineTransform.getRotateInstance(Math.toRadians(diff),
+                    center.getX(), center.getY());
+        }
+
+        private void updateRotation(Point2D original, Point2D current, OneShapeWidget el) {
+            ShapeElement temp = currentProxyControlPoint.owner();
+            Shaped orig = el.realShape().item();
+            Shaped rotated = (Shaped) orig.as(Transformable.class).copy(angle(original, current, el));
+            assert el.realShape() != temp : "Have original, not temporary copy to edit";
+            temp.setShape(rotated);
+            el.revalidate();
+        }
+
+        final AffineTransform testRotateTransform = AffineTransform.getRotateInstance(Math.toRadians(90));
+
+        @Override
+        public boolean onPotentialDrag(Widget w, Point2D original) {
+            ShapeControlPoint pt = w.getLookup().lookup(ShapeControlPoint.class);
+            return pt != null
+                    && pt.owner().item().is(Centered.class)
+                    && pt.owner().item().is(Transformable.class)
+                    && pt.owner().item().as(Transformable.class).canApplyTransform(testRotateTransform);
+        }
+
+        @Override
+        public void onBeginDrag(Widget w, Point2D original, Point2D current) {
+            if (!uiState.controlPointsDraggable()) {
+                return;
+            }
+            ShapeControlPoint pt = w.getLookup().lookup(ShapeControlPoint.class);
+            if (pt == null) {
+                return;
+            }
+            withShapeInfo(w, original, (controlPoint, cpWidget, shapeWidget) -> {
+                currentProxyControlPoint = shapeWidget.onBeginControlPointDrag(controlPoint);
+                if (currentProxyControlPoint == null) {
+                    abortAllDragOperations();
+                    currentProxyControlPoint = shapeWidget.onBeginControlPointDrag(controlPoint);
+                }
+                assert currentProxyControlPoint != null : "Did not get a control point from " + shapeWidget;
+                cpWidget.onBeginRotate(currentProxyControlPoint);
+                updateRotation(original, current, shapeWidget);
+                shapeWidget.onRotated();
+                cpWidget.onRotate();
+            });
+            opListeners.onDragStarted(w.getLookup());
+        }
+
+        @Override
+        public void onDrag(Widget w, Point2D original, Point2D current) {
+            if (!uiState.controlPointsDraggable()) {
+                return;
+            }
+//            setAngle(current, w);
+            withShapeInfo(w, original, (controlPoint, cpWidget, shapeWidget) -> {
+                assert currentProxyControlPoint != null : "Not currently rotating";
+                updateRotation(original, current, shapeWidget);
+                shapeWidget.onRotated();
+                cpWidget.onRotate();
+            });
+        }
+
+        private ShapeControlPoint clearProxy() {
+            ShapeControlPoint proxy = currentProxyControlPoint;
+            assert proxy != null : "No proxy";
+            currentProxyControlPoint = null;
+            return proxy;
+        }
+
+        @Override
+        public void onEndDrag(Widget w, Point2D original, Point2D current) {
+            if (!uiState.controlPointsDraggable()) {
+                return;
+            }
+            withShapeInfo(w, original, (controlPoint, cpWidget, shapeWidget) -> {
+                ShapeControlPoint proxy = clearProxy();
+                cpWidget.onEndRotate(false);
+                shapeWidget.onEndRotate(proxy, true);
+                cpWidget.syncOne(shapeWidget.realShape());
+            });
+            opListeners.onDragCompleted(w.getLookup());
+        }
+
+        @Override
+        public void onCancelDrag(Widget w, Point2D original) {
+            clearProxy();
+            if (!uiState.controlPointsDraggable()) {
+                return;
+            }
+            withShapeInfo(w, original, (controlPoint, cpWidget, shapeWidget) -> {
+                cpWidget.onEndRotate(true);
+                shapeWidget.onCancelRotation();
+            });
+            opListeners.onDragCancelled(w.getLookup());
+        }
+
+    }
+
     class ManyControlPointWidgetDragHandler implements DragHandler {
 
         private ShapeControlPoint currentProxyControlPoint;
@@ -1011,11 +1155,6 @@ public class DesignWidgetManager implements DesignerControl {
 //            w.repaint();
         }
 
-        private void repaintWidget(Widget w) {
-            Rectangle r = w.getScene().convertSceneToView(w.convertLocalToScene(w.getClientArea()));
-            w.getScene().getView().repaint(r);
-        }
-
         private void withShapeInfo(Widget w, TriConsumer<ShapeControlPoint, ManyControlPointsWidget, OneShapeWidget> c) {
             assert w instanceof ManyControlPointsWidget : "Unexpected widget type " + w.getClass().getName() + ": " + w;
             ShapeControlPoint e = w.getLookup().lookup(ShapeControlPoint.class);
@@ -1026,6 +1165,11 @@ public class DesignWidgetManager implements DesignerControl {
                 return;
             }
             OneShapeWidget shapeWidget = widget.find(e.owner(), OneShapeWidget.class);
+            if (shapeWidget == null) {
+                DesignWidgetManager.this.sync();
+                // May have just been added?
+                shapeWidget = widget.find(e.owner(), OneShapeWidget.class);
+            }
             assert shapeWidget != null : "No shape widget for owner " + e.owner()
                     + " of " + e.getClass().getName()
                     + " - " + e + " widget type "
@@ -1176,133 +1320,6 @@ public class DesignWidgetManager implements DesignerControl {
         }
     }
 
-    /*
-    class ControlPointDragHandler implements DragHandler {
-
-        private ShapeControlPoint currentProxyControlPoint;
-
-        private void setPoint(Point2D current, Widget w) {
-            currentProxyControlPoint.set(current.getX(), current.getY());
-            w.revalidate();
-            w.repaint();
-        }
-
-        private void withShapeInfo(Widget w, TriConsumer<ShapeControlPoint, ControlPointWidget, OneShapeWidget> c) {
-            assert w instanceof ControlPointWidget : "Unexpected widget type " + w.getClass().getName() + ": " + w;
-            ShapeControlPoint e = w.getLookup().lookup(ShapeControlPoint.class);
-            assert e != null : "No shape control point in lookup of " + w;
-            if (!e.isValid()) {
-//                System.err.println("Abort dragging invalid control point");
-                abortAllDragOperations();
-            }
-            OneShapeWidget shapeWidget = widget.find(e.owner(), OneShapeWidget.class);
-            assert shapeWidget != null : "No shape widget for owner " + e.owner()
-                    + " of " + e.getClass().getName()
-                    + " - " + e + " widget type "
-                    + w.getClass().getName()
-                    + " owner type " + e.owner().getClass().getName()
-                    + " owner id " + Long.toString(e.owner().id(), 36)
-                    + "(" + e.owner().id() + ")";
-            ControlPointWidget cpw = (ControlPointWidget) w;
-            c.apply(e, cpw, shapeWidget);
-        }
-
-        private void clearDragState() {
-            currentProxyControlPoint = null;
-        }
-
-        @Override
-        public boolean onPotentialDrag(Widget w, Point2D original) {
-            if (!uiState.controlPointsDraggable()) {
-                return false;
-            }
-            ShapeControlPoint pt = w.getLookup().lookup(ShapeControlPoint.class);
-            if (pt != null && !pt.isEditable()) {
-                return false;
-            }
-            return pt != null;
-        }
-
-        @Override
-        public void onBeginDrag(Widget w, Point2D original, Point2D current) {
-            if (!uiState.controlPointsDraggable()) {
-                return;
-            }
-            ShapeControlPoint pt = w.getLookup().lookup(ShapeControlPoint.class);
-            if (pt != null && !pt.isEditable()) {
-                return;
-            }
-            withShapeInfo(w, (controlPoint, cpWidget, shapeWidget) -> {
-                currentProxyControlPoint = shapeWidget.onBeginControlPointDrag(controlPoint);
-                cpWidget.onBeginDrag(currentProxyControlPoint);
-                setPoint(current, w);
-            });
-            opListeners.onDragStarted(w.getLookup());
-            return;
-        }
-
-        @Override
-        public void onDrag(Widget w, Point2D original, Point2D current) {
-            if (!uiState.controlPointsDraggable()) {
-                return;
-            }
-            setPoint(current, w);
-        }
-
-        private ShapeControlPoint clearProxy() {
-            ShapeControlPoint proxy = currentProxyControlPoint;
-            assert proxy != null : "No proxy";
-            currentProxyControlPoint = null;
-            return proxy;
-        }
-
-        @Override
-        public void onEndDrag(Widget w, Point2D original, Point2D current) {
-            if (!uiState.controlPointsDraggable()) {
-                return;
-            }
-            EventQueue.invokeLater(() -> {
-                withShapeInfo(w, (controlPoint, cpWidget, shapeWidget) -> {
-                    ShapeControlPoint proxy = clearProxy();
-                    cpWidget.onEndDrag();
-                    shapeWidget.onEndControlPointDrag(proxy, true);
-                });
-                opListeners.onDragCompleted(w.getLookup());
-            });
-        }
-
-        @Override
-        public void onCancelDrag(Widget w, Point2D original) {
-            if (!uiState.controlPointsDraggable()) {
-                return;
-            }
-            clearProxy();
-            withShapeInfo(w, (controlPoint, cpWidget, shapeWidget) -> {
-                cpWidget.onEndDrag();
-                shapeWidget.onCancelControlPointDrag();
-            });
-            opListeners.onDragCancelled(w.getLookup());
-        }
-
-        @Override
-        public Point2D snap(Widget w, Point2D original, Point2D suggested) {
-            SnapSettings snap = SnapSettings.getGlobal();
-            if (!snap.isEnabled()) {
-                return suggested;
-            }
-            Set<SnapKind> kinds = snap.getEnabledSnapKinds();
-            if (kinds.isEmpty()) {
-                return suggested;
-            }
-
-            Grid grid = Grid.getInstance();
-            Point2D result = pts.get().snapExclusive(null, suggested, null,
-                    grid.isEnabled() ? grid.size() : 0,
-                    snap.getEnabledSnapKinds());
-            return result;
-        }
-    }
-     */
     private static void nullConsumer(ControlPoint c) {
         // fetching control points takes a callback that is notified when the
         // control point is moved - when dragging a shape, not its control

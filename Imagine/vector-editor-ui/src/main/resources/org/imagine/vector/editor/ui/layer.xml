@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.2//EN" "http://www.netbeans.org/dtds/filesystem-1_2.dtd">
+<filesystem>
+    <folder name="Windows2">
+        <folder name="Modes">
+            <file name="palettes.wsmode" url="palettes.wsmode"/>
+            <folder name="palettes">
+                <file name="shapesPalette.wstcref" url="shapesPalette.wstcref">
+                    <attr name="position" intvalue="100001"/>
+                </file>
+                <file name="paintsPalette.wstcref" url="paintsPalette.wstcref">
+                    <attr name="position" intvalue="200001"/>
+                </file>
+            </folder>
+        </folder>
+        <folder name="Components">
+            <file name="shapesPalette.settings" url="shapesPalette.settings">
+                <attr name="position" intvalue="1000"/>
+            </file>
+            <file name="paintsPalette.settings" url="paintsPalette.settings">
+                <attr name="position" intvalue="2000"/>
+            </file>
+        </folder>
+    </folder>
+</filesystem>

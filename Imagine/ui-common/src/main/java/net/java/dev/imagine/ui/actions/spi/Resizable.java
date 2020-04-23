@@ -7,5 +7,5 @@ package net.java.dev.imagine.ui.actions.spi;
  */
 public interface Resizable {
 
-    public void resizePicture(int w, int h);
+    public void resizePicture(int w, int h, boolean resizeCanvasOnly);
 }

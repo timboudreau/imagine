@@ -1,5 +1,6 @@
 package org.imagine.geometry;
 
+import com.mastfrog.function.DoubleBiConsumer;
 import java.awt.Point;
 import java.awt.geom.Point2D;
 import org.imagine.geometry.util.GeometryStrings;
@@ -11,7 +12,7 @@ import org.imagine.geometry.util.GeometryUtils;
  *
  * @author Tim Boudreau
  */
-public final class EqPointDouble extends Point2D.Double implements Comparable<Point2D> {
+public final class EqPointDouble extends Point2D.Double implements Comparable<Point2D>, DoubleBiConsumer {
 
     public EqPointDouble() {
     }
@@ -102,5 +103,10 @@ public final class EqPointDouble extends Point2D.Double implements Comparable<Po
             result = java.lang.Double.compare(x, o.getX());
         }
         return result;
+    }
+
+    @Override
+    public void accept(double a, double b) {
+        setLocation(a, b);
     }
 }

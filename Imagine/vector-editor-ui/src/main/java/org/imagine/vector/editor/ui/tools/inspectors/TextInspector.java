@@ -16,6 +16,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JTextArea;
+import net.java.dev.imagine.api.vector.Textual;
 import net.java.dev.imagine.api.vector.elements.Text;
 import org.imagine.inspectors.spi.InspectorFactory;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
@@ -117,14 +118,14 @@ public class TextInspector extends InspectorFactory<Text> {
         return pnl;
     }
 
-    private static class TextAreaListener implements FocusListener {
+    static class TextAreaListener implements FocusListener {
 
         private final JTextArea area;
-        private final Text obj;
+        private final Textual obj;
         private final ShapesCollection coll;
         private final ShapeElement shape;
 
-        public TextAreaListener(JTextArea area, Text obj, ShapesCollection coll, ShapeElement shape) {
+        public TextAreaListener(JTextArea area, Textual obj, ShapesCollection coll, ShapeElement shape) {
             this.area = area;
             this.obj = obj;
             this.coll = coll;
@@ -142,6 +143,7 @@ public class TextInspector extends InspectorFactory<Text> {
             if (!txt.isEmpty() && !obj.getText().equals(txt)) {
                 coll.edit("Update text", shape, () -> {
                     obj.setText(txt);
+                    shape.changed();
                 });
             }
         }

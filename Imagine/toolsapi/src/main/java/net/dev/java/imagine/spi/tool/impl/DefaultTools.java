@@ -2,6 +2,7 @@ package net.dev.java.imagine.spi.tool.impl;
 
 import java.awt.Image;
 import java.beans.BeanInfo;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -148,6 +149,27 @@ public final class DefaultTools extends Tools {
 
         @Override
         public Icon icon() {
+            // Do this directly to try to use the right loader for SVG icons
+            URL url = (URL) fld.getPrimaryFile().getAttribute("SystemFileSystem.icon");
+            if (url != null) {
+                String pth = url.getPath();
+                if (!pth.isEmpty() && pth.charAt(0) == '/') {
+                    pth = pth.substring(1);
+                }
+                System.out.println("try load icon " + pth);
+                Icon result = ImageUtilities.loadImageIcon(url.getPath(), false);
+//                if (result != null && result.getIconWidth() > 0 && result.getIconHeight() > 0) {
+//                    return result;
+//                } else {
+//                    System.out.println("Got bad icon: " + result);
+//                }
+                if (result != null) {
+                    return result;
+                } else {
+                    System.out.println("No icon for " + fld.getName());
+                }
+            }
+
             Image ic = fld.getNodeDelegate().getIcon(BeanInfo.ICON_COLOR_16x16);
             try {
                 return ImageUtilities.image2Icon(ic);

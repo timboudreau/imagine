@@ -41,6 +41,7 @@ import javax.swing.undo.UndoManager;
 import javax.swing.undo.UndoableEdit;
 import net.dev.java.imagine.api.selection.Selection;
 import net.java.dev.imagine.api.image.Hibernator;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
 import org.imagine.utils.painting.RepaintHandle;
@@ -162,14 +163,14 @@ class AppPicture extends PictureImplementation {
         return getMasterRepaintHandle();
     }
 
-    public boolean paint(Graphics2D g, Rectangle r, boolean showSelection, Zoom zoom) {
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle r, boolean showSelection, Zoom zoom) {
         if (hibernated) {
             return false;
         }
         boolean result = false;
         for (Iterator i = state.layers.iterator(); i.hasNext(); ) {
             LayerImplementation l = (LayerImplementation)i.next();
-            result |= l.paint(g, r, showSelection, r != null, zoom);
+            result |= l.paint(goal, g, r, showSelection, r != null, zoom);
         }
         return result;
     }
@@ -378,7 +379,7 @@ class AppPicture extends PictureImplementation {
                     getMasterRepaintHandle(), getSize());
             SurfaceImplementation surface = nue.getSurface();
             if (surface != null) {
-                this.paint (surface.getGraphics(), null, false, Zoom.ONE_TO_ONE);
+                this.paint (RenderingGoal.PRODUCTION, surface.getGraphics(), null, false, Zoom.ONE_TO_ONE);
             } else {
                 Logger.getLogger("global").log(Level.SEVERE,
                         "Tried to flatten image but default layer factory" +
@@ -702,9 +703,9 @@ class AppPicture extends PictureImplementation {
                     g.setClip (clip);
                 }
                 if (allLayers) {
-                    AppPicture.this.paint(g, null, false, Zoom.ONE_TO_ONE);
+                    AppPicture.this.paint(RenderingGoal.PRODUCTION, g, null, false, Zoom.ONE_TO_ONE);
                 } else {
-                    layer.paint(g, null, false, false, Zoom.ONE_TO_ONE);
+                    layer.paint(RenderingGoal.PRODUCTION, g, null, false, false, Zoom.ONE_TO_ONE);
                 }
                 g.dispose();
                 if (!isCut) {

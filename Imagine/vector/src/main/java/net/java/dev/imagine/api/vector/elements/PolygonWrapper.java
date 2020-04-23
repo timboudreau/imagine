@@ -5,6 +5,7 @@
  */
 package net.java.dev.imagine.api.vector.elements;
 
+import com.mastfrog.util.collections.IntSet;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Shape;
@@ -25,10 +26,10 @@ import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.geometry.EnhancedShape;
+import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.Polygon2D;
 import org.imagine.geometry.path.PathElementKind;
 import org.imagine.geometry.util.GeometryStrings;
-import org.imagine.geometry.util.GeometryUtils;
 
 /**
  *
@@ -320,4 +321,40 @@ public class PolygonWrapper implements Strokable, Fillable,
             change();
         }
     }
+
+    @Override
+    public IntSet virtualControlPointIndices() {
+        return IntSet.EMPTY;
+    }
+
+    public double centerX() {
+        double[] d = poly.pointsArray();
+        double result = 0;
+        for (int i = 0; i < d.length; i += 2) {
+            result += d[i];
+        }
+        return result / (d.length / 2);
+    }
+
+    public double centerY() {
+        double[] d = poly.pointsArray();
+        double result = 0;
+        for (int i = 0; i < d.length; i += 2) {
+            result += d[i + 1];
+        }
+        return result / (d.length / 2);
+    }
+
+    public EqPointDouble center() {
+        double[] d = poly.pointsArray();
+        double resultX = 0;
+        double resultY = 0;
+        for (int i = 0; i < d.length; i += 2) {
+            resultX += d[i];
+            resultY += d[i + 1];
+        }
+        int pointCount = d.length / 2;
+        return new EqPointDouble(resultX / pointCount, resultY / pointCount);
+    }
+
 }

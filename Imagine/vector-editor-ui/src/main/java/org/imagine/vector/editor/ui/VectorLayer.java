@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.imagine.vector.editor.ui;
 
 import com.mastfrog.util.collections.ArrayUtils;
@@ -10,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.support.AbstractLayerImplementation;
@@ -29,13 +25,15 @@ final class VectorLayer extends AbstractLayerImplementation {
     private final VectorSurface surface;
     private final ToolWidgetSupplier widgetHooks = new ToolWidgetSupplier(this);
     private MPL lkp;
+    private Dimension canvasSize;
 
-    VectorLayer(String name, RepaintHandle handle, VectorLayerFactory factory) {
-        this(name, handle, factory, new Shapes(true));
+    VectorLayer(String name, RepaintHandle handle, Dimension canvasSize, VectorLayerFactory factory) {
+        this(name, handle, canvasSize, factory, new Shapes(true));
     }
 
-    VectorLayer(String name, RepaintHandle handle, VectorLayerFactory factory, Shapes shapes) {
+    VectorLayer(String name, RepaintHandle handle, Dimension canvasSize, VectorLayerFactory factory, Shapes shapes) {
         super(factory, true, name);
+        this.canvasSize = canvasSize;
         this.shapes = shapes;
         repainter = handle;
         addRepaintHandle(handle);
@@ -79,11 +77,33 @@ final class VectorLayer extends AbstractLayerImplementation {
 
     @Override
     public Rectangle getBounds() {
+        Rectangle base = shapes.getBounds();
+        if (base.width < 0) {
+            base.width += base.width;
+        }
+        if (base.height < 0) {
+            base.height += base.height;
+        }
+        return new Rectangle(0, 0, canvasSize.width, canvasSize.height);
+    }
+
+    @Override
+    public Rectangle getContentBounds() {
         return shapes.getBounds();
     }
 
     @Override
     public void resize(int width, int height) {
+        resize(width, height, false);
+    }
+
+    @Override
+    public void resize(int width, int height, boolean canvasOnly) {
+        canvasSize.width = width;
+        canvasSize.height = height;
+        if (canvasOnly) {
+            return;
+        }
         Dimension oldSize = getBounds().getSize();
         if (width == oldSize.width && height == oldSize.height) {
             return;
@@ -111,7 +131,7 @@ final class VectorLayer extends AbstractLayerImplementation {
     }
 
     @Override
-    protected boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom) {
+    protected boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom) {
         if (bounds != null) {
             if (bounds.isEmpty()) {
                 return false;
@@ -123,8 +143,13 @@ final class VectorLayer extends AbstractLayerImplementation {
             }
             g.scale(bounds.getWidth() / r.getWidth(), bounds.getHeight() / r.getHeight());
         }
-        boolean result = shapes.paint(g, bounds, zoom);
-        result |= surface.paint(g, bounds, zoom);
+        boolean result = false;
+        if (!surface.toolIsPaintingScene()) {
+            result = shapes.paint(goal, g, bounds, zoom);
+        }
+        if (goal.isEditing()) {
+            result |= surface.paint(goal, g, bounds, zoom);
+        }
         if (bounds != null) {
             g.dispose();
         }

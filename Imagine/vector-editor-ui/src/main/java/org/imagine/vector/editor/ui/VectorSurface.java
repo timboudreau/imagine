@@ -17,6 +17,7 @@ import java.awt.image.BufferedImageOp;
 import java.util.function.BiConsumer;
 import net.dev.java.imagine.api.tool.Tool;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import org.imagine.editor.api.snap.SnapPointRendering;
 import org.imagine.editor.api.snap.SnapPoints;
 import org.imagine.editor.api.snap.SnapPointsConsumer;
@@ -115,6 +116,17 @@ public class VectorSurface extends SurfaceImplementation implements SnapPointsSu
         }
     }
 
+    boolean toolIsPaintingScene() {
+        if (tool == null) {
+            return false;
+        }
+        WidgetSupplier supp = tool.lookup(WidgetSupplier.class);
+        if (supp != null) {
+            return supp.takesOverPaintingScene();
+        }
+        return false;
+    }
+
     private CollectionEngine createEngine(boolean unexpected, String name) {
         Dimension d = shapes.getBounds().getSize();
         engine = new CollectionEngine(tool.getDisplayName(), handle, location, d.width, d.height);
@@ -195,22 +207,24 @@ public class VectorSurface extends SurfaceImplementation implements SnapPointsSu
     }
 
     @Override
-    public boolean paint(Graphics2D g, Rectangle r, Zoom zoom) {
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle r, Zoom zoom) {
         if (tool != null) {
             WidgetSupplier supp = tool.getLookup().lookup(WidgetSupplier.class);
-            if (supp != null && supp.takesOverPaintingScene()) {
+            if (supp != null && supp.takesOverPaintingScene() && goal.isEditing()) {
 //                if (r == null) {
 //                    snapPainter.paint(g, zoom);
 //                }
                 return false;
             }
-            PaintParticipant pp = tool.lookup(PaintParticipant.class);
-            if (pp != null) {
-                pp.paint(g, r, false);
-                return true;
-            }
-            if (snapPainter != null) {
-                snapPainter.paint(g, zoom);
+            if (goal.isEditing()) {
+                PaintParticipant pp = tool.lookup(PaintParticipant.class);
+                if (pp != null) {
+                    pp.paint(g, r, false);
+                    return true;
+                }
+                if (snapPainter != null) {
+                    snapPainter.paint(g, zoom);
+                }
             }
         }
         return false;

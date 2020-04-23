@@ -8,6 +8,7 @@
  */
 package org.netbeans.paint.vectorlayers;
 
+import com.mastfrog.util.collections.IntSet;
 import java.awt.Composite;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -22,7 +23,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiPredicate;
@@ -30,6 +30,7 @@ import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.dev.java.imagine.api.tool.Tool;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import org.imagine.editor.api.snap.SnapAxis;
 import org.imagine.editor.api.snap.SnapPointsConsumer;
 import org.imagine.editor.api.snap.SnapPoints;
@@ -267,13 +268,18 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             Adjustable adj = (Adjustable) vect;
             int cpCount = adj.getControlPointCount();
             adj.getControlPoints(pts);
-            int[] virt = adj.getVirtualControlPointIndices();
+            IntSet v = adj.virtualControlPointIndices();
+//            int[] virt = adj.getVirtualControlPointIndices();
             for (int i = 0; i < cpCount * 2; i += 2) {
                 int ptIx = i / 2;
-                if (Arrays.binarySearch(virt, ptIx) < 0) {
+                if (!v.contains(ptIx)) {
                     bldr.add(SnapAxis.X, pts[i], null);
                     bldr.add(SnapAxis.Y, pts[i + 1], null);
                 }
+//                if (Arrays.binarySearch(virt, ptIx) < 0) {
+//                    bldr.add(SnapAxis.X, pts[i], null);
+//                    bldr.add(SnapAxis.Y, pts[i + 1], null);
+//                }
             }
         }
     }
@@ -416,10 +422,10 @@ class VSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
 //    static boolean NO_CACHE = Boolean.getBoolean("vector.no.cache");
 
     public boolean paint(Graphics2D g) {
-        return paint(g, null, Zoom.ONE_TO_ONE);
+        return paint(RenderingGoal.PRODUCTION, g, null, Zoom.ONE_TO_ONE);
     }
 
-    public boolean paint(Graphics2D g, Rectangle r, Zoom zoom) {
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle r, Zoom zoom) {
         return ops.apply(g, r, this::internalPaint);
     }
 

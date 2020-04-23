@@ -48,13 +48,16 @@ import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
+import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Picture;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.api.components.FontManagingPanelUI;
+import org.netbeans.paint.api.components.PopupSliderUI;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
@@ -341,106 +344,120 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         }
         JButton jb = (JButton) e.getSource();
 
-        if (NAME_DELETE.equals(jb.getName())) {
-            Layer l = picture.getActiveLayer();
-
-            if (l != null) {
-                picture.delete(l);
-            }
-        } else if (NAME_NEW.equals(jb.getName())) {
-            Collection<? extends LayerFactory> factories
-                    = Lookup.getDefault().lookupAll(LayerFactory.class);
-            if (factories.size() == 1) {
-                Layer layer = Utilities.actionsGlobalContext().lookup(Layer.class);
-                int pos;
-                if (layer != null) {
-                    List<Layer> layers = picture.getLayers();
-                    int ix = layers.indexOf(layer);
-                    assert ix != -1 : "Selected layer from lookup not part of picture";
-                    pos = ix + 1;
-                } else {
-                    pos = Picture.POSITION_BOTTOM;
-                }
-                picture.add(pos);
-            } else {
-                class AA extends AbstractAction {
-
-                    private LayerFactory f;
-
-                    public AA(LayerFactory f) {
-                        this.f = f;
-                        String name = f.getDisplayName();
-                        String s = NbBundle.getMessage(
-                                LayersTopComponent.class,
-                                "FMT_NewLayer", name); //NOI18N
-                        putValue(Action.NAME, s);
+        if (null != jb.getName()) {
+            switch (jb.getName()) {
+                case NAME_DELETE: {
+                    Layer l = picture.getActiveLayer();
+                    if (l != null) {
+                        picture.delete(l);
                     }
-
-                    public void actionPerformed(ActionEvent ae) {
-                        int ct = picture.getLayers().size();
-                        Set<String> usedNames = new HashSet<String>(ct);
-                        for (Layer l : picture.getLayers()) {
-                            usedNames.add(l.getName());
-                        }
-                        String newName = null;
-                        int ix = 1;
-                        while (newName == null || usedNames.contains(newName)) {
-                            newName = NbBundle.getMessage(LayersTopComponent.class,
-                                    "NEW_LAYER_NAME", "" + (ix++));
-                        }
-                        LayerImplementation impl = f.createLayer(newName,
-                                picture.getRepaintHandle(),
-                                picture.getSize());
+                    break;
+                }
+                case NAME_NEW:
+                    Collection<? extends LayerFactory> factories
+                            = Lookup.getDefault().lookupAll(LayerFactory.class);
+                    if (factories.size() == 1) {
                         Layer layer = Utilities.actionsGlobalContext().lookup(Layer.class);
                         int pos;
                         if (layer != null) {
                             List<Layer> layers = picture.getLayers();
-                            int index = layers.indexOf(layer);
-                            assert index != -1 : "Selected layer from lookup not part of picture";
-                            pos = index + 1;
+                            int ix = layers.indexOf(layer);
+                            assert ix != -1 : "Selected layer from lookup not part of picture";
+                            pos = ix + 1;
                         } else {
                             pos = Picture.POSITION_BOTTOM;
                         }
-                        picture.add(pos,
-                                impl.getLayer());
+                        Layer nue = picture.add(pos);
+                        picture.setActiveLayer(nue);
+                    } else {
+                        class AA extends AbstractAction {
+
+                            private LayerFactory f;
+
+                            public AA(LayerFactory f) {
+                                this.f = f;
+                                String name = f.getDisplayName();
+                                String s = NbBundle.getMessage(
+                                        LayersTopComponent.class,
+                                        "FMT_NewLayer", name); //NOI18N
+                                putValue(Action.NAME, s);
+                            }
+
+                            public void actionPerformed(ActionEvent ae) {
+                                int ct = picture.getLayers().size();
+                                Set<String> usedNames = new HashSet<String>(ct);
+                                for (Layer l : picture.getLayers()) {
+                                    usedNames.add(l.getName());
+                                }
+                                String newName = null;
+                                int ix = 1;
+                                while (newName == null || usedNames.contains(newName)) {
+                                    newName = NbBundle.getMessage(LayersTopComponent.class,
+                                            "NEW_LAYER_NAME", "" + (ix++));
+                                }
+                                LayerImplementation impl = f.createLayer(newName,
+                                        picture.getRepaintHandle(),
+                                        picture.getSize());
+                                Layer layer = Utilities.actionsGlobalContext().lookup(Layer.class);
+                                int pos;
+                                if (layer != null) {
+                                    List<Layer> layers = picture.getLayers();
+                                    int index = layers.indexOf(layer);
+                                    assert index != -1 : "Selected layer from lookup not part of picture";
+                                    pos = index + 1;
+                                } else {
+                                    pos = Picture.POSITION_BOTTOM;
+                                }
+                                picture.add(pos,
+                                        impl.getLayer());
+                            }
+                        }
+                        JPopupMenu popup = new JPopupMenu();
+                        for (LayerFactory factory : factories) {
+                            popup.add(new AA(factory));
+                        }
+                        EventObject event = EventQueue.getCurrentEvent();
+                        if (event instanceof MouseEvent) {
+                            MouseEvent me = (MouseEvent) event;
+                            Point p = me.getPoint();
+                            popup.show((Component) me.getSource(),
+                                    p.x, p.y);
+                        } else {
+                            Point p = new Point(newButton.getWidth() / 2,
+                                    newButton.getHeight() / 2);
+                            popup.show(newButton, p.x, p.y);
+                        }
                     }
+                    break;
+                case NAME_DOWN: {
+                    Layer l = picture.getActiveLayer();
+                    int ix = picture.getLayers().indexOf(l);
+                    if (ix >= 1) {
+                        picture.move(l, ix - 1);
+                    }
+                    picture.setActiveLayer(l);
+                    break;
                 }
-                JPopupMenu popup = new JPopupMenu();
-                for (LayerFactory factory : factories) {
-                    popup.add(new AA(factory));
+                case NAME_UP: {
+                    Layer l = picture.getActiveLayer();
+                    int ix = picture.getLayers().indexOf(l);
+                    if (ix != picture.getLayers().size() - 1) {
+                        picture.move(l, ix + 2);
+                    }
+                    picture.setActiveLayer(l);
+                    break;
                 }
-                EventObject event = EventQueue.getCurrentEvent();
-                if (event instanceof MouseEvent) {
-                    MouseEvent me = (MouseEvent) event;
-                    Point p = me.getPoint();
-                    popup.show((Component) me.getSource(),
-                            p.x, p.y);
-                } else {
-                    Point p = new Point(newButton.getWidth() / 2,
-                            newButton.getHeight() / 2);
-                    popup.show(newButton, p.x, p.y);
+                case NAME_DUP: {
+                    Layer l = picture.getActiveLayer();
+                    picture.duplicate(l);
+                    break;
                 }
+                case NAME_FLATTEN:
+                    picture.flatten();
+                    break;
+                default:
+                    break;
             }
-        } else if (NAME_DOWN.equals(jb.getName())) {
-            Layer l = picture.getActiveLayer();
-            int ix = picture.getLayers().indexOf(l);
-
-            if (ix >= 1) {
-                picture.move(l, ix - 1);
-            }
-        } else if (NAME_UP.equals(jb.getName())) {
-            Layer l = picture.getActiveLayer();
-            int ix = picture.getLayers().indexOf(l);
-
-            if (ix != picture.getLayers().size() - 1) {
-                picture.move(l, ix + 2);
-            }
-        } else if (NAME_DUP.equals(jb.getName())) {
-            Layer l = picture.getActiveLayer();
-
-            picture.duplicate(l);
-        } else if (NAME_FLATTEN.equals(jb.getName())) {
-            picture.flatten();
         }
         stateChanged(null);
     }
@@ -478,11 +495,12 @@ public final class LayersTopComponent extends TopComponent implements LookupList
             lbl = new JLabel();
             // So the editor will have enough room
             add(lbl);
+            Color gr = UIManager.getColor("Tree.line");
             setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0,
                     0,
                     1,
                     0,
-                    Color.GRAY),
+                    gr),
                     BorderFactory.createEmptyBorder(0,
                             12,
                             0,
@@ -490,7 +508,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
             box.addMouseListener(this);
             lbl.addMouseListener(this);
             addMouseListener(this);
-            box.setBorder(BorderFactory.createMatteBorder(0, 5, 0, 1, Color.GRAY));
+            box.setBorder(BorderFactory.createMatteBorder(0, 5, 0, 1, gr));
             opacity = new JSlider();
             opacity.setMinimum(0);
             opacity.setMaximum(100);
@@ -498,7 +516,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
                     (int) (layer.getOpacity() * 100.0F)));
             add(opacity);
             opacity.addChangeListener(this);
-            opacity.setUI((javax.swing.plaf.SliderUI) org.netbeans.paint.api.components.PopupSliderUI.createUI(opacity));
+            PopupSliderUI.attach(opacity);
             opacity.setOpaque(false);
             opacity.addMouseListener(this);
             box.setOpaque(false);
@@ -581,9 +599,9 @@ public final class LayersTopComponent extends TopComponent implements LookupList
             @Override
             public void paint(Graphics gr) {
                 Graphics2D g = (Graphics2D) gr;
-                g.setColor(Color.WHITE);
+                g.setColor(getForeground());
                 g.fillRect(0, 0, getWidth(), getHeight());
-                g.setColor(Color.GRAY);
+                g.setColor(UIManager.getColor("Tree.line"));
                 g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
                 Rectangle r = new Rectangle(1, 1, getWidth() - 1,
                         getHeight() - 1);
@@ -591,7 +609,7 @@ public final class LayersTopComponent extends TopComponent implements LookupList
 
                 g.setClip(r);
                 try {
-                    layer.paint(g, r, true, true, Zoom.ONE_TO_ONE);
+                    layer.paint(RenderingGoal.THUMBNAIL, g, r, true, true, Zoom.ONE_TO_ONE);
                 } finally {
                     g.setClip(clip);
                 }
@@ -637,8 +655,13 @@ public final class LayersTopComponent extends TopComponent implements LookupList
                 opacity.setValue((int) (100 * layer.getOpacity()));
                 lbl.setText(layer.getName());
                 box.setSelected(layer.isVisible());
-                setBackground(picture.getActiveLayer() == layer ? Color.LIGHT_GRAY
-                        : Color.WHITE);
+                if (picture.getActiveLayer() == layer) {
+                    setBackground(UIManager.getColor("Tree.selectionBackground"));
+                    setForeground(UIManager.getColor("Tree.selectionForeground"));
+                } else {
+                    setBackground(UIManager.getColor("text"));
+                    setForeground(UIManager.getColor("textText"));
+                }
             }
         }
 

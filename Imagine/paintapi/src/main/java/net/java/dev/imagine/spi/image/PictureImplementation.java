@@ -11,6 +11,7 @@ import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.api.image.Picture;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import org.imagine.editor.api.Zoom;
 
 /**
@@ -62,7 +63,7 @@ public abstract class PictureImplementation implements Hibernator {
         return picture;
     }
 
-    public abstract boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom);
+    public abstract boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom);
 
     public void hibernate() {
         //do nothing

@@ -17,6 +17,7 @@ import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.Accessor.InverseAccessor;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Picture;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.api.image.Surface;
 import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.api.editing.LayerFactory;
@@ -70,12 +71,38 @@ public abstract class LayerImplementation<T extends LayerFactory> {
     }
 
     /** Get the bounds of this layer.  This may or may not
-     * correspond to the bounds of the image it is part of */
+     * correspond to the bounds of the picture it is part of */
     public abstract Rectangle getBounds();
+
+    /**
+     * Get the bounds of the entire contents of this layer, which may include
+     * items that are offscreen.
+     *
+     * @return By default, just calls getBounds
+     */
+    public Rectangle getContentBounds() {
+        return getBounds();
+    }
     /** Get the user supplied name of this layer */
     public abstract String getName();
 
     public abstract void resize(int width, int height);
+
+    /**
+     * Resize the layer, indicating whether the contents should be scaled
+     * or not.  For backward compatibility, the default implementation
+     * simply calls two-argument resize, which <i>does</i> resize the
+     * content.
+     *
+     * @param width The new width
+     * @param height The new height
+     * @param resizeContent If true, contents should be scaled; if not, only
+     * the recorded canvas size should be changed
+     */
+    public void resize(int width, int height, boolean resizeContent) {
+        resize(width, height);
+    }
+
     /** Set the display name of this layer */
     public abstract void setName(String name);
 
@@ -135,7 +162,7 @@ public abstract class LayerImplementation<T extends LayerFactory> {
     }
 
     /**
-     * Paint the current contents of this Surface object to the supplied
+     * Paint the current contents of this Layer object to the supplied
      * Graphics2D context.
      * <p>
      * If a bounding rectangle is supplied, this method should assume that the
@@ -152,7 +179,7 @@ public abstract class LayerImplementation<T extends LayerFactory> {
      * @param r A bounding rectangle if painting a thumbnail image, or null
      *  if full quality painting is desired
      */
-    public abstract boolean paint (Graphics2D g, Rectangle bounds, boolean showSelection, boolean paintWhenVisibleFalse, Zoom zoom);
+    public abstract boolean paint (RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, boolean paintWhenVisibleFalse, Zoom zoom);
 
     /** Get a surface for drawing into.  Looks for an instance of
      * SurfaceImplementation in the Lookup returned by getLookup().

@@ -43,6 +43,7 @@ import net.dev.java.imagine.api.tool.Tool;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import net.dev.java.imagine.api.tool.aspects.NonPaintingTool;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.effects.api.EffectReceiver;
 import org.imagine.editor.api.Zoom;
 import org.imagine.utils.java2d.GraphicsUtils;
@@ -113,7 +114,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
 
     RasterSurfaceImpl(Dimension size, RepaintHandle handle, Picture picture, Selection<Shape> selection, BooleanSupplier isVisible) {
         this(handle, picture.getSize(), selection, isVisible);
-        picture.paint((Graphics2D) img.getGraphics(), null, false, Zoom.ONE_TO_ONE);
+        picture.paint(RenderingGoal.PRODUCTION, (Graphics2D) img.getGraphics(), null, false, Zoom.ONE_TO_ONE);
         this.selection = selection;
     }
 
@@ -190,8 +191,14 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
 
     private Snapshot snapshot = null;
 
+    void resizeCanvas(int width, int height) {
+        img = GraphicsUtils.newBufferedImage(width, height, g -> {
+            GraphicsUtils.setHighQualityRenderingHints(g);
+            g.drawRenderedImage(img, null);
+        });
+    }
+
     void resize(int width, int height) {
-        BufferedImage nue = new BufferedImage(width, height, GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
         double w = width;
         double h = height;
         double ow = img.getWidth();
@@ -199,11 +206,10 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         double factorX = w / ow;
         double factorY = h / oh;
         AffineTransform xform = AffineTransform.getScaleInstance(factorX, factorY);
-        Graphics2D g = nue.createGraphics();
-        GraphicsUtils.setHighQualityRenderingHints(g);
-        g.drawRenderedImage(img, xform);
-        img = nue;
-        g.dispose();
+        img = GraphicsUtils.newBufferedImage(width, height, g -> {
+            GraphicsUtils.setHighQualityRenderingHints(g);
+            g.drawRenderedImage(img, xform);
+        });
     }
 
     private void takeSnapshot() {
@@ -320,7 +326,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         return true;
     }
 
-    public boolean paint(Graphics2D g2d, Rectangle r, Zoom zoom) {
+    public boolean paint(RenderingGoal goal, Graphics2D g2d, Rectangle r, Zoom zoom) {
         if (img instanceof ByteNIOBufferedImage) {
             return false;
         }

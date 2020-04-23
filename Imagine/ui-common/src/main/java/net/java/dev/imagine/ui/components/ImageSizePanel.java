@@ -35,28 +35,37 @@ public class ImageSizePanel extends javax.swing.JPanel {
                 Exceptions.printStackTrace(ex);
             }
         }
+        boolean resizeCanvas = NbPreferences.forModule(ImageSizePanel.class)
+                .getBoolean("lastResizeCanvasOnly", false);
+        resizeCanvasOnlyBox.setSelected(resizeCanvas);
     }
 
     public ImageSizePanel(Dimension d) {
-        this();
-        imgSize = d;
+        this(true, false, d);
     }
 
-    public ImageSizePanel(boolean showTransparentBox) {
-        this(showTransparentBox, null);
+    public ImageSizePanel(boolean showBackgroundBox, boolean showResizeCanvasOnlyBox) {
+        this(showBackgroundBox, showResizeCanvasOnlyBox, null);
     }
 
-    public ImageSizePanel(boolean showTransparentBox, Dimension size) {
+    public ImageSizePanel(boolean showTransparentBox, boolean showResizeCanvasOnlyBox, Dimension size) {
         this();
         imgSize = size;
         if (!showTransparentBox) {
             backgroundBox.setVisible(false);
             backgroundLabel.setVisible(false);
         }
+        if (!showResizeCanvasOnlyBox) {
+            resizeCanvasOnlyBox.setVisible(false);
+        }
     }
 
     public boolean isTransparent() {
         return backgroundBox.getSelectedItem() == BackgroundStyle.TRANSPARENT;
+    }
+
+    public boolean isResizeCanvasOnly() {
+        return resizeCanvasOnlyBox.isSelected();
     }
 
     public BackgroundStyle getBackgroundStyle() {
@@ -69,12 +78,12 @@ public class ImageSizePanel extends javax.swing.JPanel {
         Dimension result = imgSize == null ? preferredImageSize : imgSize;
         boolean bad = false;
         try {
-            result.width = Integer.parseInt(jTextField1.getText().trim());
+            result.width = Integer.parseInt(widthField.getText().trim());
         } catch (NumberFormatException nfe) {
             bad = true;
         }
         try {
-            result.height = Integer.parseInt(jTextField2.getText().trim());
+            result.height = Integer.parseInt(heightField.getText().trim());
         } catch (NumberFormatException nfe) {
             bad = true;
         }
@@ -95,63 +104,64 @@ public class ImageSizePanel extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        jTextField1 = new javax.swing.JTextField();
-        jLabel3 = new javax.swing.JLabel();
-        jTextField2 = new javax.swing.JTextField();
+        titleLabel = new javax.swing.JLabel();
+        withLabel = new javax.swing.JLabel();
+        widthField = new javax.swing.JTextField();
+        heightLabel = new javax.swing.JLabel();
+        heightField = new javax.swing.JTextField();
         errorText = new javax.swing.JLabel();
         backgroundLabel = new javax.swing.JLabel();
         org.openide.awt.Mnemonics.setLocalizedText(backgroundLabel, org.openide.util.NbBundle.getMessage(ImageSizePanel.class, "LBL_Background")); // NOI18N
         backgroundBox = new javax.swing.JComboBox<>();
+        resizeCanvasOnlyBox = new javax.swing.JCheckBox();
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel1, org.openide.util.NbBundle.getMessage(ImageSizePanel.class, "LBL_Size")); // NOI18N
-        jLabel1.setBorder(javax.swing.BorderFactory.createMatteBorder(0, 0, 1, 0, javax.swing.UIManager.getDefaults().getColor("controlShadow")));
+        org.openide.awt.Mnemonics.setLocalizedText(titleLabel, org.openide.util.NbBundle.getMessage(ImageSizePanel.class, "LBL_Size")); // NOI18N
+        titleLabel.setBorder(javax.swing.BorderFactory.createMatteBorder(0, 0, 1, 0, javax.swing.UIManager.getDefaults().getColor("controlShadow")));
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel2, org.openide.util.NbBundle.getMessage(ImageSizePanel.class, "LBL_Width")); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(withLabel, org.openide.util.NbBundle.getMessage(ImageSizePanel.class, "LBL_Width")); // NOI18N
 
-        jTextField1.setText("640");
-        jTextField1.addFocusListener(new java.awt.event.FocusAdapter() {
+        widthField.setText("640");
+        widthField.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 fieldFocusGained(evt);
             }
         });
-        jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyTyped(java.awt.event.KeyEvent evt) {
-                fieldKeyTyped(evt);
-            }
+        widthField.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 fieldKeyPressed(evt);
             }
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 fieldKeyPressed(evt);
             }
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                fieldKeyTyped(evt);
+            }
         });
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel3, org.openide.util.NbBundle.getMessage(ImageSizePanel.class, "LBL_Height")); // NOI18N
+        org.openide.awt.Mnemonics.setLocalizedText(heightLabel, org.openide.util.NbBundle.getMessage(ImageSizePanel.class, "LBL_Height")); // NOI18N
 
-        jTextField2.setText("480");
-        jTextField2.addFocusListener(new java.awt.event.FocusAdapter() {
+        heightField.setText("480");
+        heightField.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 fieldFocusGained(evt);
             }
         });
-        jTextField2.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyTyped(java.awt.event.KeyEvent evt) {
-                fieldKeyTyped(evt);
-            }
+        heightField.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyPressed(java.awt.event.KeyEvent evt) {
                 fieldKeyPressed(evt);
             }
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 fieldKeyPressed(evt);
+            }
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                fieldKeyTyped(evt);
             }
         });
 
         errorText.setForeground(java.awt.Color.red);
 
         backgroundLabel.setLabelFor(backgroundBox);
-        org.openide.awt.Mnemonics.setLocalizedText(backgroundLabel, "Background");
+        org.openide.awt.Mnemonics.setLocalizedText(backgroundLabel, org.openide.util.NbBundle.getMessage(ImageSizePanel.class, "LBL_Background")); // NOI18N
 
         backgroundBox.setModel(BackgroundStyle.model() );
         backgroundBox.addActionListener(new java.awt.event.ActionListener() {
@@ -160,6 +170,8 @@ public class ImageSizePanel extends javax.swing.JPanel {
             }
         });
 
+        org.openide.awt.Mnemonics.setLocalizedText(resizeCanvasOnlyBox, org.openide.util.NbBundle.getMessage(ImageSizePanel.class, "LBL_ResizeCanvas")); // NOI18N
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -167,40 +179,43 @@ public class ImageSizePanel extends javax.swing.JPanel {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(jLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .add(layout.createSequentialGroup()
+                        .add(resizeCanvasOnlyBox)
+                        .add(0, 0, Short.MAX_VALUE))
+                    .add(titleLabel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .add(layout.createSequentialGroup()
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jLabel3)
-                            .add(jLabel2)
+                            .add(heightLabel)
+                            .add(withLabel)
                             .add(backgroundLabel))
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(layout.createSequentialGroup()
-                                .add(jTextField1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 206, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .add(widthField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 206, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                 .addContainerGap())
                             .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
                                     .add(backgroundBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 206, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                    .add(jTextField2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 206, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                                    .add(heightField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 206, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                                 .add(errorText, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))))
         );
 
-        layout.linkSize(new java.awt.Component[] {backgroundBox, jTextField1, jTextField2}, org.jdesktop.layout.GroupLayout.HORIZONTAL);
+        layout.linkSize(new java.awt.Component[] {backgroundBox, heightField, widthField}, org.jdesktop.layout.GroupLayout.HORIZONTAL);
 
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
-                .add(jLabel1)
+                .add(titleLabel)
                 .add(39, 39, 39)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel2)
-                    .add(jTextField1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(withLabel)
+                    .add(widthField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(jLabel3)
-                    .add(jTextField2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                    .add(heightLabel)
+                    .add(heightField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(layout.createSequentialGroup()
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -211,7 +226,9 @@ public class ImageSizePanel extends javax.swing.JPanel {
                         .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                             .add(backgroundBox, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                             .add(backgroundLabel))
-                        .addContainerGap(29, Short.MAX_VALUE))))
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                        .add(resizeCanvasOnlyBox)
+                        .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
     }// </editor-fold>//GEN-END:initComponents
 
@@ -274,11 +291,12 @@ public class ImageSizePanel extends javax.swing.JPanel {
     public javax.swing.JComboBox<BackgroundStyle> backgroundBox;
     public javax.swing.JLabel backgroundLabel;
     public javax.swing.JLabel errorText;
-    public javax.swing.JLabel jLabel1;
-    public javax.swing.JLabel jLabel2;
-    public javax.swing.JLabel jLabel3;
-    public javax.swing.JTextField jTextField1;
-    public javax.swing.JTextField jTextField2;
+    public javax.swing.JTextField heightField;
+    public javax.swing.JLabel heightLabel;
+    public javax.swing.JCheckBox resizeCanvasOnlyBox;
+    public javax.swing.JLabel titleLabel;
+    public javax.swing.JTextField widthField;
+    public javax.swing.JLabel withLabel;
     // End of variables declaration//GEN-END:variables
 
 }

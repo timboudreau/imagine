@@ -1,8 +1,10 @@
 package org.imagine.vector.editor.ui.tools.widget.actions;
 
 import com.mastfrog.util.collections.IntSet;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -27,10 +29,14 @@ import java.util.function.IntConsumer;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.java.dev.imagine.api.image.Layer;
+import net.java.dev.imagine.api.image.Picture;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import net.java.dev.imagine.api.vector.Adjustable;
+import net.java.dev.imagine.api.vector.Centered;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.Textual;
+import net.java.dev.imagine.api.vector.Transformable;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.design.ShapeNames;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
@@ -58,6 +64,7 @@ import org.netbeans.paint.api.components.dialog.DialogBuilder;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.Utilities;
+import org.openide.util.lookup.ProxyLookup;
 
 /**
  *
@@ -137,7 +144,10 @@ public class ShapeActions {
         "actionFlipVertical=&Flip Vertical",
         "opFlipVertical=Flip Vertical",
         "actionConvertToPathText=Convert to Text Path",
-        "opConvertToPathText=Convert to Text Path"
+        "opConvertToPathText=Convert to Text Path",
+        "actionCenterOnCanvas=Center on Canvas",
+        "# {0} - name",
+        "opCenterOnCanvas=Center {0}"
     })
     public ShapeActions(DesignerControl ctrl) {
         this.ctrl = ctrl;
@@ -283,6 +293,37 @@ public class ShapeActions {
                             ctrl.shapesMayBeDeleted();
                         });
                     });
+                });
+
+        final AffineTransform testTransform = AffineTransform.getTranslateInstance(1, 1);
+        actions.action(Bundle.actionCenterOnCanvas())
+                .dontHideWhenDisabled()
+                .sensitiveTo(ShapeElement.class).testingOne(shape -> {
+            return shape.item().is(Centered.class)
+                    && shape.item().is(Transformable.class)
+                    && shape.canApplyTransform(testTransform);
+        }).sensitiveTo(Picture.class).sensingPresence()
+                .sensitiveTo(Layer.class).sensingPresence()
+                .sensitiveTo(ShapesCollection.class).sensingPresence()
+                .finish((entry, picture, layer, coll) -> {
+                    Dimension d = picture.getSize();
+                    Rectangle r = layer.getBounds();
+                    if (r.width < d.width) {
+                        r.width = d.width;
+                    }
+                    if (r.height < d.height) {
+                        r.height = d.height;
+                    }
+                    double cx = r.getCenterX();
+                    double cy = r.getCenterY();
+                    EqPointDouble center = entry.item().as(Centered.class).center();
+                    double offX = center.x - cx;
+                    double offY = center.y - cy;
+                    if (offX != 0 || offY != 0) {
+                        coll.edit(Bundle.opCenterOnCanvas(entry.getName()), entry, () -> {
+                            entry.applyTransform(AffineTransform.getTranslateInstance(-offX, -offY));
+                        });
+                    }
                 });
 
         actions.action(Bundle.actionSetText())
@@ -789,7 +830,7 @@ public class ShapeActions {
         JPopupMenu menu = new JPopupMenu();
         currentPoint.set(localLocation);
         try {
-            actions.applyToPopup(menu, widget.getLookup());
+            actions.applyToPopup(menu, new ProxyLookup(widget.getLookup(), Utilities.actionsGlobalContext()));
         } finally {
             currentPoint.remove();
         }

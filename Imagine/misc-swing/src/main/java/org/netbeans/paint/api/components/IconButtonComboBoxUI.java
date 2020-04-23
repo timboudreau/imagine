@@ -249,7 +249,7 @@ public final class IconButtonComboBoxUI extends BasicComboBoxUI implements Prope
 	    if (!isSelected || index==-1) {
 		setBackground (UIManager.getColor("control")); //NOI18N
 	    } else {
-		setBackground (Color.WHITE);
+		setBackground (UIManager.getColor("Tree.selectionBackground")); // NOI18N
 	    }
 	    if (other instanceof JLabel) {
 		JLabel jl = (JLabel) other;

@@ -40,6 +40,7 @@ import net.dev.java.imagine.spi.effects.Effect;
 import net.dev.java.imagine.spi.effects.Effect.BufferedImageOpApplicator;
 import net.dev.java.imagine.spi.effects.EffectRecipient;
 import net.java.dev.imagine.api.image.Layer;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.api.image.Surface;
 import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
@@ -307,7 +308,7 @@ public class EffectsMenu extends JMenu {
 
 	    Graphics2D imageGr = (Graphics2D) temp.createGraphics();
 	    //Paint a thumbnail into that
-	    layer.paint (imageGr, new Rectangle (0, 0, 320, 200), false, true, Zoom.ONE_TO_ONE);
+	    layer.paint (RenderingGoal.THUMBNAIL, imageGr, new Rectangle (0, 0, 320, 200), false, true, Zoom.ONE_TO_ONE);
 	    //Now recreate our back buffer
 	    BufferedImage back = new BufferedImage (320, 200, 
 		    GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);

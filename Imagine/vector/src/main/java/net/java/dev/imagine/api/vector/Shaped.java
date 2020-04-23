@@ -15,7 +15,7 @@ import org.imagine.geometry.util.GeometryUtils;
  *
  * @author Tim Boudreau
  */
-public interface Shaped extends Copyable {
+public interface Shaped extends Copyable, Centered {
 
     Shape toShape();
 
@@ -49,6 +49,15 @@ public interface Shaped extends Copyable {
     default Rectangle getBounds() {
         return toShape().getBounds();
     }
+
+    default double centerX() {
+        return toShape().getBounds2D().getCenterX();
+    }
+
+    default double centerY() {
+        return toShape().getBounds2D().getCenterY();
+    }
+
 
     /**
      * Create an independent copy of this shape.

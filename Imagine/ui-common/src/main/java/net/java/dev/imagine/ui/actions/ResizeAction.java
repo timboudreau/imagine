@@ -40,7 +40,7 @@ public class ResizeAction extends GenericContextSensitiveAction<Resizable> {
 
     @Override
     public void performAction(Resizable target) {
-        ImageSizePanel pnl = new ImageSizePanel(false);
+        ImageSizePanel pnl = new ImageSizePanel(false, true);
         DialogDescriptor dd = new DialogDescriptor(pnl,
                 NbBundle.getMessage(ResizeAction.class,
                         "TTL_Resize")); //NOI18N
@@ -52,7 +52,7 @@ public class ResizeAction extends GenericContextSensitiveAction<Resizable> {
             if (d == null || d.width <= 0 || d.height <= 0) {
                 return;
             }
-            target.resizePicture(d.width, d.height);
+            target.resizePicture(d.width, d.height, pnl.isResizeCanvasOnly());
         }
     }
 }

@@ -13,7 +13,9 @@
 
 package net.java.dev.imagine;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import javax.imageio.ImageIO;
 import net.java.dev.imagine.spi.*;
 import org.openide.util.ContextGlobalProvider;
@@ -76,37 +78,37 @@ import org.openide.util.lookup.ServiceProvider;
 @ServiceProvider(service = ContextGlobalProvider.class, supersedes="org.netbeans.modules.openide.windows.GlobalActionContextImpl", position=Integer.MIN_VALUE)
 public final class ApplicationContext implements ContextGlobalProvider {
     private final MutableProxyLookup proxy = new MutableProxyLookup();
-    private final Lookup.Result lookupsLookup;
-    private final LookupListener listener;
+    private final Lookup.Result<SelectionContextContributor> lookupsLookup;
+    private final LookupListener listenerStrongReference;
 
     /** Creates a new instance of ApplicationContext */
+    @SuppressWarnings("unchecked")
     public ApplicationContext() {
-	lookupsLookup = Lookup.getDefault().lookup (new
-		Lookup.Template(SelectionContextContributor.class));
+	lookupsLookup = Lookup.getDefault()
+                .lookupResult(SelectionContextContributor.class);
 
 	// Note the listener below will only really be called if
 	// a module providing a lookup we are proxying is
 	// installed/uninstalled
-	listener = (LookupEvent evt) -> {
-            updateLookups (
-                    ((Lookup.Result) evt.getSource()).allInstances());
-        };
 
-	lookupsLookup.addLookupListener(listener);
-        lookupsLookup.allInstances();
-	listener.resultChanged (new LookupEvent (lookupsLookup));
+        // Need to hold a reference to the listener or it will be garbage
+        // collected and never called; as of JDK 10 this applies to method
+        // references
+	lookupsLookup.addLookupListener(
+                listenerStrongReference = this::updateLookups);
+        updateLookups(lookupsLookup.allInstances());
     }
 
-    private void updateLookups (Collection allContributors) {
-	SelectionContextContributor[] p = (SelectionContextContributor[])
-	    allContributors.toArray(new SelectionContextContributor[
-            allContributors.size()]);
+    private void updateLookups(LookupEvent evt) {
+        updateLookups(lookupsLookup.allInstances());
+    }
 
-	Lookup[] lkp = new Lookup[p.length];
-	for (int i=0; i < p.length; i++) {
-	    lkp[i] = p[i].getLookup();
-	}
-	proxy.changeLookups (lkp);
+    private void updateLookups (Collection<? extends SelectionContextContributor> allContributors) {
+        List<Lookup> all = new ArrayList<>(allContributors.size());
+        for (SelectionContextContributor c : allContributors) {
+            all.add(c.getLookup());
+        }
+	proxy.changeLookups (all.toArray(new Lookup[all.size()]));
     }
 
     @Override

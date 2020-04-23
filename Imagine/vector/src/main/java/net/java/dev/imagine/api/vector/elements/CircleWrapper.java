@@ -1,11 +1,13 @@
 package net.java.dev.imagine.api.vector.elements;
 
+import com.mastfrog.util.collections.IntSet;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import static java.lang.Double.doubleToLongBits;
+import java.util.BitSet;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Strokable;
@@ -17,6 +19,7 @@ import static net.java.dev.imagine.api.vector.design.ControlPointKind.RADIUS;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.geometry.Circle;
 import net.java.dev.imagine.api.vector.Vectors;
+import org.imagine.geometry.EqPointDouble;
 
 /**
  *
@@ -87,10 +90,12 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
         };
     }
 
+    @Override
     public double centerX() {
         return centerX;
     }
 
+    @Override
     public double centerY() {
         return centerY;
     }
@@ -142,6 +147,11 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
     @Override
     public Circle toShape() {
         return new Circle(centerX, centerY, radius);
+    }
+
+    @Override
+    public EqPointDouble center() {
+        return new EqPointDouble(centerX, centerY);
     }
 
     @Override
@@ -281,6 +291,13 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
     @Override
     public int[] getVirtualControlPointIndices() {
         return new int[]{1, 2, 3, 4};
+    }
+
+    @Override
+    public IntSet virtualControlPointIndices() {
+        BitSet bits = new BitSet(5);
+        bits.set(1, 5);
+        return IntSet.of(bits);
     }
 
     @Override

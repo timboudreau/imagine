@@ -12,7 +12,6 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import net.java.dev.imagine.api.vector.elements.ImageWrapper;
 import net.java.dev.imagine.api.vector.elements.PathText;
-import net.java.dev.imagine.api.vector.elements.Text;
 import org.imagine.geometry.PieWedge;
 import org.imagine.geometry.Polygon2D;
 import org.imagine.geometry.RotationDirection;
@@ -140,26 +139,18 @@ public class OneShapeWidget extends Widget {
                     + "dragging shape simultaneously is impossible");
         }
 
-        System.out.println("\nsetCpDragInProgress " + value);
-//        new Exception("setCpDragInProgress " + value).printStackTrace();
         if (value != this.draggingControlPoint) {
             this.draggingControlPoint = value;
             if (value) {
                 ShapeElement result = switchToShapeCopy();
-                System.out.println("switch to copy " + result.getName());
                 return result;
             } else {
                 ShapeElement result = clearShapeCopy();
-                System.out.println("switch back to real " + result.getName());
                 return result;
             }
         } else {
-            System.out.println("NOT A CHANGE");
-            if (true) {
-                return temp;
-            }
+            return temp;
         }
-        return null;
     }
 
     private boolean draggingShape;
@@ -236,12 +227,19 @@ public class OneShapeWidget extends Widget {
     }
 
     public ShapeControlPoint onBeginControlPointDrag(ShapeControlPoint pt) {
-        System.out.println("begin drag " + pt.index() + " on " + pt.owner().getName());
         setControlPointDragInProgress(true);
         return tempControlPoint(pt.index());
     }
 
+    public ShapeControlPoint onBeginRotate(ShapeControlPoint pt) {
+        return onBeginControlPointDrag(pt);
+    }
+
     public void onControlPointMove(ShapeControlPoint pt) {
+        revalidate();
+    }
+
+    public void onRotated() {
         revalidate();
     }
 
@@ -257,6 +255,10 @@ public class OneShapeWidget extends Widget {
         setControlPointDragInProgress(false);
         revalidate();
         repaint();
+    }
+
+    public void onCancelRotation() {
+        onCancelControlPointDrag();
     }
 
     @Messages("MOVE_CONTROL_POINT=Move Control Point")
@@ -275,6 +277,26 @@ public class OneShapeWidget extends Widget {
             })[pt.index()];
             shapes.edit(Bundle.MOVE_CONTROL_POINT(), element, () -> {
                 real.set(pt.getX(), pt.getY());
+            });
+        } else {
+            // Ensure if we were moved, we repaint in the right place
+            revalidate();
+//            getScene().validate();
+        }
+    }
+
+    @Messages("ROTATE_SHAPE=Rotate Shape")
+    public void onEndRotate(ShapeControlPoint pt, boolean commit) {
+        ShapeElement tp = setControlPointDragInProgress(false);
+        assert pt.owner().equals(tp);
+        assert tp != null : "CP End drag without start";
+        if (commit) {
+            // Find the real control point (actually, creating a new one
+            // with the same identity for mapping to a widget), and
+            // set its position to that of the dragged control point
+            // copy
+            shapes.edit(Bundle.ROTATE_SHAPE(), element, () -> {
+                element.setShape(tp.item());
             });
         } else {
             // Ensure if we were moved, we repaint in the right place
@@ -337,9 +359,9 @@ public class OneShapeWidget extends Widget {
                     g.draw(shape);
                 }
             }
-            if (!el.item().is(Text.class)) {
+//            if (!el.item().is(Textual.class)) {
 //                debugPaintCorners(g, el, shape);
-            }
+//            }
         }
         paintDecorations(g, el, shape);
     }
@@ -367,8 +389,6 @@ public class OneShapeWidget extends Widget {
 
             int idHash = System.identityHashCode(approximate);
             lastIdHash.ifUpdate(idHash, () -> {
-                System.out.println("POLY POINTS " + approximate.pointCount()
-                        + " for " + el.getName());
                 g.setColor(new Color(20, 150, 20, 200));
                 g.setStroke(new BasicStroke((float) (scale * 3)));
                 g.draw(approximate);
@@ -384,65 +404,6 @@ public class OneShapeWidget extends Widget {
             g.draw(wedge);
         };
         RotationDirection dir = vv.analyze(shape);
-
-
-        /*
-        RotationDirection dir = CornerAngle.forShape(shape, (int apexPointIndexWithinShape, CornerAngle angle, double x, double y, int isects) -> {
-        });
-
-        CornerAngle.forShape(shape, (int apexPointIndexWithinShape, CornerAngle angle, double x, double y, int isects) -> {
-            wedge.setCenter(x, y);
-            RotationDirection d2 = angle.direction();
-            if (isects % 2 != 0) {
-                d2 = d2.opposite();
-            }
-            if (d2 != dir) {
-                System.out.println("Invert " + apexPointIndexWithinShape + " for " + angle);
-                g.setColor(new Color(255, 40, 40));
-                angle = angle.normalized();
-                if (isects % 2 == 1) {
-                    g.setColor(new Color(40, 220, 40));
-                    wedge.setAngleAndExtent(angle.bDegrees(), 360 - Math.abs(angle.extent()));
-                } else {
-                    wedge.setAngleAndExtent(angle.bDegrees(), 360 - Math.abs(angle.extent()));
-//                    wedge.setAngleAndExtent(angle.aDegrees(), angle.extent());
-                }
-            } else {
-                angle = angle.normalized();
-                wedge.setAngleAndExtent(angle.aDegrees(), angle.extent());
-//                angle = angle.normalized();
-                g.setColor(new Color(40, 40, 255));
-            }
-            float txtOffset = (float) (scale * 5);
-            g.drawString(Integer.toString(apexPointIndexWithinShape)
-                    + " - " + GeometryUtils.toShortString(angle.extent()) + "\u00B0"
-                    + " i:" + isects,
-                    (float) (x + txtOffset), (float) (y + txtOffset)
-            );
-            g.draw(wedge);
-//            g.setColor(Color.RED);
-//            g.draw(GeometryUtils.approximate(shape));
-        });
-         */
-
- /*
-        new MinimalAggregateShapeDouble(shape).visitAnglesWithArcs(new ArcsVisitor() {
-            @Override
-            public void visit(int index, double angle1, double x1, double y1,
-                    double angle2, double x2, double y2, Rectangle2D bounds,
-                    double apexX, double apexY, double offsetX,
-                    double offsetY, double midAngle) {
-                CornerAngle ca = new CornerAngle(angle1, angle2);
-                if (ca.direction() == dir) {
-                    ca = ca.opposite();
-                }
-                String txt = GeometryUtils.toShortString(ca.normalized().extent()) + "\u00B0";
-                g.drawString(txt, (float) offsetX, (float) offsetY);
-                g.setColor(Color.BLUE.brighter());
-                g.draw(ca.toShape(apexX, apexY, 20));
-            }
-        }, 25);
-         */
     }
 
     private void paintDecorations(Graphics2D g, ShapeElement el, Shape shape) {

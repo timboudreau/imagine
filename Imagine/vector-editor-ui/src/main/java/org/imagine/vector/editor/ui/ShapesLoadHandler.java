@@ -5,7 +5,9 @@
  */
 package org.imagine.vector.editor.ui;
 
+import java.awt.Dimension;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -25,7 +27,15 @@ import org.openide.util.lookup.ServiceProvider;
 public class ShapesLoadHandler implements LayerLoadHandler<VectorLayer> {
 
     private static final Logger LOG = Logger.getLogger(ShapesLayerSave.class.getName());
+    /**
+     * Original magic number, before layer canvas size was saved with the layer.
+     */
     static final byte SHAPE_COLLECTION_MAGIC_1 = (byte) 37;
+    /**
+     * New magic number, indicates the layer canvas size should be written after the
+     * shapes data is.
+     */
+    static final byte SHAPE_COLLECTION_MAGIC_1A = (byte) 38;
     static final byte SHAPE_COLLECTION_MAGIC_2 = (byte) 52;
 
     static {
@@ -54,14 +64,38 @@ public class ShapesLoadHandler implements LayerLoadHandler<VectorLayer> {
         assert recognizes(type) : "Wrong handler for type " + type;
         long start = channel.position();
         fine(() -> "Vector layer begin reading shapes @ " + start);
-        KeyBinaryReader<C> rdr = new KeyBinaryReader<>(channel, SHAPE_COLLECTION_MAGIC_1, SHAPE_COLLECTION_MAGIC_2);
+        ByteBuffer revCheck = ByteBuffer.allocate(1);
+        channel.read(revCheck);
+        channel.position(channel.position()-1);
+        revCheck.flip();
+        byte magic1 = revCheck.get();
+        switch(magic1) {
+            case SHAPE_COLLECTION_MAGIC_1 :
+                break;
+            case SHAPE_COLLECTION_MAGIC_1A :
+                break;
+            default :
+                throw new IllegalArgumentException("Bad magic number for shape layer " + magic1
+                    + " expected " + SHAPE_COLLECTION_MAGIC_1 + " or " + SHAPE_COLLECTION_MAGIC_1A);
+        }
+
+        KeyBinaryReader<C> rdr = new KeyBinaryReader<>(channel, magic1, SHAPE_COLLECTION_MAGIC_2);
         int size = rdr.readMagicAndSize();
         finer(() -> "Key reader reports shapes section length " + size);
         Shapes shapes = Shapes.load(rdr, HashInconsistencyBehavior.WARN);
         long end = channel.position();
+        Dimension canvasSize = shapes.getBounds().getSize();
+        switch(magic1) {
+            case SHAPE_COLLECTION_MAGIC_1A :
+                ByteBuffer sizeInfo = ByteBuffer.allocate(Integer.BYTES * 2);
+                channel.read(sizeInfo);
+                sizeInfo.flip();
+                canvasSize = new Dimension(sizeInfo.getInt(), sizeInfo.getInt());
+                break;
+        }
         finer(() -> "Vector layer finished reading shapes @ " + end + " having read " + (end - start) + " bytes");
         VectorLayerFactory vlf = Lookup.getDefault().lookup(VectorLayerFactory.class);
-        VectorLayer vl = new VectorLayer("-pending", handle, vlf, shapes);
+        VectorLayer vl = new VectorLayer("-pending", handle, canvasSize, vlf, shapes);
         return vl;
     }
 }

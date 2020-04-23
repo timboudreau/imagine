@@ -26,7 +26,7 @@ import org.openide.util.NbBundle;
  *
  * @author Tim Boudreau
  */
-@ToolDef(name = "Triangle", iconPath = "org/netbeans/paint/tools/resources/triangle.png")
+@ToolDef(name = "Triangle", iconPath = "org/netbeans/paint/tools/resources/triangle.svg")
 @Tool(Surface.class)
 public class TriangleTool extends RectangleTool {
 

@@ -35,6 +35,7 @@ import net.dev.java.imagine.spi.effects.EffectRecipient;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import net.java.dev.imagine.api.image.Layer;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.layers.text.widget.api.Text;
 import net.java.dev.imagine.layers.text.widget.api.TextItems;
 import net.java.dev.imagine.layers.text.widget.api.TextItems.TextItemsSupport;
@@ -408,7 +409,7 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
     }
 
     @Override
-    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignore, Zoom zoom) {
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignore, Zoom zoom) {
         //do nothing
         return false;
     }

@@ -231,7 +231,7 @@ public final class Picture implements Iterable<Layer> {
     }
 
     /**
-     * Paint the current contents of this Surface object to the supplied
+     * Paint the current contents of this Picture object to the supplied
      * Graphics2D context.
      * <p>
      * If a bounding rectangle is supplied, this method should assume that the
@@ -244,8 +244,8 @@ public final class Picture implements Iterable<Layer> {
      * @param r A bounding rectangle if painting a thumbnail image, or null
      *  if full quality painting is desired
      */
-    public boolean paint (Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom) {
-        return impl.paint (g, bounds, showSelection, zoom);
+    public boolean paint (RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom) {
+        return impl.paint (goal, g, bounds, showSelection, zoom);
     }
 
     /**

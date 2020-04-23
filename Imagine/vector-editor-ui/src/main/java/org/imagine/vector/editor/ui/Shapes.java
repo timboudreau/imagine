@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import org.imagine.editor.api.snap.SnapPoints;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
@@ -562,13 +563,13 @@ public class Shapes implements HitTester, ShapesCollection {
     }
 
     @Override
-    public boolean paint(Graphics2D g, Rectangle thumbnailBounds, Zoom zoom) {
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle thumbnailBounds, Zoom zoom) {
         GraphicsUtils.setHighQualityRenderingHints(g);
         int max = shapes.size() - 1;
         boolean result = false;
         for (int i = max; i >= 0; i--) {
             ShapeEntry se = shapes.get(i);
-            result |= se.paint(g, thumbnailBounds);
+            result |= se.paint(goal, g, thumbnailBounds);
         }
         return result;
     }

@@ -21,6 +21,7 @@ import java.util.Collection;
 import net.dev.java.imagine.api.selection.ObjectSelection;
 import net.dev.java.imagine.api.selection.ShapeConverter;
 import net.dev.java.imagine.api.selection.Universe;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.effects.api.EffectReceiver;
@@ -108,7 +109,7 @@ class VLayerImpl extends AbstractLayerImplementation {
     }
 
     @Override
-    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom) {
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom) {
         Composite old = null;
         float opacity = getOpacity();
         if (opacity != 1.0F) {
@@ -117,11 +118,11 @@ class VLayerImpl extends AbstractLayerImplementation {
                     opacity));
         }
 
-        boolean result = surface.paint(g, bounds, zoom);
+        boolean result = surface.paint(goal, g, bounds, zoom);
         if (old != null) {
             g.setComposite(old);
         }
-        if (showSelection) {
+        if (showSelection && goal.isEditing()) {
             sel.paint(g, bounds);
         }
 //        System.out.println(surface.stack.dump());
@@ -186,7 +187,7 @@ class VLayerImpl extends AbstractLayerImplementation {
                 AffineTransform xform = AffineTransform.getScaleInstance((double) size.getWidth() / (double) d.getWidth(),
                         (double) size.getHeight() / (double) d.getHeight());
                 g.setTransform(xform);
-                surface.paint(g, null, Zoom.ONE_TO_ONE);
+                surface.paint(RenderingGoal.PRODUCTION, g, null, Zoom.ONE_TO_ONE);
             });
         }
     }

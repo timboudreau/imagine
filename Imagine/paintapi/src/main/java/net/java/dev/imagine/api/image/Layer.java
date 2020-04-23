@@ -71,11 +71,21 @@ public final class Layer implements Lookup.Provider {
     public Layer clone (boolean isUserCopy, boolean deepCopy) {
         return Accessor.layerFor (impl.clone(isUserCopy, deepCopy));
     }
-    
+
+    /**
+     * Get the bounds of all content within this layer, which may be include
+     * contents outside the visible bounds.
+     *
+     * @return A rectangle
+     */
+    public Rectangle getContentBounds() {
+        return impl.getContentBounds();
+    }
+
     /**
      * Determine if this is a bitmap-backed layer, or if it can be
      * scaled up arbitrarily.
-     * 
+     *
      * @return Whether or not this layer is resolution-independent
      */
     public boolean isResolutionIndependent() {
@@ -148,7 +158,7 @@ public final class Layer implements Lookup.Provider {
     public Surface getSurface() {
         Surface surface = getLookup().lookup (Surface.class);
         if (surface != null) {
-            SurfaceImplementation surf = 
+            SurfaceImplementation surf =
                     getLookup().lookup(SurfaceImplementation.class);
             if (surf != null) {
                 surface = Accessor.surfaceFor(surf);
@@ -177,21 +187,31 @@ public final class Layer implements Lookup.Provider {
     public void setOpacity (float f) {
         impl.setOpacity(f);
     }
-    
+
     /**
      * Resize this layer, causing its contents to be scaled or clipped
      * to the new size
      * @param width
-     * @param height 
+     * @param height
      */
     public void resize (int width, int height) {
+        resize(width, height, true);
+    }
+
+    /**
+     * Resize this layer, possibly, causing its contents to be scaled or clipped
+     * to the new size
+     * @param width
+     * @param height
+     */
+    public void resize (int width, int height, boolean resizeContents) {
         assert width > 0;
         assert height > 0;
-        impl.resize (width, height);
+        impl.resize (width, height, true);
     }
-    
+
     /**
-     * Paint the current contents of this Surface object to the supplied
+     * Paint the current contents of this Layer object to the supplied
      * Graphics2D context.
      * <p>
      * If a bounding rectangle is supplied, this method should assume that the
@@ -204,9 +224,9 @@ public final class Layer implements Lookup.Provider {
      * @param r A bounding rectangle if painting a thumbnail image, or null
      *  if full quality painting is desired
      */
-    public boolean paint (Graphics2D g, Rectangle bounds, boolean showSelection,
+    public boolean paint (RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection,
             boolean paintWhenVisibleFalse, Zoom zoom) {
-        return impl.paint (g, bounds, showSelection, paintWhenVisibleFalse, zoom);
+        return impl.paint (goal, g, bounds, showSelection, paintWhenVisibleFalse, zoom);
     }
 
     public void commitLastPropertyChangeToUndoHistory() {
@@ -241,7 +261,7 @@ public final class Layer implements Lookup.Provider {
                     fire (evt.getPropertyName(), evt.getOldValue(),
                         evt.getNewValue());
                 }
-                
+
             });
         }
     }
@@ -257,11 +277,11 @@ public final class Layer implements Lookup.Provider {
     public Lookup getLookup() {
         return impl.getLookup();
     }
-    
+
     public boolean equals(Object o) {
         return o instanceof Layer && ((Layer) o).impl.equals(impl);
     }
-    
+
     public int hashCode() {
         return impl.hashCode();
     }

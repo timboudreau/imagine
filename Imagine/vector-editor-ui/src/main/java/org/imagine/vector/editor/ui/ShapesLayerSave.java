@@ -1,5 +1,6 @@
 package org.imagine.vector.editor.ui;
 
+import java.awt.Rectangle;
 import java.io.IOException;
 import static java.lang.System.identityHashCode;
 import java.nio.ByteBuffer;
@@ -11,7 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.java.dev.imagine.spi.io.LayerSaveHandler;
 import org.imagine.io.KeyBinaryWriter;
-import static org.imagine.vector.editor.ui.ShapesLoadHandler.SHAPE_COLLECTION_MAGIC_1;
+import static org.imagine.vector.editor.ui.ShapesLoadHandler.SHAPE_COLLECTION_MAGIC_1A;
 import static org.imagine.vector.editor.ui.ShapesLoadHandler.SHAPE_COLLECTION_MAGIC_2;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
 
@@ -71,7 +72,7 @@ public class ShapesLayerSave implements LayerSaveHandler<VectorLayer> {
 
         long start = channel.position();
         fine(() -> "Vector layer write shapes starting at " + start);
-        KeyBinaryWriter w = new KeyBinaryWriter(SHAPE_COLLECTION_MAGIC_1, SHAPE_COLLECTION_MAGIC_2);
+        KeyBinaryWriter w = new KeyBinaryWriter(SHAPE_COLLECTION_MAGIC_1A, SHAPE_COLLECTION_MAGIC_2);
         shapes.writeTo(w);
         w.finishRecord();
         finer(() -> "Shapes writer reports bytes to write " + w.size());
@@ -82,6 +83,14 @@ public class ShapesLayerSave implements LayerSaveHandler<VectorLayer> {
         long end = channel.position();
         finer(() -> "Vector layer wrote shapes starting at " + start
                 + " ending at " + end + " of " + (end - start) + " bytes");
+        ByteBuffer sizeInfo = ByteBuffer.allocate(Integer.BYTES * 2);
+        Rectangle r = layer.getBounds();
+        sizeInfo.putInt(r.width);
+        sizeInfo.putInt(r.height);
+        sizeInfo.flip();
+        channel.write(sizeInfo);
+        finer(() -> "Vector layer wrote size " + r.width + "," + r.height);
+
         return layerTypeId();
     }
 

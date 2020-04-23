@@ -1,22 +1,24 @@
 package org.imagine.vector.editor.ui;
 
+import com.mastfrog.util.collections.IntSet;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Set;
 import java.util.function.Consumer;
 import org.imagine.editor.api.snap.SnapAxis;
 import net.java.dev.imagine.api.image.Hibernator;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.Textual;
@@ -56,7 +58,7 @@ import org.openide.util.WeakSet;
  */
 public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointController {
 
-    private static long IDS = 0 /* - System.currentTimeMillis() */;
+    private static long IDS = idsBase();
     private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
     private static final PaintKey XPAR_KEY = PaintKey.forPaint(TRANSPARENT);
     private PaintKey<?> bg;
@@ -74,6 +76,15 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
         return ShapeInfo.create(shape());
     });
     private static final byte IO_REV = 1;
+
+    static final long idsBase() {
+        long ts = System.currentTimeMillis();
+        return (ts / 5);
+    }
+
+    public boolean isNameExplicitlySet() {
+        return name != null;
+    }
 
     public void writeTo(VectorIO io, KeyWriter writer) throws IOException {
         byte flags = 0;
@@ -191,7 +202,8 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
 
     @Override
     public boolean isNameSet() {
-        return name != null;
+        return name != null
+                && !name.equals(defaultName());
     }
 
     @Override
@@ -223,9 +235,13 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
     @Override
     public String getName() {
         if (name == null) {
-            return ShapeNames.nameOf(vect) + "-" + Long.toString(id, 36);
+            return defaultName();
         }
         return name;
+    }
+
+    private String defaultName() {
+        return ShapeNames.nameOf(vect) + "-" + Long.toString(id, 36);
     }
 
     @Override
@@ -240,11 +256,6 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
     @Override
     public long id() {
         return id;
-    }
-
-    public void setStroke(BasicStroke stroke) {
-        this.stroke = stroke;
-        changed();
     }
 
     @Override
@@ -393,7 +404,7 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
                     if (pts.length > 0) {
                         pts = pts[0].family();
                     }
-                    if (c != null) {
+                    if (c != null && pt.index() < pts.length) {
                         c.accept(pts[pt.index()]);
                     }
                     ShapeEntry.this.changed(pt);
@@ -427,6 +438,16 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
         } else {
             return shape().contains(p);
         }
+    }
+
+    @Override
+    public boolean setStroke(BasicStrokeWrapper wrapper) {
+        boolean change = !wrapper.equals(this.stroke);
+        if (change) {
+            this.stroke = wrapper.toStroke();
+            changed();
+        }
+        return change;
     }
 
     @Override
@@ -521,13 +542,16 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
             int cpCount = adj.getControlPointCount();
             double[] pts = new double[cpCount * 2];
             adj.getControlPoints(pts);
-            int[] virt = adj.getVirtualControlPointIndices();
+            IntSet v = adj.virtualControlPointIndices();
+//            int[] virt = adj.getVirtualControlPointIndices();
             for (int i = 0; i < pts.length; i += 2) {
                 int ptIx = i / 2;
-                if (Arrays.binarySearch(virt, ptIx) < 0) {
+                if (!v.contains(ptIx)) {
+//                if (Arrays.binarySearch(virt, ptIx) < 0) {
                     ShapeSnapPointEntry sn = new ShapeSnapPointEntry(this, ptIx, -1);
                     bldr.add(SnapAxis.X, pts[i], sn);
                     bldr.add(SnapAxis.Y, pts[i + 1], sn);
+//                }
                 }
             }
         }
@@ -672,19 +696,31 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
     }
 
     @Override
-    public boolean paint(Graphics2D g, Rectangle bounds) {
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds) {
         Shape sh = shape();
         //            System.out.println("paint shape " + sh);
         if (bds != null && !sh.intersects(bds)) {
 //            System.out.println("  does not intersect");
 //            return false;
         }
+        if (goal.isProduction()) {
+            g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        }
         if (vect.is(ImageWrapper.class)) {
             vect.as(ImageWrapper.class).paint(g);
         } else if (vect.is(PathText.class)) {
-            g.setPaint(getFill());
-            g.setStroke(stroke);
+            g.setPaint(goal.isProduction() ? bg.toPaint()
+                    : GradientManager.getDefault().findPaint(bg));
+            if (stroke != null) {
+                g.setStroke(stroke);
+            }
             vect.as(PathText.class).paint(g);
+            if (isDraw()) {
+                g.setPaint(goal.isProduction()
+                        ? fg.toPaint()
+                        : GradientManager.getDefault().findPaint(fg));
+                vect.as(PathText.class).draw(g);
+            }
         } else {
             Stroke oldStroke = null;
             if (stroke != null) {
@@ -693,13 +729,17 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
                 g.setStroke(GraphicsUtils.createTransformedStroke(stroke, xform));
             }
             if (bg != null) {
-                g.setPaint(GradientManager.getDefault().findPaint(bg));
+                g.setPaint(goal.isProduction()
+                        ? bg.toPaint()
+                        : GradientManager.getDefault().findPaint(bg));
             }
             if (isFill()) {
                 g.fill(sh);
             }
             if (fg != null) {
-                g.setPaint(GradientManager.getDefault().findPaint(fg));
+                g.setPaint(goal.isProduction()
+                        ? fg.toPaint()
+                        : GradientManager.getDefault().findPaint(fg));
             }
             if (isDraw()) {
                 g.draw(sh);

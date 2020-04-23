@@ -13,6 +13,8 @@ import java.util.Set;
 import net.java.dev.imagine.api.vector.Adjustable;
 import net.java.dev.imagine.api.vector.Mutable;
 import net.java.dev.imagine.api.vector.Versioned;
+import net.java.dev.imagine.api.vector.elements.CircleWrapper;
+import net.java.dev.imagine.api.vector.elements.RhombusWrapper;
 import net.java.dev.imagine.api.vector.util.Pt;
 import net.java.dev.imagine.api.vector.util.Size;
 import org.imagine.geometry.EqPointDouble;
@@ -133,6 +135,9 @@ final class ControlPointSharedData<T extends Adjustable & Versioned> {
             int oldRev = revAtLastUpd;
             adj.setControlPointLocation(index, new Pt(x, y));
             revAtLastUpd = adj.rev();
+            if (adj instanceof CircleWrapper || adj instanceof RhombusWrapper) {
+                revAtLastUpd = -1;
+            }
             controlPoints[index * 2] = x;
             controlPoints[(index * 2) + 1] = y;
             return revAtLastUpd != oldRev;

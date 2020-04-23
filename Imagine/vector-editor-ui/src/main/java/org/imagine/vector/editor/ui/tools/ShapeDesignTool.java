@@ -5,6 +5,7 @@
  */
 package org.imagine.vector.editor.ui.tools;
 
+import com.mastfrog.function.state.Obj;
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -18,29 +19,32 @@ import net.dev.java.imagine.spi.tool.ToolDef;
 import net.dev.java.imagine.spi.tool.ToolImplementation;
 import org.imagine.editor.api.snap.SnapPointsSupplier;
 import org.imagine.geometry.Circle;
+import org.imagine.inspectors.spi.Inspectors;
 import org.imagine.vector.editor.ui.spi.WidgetSupplier;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
-import org.imagine.utils.Holder;
+import org.imagine.vector.editor.ui.palette.PaintsPaletteTC;
 import org.imagine.vector.editor.ui.palette.ShapesPaletteTC;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
 import org.imagine.vector.editor.ui.tools.widget.DesignWidgetManager;
 import org.imagine.vector.editor.ui.tools.widget.util.ViewL;
 import org.netbeans.paintui.widgetlayers.WidgetController;
 import org.openide.util.Lookup;
+import org.openide.util.NbBundle.Messages;
 import org.openide.util.lookup.ProxyLookup;
 
 /**
  *
  * @author Tim Boudreau
  */
-@ToolDef(category = "vector", name = "Shape Design")
+@ToolDef(category = "vector", name = "SHAPE_DESIGN")
 @Tool(ShapesCollection.class)
+@Messages("SHAPE_DESIGN=Shape Design")
 public class ShapeDesignTool extends ToolImplementation<ShapesCollection>
         implements WidgetSupplier, PaintParticipant, CustomizerProvider {
 
     private MPL layerLookup = new MPL();
-    private Holder<Repainter> repainter = Holder.create();
+    private Obj<Repainter> repainter = Obj.create();
 
     public ShapeDesignTool(ShapesCollection obj) {
         super(obj);
@@ -54,12 +58,21 @@ public class ShapeDesignTool extends ToolImplementation<ShapesCollection>
         layerLookup.setOtherLookups();
         widgetLookup.updateLookups();
         ShapesPaletteTC.closePalette();
+        PaintsPaletteTC.closePalette();
     }
 
     @Override
     public void attach(Lookup.Provider layer) {
+        System.out.println("Open palettes");
         ShapesPaletteTC.openPalette();
+        PaintsPaletteTC.openPalette();
+        Inspectors.openUI(true);
         layerLookup.setOtherLookups(layer.getLookup());
+    }
+
+    @Override
+    public boolean takesOverPaintingScene() {
+        return true;
     }
 
     @Override
@@ -155,7 +168,7 @@ public class ShapeDesignTool extends ToolImplementation<ShapesCollection>
             }
             g.setPaintMode();
         }
-        */
+         */
     }
     private final Circle circ = new Circle(0, 0, 1);
 

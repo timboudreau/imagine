@@ -1,5 +1,6 @@
 package net.java.dev.imagine.api.vector.elements;
 
+import com.mastfrog.util.collections.IntSet;
 import org.imagine.geometry.MinimalAggregateShapeFloat;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -15,6 +16,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 import net.java.dev.imagine.api.vector.Adjustable;
@@ -562,6 +564,17 @@ public class Text implements Primitive, Vectors, Adjustable, Textual, Versioned 
             result[i] = i;
         }
         return result;
+    }
+
+    @Override
+    public IntSet virtualControlPointIndices() {
+        ensureShape();
+        if (baselines == null) {
+            return IntSet.EMPTY;
+        }
+        BitSet bits = new BitSet();
+        bits.set((baselines.length + charPositions.length) / 2);
+        return IntSet.of(bits);
     }
 
     @Override

@@ -55,11 +55,11 @@ public class OpenFileAction extends AbstractAction {
 
     public void actionPerformed(ActionEvent e) {
         File[] f = new FileChooserBuilder(OpenFileAction.class)
-                .addFileFilter(new FF())
+                .setFileFilter(new FF())
                 .setFilesOnly(true)
+                .setFileHiding(true)
                 .setTitle(NbBundle.getMessage(OpenFileAction.class,
                         "TTL_OpenDlg"))
-                .setFileHiding(false)
                 .showMultiOpenDialog();
         if (f != null && f.length > 0) {
             if (f.length == 1) {

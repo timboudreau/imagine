@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.2//EN" "http://www.netbeans.org/dtds/filesystem-1_2.dtd">
 <filesystem>
-    <folder name="Windows2Local">
+    <folder name="Windows2">
         <folder name="Modes">
             <file name="inspectors.wsmode" url="inspectors.wsmode"/>
-            <folder name="layersMode">
+            <folder name="inspectors">
                 <file name="inspectors.wstcref" url="inspectors.wstcref"/>
             </folder>
         </folder>

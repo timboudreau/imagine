@@ -5,6 +5,7 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
@@ -141,7 +142,7 @@ public final class InspectorTopComponent extends TopComponent implements TriCons
         if (!all.isEmpty()) {
             int size = all.size();
             int cursor = 0;
-            for (T obj : all) {
+            for (T obj : new LinkedHashSet<>(all)) {
                 Component comp = f.get(obj, lkp, cursor, size);
                 if (comp != null) {
                     pnl.add(comp);

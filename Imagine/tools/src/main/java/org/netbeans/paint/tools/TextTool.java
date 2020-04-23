@@ -42,7 +42,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Tim Boudreau
  */
-@ToolDef(name = "Text", iconPath = "org/netbeans/paint/tools/resources/text.png")
+@ToolDef(name = "Text", iconPath = "org/netbeans/paint/tools/resources/text.svg")
 @Tool(Surface.class)
 public class TextTool implements KeyListener, MouseListener, MouseMotionListener, PaintParticipant, CustomizerProvider, Attachable {
 

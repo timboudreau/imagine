@@ -8,6 +8,7 @@
  */
 package net.java.dev.imagine.api.vector.elements;
 
+import com.mastfrog.util.collections.IntSet;
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
@@ -374,5 +375,10 @@ public final class Polyline implements Strokable, Adjustable, Volume, Vectors, M
         Rectangle2D.Double bds = new Rectangle2D.Double();
         getBounds(bds);
         return bds.getBounds();
+    }
+
+    @Override
+    public IntSet virtualControlPointIndices() {
+        return IntSet.EMPTY;
     }
 }

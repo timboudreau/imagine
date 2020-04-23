@@ -25,6 +25,7 @@ import java.util.Arrays;
 import javax.swing.JComponent;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
+import javax.swing.UIManager;
 
 /**
  *
@@ -140,7 +141,7 @@ public final class FontCellRenderer implements ListCellRenderer {
 //                g.fillRect(0, 0, img.getWidth(), img.getHeight());
                 g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
                 g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-                g.setColor(Color.BLACK);
+                g.setColor(UIManager.getColor("textText"));
                 for (int i = 0; i < fonts.length; i++) {
                     positions[i] = y;
                     boolean problematic = widths[i] < 5;

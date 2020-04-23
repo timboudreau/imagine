@@ -1,29 +1,39 @@
 package org.imagine.vector.editor.ui.tools.inspectors;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.GradientPaint;
 import java.awt.LinearGradientPaint;
 import java.awt.Paint;
 import java.awt.RadialGradientPaint;
+import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
+import net.java.dev.imagine.api.vector.elements.PathText;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.inspectors.spi.InspectorFactory;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
+import org.imagine.vector.editor.ui.tools.inspectors.ShapeElementPropertiesInspector.StrokeCustomizer;
 import org.netbeans.paint.api.components.EnumComboBoxModel;
+import org.netbeans.paint.api.components.PopupSliderUI;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.netbeans.paint.api.components.VerticalFlowLayout;
+import org.netbeans.paint.api.components.number.NumberModel;
+import org.netbeans.paint.api.components.number.NumericConstraint;
+import static org.netbeans.paint.api.components.number.StandardNumericConstraints.DOUBLE;
 import org.openide.awt.Mnemonics;
 import org.openide.util.Lookup;
+import org.openide.util.NbBundle;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.lookup.ServiceProvider;
 
@@ -140,6 +150,147 @@ public class ShapeElementPropertiesInspector extends InspectorFactory<ShapeEleme
                 }
             }
         }
+        StrokeCustomizer sc = new StrokeCustomizer(shape.stroke(), newStroke -> {
+            coll.edit(Bundle.EDIT_STROKE(shape.getName()), shape, () -> {
+                shape.setStroke(newStroke);
+            });
+        });
+        pnl.add(sc);
+        if (shape.item() instanceof PathText) {
+            pnl.add(new PathTextInspector().get(((PathText) shape.item()), lookup, item, of));
+        }
         return pnl;
+    }
+
+    @Messages({"CAP=Cap", "JOIN=Join", "SIZE=Width", "EDIT_STROKE=Edit Stroke on {0}"})
+    static class StrokeCustomizer extends JPanel {
+
+        BasicStroke stroke;
+        private final JLabel capLabel = new JLabel();
+        private final JLabel joinLabel = new JLabel();
+        private final JLabel widthLabel = new JLabel();
+        private final JComboBox<Cap> capBox;
+        private final JComboBox<Join> joinBox;
+
+        StrokeCustomizer(BasicStroke stroke, Consumer<BasicStroke> updater) {
+            super(new VerticalFlowLayout());
+            if (stroke == null) {
+                stroke = new BasicStroke(1);
+            }
+            this.stroke = stroke;
+            capBox = EnumComboBoxModel.newComboBox(Cap.forStroke(stroke));
+            joinBox = EnumComboBoxModel.newComboBox(Join.forStroke(stroke));
+            Mnemonics.setLocalizedText(capLabel, Bundle.CAP());
+            Mnemonics.setLocalizedText(joinLabel, Bundle.JOIN());
+            Mnemonics.setLocalizedText(widthLabel, Bundle.SIZE());
+            JPanel sub1 = new SharedLayoutPanel();
+            sub1.add(capLabel);
+            sub1.add(capBox);
+            add(sub1);
+            JPanel sub2 = new SharedLayoutPanel();
+            sub2.add(joinLabel);
+            sub2.add(joinBox);
+            add(sub2);
+            NumericConstraint con = DOUBLE.withMaximum(75D).withMinimum(0.1D).withStep(0.5D);
+            NumberModel<Double> mdl = NumberModel.ofDouble(con, () -> {
+                return this.stroke.getLineWidth();
+            }, sz -> {
+                this.stroke = new BasicStroke((float) sz, ((Cap) capBox.getSelectedItem()).constant(),
+                        ((Join) joinBox.getSelectedItem()).constant());
+                updater.accept(this.stroke);
+            });
+            JSlider slider = new JSlider(mdl.toBoundedRangeModel());
+            PopupSliderUI.attach(slider);
+            JPanel sub3 = new SharedLayoutPanel();
+            sub3.add(widthLabel);
+            sub3.add(slider);
+            ItemListener il = e -> {
+                Cap cap = (Cap) capBox.getSelectedItem();
+                Join join = (Join) joinBox.getSelectedItem();
+                if (cap != null) {
+                    StrokeCustomizer.this.stroke = new BasicStroke(mdl.get().floatValue(), cap.constant(),
+                            join.constant());
+                    updater.accept(this.stroke);
+                }
+            };
+            capBox.addItemListener(il);
+            joinBox.addItemListener(il);
+            add(sub3);
+        }
+
+        @Messages({"ROUND=Round", "BUTT=Butt", "SQUARE=Square"})
+        enum Cap {
+            ROUND,
+            BUTT,
+            SQUARE;
+
+            static Cap forStroke(BasicStroke stroke) {
+                switch (stroke.getEndCap()) {
+                    case BasicStroke.CAP_BUTT:
+                        return BUTT;
+                    case BasicStroke.CAP_ROUND:
+                        return ROUND;
+                    case BasicStroke.CAP_SQUARE:
+                        return SQUARE;
+                    default:
+                        throw new AssertionError("Unknown stroke type " + stroke.getEndCap());
+                }
+            }
+
+            int constant() {
+                switch (this) {
+                    case BUTT:
+                        return BasicStroke.CAP_BUTT;
+                    case ROUND:
+                        return BasicStroke.CAP_ROUND;
+                    case SQUARE:
+                        return BasicStroke.CAP_SQUARE;
+                    default:
+                        throw new AssertionError(this);
+                }
+            }
+
+            public String toString() {
+                return NbBundle.getMessage(Join.class, name());
+            }
+        }
+
+        @Messages({"BEVEL=Bevel", "MITER=Miter"})
+        enum Join {
+            BEVEL,
+            MITER,
+            ROUND;
+
+            int constant() {
+                switch (this) {
+                    case BEVEL:
+                        return BasicStroke.JOIN_BEVEL;
+                    case MITER:
+                        return BasicStroke.JOIN_MITER;
+                    case ROUND:
+                        return BasicStroke.JOIN_ROUND;
+                    default:
+                        throw new AssertionError(this);
+                }
+            }
+
+            public static Join forStroke(BasicStroke stroke) {
+                switch (stroke.getLineJoin()) {
+                    case BasicStroke.JOIN_BEVEL:
+                        return BEVEL;
+                    case BasicStroke.JOIN_MITER:
+                        return MITER;
+                    case BasicStroke.JOIN_ROUND:
+                        return ROUND;
+                    default:
+                        throw new AssertionError("Unknown line join type " + stroke.getLineJoin());
+                }
+            }
+
+            public String toString() {
+                return NbBundle.getMessage(Join.class, name());
+            }
+        }
+
     }
 }

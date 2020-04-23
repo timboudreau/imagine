@@ -120,7 +120,7 @@ public class RadialSliderUI extends SliderUI {
         g.setRenderingHint(KEY_STROKE_CONTROL, VALUE_STROKE_PURE);
         SliderState state = state(slider);
         state.withCircleAndLine(c, (circ, line, angle) -> {
-            Color shad = UIManager.getColor("controlShadow");
+            Color shad = UIManager.getColor("controlShadow"); //NOI18N
             if (shad == null) {
                 shad = Color.GRAY;
             }
@@ -154,7 +154,7 @@ public class RadialSliderUI extends SliderUI {
                 g.setColor(lineColor);
                 if (dragLine != null) {
                     g.setStroke(NORMAL);
-                    g.setColor(Color.LIGHT_GRAY);
+                    g.setColor(UIManager.getColor("controlShadow"));
                     g.draw(dragLine);
                 }
                 paintDragCaption(state, slider, g, lineColor, circ, angle);
@@ -278,7 +278,10 @@ public class RadialSliderUI extends SliderUI {
     public void installUI(JComponent c) {
         Color bg = UIManager.getColor("TextArea.background"); // NOI18N
         if (bg == null) {
-            bg = Color.WHITE;
+            bg = UIManager.getColor("text"); // NOI18N
+            if (bg == null) {
+                bg = Color.WHITE;
+            }
         }
         c.setBackground(bg);
         Color fg = UIManager.getColor("TextArea.foreground"); // NOI18N

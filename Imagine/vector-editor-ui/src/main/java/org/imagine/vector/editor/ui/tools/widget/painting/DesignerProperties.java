@@ -5,7 +5,6 @@ import java.awt.Color;
 import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.Shape;
-import java.awt.Stroke;
 import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -319,7 +318,7 @@ public class DesignerProperties {
     private double lastStrokeZoom = -1;
     private BasicStroke lastStroke;
 
-    public Stroke strokeForControlPoint(double zoom) {
+    public BasicStroke strokeForControlPoint(double zoom) {
         if (lastStrokeZoom != zoom) {
             float inv = 1F / (float) zoom;
 //            inv = Math.max(inv, 0.125F); // Java2D will not draw narrower strokes
@@ -329,7 +328,7 @@ public class DesignerProperties {
         return lastStroke;
     }
 
-    public Stroke strokeForControlPointConnectorLine(double zoom) {
+    public BasicStroke strokeForControlPointConnectorLine(double zoom) {
         double sz = 0.75 * (1D / zoom);
 
         float[] pattern = Arrays.copyOf(controlPointConnectorStrokePattern,

@@ -1,6 +1,7 @@
 package org.imagine.vector.editor.ui.palette;
 
 import com.mastfrog.abstractions.Wrapper;
+import com.mastfrog.function.state.Obj;
 import com.mastfrog.util.preconditions.Exceptions;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -31,6 +32,19 @@ import org.openide.filesystems.FileUtil;
  * @author Tim Boudreau
  */
 public final class PaintPalettes {
+
+    private static Obj<String> lastActive = Obj.create();
+
+    static void activated(AbstractPaletteTC paletteTC) {
+        lastActive.set(paletteTC.preferredID());
+    }
+
+    static boolean wasLastActive(AbstractPaletteTC tc) {
+        if (!lastActive.isSet()) {
+            activated(tc);
+        }
+        return tc.preferredID().equals(lastActive.get());
+    }
 
     public static Collection<? extends DataFlavor> shapeMimeTypes() {
         return ShapeEntryTransferHandler.flavors();

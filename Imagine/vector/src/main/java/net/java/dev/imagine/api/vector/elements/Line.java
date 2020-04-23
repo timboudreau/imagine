@@ -8,10 +8,10 @@
  */
 package net.java.dev.imagine.api.vector.elements;
 
+import com.mastfrog.util.collections.IntSet;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import static java.lang.Double.doubleToLongBits;
@@ -22,6 +22,8 @@ import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 import net.java.dev.imagine.api.vector.Vectors;
+import org.imagine.geometry.EqLine;
+import org.imagine.geometry.EqPointDouble;
 
 /**
  *
@@ -137,8 +139,20 @@ public class Line implements Strokable, Adjustable, Vectors, Versioned {
     }
 
     @Override
-    public Line2D.Double toShape() {
-        return new Line2D.Double(x1, y1, x2, y2);
+    public EqLine toShape() {
+        return new EqLine(x1, y1, x2, y2);
+    }
+
+    public EqPointDouble center() {
+        return toShape().midPoint();
+    }
+
+    public double centerX() {
+        return x1 + ((x2 - x1) / 2);
+    }
+
+    public double centerY() {
+        return y1 + ((y2 - y1) / 2);
     }
 
     @Override
@@ -255,7 +269,7 @@ public class Line implements Strokable, Adjustable, Vectors, Versioned {
     }
 
     @Override
-    public Vectors copy(AffineTransform xform) {
+    public Line copy(AffineTransform xform) {
         double[] pts = new double[]{
             x1, y1, x2, y2
         };
@@ -325,5 +339,10 @@ public class Line implements Strokable, Adjustable, Vectors, Versioned {
         Rectangle r = new Rectangle();
         r.setFrameFromDiagonal(x1, y1, x2, y2);
         return r;
+    }
+
+    @Override
+    public IntSet virtualControlPointIndices() {
+        return IntSet.EMPTY;
     }
 }

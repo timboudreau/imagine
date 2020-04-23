@@ -3,6 +3,7 @@ package org.imagine.vector.editor.ui.tools.widget.snap;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
@@ -51,7 +52,7 @@ class TextPainter {
         handle.repaintArea(lastBounds);
     }
 
-    static void paintCenteredText(String txt, Graphics2D g, double xx, double yy, Rectangle2D adjust) {
+    static void paintCenteredText(String txt, Graphics2D g, double xx, double yy, Rectangle2D adjust, Paint fill, Paint textColor) {
         FontMetrics fm = g.getFontMetrics();
         int txtW = fm.stringWidth(txt);
         int txtH = fm.getMaxAscent();
@@ -59,8 +60,13 @@ class TextPainter {
         float y = (float) ((xx - (txtFullHeight / 2D))
                 + fm.getAscent());
         float x = (float) (yy - (txtW / 2));
-        g.drawString(txt, x, y);
         adjust.setFrame(x, y + txtH, txtW, txtFullHeight);
+        if (fill != null) {
+            g.setPaint(fill);
+            g.fill(adjust);
+        }
+        g.setPaint(textColor);
+        g.drawString(txt, x, y);
     }
 
     String text() {
@@ -76,16 +82,19 @@ class TextPainter {
     }
 
     public void paint(Graphics2D g, Zoom zoom, PieWedge relTo) {
+        SnapUISettings settings = SnapUISettings.getInstance();
         boolean noFlip = relTo.angle() < 180;
         double opp = noFlip ? relTo.midAngle() : Angle.opposite(relTo.midAngle());
-        EqPoint txtPos = new EqPoint(relTo.getCenterX(), relTo.getCenterY());
-
-        Circle.positionOf(opp, txtPos.x, txtPos.y, relTo.radius(), (tx, ty) -> {
-            txtPos.setLocation(tx, ty);
-        });
-
         String txt = text();
-        g.setFont(FONT.deriveFont(zoom.getInverseTransform()));
+        EqPoint txtPos = new EqPoint(relTo.getCenterX(), relTo.getCenterY());
+        Circle.positionOf(opp, txtPos.x, txtPos.y, relTo.radius(), txtPos);
+
+//        g.setFont(FONT.deriveFont(zoom.getInverseTransform()));
+//        paintCenteredText(txt, g, txtPos.x, txtPos.y, lastBounds,
+//                settings.captionFillColor(SnapKind.POSITION),
+//                settings.captionColor(SnapKind.POSITION)
+//        );
+
         FontMetrics fm = g.getFontMetrics();
         int txtWidth = fm.stringWidth(txt);
         int txtHeight = fm.getMaxAscent() + fm.getMaxDescent();
@@ -95,7 +104,6 @@ class TextPainter {
         txtPos.x += margin;
         txtPos.y += margin;
         lastBounds.setFrame(txtPos.x - margin, txtPos.y - margin - fm.getAscent(), txtWidth + (margin * 2), txtHeight + (margin * 2));
-        SnapUISettings settings = SnapUISettings.getInstance();
         g.setPaint(settings.captionFillColor(SnapKind.POSITION));
         g.fill(lastBounds);
         g.setPaint(settings.captionColor(SnapKind.POSITION));
@@ -156,30 +164,40 @@ class TextPainter {
         double textY;
         String txt = text();
         g.setFont(FONT.deriveFont(zoom.getInverseTransform()));
-        FontMetrics fm = g.getFontMetrics();
-        int txtWidth = fm.stringWidth(txt);
-        int txtHeight = fm.getMaxAscent() + fm.getMaxDescent();
-        switch (axis) {
-            case X:
-                textX = (along.x1 + ((along.x2 - along.x1) / 2)) - (txtWidth / 2D);
-                textY = along.y1 + txtHeight + zoom.inverseScale(2);
-                break;
-            case Y:
-                textX = along.x1 + zoom.inverseScale(5);
-                textY = along.y1 + ((along.y2 - along.y1) / 2);
-                break;
-            default:
-                throw new AssertionError(axis);
-        }
+//        FontMetrics fm = g.getFontMetrics();
+//        int txtWidth = fm.stringWidth(txt);
+//        int txtHeight = fm.getMaxAscent() + fm.getMaxDescent();
+//        switch (axis) {
+//            case X:
+//                textX = (along.x1 + ((along.x2 - along.x1) / 2)) - (txtWidth / 2D);
+//                textY = along.y1 + txtHeight + zoom.inverseScale(2);
+//                break;
+//            case Y:
+//                textX = along.x1 + zoom.inverseScale(5);
+//                textY = along.y1 + ((along.y2 - along.y1) / 2);
+//                break;
+//            default:
+//                throw new AssertionError(axis);
+//        }
+        EqPointDouble txtPos = along.toLine().midPoint();
+        textX = txtPos.x;
+        textY = txtPos.y;
+
         float margin = (float) SnapUISettings.getInstance().captionMargin(zoom);
         textX += margin;
         textY += margin;
-        lastBounds.setFrame(textX - margin, textY - margin - fm.getAscent(), txtWidth + (margin * 2), txtHeight + (margin * 2));
+//        lastBounds.setFrame(textX - margin, textY - margin - fm.getAscent(), txtWidth + (margin * 2), txtHeight + (margin * 2));
+//        SnapUISettings settings = SnapUISettings.getInstance();
+//        g.setPaint(settings.captionFillColor(SnapKind.POSITION));
+//        g.fill(lastBounds);
+//        g.setPaint(settings.captionColor(SnapKind.POSITION));
+//        g.drawString(txt, (float) textX, (float) textY);
         SnapUISettings settings = SnapUISettings.getInstance();
-        g.setPaint(settings.captionFillColor(SnapKind.POSITION));
-        g.fill(lastBounds);
-        g.setPaint(settings.captionColor(SnapKind.POSITION));
-        g.drawString(txt, (float) textX, (float) textY);
+        paintCenteredText(txt, g, textX, textY, lastBounds,
+                settings.captionFillColor(SnapKind.POSITION),
+                settings.captionColor(SnapKind.POSITION)
+        );
+
     }
 
 }

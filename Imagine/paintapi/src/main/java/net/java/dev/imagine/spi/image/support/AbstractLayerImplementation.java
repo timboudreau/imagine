@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.java.dev.imagine.spi.image.support;
 
 import java.awt.Graphics2D;
@@ -12,6 +7,7 @@ import java.beans.PropertyChangeListener;
 import java.util.Objects;
 import javax.swing.event.SwingPropertyChangeSupport;
 import javax.swing.event.UndoableEditEvent;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.api.editing.LayerFactory;
@@ -41,14 +37,14 @@ public abstract class AbstractLayerImplementation extends LayerImplementation {
     }
 
     @Override
-    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, boolean paintWhenVisibleFalse, Zoom zoom) {
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, boolean paintWhenVisibleFalse, Zoom zoom) {
         if (!istate.visible && !paintWhenVisibleFalse) {
             return false;
         }
-        return paint(g, bounds, showSelection, zoom);
+        return paint(goal, g, bounds, showSelection, zoom);
     }
 
-    protected abstract boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom);
+    protected abstract boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom);
 
     @Override
     public final void addPropertyChangeListener(PropertyChangeListener l) {

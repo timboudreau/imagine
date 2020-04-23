@@ -5,6 +5,7 @@
  */
 package net.java.dev.imagine.api.vector.design;
 
+import java.util.HashSet;
 import java.util.Set;
 import net.java.dev.imagine.api.vector.util.Size;
 import org.openide.util.WeakSet;
@@ -30,7 +31,7 @@ public class DelegatingControlPointController implements ControlPointController 
     public void changed(ControlPoint pt) {
         if (!delegates.isEmpty()) {
             ControlPoint xf = transform(pt);
-            for (ControlPointController c : delegates) {
+            for (ControlPointController c : new HashSet<>(delegates)) {
                 c.changed(xf);
             }
         }

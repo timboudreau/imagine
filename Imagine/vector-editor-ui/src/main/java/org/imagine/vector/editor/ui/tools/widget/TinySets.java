@@ -561,7 +561,12 @@ public class TinySets {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public Iterator<T> iterator() {
+            if (delegate instanceof MultiSet<?>) {
+                // Avoid ConcurrentModificationExceptions
+                return CollectionUtils.toIterator((T[]) delegate.toArray());
+            }
             return new TsIter(delegate.iterator());
         }
 

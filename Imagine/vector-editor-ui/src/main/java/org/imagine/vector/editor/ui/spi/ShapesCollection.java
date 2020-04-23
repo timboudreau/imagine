@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.imagine.vector.editor.ui.spi;
 
 import java.awt.BasicStroke;
@@ -20,6 +15,7 @@ import java.util.function.DoubleConsumer;
 import java.util.function.Supplier;
 import org.imagine.editor.api.snap.SnapPoints;
 import net.java.dev.imagine.api.image.Hibernator;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.api.vector.Shaped;
 import org.imagine.awt.key.PaintKey;
 import org.imagine.editor.api.PaintingStyle;
@@ -102,7 +98,7 @@ public interface ShapesCollection extends Hibernator, Iterable<ShapeElement> {
 
     Rectangle getBounds();
 
-    boolean paint(Graphics2D g, Rectangle bounds, Zoom zoom);
+    boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, Zoom zoom);
 
     ShapesCollection snapshot();
 

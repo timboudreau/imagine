@@ -1,17 +1,36 @@
 package org.imagine.vector.editor.ui.palette;
 
-import java.awt.BorderLayout;
+import org.netbeans.paint.api.components.OneComponentLayout;
+import org.openide.util.ImageUtilities;
+import org.openide.util.NbBundle.Messages;
+import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
+import org.openide.windows.WindowManager;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class ShapesPaletteTC extends TopComponent {
+// If we enable this, LayerBuilder crashes the bulid.
+//@ConvertAsProperties(
+//        dtd = "-//org.imagine.vector.editor.ui//PaintsPaletteTC//EN",
+//        autostore = false
+//)
+@Messages("SHAPES_PALETTE=Shapes")
+public final class ShapesPaletteTC extends AbstractPaletteTC {
 
     public ShapesPaletteTC() {
-        setLayout(new BorderLayout());
-        add(PaintPalettes.createShapesPaletteComponent(), BorderLayout.CENTER);
+        setLayout(new OneComponentLayout());
+        add(PaintPalettes.createShapesPaletteComponent());
+        setHtmlDisplayName(Bundle.SHAPES_PALETTE());
+        setDisplayName(Bundle.SHAPES_PALETTE());
+        setName(preferredID());
+        setIcon(ImageUtilities.loadImage("org/imagine/inspectors/gradientfill.png", false));
+    }
+
+    @Override
+    protected void componentActivated() {
+        PaintPalettes.activated(this);
     }
 
     @Override
@@ -19,19 +38,51 @@ public class ShapesPaletteTC extends TopComponent {
         return Bundle.ShapesPalette();
     }
 
-    public static void openPalette() {
-        for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
-            if (tc instanceof ShapesPaletteTC) {
-                tc.requestVisible();
-                return;
-            }
+    @Override
+    protected String preferredID() {
+        return "shapesPalette";
+    }
+
+    @Override
+    public void open() {
+        System.out.println("Shapes Palette tc opening");
+        Mode mode = WindowManager.getDefault().findMode("palettes");
+        if (mode != null) {
+            System.out.println("   docking into " + mode);
+            mode.dockInto(this);
         }
-        ShapesPaletteTC nue = new ShapesPaletteTC();
+        super.open();
+    }
+
+    private static ShapesPaletteTC INSTANCE;
+
+    public static synchronized ShapesPaletteTC getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = (ShapesPaletteTC) WindowManager.getDefault().findTopComponent("shapesPalette");
+        }
+        return INSTANCE;
+    }
+
+    public static synchronized ShapesPaletteTC getDefault() {
+        if (INSTANCE == null) {
+            INSTANCE = new ShapesPaletteTC();
+        }
+        return INSTANCE;
+    }
+
+    public static void openPalette() {
+        ShapesPaletteTC nue = getInstance();
         nue.open();
-        nue.requestVisible();
+        if (PaintPalettes.wasLastActive(nue)) {
+            nue.requestVisible();
+        }
     }
 
     public static void closePalette() {
+        if (INSTANCE != null && INSTANCE.isOpened()) {
+            INSTANCE.close();
+            return;
+        }
         for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
             if (tc instanceof ShapesPaletteTC) {
                 tc.close();
@@ -40,4 +91,17 @@ public class ShapesPaletteTC extends TopComponent {
         }
     }
 
+    @Override
+    public Object writeReplace() {
+        return new ResolvableHelper();
+    }
+
+    static final class ResolvableHelper implements java.io.Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        public Object readResolve() {
+            return getDefault();
+        }
+    }
 }

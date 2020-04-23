@@ -8,6 +8,7 @@
  */
 package net.java.dev.imagine.api.vector;
 
+import com.mastfrog.util.collections.IntSet;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
@@ -41,8 +42,20 @@ public interface Adjustable extends Primitive {
      * for quadratic or cubic curves).
      *
      * @return An array
+     * @deprecated use virtualControlPointIndices() instead
      */
     int[] getVirtualControlPointIndices();
+
+    /**
+     * Get the set of control point indices which are virtual (control points
+     * for quadratic or cubic curves, radius points, edge handles - points which
+     * do not correspond to a corner or origin point of a shape).
+     *
+     * @return A set
+     */
+    default IntSet virtualControlPointIndices() {
+        return IntSet.of(getVirtualControlPointIndices());
+    }
 
     /**
      * Change the control point's location.
@@ -58,7 +71,6 @@ public interface Adjustable extends Primitive {
      * @return An array of kinds
      */
     ControlPointKind[] getControlPointKinds();
-
 
     default boolean isVirtualControlPoint(int index) {
         int[] virts = getVirtualControlPointIndices();

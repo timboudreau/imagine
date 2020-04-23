@@ -25,6 +25,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -159,9 +160,9 @@ public final class PaintTopComponent extends TopComponent implements
     }
 
     @Override
-    public void resizePicture(int w, int h) {
+    public void resizePicture(int w, int h, boolean resizeCanvasOnly) {
         for (LayerImplementation l : canvas.getPicture().getLayers()) {
-            l.resize(w, h);
+            l.resize(w, h, resizeCanvasOnly);
         }
         pictureResized(w, h);
         invalidate();
@@ -219,16 +220,26 @@ public final class PaintTopComponent extends TopComponent implements
     @SuppressWarnings("LeakingThisInConstructor")
     public PaintTopComponent(PictureScene canvas) {
         this.canvas = canvas;
-        String displayName = NbBundle.getMessage(
-                PaintTopComponent.class,
-                "UnsavedImageNameFormat", //NOI18N
-                new Object[]{new Integer(ct++)}
-        );
-        setDisplayName(displayName);
         PictureImplementation picture = canvas.getPicture();
+        String displayName;
+        Path pth = picture.getPicture().associatedFile();
+        if (pth != null) {
+            file = pth.toFile();
+            displayName = file.getName();
+        } else {
+            displayName = NbBundle.getMessage(
+                    PaintTopComponent.class,
+                    "UnsavedImageNameFormat", //NOI18N
+                    new Object[]{ct++}
+            );
+        }
+        setDisplayName(displayName);
         stateChanged(new ChangeEvent(picture));
-        setPreferredSize(new Dimension(500, 500));
 
+//        Dimension sz = new Dimension(picture.getSize());
+//        sz.width = Math.max(sz.width, 500);
+//        sz.height = Math.max(sz.height, 500);
+//        setPreferredSize(sz);
         setLayout(new BorderLayout());
         InnerPanel inner = new InnerPanel(canvas.createView(), canvas);
         canvas.addSceneListener(inner);
@@ -347,11 +358,10 @@ public final class PaintTopComponent extends TopComponent implements
     }
 
     public void pictureResized(int width, int height) {
-//        /throw new UnsupportedOperationException("Not yet implemented");
+        canvas.pictureResized(new Dimension(width, height));
         invalidate();
         revalidate();
         repaint();
-        canvas.getScene().validate();
     }
 
     @Override

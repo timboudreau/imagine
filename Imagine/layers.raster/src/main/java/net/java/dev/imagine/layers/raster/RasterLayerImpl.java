@@ -36,6 +36,7 @@ import javax.swing.undo.UndoableEdit;
 import net.dev.java.imagine.api.selection.ShapeSelection;
 import net.dev.java.imagine.api.selection.Universe;
 import net.java.dev.imagine.api.image.Hibernator;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.effects.spi.ImageSource;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.imagine.editor.api.Zoom;
@@ -134,12 +135,12 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
     }
 
     @Override
-    public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignoreVisibility, Zoom zoom) {
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignoreVisibility, Zoom zoom) {
         if (!visible && !ignoreVisibility) {
             return false;
         }
         if (bounds != null) {
-            return surface.paint(g, bounds, zoom);
+            return surface.paint(goal, g, bounds, zoom);
         }
         Composite comp = null;
         if (opacity != 1.0f) {
@@ -148,7 +149,7 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
                     opacity));
         }
         boolean result;
-        result = surface.paint(g, null, zoom);
+        result = surface.paint(goal, g, null, zoom);
         if (opacity != 1.0f) {
             g.setComposite(comp);
         }
@@ -463,6 +464,13 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
 
     @Override
     public void resize(int width, int height) {
+        resize(width, height, false);
+    }
+
+    public void resize(int width, int height, boolean resizeCanvasOnly) {
+        if (resizeCanvasOnly) {
+            surface.resizeCanvas(width, height);
+        }
         surface.resize(width, height);
     }
 }

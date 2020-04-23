@@ -61,9 +61,11 @@ public class ZoomInAction extends GenericContextSensitiveAction<Zoom> {
     static float[] FRACTIONS = new float[]{
         0.05F, 0.10F, 0.15F, 0.20F, 0.25F,
         0.3F, 0.4F, 0.5F, 0.75F, 0.875F,
-        1F, 1.25F, 1.5F, 1.75F, 2F, 3F
+        1F, 1.25F, 1.5F, 1.75F, 2F, 3F,
+        4F, 5F, 6F, 7F, 8F, 9F, 10F,
+        20F, 30F, 40F, 50F, 75F, 100F
     };
-    static final float MAX_ZOOM = 10F;
+    static final float MAX_ZOOM = 100F;
     static final float MIN_ZOOM = 0.005F;
 
     private static int index(float val) {

@@ -5,11 +5,14 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.LayoutManager;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.WindowConstants;
+import org.netbeans.paint.api.components.TilingLayout.TilingPolicy;
 import org.openide.util.Exceptions;
 
 /**
@@ -19,12 +22,17 @@ import org.openide.util.Exceptions;
 class PaletteItemsPanel<T> extends JPanel {
 
     private final AbstractTileFactory<T, ?> tileFactory;
+    private static final Logger LOG = Logger.getLogger(PaletteItemsPanel.class.getName());
+
+    static {
+        LOG.setLevel(Level.ALL);
+    }
 
     @SuppressWarnings("LeakingThisInConstructor")
     PaletteItemsPanel(AbstractTileFactory<T, ?> tileFactory) {
         super(new TilingLayout(() -> {
             return tileFactory.getPreferredTileSize().width;
-        }));
+        }, TilingPolicy.FIXED_SIZE));
         this.tileFactory = tileFactory;
         this.tileFactory.attachPaletteComponent(this);
     }
@@ -45,6 +53,7 @@ class PaletteItemsPanel<T> extends JPanel {
         if (storage != null) {
             storage.allNames((thrown, names) -> {
                 if (thrown != null) {
+                    LOG.log(Level.SEVERE, "Exception getting names for " + tileFactory, thrown);
                     Exceptions.printStackTrace(thrown);
                 } else if (names != null) {
                     if (isDisplayable()) {
@@ -54,7 +63,13 @@ class PaletteItemsPanel<T> extends JPanel {
                                 addTile(tile);
                             }
                         }
+                    } else {
+                        LOG.log(Level.WARNING, "PaletteItemsPanel for {0} hidden before it could "
+                                + "process {1}", new Object[]{tileFactory, names});
                     }
+                } else {
+                    LOG.log(Level.INFO, "PaletteItemsPanel for {0} got null names array",
+                            tileFactory);
                 }
             }).listen(l);
         }
@@ -104,6 +119,7 @@ class PaletteItemsPanel<T> extends JPanel {
 
         @Override
         public void onItemAdded(String name, T item) {
+            LOG.log(Level.FINE, "Panel onItemAdded {0} with {1}", new Object[] {name, item});;
             Tile<? super T> tile = tileFactory.createTile(name, item);
             if (findTile(name) == null) {
                 addTile(tile);

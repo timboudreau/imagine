@@ -31,24 +31,21 @@ public class MoveInSceneCoordinateSpaceAction extends WidgetAction.LockedAdapter
         Point sceneLoc = widget.getScene().getLocation();
         double zoom = widget.getScene().getZoomFactor();
         double inv = 1D / zoom;
-//            System.out.println("SCENE LOC " + sceneLoc.x + ", " + sceneLoc.y
-//                + "; scenePoint " + scenePoint.x + ", " + scenePoint.y);
         scenePoint.x -= sceneLoc.x;
         scenePoint.y -= sceneLoc.y;
-        
-//        Point wl = widget.getLocation();
-//        scenePoint.x += wl.x;
-//        scenePoint.y += wl.y;
-//        System.out.println("widget loc " + wl.x + ", " + wl.y);
 
         scenePoint.x *= inv;
         scenePoint.y *= inv;
         return scenePoint;
     }
 
+    private boolean isUnknownModifierKeys(WidgetMouseEvent evt) {
+        return evt.isAltDown() || evt.isMetaDown();
+    }
+
     @Override
     public State mousePressed(Widget widget, WidgetMouseEvent event) {
-        if (event.isPopupTrigger()) {
+        if (event.isPopupTrigger() || isUnknownModifierKeys(event)) {
             abort();
             return State.REJECTED;
         }
@@ -72,7 +69,7 @@ public class MoveInSceneCoordinateSpaceAction extends WidgetAction.LockedAdapter
 
     @Override
     public State mouseReleased(Widget widget, WidgetMouseEvent event) {
-        if (event.isPopupTrigger()) {
+        if (event.isPopupTrigger() || isUnknownModifierKeys(event)) {
             return State.REJECTED;
         }
         if (state != null && widget == state.widget) {
@@ -87,6 +84,9 @@ public class MoveInSceneCoordinateSpaceAction extends WidgetAction.LockedAdapter
 
     @Override
     public State mouseDragged(Widget widget, WidgetMouseEvent event) {
+        if (isUnknownModifierKeys(event)) {
+            return State.REJECTED;
+        }
         if (state != null && widget == state.widget) {
             boolean restrictHorizontal = event.isShiftDown();
             boolean restrictVertical = event.isControlDown();
@@ -167,7 +167,8 @@ public class MoveInSceneCoordinateSpaceAction extends WidgetAction.LockedAdapter
         }
 
         private void commit(Point2D scenePoint) {
-            if (lastDragPoint != null && (startPoint.getX() != lastDragPoint.getX() || startPoint.getY() != lastDragPoint.getY())) {
+            if (lastDragPoint != null && (startPoint.getX() != lastDragPoint.getX()
+                    || startPoint.getY() != lastDragPoint.getY())) {
                 handler.onEndDrag(widget, startPoint, scenePoint);
                 lastDragPoint = null;
             } else if (lastDragPoint != null) {
@@ -175,9 +176,5 @@ public class MoveInSceneCoordinateSpaceAction extends WidgetAction.LockedAdapter
                 lastDragPoint = null;
             }
         }
-    }
-
-    static String p2s(Point2D p) {
-        return p.getX() + ", " + p.getY();
     }
 }

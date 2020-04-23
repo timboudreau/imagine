@@ -10,6 +10,7 @@ import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import javax.swing.BorderFactory;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 
 /**
@@ -30,7 +31,7 @@ final class ShapeTile extends Tile<ShapeElement> {
 
     @Override
     protected void paintContent(ShapeElement item, Graphics2D g, int x, int y, int w, int h) {
-        item.paint(g, null);
+        item.paint(RenderingGoal.THUMBNAIL, g, null);
     }
 
     private final Rectangle2D.Double scratch = new Rectangle2D.Double();

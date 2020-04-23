@@ -20,6 +20,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import net.dev.java.imagine.api.tool.Tool;
 import net.java.dev.imagine.Accessor;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.image.ToolCommitPreference;
 import org.imagine.editor.api.Zoom;
@@ -117,7 +118,7 @@ public abstract class SurfaceImplementation implements Movable {
      * @param r A bounding rectangle if painting a thumbnail image, or null
      *  if full quality painting is desired
      */
-    public abstract boolean paint (Graphics2D g, Rectangle r, Zoom zoom);
+    public abstract boolean paint (RenderingGoal goal, Graphics2D g, Rectangle r, Zoom zoom);
 
     /**
      * Overridable by surfaces which collect geometry, and you don't want

@@ -45,7 +45,7 @@ class SnapperCorners extends Snapper.RangeVisitVectorSnapper {
                 result = super.scan(val, map, map.key(0) - 1, max1, pred);
             }
         }
-        if (!result) {
+        if (!result && map.size() > 0) {
             double minDegrees = min / CornerAngle.ENCODING_MULTIPLIER;
             if (minDegrees < 0) {
                 double min1 = (360 + minDegrees) * CornerAngle.ENCODING_MULTIPLIER;

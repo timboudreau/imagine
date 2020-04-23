@@ -8,6 +8,7 @@
  */
 package net.java.dev.imagine.api.vector.elements;
 
+import com.mastfrog.util.collections.IntSet;
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
@@ -421,5 +422,10 @@ public class RoundRect implements Vectors, Volume, Adjustable, Fillable, Strokab
      */
     public double arcHeight() {
         return ah;
+    }
+
+    @Override
+    public IntSet virtualControlPointIndices() {
+        return IntSet.EMPTY;
     }
 }

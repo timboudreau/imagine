@@ -1,3 +1,4 @@
 Manifest-Version: 1.0
+OpenIDE-Module-Layer: org/imagine/vector/editor/ui/layer.xml
 OpenIDE-Module-Localizing-Bundle: org/imagine/vector/editor/ui/Bundle.properties
 

@@ -21,6 +21,7 @@ import net.java.dev.imagine.api.vector.Vectors;
 import org.imagine.geometry.Axis;
 import org.imagine.geometry.EqLine;
 import com.mastfrog.function.state.Int;
+import org.imagine.geometry.EqPointDouble;
 
 /**
  *
@@ -205,6 +206,18 @@ public class TriangleWrapper implements Strokable, Fillable, Volume, Adjustable,
     @Override
     public Triangle2D toShape() {
         return new Triangle2D(ax, ay, bx, by, cx, cy);
+    }
+
+    public EqPointDouble center() {
+        return new EqPointDouble(centerX(), centerY());
+    }
+
+    public double centerX() {
+        return (ax + bx + cx) / 3;
+    }
+
+    public double centerY() {
+        return (ay + by + cy) / 3;
     }
 
     @Override

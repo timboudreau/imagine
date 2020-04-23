@@ -464,7 +464,11 @@ public final strictfp class Circle implements Shape, Sector {
         if (cx == tx && cy == ty) {
             return 0;
         }
-        return ((Math.toDegrees(Math.atan2(tx - cx, cy - ty)) + 360.0) % 360.0);
+        return (Math.toDegrees(Math.atan2(tx - cx, cy - ty)) + 360.0) % 360.0;
+    }
+
+    public static double angleOf(Point2D center, Point2D point) {
+        return angleOf(center.getX(), center.getY(), point.getX(), point.getY());
     }
 
     public Quadrant quadrantOf(double x, double y) {

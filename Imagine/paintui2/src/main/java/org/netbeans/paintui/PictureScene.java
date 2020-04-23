@@ -29,11 +29,13 @@ import net.dev.java.imagine.api.tool.aspects.NonPaintingTool;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import net.java.dev.imagine.api.image.Hibernator;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.support.AbstractPictureImplementation;
 import net.java.dev.imagine.ui.common.BackgroundStyleApplier;
+import net.java.dev.imagine.ui.common.ImageEditorBackground;
 import org.imagine.editor.api.AspectRatio;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.border.BorderFactory;
@@ -56,7 +58,7 @@ import org.openide.util.NbBundle;
  *
  * @author Tim Boudreau
  */
-final class PictureScene extends Scene implements WidgetController {
+final class PictureScene extends Scene implements WidgetController, ChangeListener {
 
     private final PI picture;
     private final ZoomImpl zoom = new ZoomImpl();
@@ -94,9 +96,22 @@ final class PictureScene extends Scene implements WidgetController {
         init(new Dimension(img.getWidth(), img.getHeight()));
     }
 
+    public void pictureResized(Dimension newSize) {
+        mainLayer.setPreferredBounds(new Rectangle(new Point(0,0), newSize));
+        validate();
+    }
+
+    @Override
+    public void stateChanged(ChangeEvent e) {
+        setBackground(ImageEditorBackground.getDefault().style().getPaint());
+        if (getView() != null && getView().isShowing()) {
+            getView().repaint();
+        }
+    }
+
     private void init(Dimension size) {
         mainLayer.setPreferredBounds(new Rectangle(new Point(0, 0), size));
-        setBackground(GraphicsUtils.checkerboardBackground());
+        setBackground(ImageEditorBackground.getDefault().style().getPaint());
         hasResolutionDependentLayers = false;
         //make thsi more efficient later
         List<Widget> widgets = new ArrayList<Widget>();
@@ -136,6 +151,7 @@ final class PictureScene extends Scene implements WidgetController {
 //        addChild(selectionLayer);
 //        addChild(gridWidget);
 //        selectionLayer.attachToSelection();
+        ImageEditorBackground.getDefault().addChangeListener(this);
     }
 
     @Override
@@ -814,13 +830,13 @@ final class PictureScene extends Scene implements WidgetController {
         }
 
         @Override
-        public boolean paint(Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom) {
+        public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom) {
             if (isHibernated()) {
                 return false;
             }
             boolean result = false;
             for (LayerImplementation l : getLayers()) {
-                result |= l.paint(g, bounds, showSelection, bounds == null, zoom);
+                result |= l.paint(goal, g, bounds, showSelection, bounds == null, zoom);
             }
             return result;
         }

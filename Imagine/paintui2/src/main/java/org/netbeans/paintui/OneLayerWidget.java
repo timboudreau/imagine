@@ -10,6 +10,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.JComponent;
 import net.java.dev.imagine.api.image.Layer;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.imagine.utils.painting.RepaintHandle;
 import org.netbeans.api.visual.border.BorderFactory;
@@ -113,7 +114,7 @@ final class OneLayerWidget extends Widget {
         }
         try {
 //            layer.paint(g, layer.getBounds(), false, false, ((PictureScene)getScene()).getZoom());
-            layer.paint(g, null, false, false, ((PictureScene)getScene()).getZoom());
+            layer.paint(RenderingGoal.EDITING, g, null, false, false, ((PictureScene)getScene()).getZoom());
         } finally {
             if (old != null) {
                 g.setComposite(old);
@@ -132,7 +133,6 @@ final class OneLayerWidget extends Widget {
 
         @Override
         public void propertyChange(PropertyChangeEvent evt) {
-            System.out.println("Prop change from layer " + evt.getPropertyName() + " " + evt.getNewValue());
             if (Layer.PROP_VISIBLE.equals(evt.getPropertyName())) {
                 setVisible(layer.isVisible());
                 getScene().validate();

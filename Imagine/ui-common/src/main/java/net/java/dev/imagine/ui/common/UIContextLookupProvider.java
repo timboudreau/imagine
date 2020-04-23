@@ -124,6 +124,5 @@ public final class UIContextLookupProvider implements SelectionContextContributo
                 setLookups(INSTANCE.custom, lkp);
             }
         }
-
     }
 }

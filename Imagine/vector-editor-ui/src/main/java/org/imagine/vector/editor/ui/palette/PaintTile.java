@@ -1,10 +1,10 @@
 package org.imagine.vector.editor.ui.palette;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import javax.swing.BorderFactory;
+import javax.swing.UIManager;
 import org.imagine.awt.GradientManager;
 import org.imagine.awt.key.ColorKey;
 import org.imagine.awt.key.PaintKey;
@@ -17,12 +17,13 @@ import org.openide.util.Exceptions;
 final class PaintTile extends Tile<PaintKey<?>> {
 
     private final PaletteBackend<? extends PaintKey<?>> storage;
+    private static final float[] scratchFloats = new float[4];
 
     public PaintTile(String name, PaletteBackend<? extends PaintKey<?>> storage) {
         super(name);
         this.storage = storage;
-        setBackground(Color.WHITE);
-        setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+        setBackground(UIManager.getColor("text"));
+        setBorder(BorderFactory.createLineBorder(UIManager.getColor("controlDkShadow")));
     }
 
     @Override
@@ -30,7 +31,6 @@ final class PaintTile extends Tile<PaintKey<?>> {
         return storage;
     }
 
-    static float[] scratchFloats = new float[4];
 
     @Override
     protected void paintContent(PaintKey<?> item, Graphics2D g, int x, int y, int w, int h) {

@@ -63,7 +63,7 @@
                 <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
                 <configuration>
-                    <moduleType>autoload</moduleType>
+                    <moduleType>eager</moduleType>
                     <publicPackages>
                         <publicPackage>net.dev.java.imagine.api.palette</publicPackage>
                         <publicPackage>net.dev.java.imagine.spi.palette</publicPackage>

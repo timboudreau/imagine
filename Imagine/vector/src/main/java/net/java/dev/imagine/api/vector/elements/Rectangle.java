@@ -8,6 +8,7 @@
  */
 package net.java.dev.imagine.api.vector.elements;
 
+import com.mastfrog.util.collections.IntSet;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
@@ -24,6 +25,7 @@ import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.geometry.EnhRectangle2D;
 import org.imagine.geometry.EnhancedShape;
+import org.imagine.geometry.EqPointDouble;
 
 /**
  *
@@ -44,6 +46,18 @@ public final class Rectangle extends AbstractVersioned implements Strokable, Fil
         this.w = w;
         this.h = h;
         this.fill = fill;
+    }
+
+    public double centerX() {
+        return x + (w / 2);
+    }
+
+    public double centerY() {
+        return y + (h / 2);
+    }
+
+    public EqPointDouble center() {
+        return new EqPointDouble(centerX(), centerY());
     }
 
     public Runnable restorableSnapshot() {
@@ -375,5 +389,10 @@ public final class Rectangle extends AbstractVersioned implements Strokable, Fil
             this.h = h;
             change();
         }
+    }
+
+    @Override
+    public IntSet virtualControlPointIndices() {
+        return IntSet.EMPTY;
     }
 }

@@ -76,6 +76,41 @@ public final class Rhombus implements Shape, EnhancedShape {
         radY = rect.getHeight() / 2;
         circ.setRotation(rotation);
     }
+    
+    public Rhombus(Rhombus toCopy) {
+        this.circ = new Circle(toCopy.circ.centerX, toCopy.circ.centerY);
+        this.radX = toCopy.radX;
+        this.radY = toCopy.radY;
+        this.circ.setRotation(toCopy.circ.rotation());
+    }
+
+    public double centerX() {
+        return circ.centerX;
+    }
+
+    public double centerY() {
+        return circ.centerY;
+    }
+
+    public void setCenterX(double centerX) {
+        circ.setCenter(centerX, circ.centerY);
+    }
+
+    public void setCenterY(double centerY) {
+        circ.setCenter(circ.centerX, centerY);
+    }
+
+    public void setCenter(Point2D p) {
+        circ.setCenter(p);
+    }
+
+    public double rotation() {
+        return circ.rotation();
+    }
+
+    public void setRotation(double rot) {
+        circ.setRotation(rot);
+    }
 
     private static boolean isLesser(Point2D compareTo, Point2D test) {
         return EqPointDouble.of(compareTo).compareTo(test) > 0;

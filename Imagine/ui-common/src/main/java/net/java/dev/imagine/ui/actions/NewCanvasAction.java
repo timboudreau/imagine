@@ -135,7 +135,7 @@ public final class NewCanvasAction extends org.openide.util.actions.CallableSyst
             return;
         }
         Dimension last = loadLastSize();
-        final ImageSizePanel pnl = new ImageSizePanel(f.supportsBackgroundStyles(), last);
+        final ImageSizePanel pnl = new ImageSizePanel(f.supportsBackgroundStyles(), false, last);
         String ttl = NbBundle.getMessage(ResizeAction.class, "TTL_NewImage");
         //This code really should use DialogDisplayer, but is not due
         //to a bug in the window system

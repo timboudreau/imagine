@@ -185,7 +185,6 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
 
         g.setColor(js.isEnabled() ? js.getForeground()
                 : UIManager.getColor("controlDkShadow"));
-        g.setColor(Color.BLACK);
         g.drawString(val, txtX, txtY);
         if (c.hasFocus() && c.getBorder() != raised) {
             Color col = UIManager.getColor("controlShadow");

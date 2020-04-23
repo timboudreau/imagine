@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import net.dev.java.imagine.api.selection.Selection;
+import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.imagine.editor.api.Zoom;
@@ -81,10 +82,10 @@ class TransferableImpl implements Transferable, ClipboardOwner {
                 }
                 Rectangle r = new Rectangle(0, 0, d.width, d.height);
                 if (allLayers) {
-                    picture.paint(g, r, false, Zoom.ONE_TO_ONE);
+                    picture.paint(RenderingGoal.PRODUCTION, g, r, false, Zoom.ONE_TO_ONE);
                 } else {
                     if (layer.isVisible()) {
-                        layer.paint(g, r, false, false, Zoom.ONE_TO_ONE);
+                        layer.paint(RenderingGoal.PRODUCTION, g, r, false, false, Zoom.ONE_TO_ONE);
                     }
                 }
             });

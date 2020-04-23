@@ -12,7 +12,6 @@
  * Microsystems, Inc. All Rights Reserved.
  */
 package org.netbeans.paint.api.components;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -122,7 +121,7 @@ public class SimpleSliderUI extends SliderUI implements ChangeListener {
             c.setFont(f.deriveFont(f.getSize2D() - 2));
         }
         ((JSlider)c).addChangeListener(this);
-        c.setBackground(Color.WHITE);
+        c.setBackground(UIManager.getColor("text"));
 //        c.setFocusable(false);
         
     }
@@ -152,7 +151,7 @@ public class SimpleSliderUI extends SliderUI implements ChangeListener {
         int center = (sl.getHeight() - (ins.top + ins.bottom))/2;
         int end = sl.getWidth() - (EDGE_GAP + ins.left + ins.right);
 
-        g.setColor(Color.black);
+        g.setColor(UIManager.getColor("textText"));
         g.drawLine(EDGE_GAP + ins.left, center, end, center);
         g.drawLine(EDGE_GAP + ins.left, center + EDGE_GAP, EDGE_GAP + ins.left,
                    center);
@@ -196,7 +195,7 @@ public class SimpleSliderUI extends SliderUI implements ChangeListener {
         int y = (center + THUMB_SIZE + (h/2)) - 3;
         int x = getThumbPositionH(sl) - (w/2);
 
-        g.setXORMode(Color.WHITE);
+        g.setXORMode(UIManager.getColor("text"));
         g.drawString(s, x, y);
         g.setPaintMode();
     }
@@ -216,7 +215,7 @@ public class SimpleSliderUI extends SliderUI implements ChangeListener {
         int center = (sl.getWidth() - (ins.left + ins.right))/2;
         int end = sl.getHeight() - (EDGE_GAP + ins.top + ins.bottom);
 
-        g.setColor(Color.black);
+        g.setColor(UIManager.getColor("textText"));
         g.drawLine(center, EDGE_GAP + ins.top, center, end);
         g.drawLine(center, EDGE_GAP + ins.top, center + EDGE_GAP,
                    EDGE_GAP + ins.top);
