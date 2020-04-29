@@ -11,28 +11,28 @@ import java.util.HashSet;
 import java.util.Set;
 import net.dev.java.imagine.api.tool.aspects.Attachable;
 import net.dev.java.imagine.api.tool.aspects.LookupContentsContributor;
+import net.dev.java.imagine.api.tool.aspects.ScalingMouseListener;
 import org.openide.util.Lookup;
-import org.openide.util.Lookup.Provider;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
 
 /**
- * Provides the functionality of a Tool.  A single logical Tool (one name,
- * action, icon, display name) can have multiple implementations.  Each
- * implementation is sensitive to some object type which may be present in
- * the active Layer's lookup.  If an instance of that type is present, then
- * a ToolImplementation may be constructed to drive the tool.
+ * Provides the functionality of a Tool. A single logical Tool (one name,
+ * action, icon, display name) can have multiple implementations. Each
+ * implementation is sensitive to some object type which may be present in the
+ * active Layer's lookup. If an instance of that type is present, then a
+ * ToolImplementation may be constructed to drive the tool.
  * <p/>
- * ToolImplementation subclasses <u>must</u> have a 1-argument constructor
- * which takes an instance of the type it is sensitive to.  To register a tool,
+ * ToolImplementation subclasses <u>must</u> have a 1-argument constructor which
+ * takes an instance of the type it is sensitive to. To register a tool,
  * implement ToolImplementation and annotate it with the &#064;Tool annotation.
  * <p/>
  * <i><b>Note:</b> For many commonn cases, it is not necessary to subclass
  * ToolImplementation</i> - you can simply subclass MouseAdapter or similar, and
  * add the annotation &#064;Tool, give it a constructor which takes an instance
- * of the type specified in the annotation, and one will be generated.  Subclassing
- * ToolImplementation is useful when more complex enablement or attaching logic
- * is needed.
+ * of the type specified in the annotation, and one will be generated.
+ * Subclassing ToolImplementation is useful when more complex enablement or
+ * attaching logic is needed.
  *
  * @author Tim Boudreau
  */
@@ -46,14 +46,15 @@ public abstract class ToolImplementation<T> implements Attachable, LookupContent
     }
 
     /**
-     * Provide some additional objects which should be present in the 
-     * Tool's lookup.  
-     * @param addTo a Set which objects can be contributed to, and which
-     * will appear in Tool.getLookup() which this ToolImplementation is in use.
+     * Provide some additional objects which should be present in the Tool's
+     * lookup.
+     *
+     * @param addTo a Set which objects can be contributed to, and which will
+     * appear in Tool.getLookup() which this ToolImplementation is in use.
      * <p/>
      * In particular, if you are implementing WidgetAction or any Swing listener
-     * interface, you can implement it in a separate class and simply add
-     * it to the passed set.
+     * interface, you can implement it in a separate class and simply add it to
+     * the passed set.
      */
     public void createLookupContents(Set<? super Object> addTo) {
         //do nothing
@@ -64,13 +65,14 @@ public abstract class ToolImplementation<T> implements Attachable, LookupContent
     }
 
     /**
-     * Get this Tool's lookup, which contains any listeners or other
-     * relevant objects which can interoperate with the selected layer.
-     * @return 
+     * Get this Tool's lookup, which contains any listeners or other relevant
+     * objects which can interoperate with the selected layer.
+     *
+     * @return
      */
     public final Lookup getLookup() {
         if (lkp == null) {
-            Set<Object> s = new HashSet<Object>();
+            Set<Object> s = new HashSet<>();
             createLookupContents(s);
             synchronized (this) {
                 if (lkp == null) {
@@ -86,6 +88,9 @@ public abstract class ToolImplementation<T> implements Attachable, LookupContent
                     if (this instanceof MouseWheelListener) {
                         s.add(new MouseWheelListenerProxy(this));
                     }
+                    if (this instanceof ScalingMouseListener) {
+                        s.add(new ScalingMouseListenerProxy((ScalingMouseListener) this));
+                    }
                     lkp = Lookups.fixed(s.toArray(new Object[s.size()]));
                     Lookup addtl = additionalLookup();
                     if (addtl != Lookup.EMPTY) {
@@ -100,14 +105,14 @@ public abstract class ToolImplementation<T> implements Attachable, LookupContent
     /**
      * Optional method to add listeners, fetch other objects, etc., from the
      * layer this ToolImplementation is currently operating on.
-     * 
-     * @param layer The layer (or other lookup provider) which is the context
-     * in which this implementation is operating.
+     *
+     * @param layer The layer (or other lookup provider) which is the context in
+     * which this implementation is operating.
      */
     public void attach(Lookup.Provider layer) {
         //do nothing
     }
-    
+
     /**
      * Optional method to detach listeners, etc. when this ToolImplementation is
      * no longer in use.
@@ -115,15 +120,16 @@ public abstract class ToolImplementation<T> implements Attachable, LookupContent
     public void detach() {
         //do nothing
     }
-    
+
     //Proxy classes to avoid exposing the ToolImplementation itself in its own lookup
     private static class MouseListenerProxy implements MouseListener {
+
         private final MouseListener delegate;
 
         public MouseListenerProxy(ToolImplementation<?> delegate) {
             this.delegate = (MouseListener) delegate;
         }
-        
+
         public void mouseReleased(MouseEvent e) {
             delegate.mouseReleased(e);
         }
@@ -144,8 +150,58 @@ public abstract class ToolImplementation<T> implements Attachable, LookupContent
             delegate.mouseClicked(e);
         }
     }
-    
+
+    private static class ScalingMouseListenerProxy implements ScalingMouseListener {
+
+        private final ScalingMouseListener delegate;
+
+        public ScalingMouseListenerProxy(ScalingMouseListener delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void mouseMoved(double x, double y, MouseEvent e) {
+            delegate.mouseMoved(x, y, e);
+        }
+
+        @Override
+        public void mouseDragged(double x, double y, MouseEvent e) {
+            delegate.mouseDragged(x, y, e);
+        }
+
+        @Override
+        public void mouseWheelMoved(double x, double y, MouseWheelEvent e) {
+            delegate.mouseWheelMoved(x, y, e);
+        }
+
+        @Override
+        public void mouseExited(double x, double y, MouseEvent e) {
+            delegate.mouseExited(x, y, e);
+        }
+
+        @Override
+        public void mouseEntered(double x, double y, MouseEvent e) {
+            delegate.mouseEntered(x, y, e);
+        }
+
+        @Override
+        public void mouseReleased(double x, double y, MouseEvent e) {
+            delegate.mouseReleased(x, y, e);
+        }
+
+        @Override
+        public void mousePressed(double x, double y, MouseEvent e) {
+            delegate.mousePressed(x, y, e);
+        }
+
+        @Override
+        public void mouseClicked(double x, double y, MouseEvent e) {
+            delegate.mouseClicked(x, y, e);
+        }
+    }
+
     private static class KeyListenerProxy implements KeyListener {
+
         private final KeyListener keyListener;
 
         public KeyListenerProxy(ToolImplementation<?> keyListener) {
@@ -164,8 +220,9 @@ public abstract class ToolImplementation<T> implements Attachable, LookupContent
             keyListener.keyPressed(e);
         }
     }
-    
+
     private static class MouseMotionListenerProxy implements MouseMotionListener {
+
         private final MouseMotionListener mml;
 
         public MouseMotionListenerProxy(ToolImplementation<?> mml) {
@@ -182,8 +239,9 @@ public abstract class ToolImplementation<T> implements Attachable, LookupContent
             mml.mouseMoved(e);
         }
     }
-    
+
     private static class MouseWheelListenerProxy implements MouseWheelListener {
+
         private final MouseWheelListener whl;
 
         public MouseWheelListenerProxy(ToolImplementation<?> whl) {
@@ -193,23 +251,5 @@ public abstract class ToolImplementation<T> implements Attachable, LookupContent
         public void mouseWheelMoved(MouseWheelEvent e) {
             whl.mouseWheelMoved(e);
         }
-    }
-    
-    private static final class AttachableProxy implements Attachable {
-        private final ToolImplementation<?> impl;
-        AttachableProxy(ToolImplementation<?> impl) {
-            this.impl = impl;
-        }
-
-        @Override
-        public void attach(Provider on) {
-            impl.attach(on);
-        }
-
-        @Override
-        public void detach() {
-            impl.detach();
-        }
-        
     }
 }

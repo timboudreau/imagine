@@ -93,9 +93,9 @@ public class MoveInSceneCoordinateSpaceAction extends WidgetAction.LockedAdapter
             boolean dragInProgress = state.dragged(scenePoint(widget),
                     restrictVertical, restrictHorizontal);
 //            if (dragInProgress) {
-            return State.createLocked(widget, this);
+//            return State.createLocked(widget, this);
 //            } else {
-//                return State.CONSUMED;
+                return State.CONSUMED;
 //            }
         }
         return WidgetAction.State.REJECTED;

@@ -179,8 +179,16 @@ public class ManyControlPointsWidget extends Widget {
         });
     }
 
+    private final Rectangle2D.Double repaintScratchRect = new Rectangle2D.Double();
+
+    private Rectangle2D.Double repaintScratchRect() {
+        repaintScratchRect.width = 0;
+        repaintScratchRect.height = 0;
+        return repaintScratchRect;
+    }
+
     public void shapeDeleted(ShapeElement el) {
-        Rectangle2D.Double repaint = new Rectangle2D.Double();
+        Rectangle2D.Double repaint = repaintScratchRect();
         points.conditionallyRemove(cps -> {
             for (Iterator<ShapeControlPoint> it = cps.iterator(); it.hasNext();) {
                 ShapeControlPoint scp = it.next();
@@ -195,7 +203,7 @@ public class ManyControlPointsWidget extends Widget {
     }
 
     public void shapeAdded(ShapeElement el) {
-        Rectangle2D.Double repaint = new Rectangle2D.Double();
+        Rectangle2D.Double repaint = repaintScratchRect();
         shapeAdded(el, repaint);
         if (!repaint.isEmpty()) {
             repaint(repaint);
@@ -273,7 +281,7 @@ public class ManyControlPointsWidget extends Widget {
         time("syncOne " + el.getName(), () -> {
             MO mo = new MO();
             CoordinateMapModifier<Set<ShapeControlPoint>> mod = points.modifier(mo);
-            Rectangle2D.Double repaint = new Rectangle2D.Double();
+            Rectangle2D.Double repaint = repaintScratchRect();
             el.addToBounds(repaint);
             ShapeControlPoint[] pts = el.controlPoints(renderingProperties.controlPointSize(), this::controlPointMoved);
             Set<ShapeControlPoint> currentPoints = new HashSet<>();
@@ -393,8 +401,6 @@ public class ManyControlPointsWidget extends Widget {
         }
     }
 
-    private final Rectangle2D.Double repaintScratchRect = new Rectangle2D.Double();
-
     private void repaint(double cpx, double cpy) {
         double sz = focusControlPointSize();
 //        sz += renderingProperties.focusStrokeSize() * (getScene().getZoomFactor());
@@ -464,7 +470,7 @@ public class ManyControlPointsWidget extends Widget {
             ShapesCollection coll = shapesLookup.lookup(ShapesCollection.class);
             Set<ShapeElement> removedShapes = new HashSet<>(coll.size());
             Set<ShapeElement> retainedShapes = new HashSet<>();
-            Rectangle2D.Double repaint = new Rectangle2D.Double();
+            Rectangle2D.Double repaint = repaintScratchRect();
 
             points.visitAll((double x, double y, Set<ShapeControlPoint> val) -> {
                 for (Iterator<ShapeControlPoint> it = val.iterator(); it.hasNext();) {
@@ -550,7 +556,7 @@ public class ManyControlPointsWidget extends Widget {
     }
 
     private void controlPointMoved(ShapeControlPoint cp) {
-        Rectangle2D.Double repaint = new Rectangle2D.Double();
+        Rectangle2D.Double repaint = repaintScratchRect();
         cp.owner().addToBounds(repaint);
         if (cp.owner().item().is(CircleWrapper.class) || cp.owner().item().is(RhombusWrapper.class)) {
             // Moving a control point can invalidate other ones - just sync it all up
@@ -1052,7 +1058,7 @@ public class ManyControlPointsWidget extends Widget {
         oldShapeBounds.height = 0;
         en.addToBounds(oldShapeBounds);
         BasicStroke stroke = en.stroke();
-        double add = factor * stroke.getLineWidth();
+        double add = stroke == null ? 0 : factor * stroke.getLineWidth();
         oldShapeBounds.x -= add / 2;
         oldShapeBounds.y -= add / 2;
         oldShapeBounds.width += add;
@@ -1070,7 +1076,7 @@ public class ManyControlPointsWidget extends Widget {
     void onRotate() {
         if (temp != null) {
             repaint(oldShapeBounds);
-            Rectangle2D.Double xp = new Rectangle2D.Double();
+            Rectangle2D.Double xp = repaintScratchRect();
             syncAllControlPoints(temp.owner(), temp, xp);
             cacheLastBounds(temp.owner());
             oldShapeBounds.add(xp);

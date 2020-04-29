@@ -58,6 +58,9 @@ final class OneLayerWidget extends Widget {
             factory = widgetLayer.createWidgetController(this, (PictureScene) getScene());
             if (factory != null) {
                 attached = true;
+                factory.setAspectRatio(((PictureScene) getScene()).aspectRatio());
+                factory.setOpacity(layer.getOpacity());
+//                factory.setLocation(layer.getBounds().getLocation());
                 factory.attach(lkp::lookups);
             } else {
                 attached = false;
@@ -114,7 +117,8 @@ final class OneLayerWidget extends Widget {
         }
         try {
 //            layer.paint(g, layer.getBounds(), false, false, ((PictureScene)getScene()).getZoom());
-            layer.paint(RenderingGoal.EDITING, g, null, false, false, ((PictureScene)getScene()).getZoom());
+            layer.paint(RenderingGoal.EDITING, g, null, false, false, ((PictureScene)getScene()).getZoom(),
+                    ((PictureScene)getScene()).aspectRatio());
         } finally {
             if (old != null) {
                 g.setComposite(old);

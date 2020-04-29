@@ -54,6 +54,7 @@ import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import net.java.dev.imagine.api.image.Surface;
+import org.imagine.geometry.util.PooledTransform;
 import org.netbeans.paint.api.components.FileChooserUtils;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
@@ -170,24 +171,24 @@ public class ImageTool implements MouseListener, MouseMotionListener, KeyListene
         }
         boolean needResize = w < img.getWidth() || h < img.getHeight();
 
-        AffineTransform at = AffineTransform.getTranslateInstance(bds.x + imgLocation.x, bds.y + imgLocation.y);
-        if (!resizeMode && needResize) {
-            at.concatenate(AffineTransform.getScaleInstance(xform, xform));
-        }
-
-        if (!commit) {
-            Composite c = g.getComposite();
-            g.setComposite (AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5F));
-            g.drawRenderedImage(img, at);
-            g.setComposite(c);
-        } else {
-            surface.beginUndoableOperation(toString());
-            try {
-                g.drawRenderedImage(img, at);
-            } finally {
-                surface.endUndoableOperation();
+        PooledTransform.withTranslateInstance(bds.x + imgLocation.x, bds.y + imgLocation.y, at -> {
+            if (!resizeMode && needResize) {
+                PooledTransform.withScaleInstance(xform, xform, at::concatenate);
             }
-        }
+            if (!commit) {
+                Composite c = g.getComposite();
+                g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5F));
+                g.drawRenderedImage(img, at);
+                g.setComposite(c);
+            } else {
+                surface.beginUndoableOperation(toString());
+                try {
+                    g.drawRenderedImage(img, at);
+                } finally {
+                    surface.endUndoableOperation();
+                }
+            }
+        });
     }
 
     public void keyReleased(KeyEvent e) {

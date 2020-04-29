@@ -11,6 +11,7 @@ import net.java.dev.imagine.api.vector.util.plot.Positioner;
 import org.imagine.geometry.Angle;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.EqLine;
+import org.imagine.geometry.util.PooledTransform;
 
 /**
  *
@@ -158,10 +159,18 @@ class PositionerImpl2 implements Positioner {
         private double emit() {
             if (curr != null) {
                 double ang = currentAngle();
-                AffineTransform rot = AffineTransform.getRotateInstance(Math.toRadians(ang), 0, 0);
-                curr = rot.createTransformedShape(curr);
-                AffineTransform xl = AffineTransform.getTranslateInstance(points[0], points[1]);
-                curr = xl.createTransformedShape(curr);
+
+                PooledTransform.withRotateInstance(Math.toRadians(ang), 0, 0, rot -> {
+                    curr = rot.createTransformedShape(curr);
+                    PooledTransform.withTranslateInstance(points[0], points[1], xlate -> {
+                        curr = xlate.createTransformedShape(curr);
+                    });
+                });
+
+//                AffineTransform rot = AffineTransform.getRotateInstance(Math.toRadians(ang), 0, 0);
+//                curr = rot.createTransformedShape(curr);
+//                AffineTransform xl = AffineTransform.getTranslateInstance(points[0], points[1]);
+//                curr = xl.createTransformedShape(curr);
 
                 /*
                 if (false && last != null) {
@@ -190,8 +199,7 @@ class PositionerImpl2 implements Positioner {
                         }
                     }
                 }
-                */
-
+                 */
                 last = curr;
                 if (curr == null) {
                     throw new IllegalStateException("Huh?");
@@ -264,9 +272,12 @@ class PositionerImpl2 implements Positioner {
 
     private static Shape normalize(Shape s) {
         Rectangle2D r = s.getBounds2D();
-        AffineTransform xl = AffineTransform.getTranslateInstance(-r.getX(), 0);
-        s = xl.createTransformedShape(s);
-        return s;
+        AffineTransform xl = PooledTransform.getTranslateInstance(-r.getX(), 0, null);
+        try {
+            s = xl.createTransformedShape(s);
+            return s;
+        } finally {
+            PooledTransform.returnToPool(xl);
+        }
     }
-
 }

@@ -10,7 +10,6 @@ import java.awt.MultipleGradientPaint;
 import java.awt.MultipleGradientPaint.ColorSpaceType;
 import java.awt.MultipleGradientPaint.CycleMethod;
 import java.awt.RadialGradientPaint;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.prefs.Preferences;
@@ -27,6 +26,7 @@ import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import org.imagine.editor.api.AspectRatio;
+import org.imagine.geometry.util.PooledTransform;
 import org.netbeans.paint.api.components.PopupSliderUI;
 import org.netbeans.paint.api.components.fractions.FractionsAndColorsEditor;
 import org.netbeans.paint.api.components.points.PointSelector;
@@ -143,7 +143,11 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
         colorSpaceCombo.setRenderer(ren);
         colorSpaceLabel.setLabelFor(colorSpaceCombo);
 
-        JSlider radius = new JSlider(1, (int) ratio.diagonal(), (int) params.radius);
+        System.out.println("1, DIAG " + ratio.diagonal() + " RAD " + params.radius);
+        int max = Math.max(2, (int) ratio.diagonal());
+        int val = Math.max(1, Math.min((int) params.radius, 1));
+        JSlider radius = new JSlider(1, max,
+                val);
         radius.setUI(PopupSliderUI.createUI(radius));
         radiusLabel.setLabelFor(radius);
 
@@ -223,24 +227,28 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
             Point2D p = (Point2D) evt.getNewValue();
             params.targetPoint.setLocation(p);
             ps.repaint();
+            rev++;
             changed();
         });
         ps.addPropertyChangeListener("focusPoint", evt -> {
             Point2D p = (Point2D) evt.getNewValue();
             params.focusPoint.setLocation(p);
             ps.repaint();
+            rev++;
             changed();
         });
 
         colorSpaceCombo.addActionListener(ae -> {
             params.colorSpaceType = (ColorSpaceType) colorSpaceCombo.getSelectedItem();
             ps.repaint();
+            rev++;
             changed();
         });
 
         cycleCombo.addActionListener(ae -> {
             params.cycleMethod = (CycleMethod) cycleCombo.getSelectedItem();
             ps.repaint();
+            rev++;
             changed();
         });
 
@@ -248,10 +256,12 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
             Number n = (Number) radius.getValue();
             params.radius = n.floatValue();
             ps.repaint();
+            rev++;
             changed();
         });
 
         fAndC.addChangeListener(e -> {
+            rev++;
             fAndC.colorsAndFractions((fracs, cols) -> {
                 params.colors = cols;
                 params.fractions = fracs;
@@ -264,6 +274,8 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
         return panel;
     }
 
+    private int rev = 0;
+
     @Override
     public String getName() {
         return name != null ? name
@@ -271,11 +283,23 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
                         "RADIAL_GRADIENT_PAINT");
     }
 
+    private RadialGradientPaint lastResult;
+    private int revAtLastResult = -1;
+
     @Override
     public RadialGradientPaint get() {
-        RadialGradientPaint paint = new RadialGradientPaint(params.targetPoint, params.radius, params.focusPoint, params.fractions, params.colors, params.cycleMethod, params.colorSpaceType,
-                AffineTransform.getTranslateInstance(0, 0));
-        return paint;
+        if (revAtLastResult != rev) {
+            revAtLastResult = rev;
+            return lastResult = PooledTransform.lazyTranslate(0, 0, (xform, ownerConsumer) -> {
+                RadialGradientPaint gp = new RadialGradientPaint(params.targetPoint,
+                        params.radius, params.focusPoint, params.fractions, params.colors,
+                        params.cycleMethod, params.colorSpaceType,
+                        xform);
+                ownerConsumer.accept(gp);
+                return gp;
+            });
+        }
+        return lastResult;
     }
 
     @Override

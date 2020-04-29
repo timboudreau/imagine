@@ -16,6 +16,8 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,9 +27,12 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.selection.PictureSelection;
 import net.dev.java.imagine.api.tool.Tool;
+import net.dev.java.imagine.api.tool.ToolUIContextImplementation;
 import net.dev.java.imagine.api.tool.aspects.NonPaintingTool;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
+import net.dev.java.imagine.api.tool.aspects.ScalingMouseListener;
+import net.dev.java.imagine.spi.tool.ToolUIContext;
 import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.spi.image.LayerImplementation;
@@ -35,8 +40,9 @@ import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.support.AbstractPictureImplementation;
 import net.java.dev.imagine.ui.common.BackgroundStyleApplier;
-import net.java.dev.imagine.ui.common.ImageEditorBackground;
+import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.editor.api.AspectRatio;
+import org.imagine.editor.api.ContextLog;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.border.BorderFactory;
 import org.netbeans.api.visual.layout.LayoutFactory;
@@ -46,6 +52,7 @@ import org.netbeans.api.visual.widget.Widget;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.SnapPointsSupplier;
+import org.imagine.geometry.util.PooledTransform;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.api.visual.widget.EventProcessingType;
 import org.netbeans.paintui.widgetlayers.WidgetController;
@@ -81,6 +88,7 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
         setKeyEventProcessingType(EventProcessingType.FOCUSED_WIDGET_AND_ITS_PARENTS);
         setCheckClipping(false);
         init(size);
+        ViewL.attach(this);
     }
 
     PI picture() {
@@ -91,13 +99,17 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
         return rh;
     }
 
+    AspectRatio aspectRatio() {
+        return picture.aspectRatio();
+    }
+
     public PictureScene(BufferedImage img) {
         picture = new PI(new RH(), img);
         init(new Dimension(img.getWidth(), img.getHeight()));
     }
 
     public void pictureResized(Dimension newSize) {
-        mainLayer.setPreferredBounds(new Rectangle(new Point(0,0), newSize));
+        mainLayer.setPreferredBounds(new Rectangle(new Point(0, 0), newSize));
         validate();
     }
 
@@ -159,6 +171,33 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
         return picture.getSelection().getLookup();
     }
 
+    ToolUIContext uiContext = new ToolUIContextImplementation() {
+        @Override
+        public Zoom zoom() {
+            return zoom;
+        }
+
+        @Override
+        public AspectRatio aspectRatio() {
+            return PictureScene.this.aspectRatio();
+        }
+
+        @Override
+        public ToolUIContext toToolUIContext() {
+            return uiContext;
+        }
+
+        @Override
+        public void fetchVisibleBounds(Rectangle into) {
+            JComponent view = getView();
+            if (view == null) {
+                return;
+            }
+            Rectangle r = view.getVisibleRect();
+            into.setFrame(convertViewToScene(r));
+        }
+    }.toToolUIContext();
+
     private static String getDefaultLayerName(int ix) {
         return NbBundle.getMessage(PI.class, "LAYER_NAME", "" + ix);
     }
@@ -202,72 +241,97 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
     private boolean hasResolutionDependentLayers;
 
     public void setActiveTool(Tool tool) {
-        System.out.println("canvas set active tool " + tool);
+//        System.out.println("canvas set active tool " + tool);
+        LayerImplementation activeLayer = picture.getActiveLayer();
         if (this.activeTool == tool) {
             if (tool != null) {
-                System.err.println("Active tool is already " + activeTool + " - do nothing");
+                CLOG.log("Active tool is already " + activeTool.getName() + " - do nothing");
+                if (tool.isAttachedTo(activeLayer.getLayer())) {
+                    return;
+                }
+            } else {
+                CLOG.log("Setting active tool null when already null");
+                return;
             }
-            return;
         }
         if (this.activeTool != null) {
-            System.out.println("  deactivate old tool");
+//            System.out.println("  deactivate old tool");
             detachTool(this.activeTool);
         }
         this.activeTool = null;
-        LayerImplementation layer = picture.getActiveLayer();
-        if (maybeAttachTool(tool, layer)) {
-            System.out.println("  activating tool succeeded");
+        if (maybeAttachTool(tool, activeLayer)) {
+//            System.out.println("  activating tool succeeded");
             this.activeTool = tool;
+            CLOG.log("Active tool for " + activeTool.getName() + " in " + this + " now " + tool.getName());
         } else {
-            System.out.println("  activating tool failed");
+//            System.out.println("  activating tool failed");
             this.activeTool = null;
+            CLOG.log("Failed to activate " + tool.getName() + " for " + this);
         }
+    }
+
+    void detachForClose() {
+        CLOG.log("Detach for close " + this);
+        LayerImplementation layer = picture.getActiveLayer();
+        if (layer != null) {
+            SurfaceImplementation surf = layer.getSurface();
+            if (surf != null) {
+                surf.setTool(null);
+            }
+        }
+        if (activeTool != null) {
+            activeTool.detach();
+            activeTool = null;
+        }
+        setActiveTool((Tool) null);
     }
 
     private boolean detachTool(Tool tool) {
         if (tool != null) {
-            System.out.println("DETACH TOOL " + tool);
+//            System.out.println("DETACH TOOL " + tool);
             tool.detach();
             return true;
         }
         return false;
     }
 
+    private final ContextLog CLOG = ContextLog.get("selection");
+
     private boolean maybeAttachTool(Tool tool, LayerImplementation layer) {
         if (tool == null || layer == null) {
-            System.out.println("  no attach due to tool " + tool + " layer " + layer);
+            CLOG.log("PicSc  no attach due to tool " + tool + " layer " + layer);
             if (layer != null) {
                 SurfaceImplementation surf = layer.getSurface();
                 if (surf != null) {
-                    System.out.println("  set surface tool to null");
+                    CLOG.log("PicSc  set surface tool to null");
                     surf.setTool(null);
                 }
             }
             return false;
         }
         if (!tool.canAttach(layer.getLayer())) {
-            System.out.println("  tool cannot attach to " + layer);
+            CLOG.log("PicSc  tool " + tool.getName() + " cannot attach to " + layer);
             SurfaceImplementation surf = layer.getSurface();
             if (surf != null) {
-                System.out.println("  set surface tool to null");
+                CLOG.log("PicSc  set surface tool to null");
                 surf.setTool(null);
             }
             return false;
         }
-        System.out.println("  trying to attach tool");
+        CLOG.log("PicSc  trying to attach tool " + tool.getName());
         //With new API, we must attach first, or the tool's lookup contents
         //are not initialized yet
-        tool.attach(layer.getLayer());
-        System.out.println("   attached " + tool + " to " + layer);
+        tool.attach(layer.getLayer(), uiContext);
+        CLOG.log("   attached " + tool + " to " + layer);
         PaintParticipant participant = get(tool, PaintParticipant.class);
-        System.err.println("Paint participant for " + tool + " is " + participant + " - " + tool.getLookup().lookupAll(Object.class));
         SurfaceImplementation surface = layer.getSurface();
+//        CLOG.log("PicSc Paint participant for " + tool + " is " + participant + " - " + tool.getLookup().lookupAll(Object.class));
         if (participant != null) {
-            System.err.println("attaching repainter to " + surface);
+            System.err.println("attaching repainter to " + surface + " for " + tool.getName());
             participant.attachRepainter(selectionLayer.newRepainter(tool, participant, layer, surface));
         }
         if (surface != null) {
-            System.out.println("  setting tool on surface");
+            CLOG.log("PicSc  setting tool on surface to " + tool.getName());
             layer.getSurface().setTool(tool);
         }
         return true;
@@ -336,14 +400,11 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
         }
 
         void attachToSelection() {
-            picture.getSelection().addChangeListener(new ChangeListener() {
+            picture.getSelection().addChangeListener(this);
+        }
 
-                @Override
-                public void stateChanged(ChangeEvent e) {
-                    System.out.println("change from picture selection " + picture.getSelection());
-                    repaint();
-                }
-            });
+        void detach() {
+            picture.getSelection().removeChangeListener(this);
         }
 
         @Override
@@ -487,7 +548,7 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
             return new KeyEvent(source, awtId, evt.getWhen(), evt.getModifiers(), evt.getKeyCode(), evt.getKeyChar(), evt.getKeyLocation());
         }
 
-        State dispatch(WidgetKeyEvent evt, int awtId) {
+        State dispatch(Widget widget, WidgetKeyEvent evt, int awtId) {
             KeyListener kl = toolAs(KeyListener.class);
             if (kl != null && picture.getActiveLayer() != null) {
                 return dispatchToTool(toKeyEvent(evt, awtId), kl);
@@ -495,19 +556,19 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
             return State.REJECTED;
         }
 
-        State dispatch(WidgetMouseEvent evt, int awtId) {
+        State dispatch(Widget widget, WidgetMouseEvent evt, int awtId) {
             Point pt = evt.getPoint();
             pslep.setStatus(new StringBuilder(Integer.toString(pt.x)).append(',').append(pt.y).toString());
             if (picture.getActiveLayer() != null) {
                 MouseListener ml = toolAs(MouseListener.class);
-                if (ml != null) {
-                    return dispatchToTool(toMouseEvent(evt, awtId), ml);
-                }
+//                if (ml != null) {
+                return dispatchToTool(widget, toMouseEvent(evt, awtId), ml);
+//                }
             }
             return State.REJECTED;
         }
 
-        private State dispatchToTool(MouseEvent event, MouseListener ml) {
+        private State dispatchToTool(Widget target, MouseEvent event, MouseListener ml) {
 //            System.out.println("dispatch " + event.getX() + " " + event.getY() + " to " + ml);
             MouseMotionListener mml = toolAs(MouseMotionListener.class);
             switch (event.getID()) {
@@ -547,6 +608,37 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
                     }
                     break;
             }
+
+            ScalingMouseListener sml = toolAs(ScalingMouseListener.class);
+            if (sml != null) {
+                Point2D.Double pt = ViewL.lastPoint(target);
+                switch (event.getID()) {
+                    case MouseEvent.MOUSE_PRESSED:
+                        sml.mousePressed(pt.x, pt.y, event);
+                        break;
+                    case MouseEvent.MOUSE_RELEASED:
+                        sml.mouseReleased(pt.x, pt.y, event);
+                        break;
+                    case MouseEvent.MOUSE_CLICKED:
+                        sml.mouseClicked(pt.x, pt.y, event);
+                        break;
+                    case MouseEvent.MOUSE_ENTERED:
+                        sml.mouseEntered(pt.x, pt.y, event);
+                        break;
+                    case MouseEvent.MOUSE_EXITED:
+                        sml.mouseExited(pt.x, pt.y, event);
+                        break;
+                    case MouseEvent.MOUSE_MOVED:
+                        sml.mouseMoved(pt.x, pt.y, event);
+                        break;
+                    case MouseEvent.MOUSE_DRAGGED:
+                        sml.mouseDragged(pt.x, pt.y, event);
+                        break;
+                }
+            } else {
+                System.out.println("No SML");
+            }
+
             return event.isConsumed() ? State.CONSUMED : State.REJECTED;
         }
 
@@ -567,52 +659,52 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
 
         @Override
         public State mouseClicked(Widget widget, WidgetMouseEvent wme) {
-            return dispatch(wme, MouseEvent.MOUSE_CLICKED);
+            return dispatch(widget, wme, MouseEvent.MOUSE_CLICKED);
         }
 
         @Override
         public State mousePressed(Widget widget, WidgetMouseEvent wme) {
-            return dispatch(wme, MouseEvent.MOUSE_PRESSED);
+            return dispatch(widget, wme, MouseEvent.MOUSE_PRESSED);
         }
 
         @Override
         public State mouseReleased(Widget widget, WidgetMouseEvent wme) {
-            return dispatch(wme, MouseEvent.MOUSE_RELEASED);
+            return dispatch(widget, wme, MouseEvent.MOUSE_RELEASED);
         }
 
         @Override
         public State mouseEntered(Widget widget, WidgetMouseEvent wme) {
-            return dispatch(wme, MouseEvent.MOUSE_ENTERED);
+            return dispatch(widget, wme, MouseEvent.MOUSE_ENTERED);
         }
 
         @Override
         public State mouseExited(Widget widget, WidgetMouseEvent wme) {
-            return dispatch(wme, MouseEvent.MOUSE_EXITED);
+            return dispatch(widget, wme, MouseEvent.MOUSE_EXITED);
         }
 
         @Override
         public State mouseDragged(Widget widget, WidgetMouseEvent wme) {
-            return dispatch(wme, MouseEvent.MOUSE_DRAGGED);
+            return dispatch(widget, wme, MouseEvent.MOUSE_DRAGGED);
         }
 
         @Override
         public State mouseMoved(Widget widget, WidgetMouseEvent wme) {
-            return dispatch(wme, MouseEvent.MOUSE_MOVED);
+            return dispatch(widget, wme, MouseEvent.MOUSE_MOVED);
         }
 
         @Override
         public State keyTyped(Widget widget, WidgetKeyEvent wke) {
-            return dispatch(wke, KeyEvent.KEY_TYPED);
+            return dispatch(widget, wke, KeyEvent.KEY_TYPED);
         }
 
         @Override
         public State keyPressed(Widget widget, WidgetKeyEvent wke) {
-            return dispatch(wke, KeyEvent.KEY_PRESSED);
+            return dispatch(widget, wke, KeyEvent.KEY_PRESSED);
         }
 
         @Override
         public State keyReleased(Widget widget, WidgetKeyEvent wke) {
-            return dispatch(wke, KeyEvent.KEY_RELEASED);
+            return dispatch(widget, wke, KeyEvent.KEY_RELEASED);
         }
 
         @Override
@@ -625,6 +717,15 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
                     return State.CONSUMED;
                 }
             }
+            ScalingMouseListener sml = toolAs(ScalingMouseListener.class);
+            if (sml != null) {
+                MouseWheelEvent mwe = toMouseWheelEvent(event);
+                Point2D.Double pt = ViewL.lastPoint(widget);
+                sml.mouseWheelMoved(pt.x, pt.y, mwe);
+                if (mwe.isConsumed()) {
+                    return State.CONSUMED;
+                }
+            }
             return State.REJECTED;
         }
     }
@@ -632,9 +733,26 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
     private class ZoomImpl implements Zoom {
 
         private final ChangeSupport supp = new ChangeSupport(this);
+        private final AffineTransform xform = PooledTransform.get(this);
+        private final AffineTransform inverse = PooledTransform.get(this);
 
         public float getZoom() {
             return (float) PictureScene.this.getZoomFactor();
+        }
+
+        @Override
+        public AffineTransform getZoomTransform() {
+            double z = PictureScene.this.getZoomFactor();
+            xform.setToScale(z, z);
+            return xform;
+        }
+
+        @Override
+        public AffineTransform getInverseTransform() {
+            double zz = PictureScene.this.getZoomFactor();
+            double z = zz == 0 ? 0.00000000000000000000001 : 1 / zz;
+            inverse.setToScale(z, z);
+            return inverse;
         }
 
         public void setZoom(float val) {
@@ -673,8 +791,11 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
 
     final class PI extends AbstractPictureImplementation {
 
-        private AspectRatio ratio = AspectRatio.create(this::getSize);
+        private AspectRatio ratio = AspectRatio.create(this::getSize, () -> {
+            return hasResolutionDependentLayers;
+        });
         private BackgroundStyle backgroundStyle;
+
         public PI(RepaintHandle handle, Dimension size, BackgroundStyle backgroundStyle) {
             this(handle, size, backgroundStyle, true);
         }
@@ -747,12 +868,11 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
                 Set<LayerImplementation> retained,
                 LayerImplementation oldActiveLayer,
                 LayerImplementation newActiveLayer) {
-            System.out.println("Layers changed - active " + newActiveLayer);
             PictureScene.this.hasResolutionDependentLayers = false;
             Rectangle newBounds = new Rectangle(0, 0, 1, 1);
             Tool oldTool = activeTool;
             if (oldTool != null && oldActiveLayer != newActiveLayer) {
-                System.out.println("  active layer changed, detach tool");
+//                System.out.println("  active layer changed, detach tool");
                 detachTool(oldTool);
             }
             for (LayerImplementation removedLayer : removed) {
@@ -772,7 +892,6 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
                 assert olw != null : "No widget for " + layer;
                 if (PictureScene.this.picture == null
                         || olw.layer == newActiveLayer) {
-                    System.out.println("  add tool action to layer " + layer);
                     olw.getActions().addAction(PictureScene.this.toolAction);
                 }
                 olw.bringToFront();
@@ -782,7 +901,6 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
                 }
             }
             if (newActiveLayer != oldActiveLayer && !maybeAttachTool(oldTool, newActiveLayer)) {
-                System.out.println("  could not attach - clearing tool");
                 activeTool = null;
             }
             updateSize(newBounds.getSize());
@@ -836,7 +954,7 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
             }
             boolean result = false;
             for (LayerImplementation l : getLayers()) {
-                result |= l.paint(goal, g, bounds, showSelection, bounds == null, zoom);
+                result |= l.paint(goal, g, bounds, showSelection, bounds == null, zoom, aspectRatio());
             }
             return result;
         }

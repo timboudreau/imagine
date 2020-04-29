@@ -15,7 +15,7 @@ import org.openide.util.lookup.ServiceProvider;
 @ServiceProvider(service=LayerFactory.class, position=10000)
 public class VectorLayerFactory extends LayerFactory {
 
-    @Messages("vector=Vector 2.0")
+    @Messages("vector=Vector (resolution independent)")
     public VectorLayerFactory() {
         super("vector2", Bundle.vector());
     }

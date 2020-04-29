@@ -25,6 +25,8 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,6 +60,7 @@ import org.netbeans.api.progress.ProgressHandleFactory;
 import org.netbeans.paint.api.components.FileChooserUtils;
 import org.netbeans.paintui.PictureScene.PI;
 import net.java.dev.imagine.ui.actions.spi.Selectable;
+import org.imagine.editor.api.ContextLog;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Scene.SceneListener;
 import org.openide.awt.ActionID;
@@ -133,7 +136,7 @@ import org.openide.windows.TopComponent;
 })
 @TopComponent.Description(preferredID = "PaintTopComponent",
         //iconBase="SET/PATH/TO/ICON/HERE",
-        persistenceType = TopComponent.PERSISTENCE_ALWAYS)
+        persistenceType = TopComponent.PERSISTENCE_NEVER)
 @TopComponent.Registration(mode = "editor", openAtStartup = false)
 @ActionID(category = "Window", id = "org.netbeans.paintui.PaintTopComponent")
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
@@ -153,6 +156,11 @@ public final class PaintTopComponent extends TopComponent implements
     public static DataFlavor LAYER_DATA_FLAVOR = new DataFlavor(Layer.class,
             NbBundle.getMessage(PI.class,
                     "LAYER_CLIPBOARD_NAME")); //NOI18N
+
+    private static final ContextLog CLOG = ContextLog.get("selection");
+
+    static int ids = 0;
+    private final int id = ids++;
 
     public PaintTopComponent() {
         this(new PictureScene());
@@ -371,6 +379,10 @@ public final class PaintTopComponent extends TopComponent implements
 
     private LayerImplementation lastActiveLayer = null;
 
+    private void clog(String msg) {
+        CLOG.log("PTC-" + id + ": " + msg);
+    }
+
     @Override
     public void stateChanged(ChangeEvent e) {
         PI picture = canvas.getPicture();
@@ -379,7 +391,8 @@ public final class PaintTopComponent extends TopComponent implements
             SurfaceImplementation lastSurface = lastActiveLayer.getSurface();
             if (lastSurface != null && lastActiveLayer != null) {
                 //Force it to dispose its undo data
-                lastActiveLayer.getSurface().setTool(null);
+                clog("stateChanged clear surface tool");
+                lastSurface.setTool(null);
             }
         }
         //What the heck was this?
@@ -400,10 +413,11 @@ public final class PaintTopComponent extends TopComponent implements
         }
          */
 
-        List l = new ArrayList(10);
+        List<Object> l = new ArrayList<>(10);
         l.add(this);
         l.addAll(Arrays.asList(this, canvas.getZoom(),
-                getUndoRedo(), picture.getPicture()));
+                getUndoRedo(), picture.getPicture(),
+                picture.aspectRatio()));
         Layer layer = null;
         Selection<?> sel = null;
         if (layerImpl != null) {
@@ -428,13 +442,17 @@ public final class PaintTopComponent extends TopComponent implements
         }
         UIContextLookupProvider.set(l);
         if (layer != null) {
+            clog("stateChanged set layer and selection with " + l.size() + " objects "
+                    + ", layer lookup and canvas lookup");
             UIContextLookupProvider.setLayerAndSelection(layer.getLookup(),
                     canvas.getLookup());
         } else {
+            clog("stateChanged set layer and selection with " + l.size() + " objects "
+                    + " canvas lookup and NO layer lookup");
             UIContextLookupProvider.setLayerAndSelection(canvas.getLookup(), null);
         }
 //        UIContextLookupProvider.setLayer(layerImpl.getLookup());
-        System.err.println("Lookup contents set to " + UIContextLookupProvider.theLookup().lookupAll(Object.class));
+//        System.err.println("Lookup contents set to " + UIContextLookupProvider.theLookup().lookupAll(Object.class));
         updateActiveTool();
     }
 
@@ -501,9 +519,10 @@ public final class PaintTopComponent extends TopComponent implements
 
     @Override
     protected void componentActivated() {
+        clog("componentActivated");
+        lastActive = new WeakReference<>(this);
         active = true;
         startListening();
-        System.out.println("activated, update active tool");
         updateActiveTool();
         stateChanged(null);
         canvas.getView().requestFocus();
@@ -514,9 +533,9 @@ public final class PaintTopComponent extends TopComponent implements
 
     @Override
     protected void componentDeactivated() {
+        clog("componentDeactivated");
         active = false;
         stopListening();
-        System.out.println("deactivated, set active tool null");
 //        setActiveTool(null);
 //        for (TopComponent tc : layerTopComponents) {
 //            tc.close();
@@ -567,53 +586,66 @@ public final class PaintTopComponent extends TopComponent implements
 
     @Override
     public void resultChanged(LookupEvent lookupEvent) {
+        clog("Update active tool from lookupEvent");
         updateActiveTool();
     }
 
     private void setActiveTool(Tool tool) {
-        System.out.println("set active tool " + tool);
+        clog("Set active tool " + tool);
+//        System.out.println("set active tool " + tool);
         canvas.setActiveTool(tool);
     }
 
     private void startListening() {
-        System.out.println("  start listening for active tool changes");
+//        System.out.println("  start listening for active tool changes");
         tools = Utilities.actionsGlobalContext().lookupResult(Tool.class);
         tools.addLookupListener(this);
     }
 
     private void stopListening() {
-        System.out.println("  stop listening for active tool changes");
-        tools.removeLookupListener(this);
+        if (tools != null) {
+            tools.removeLookupListener(this);
+        }
         tools = null;
     }
 
     private void updateActiveTool() {
-        System.out.println("update active tool");
-        if (isActive()) {
+        if (isActive() && tools != null) {
             Collection<? extends Tool> oneOrNone = tools == null
                     ? Collections.emptySet() : tools.allInstances();
-            setActiveTool(oneOrNone.isEmpty() ? null : (Tool) oneOrNone.iterator().next());
+            Tool to = oneOrNone.isEmpty() ? null : (Tool) oneOrNone.iterator().next();
+            clog("Update active tool " + to);
+            setActiveTool(to);
         } else {
-            System.out.println("  not active, no update");
+            System.out.println("Not active, no update active tool");
         }
     }
 
     @Override
     protected void componentClosed() {
-        if (UIContextLookupProvider.lookup(PaintTopComponent.class) == this) {
+        stopListening();
+        if (isActive()) {
             UIContextLookupProvider.set(new Object[0]);
             if (lastActiveLayer != null) {
                 lastActiveLayer.getSurface().setTool(null);
             }
+            lastActiveLayer = null;
+            UIContextLookupProvider.setLayerAndSelection(Lookup.EMPTY, Lookup.EMPTY);
         }
-
-        super.componentClosed();
+        canvas.detachForClose();
+        // Ensure no soft memory leaks
         undoManager.discardAllEdits();
+        canvas.removeChildren();
+        active = false;
+        removeAll();
+        super.componentClosed();
     }
 
+    @Override
     public void reload() throws IOException {
     }
 
+    @Override
     public boolean canReload() {
         Node[] n = getActivatedNodes();
         if (n.length == 1) {
@@ -624,8 +656,11 @@ public final class PaintTopComponent extends TopComponent implements
     }
 
     boolean isActive() {
-        return UIContextLookupProvider.lookup(PaintTopComponent.class)
+        return lastActive != null && lastActive.get() == this
+                || UIContextLookupProvider.lookup(PaintTopComponent.class)
                 == this;
 //        return TopComponent.getRegistry().getActivated() == this;
     }
+
+    private static Reference<PaintTopComponent> lastActive;
 }

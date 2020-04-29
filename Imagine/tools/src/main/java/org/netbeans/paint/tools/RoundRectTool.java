@@ -10,7 +10,6 @@ package org.netbeans.paint.tools;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.geom.RoundRectangle2D;
 import java.text.DecimalFormat;
 import net.dev.java.imagine.spi.tool.Tool;
@@ -21,13 +20,14 @@ import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Constants;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import org.imagine.editor.api.PaintingStyle;
+import org.imagine.geometry.EnhRectangle2D;
 import org.openide.util.NbBundle;
 
 /**
  *
  * @author Tim Boudreau
  */
-@ToolDef(name = "Rounded_Rectangle", iconPath = "org/netbeans/paint/tools/resources/roundrect.png")
+@ToolDef(name = "Rounded_Rectangle", iconPath = "org/netbeans/paint/tools/resources/roundrect.svg")
 @Tool(Surface.class)
 public class RoundRectTool extends RectangleTool {
 
@@ -37,7 +37,7 @@ public class RoundRectTool extends RectangleTool {
 
     static final RoundRectangle2D.Double scratchRR = new RoundRectangle2D.Double();
     @Override
-    protected void draw(Rectangle toPaint, Graphics2D g2d, PaintingStyle style) {
+    protected void draw(EnhRectangle2D toPaint, Graphics2D g2d, PaintingStyle style) {
         scratchRR.setFrame(toPaint);
         double arcWidthPercentage = arcWc.get();
         double arcHeightPercentage = arcHc.get();

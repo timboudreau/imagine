@@ -36,6 +36,7 @@ import net.java.dev.imagine.api.vector.util.Size;
 import org.imagine.awt.GradientManager;
 import org.imagine.awt.io.PaintKeyIO;
 import org.imagine.awt.key.PaintKey;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.snap.SnapPointsBuilder;
 import org.imagine.geometry.Angle;
@@ -45,7 +46,6 @@ import org.imagine.geometry.EqLine;
 import org.imagine.io.KeyReader;
 import org.imagine.io.KeyWriter;
 import org.imagine.utils.Holder;
-import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.vector.editor.ui.io.VectorIO;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeInfo;
@@ -485,13 +485,15 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
     }
 
     @Override
-    public Paint fill() {
-        return bg == null ? null : GradientManager.getDefault().findPaint(bg);
+    public Paint fill(AspectRatio ratio) {
+        return bg == null ? null : GradientManager.getDefault().findPaint(bg,
+                (int) ratio.width(), (int) ratio.height());
     }
 
     @Override
-    public Paint outline() {
-        return fg == null ? null : GradientManager.getDefault().findPaint(bg);
+    public Paint outline(AspectRatio ratio) {
+        return fg == null ? null : GradientManager.getDefault().findPaint(fg,
+                (int) ratio.width(), (int) ratio.height());
     }
 
     @Override
@@ -639,64 +641,11 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
                 }
 
             });
-            /*
-            Shape sh = this.shape();
-            VectorVisitor.analyze(sh, (int pointIndex, LineVector vect,
-                    int subpathIndex, RotationDirection subpathRotationDirection,
-                    Polygon2D approximate, int prevPointIndex, int nextPointIndex) -> {
-                CornerAngle corner = vect.corner();
-                if (!corner.isExtreme()) {
-                    double enc = corner.encode();
-                    bldr.addCorner(enc, new ShapeSnapPointEntry(ShapeEntry.this,
-                            pointIndex, nextPointIndex, enc));
-                    bldr.addAngle(Angle.canonicalize(vect.firstLineAngle()),
-                            new ShapeSnapPointEntry(ShapeEntry.this,
-                                    pointIndex, nextPointIndex, corner.leadingAngle()));
-
-                    bldr.addAngle(Angle.canonicalize(vect.secondLineAngle()),
-                            new ShapeSnapPointEntry(ShapeEntry.this,
-                                    prevPointIndex, pointIndex, corner.leadingAngle()));
-
-                    EqLine line = vect.trailingLine();
-                    Axis ax = line.nearestAxis();
-                    bldr.addDistance(SnapAxis.forVertical(ax.isVertical()),
-                            line.distanceIn(ax),
-                            new ShapeSnapPointEntry(this, prevPointIndex, pointIndex,
-                                    line.distanceIn(ax)));
-
-                    line = vect.leadingLine();
-                    ax = line.nearestAxis();
-                    bldr.addDistance(SnapAxis.forVertical(ax.isVertical()),
-                            line.distanceIn(ax),
-                            new ShapeSnapPointEntry(this, pointIndex, nextPointIndex,
-                                    line.distanceIn(ax)));
-                }
-            });
-             */
-//            CornerAngle.forShape(sh, (ptIx, ca, x, y, isects) -> {
-//                ca = ca.normalized();
-//                System.out.println("corner " + getName() + " pt " + ptIx + " " + ca);
-//                bldr.addCorner(ca.encodeNormalized(), new ShapeSnapPointEntry(this, ptIx, ptIx - 1, ca.encodeSigned()));
-//            });
         }
-//        if (vect.is(EnhancedShape.class)) {
-//            for (CornerAngle ca : vect.as(EnhancedShape.class).cornerAngles()) {
-//                double norm = ca.encodeNormalized();
-//                bldr.addCorner(norm, new ShapeSnapPointEntry())
-//            }
-//        }
-//        vect.collectSizings((double size, boolean vertical, int cpIx1, int cpIx2) -> {
-//            bldr.addDistance(SnapAxis.forVertical(vertical), size,
-//                    new ShapeSnapPointEntry(this, cpIx1, cpIx2, size));
-//        });
-//        vect.collectAngles((double angle, int cpIx1, int cpIx2) -> {
-//            System.out.println("ANGLE " + getName() + " " + angle + " " + cpIx1 + " to " + cpIx2);
-//            bldr.addAngle(angle, new ShapeSnapPointEntry(this, cpIx1, cpIx2, angle));
-//        });
     }
 
     @Override
-    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds) {
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, AspectRatio ratio) {
         Shape sh = shape();
         //            System.out.println("paint shape " + sh);
         if (bds != null && !sh.intersects(bds)) {
@@ -706,11 +655,13 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
         if (goal.isProduction()) {
             g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         }
+        int w = (int) Math.ceil(ratio.width());
+        int h = (int) Math.ceil(ratio.height());
         if (vect.is(ImageWrapper.class)) {
             vect.as(ImageWrapper.class).paint(g);
         } else if (vect.is(PathText.class)) {
             g.setPaint(goal.isProduction() ? bg.toPaint()
-                    : GradientManager.getDefault().findPaint(bg));
+                    : GradientManager.getDefault().findPaint(bg, w, h));
             if (stroke != null) {
                 g.setStroke(stroke);
             }
@@ -718,20 +669,21 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
             if (isDraw()) {
                 g.setPaint(goal.isProduction()
                         ? fg.toPaint()
-                        : GradientManager.getDefault().findPaint(fg));
+                        : GradientManager.getDefault().findPaint(fg, w, h));
                 vect.as(PathText.class).draw(g);
             }
         } else {
             Stroke oldStroke = null;
             if (stroke != null) {
                 oldStroke = g.getStroke();
-                AffineTransform xform = g.getTransform();
-                g.setStroke(GraphicsUtils.createTransformedStroke(stroke, xform));
+                g.setStroke(stroke);
+//                AffineTransform xform = g.getTransform();
+//                g.setStroke(GraphicsUtils.createTransformedStroke(stroke, xform));
             }
             if (bg != null) {
                 g.setPaint(goal.isProduction()
                         ? bg.toPaint()
-                        : GradientManager.getDefault().findPaint(bg));
+                        : GradientManager.getDefault().findPaint(bg, w, h));
             }
             if (isFill()) {
                 g.fill(sh);
@@ -739,7 +691,7 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
             if (fg != null) {
                 g.setPaint(goal.isProduction()
                         ? fg.toPaint()
-                        : GradientManager.getDefault().findPaint(fg));
+                        : GradientManager.getDefault().findPaint(fg, w, h));
             }
             if (isDraw()) {
                 g.draw(sh);

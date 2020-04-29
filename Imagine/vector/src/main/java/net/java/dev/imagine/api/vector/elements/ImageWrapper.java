@@ -29,6 +29,8 @@ import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.utils.java2d.GraphicsUtils;
 import net.java.dev.imagine.api.vector.Vectors;
+import static org.imagine.geometry.util.GeometryStrings.transformToString;
+import org.imagine.geometry.util.PooledTransform;
 
 /**
  *
@@ -49,31 +51,31 @@ public class ImageWrapper implements Primitive, Vectors {
 
     public ImageWrapper(RenderedImage img, double x, double y) {
         this.img = getBufferedImage(img, false);
-        this.xform = AffineTransform.getTranslateInstance(x, y);
+        this.xform = PooledTransform.getTranslateInstance(x, y, this);
     }
 
     public ImageWrapper(RenderableImage img, double x, double y) {
         this.img = getBufferedImage(img);
-        this.xform = AffineTransform.getTranslateInstance(x, y);
+        this.xform = PooledTransform.getTranslateInstance(x, y, this);
     }
 
     public ImageWrapper(double x, double y, Image img) {
         this.img = getBufferedImage(img);
-        this.xform = AffineTransform.getTranslateInstance(x, y);
+        this.xform = PooledTransform.getTranslateInstance(x, y, this);
     }
 
     public ImageWrapper(AffineTransform xform, Image img) {
-        this.xform = xform;
+        this.xform = PooledTransform.copyOf(xform, this);
         this.img = getBufferedImage(img);
     }
 
     public ImageWrapper(RenderedImage img, AffineTransform xform) {
         this.img = getBufferedImage(img, false);
-        this.xform = xform;
+        this.xform = PooledTransform.copyOf(xform, this);
     }
 
     public ImageWrapper(RenderableImage img, AffineTransform xform) {
-        this.xform = xform;
+        this.xform = PooledTransform.copyOf(xform, this);
         this.img = getBufferedImage(img);
     }
 
@@ -84,16 +86,17 @@ public class ImageWrapper implements Primitive, Vectors {
                 : new AffineTransform(xform);
         return () -> {
             img = oim;
-            xform = xf;
+            xform = PooledTransform.copyOf(xf, this);
         };
     }
 
     @Override
     public void translate(double x, double y) {
         if (xform == null) {
-            xform = AffineTransform.getTranslateInstance(x, y);
+            xform = PooledTransform.getTranslateInstance(x, y, this);
         } else {
-            xform.preConcatenate(AffineTransform.getTranslateInstance(x, y));
+            PooledTransform.withTranslateInstance(x, y, xform::preConcatenate);
+//            xform.preConcatenate(AffineTransform.getTranslateInstance(x, y));
         }
     }
 
@@ -143,8 +146,7 @@ public class ImageWrapper implements Primitive, Vectors {
             }
         }
         return GraphicsUtils.newBufferedImage(img.getWidth(), img.getHeight(), g -> {
-            g.drawRenderedImage(img, AffineTransform.getTranslateInstance(
-                    0, 0));
+            g.drawRenderedImage(img, null);
         });
     }
 
@@ -157,8 +159,7 @@ public class ImageWrapper implements Primitive, Vectors {
         }
         return GraphicsUtils.newBufferedImage((int) Math.ceil(img.getWidth()),
                 (int) Math.ceil(img.getHeight()), g -> {
-            g.drawRenderableImage(img, AffineTransform.getTranslateInstance(
-                    0, 0));
+            g.drawRenderableImage(img, null);
         });
     }
 
@@ -193,7 +194,7 @@ public class ImageWrapper implements Primitive, Vectors {
 
     @Override
     public String toString() {
-        return "ImageWrapper " + img + " " + GraphicsUtils.transformToString(xform);
+        return "ImageWrapper " + img + " " + transformToString(xform);
     }
 
     @Override
@@ -253,8 +254,8 @@ public class ImageWrapper implements Primitive, Vectors {
 
     @Override
     public ImageWrapper copy(AffineTransform xform) {
-        AffineTransform origXform = this.xform == null ? null : new AffineTransform(this.xform);
-        ImageWrapper nue = new ImageWrapper(new AffineTransform(origXform), img);
+        AffineTransform origXform = this.xform;
+        ImageWrapper nue = new ImageWrapper(origXform, img);
         if (xform != null && !xform.isIdentity()) {
             nue.applyTransform(xform);
         }

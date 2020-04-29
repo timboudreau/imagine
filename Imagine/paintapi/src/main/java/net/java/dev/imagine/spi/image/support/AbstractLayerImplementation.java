@@ -9,6 +9,7 @@ import javax.swing.event.SwingPropertyChangeSupport;
 import javax.swing.event.UndoableEditEvent;
 import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.spi.image.LayerImplementation;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.netbeans.paint.api.editing.UndoManager;
@@ -37,14 +38,14 @@ public abstract class AbstractLayerImplementation extends LayerImplementation {
     }
 
     @Override
-    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, boolean paintWhenVisibleFalse, Zoom zoom) {
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, boolean paintWhenVisibleFalse, Zoom zoom, AspectRatio ratio) {
         if (!istate.visible && !paintWhenVisibleFalse) {
             return false;
         }
-        return paint(goal, g, bounds, showSelection, zoom);
+        return paint(goal, g, bounds, showSelection, zoom, ratio);
     }
 
-    protected abstract boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom);
+    protected abstract boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom, AspectRatio ratio);
 
     @Override
     public final void addPropertyChangeListener(PropertyChangeListener l) {

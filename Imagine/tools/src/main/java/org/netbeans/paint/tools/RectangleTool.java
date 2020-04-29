@@ -17,18 +17,19 @@ import static org.netbeans.paint.tools.MutableRectangle.*;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.awt.geom.Point2D;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
+import net.dev.java.imagine.api.tool.aspects.ScalingMouseListener;
+import net.dev.java.imagine.spi.tool.ToolUIContext;
 import org.imagine.editor.api.snap.SnapPoints;
 import org.imagine.editor.api.snap.SnapPointsConsumer;
 import org.imagine.editor.api.snap.SnapPointsSupplier;
@@ -42,20 +43,25 @@ import org.openide.util.lookup.Lookups;
 
 import static net.java.dev.imagine.api.toolcustomizers.Constants.*;
 import org.imagine.editor.api.PaintingStyle;
+import org.imagine.editor.api.Zoom;
+import org.imagine.editor.api.grid.SnapSettings;
+import org.imagine.geometry.EnhRectangle2D;
+import org.imagine.geometry.EqPointDouble;
 
 /**
  *
  * @author Tim Boudreau
  */
-@ToolDef(name = "Rectangle", iconPath = "org/netbeans/paint/tools/resources/rect.png")
+@ToolDef(name = "Rectangle", iconPath = "org/netbeans/paint/tools/resources/rect.svg")
 @Tool(Surface.class)
-public class RectangleTool implements PaintParticipant, MouseMotionListener, MouseListener, KeyListener, CustomizerProvider, Attachable, SnapPointsConsumer {
+public class RectangleTool implements PaintParticipant, ScalingMouseListener, KeyListener, CustomizerProvider, Attachable, SnapPointsConsumer, ChangeListener {
 
-    private Rectangle lastPaintedRectangle = new Rectangle();
-    int NO_ANCHOR_SIZE = 18;
-    private Rectangle TEMPLATE_RECTANGLE = new Rectangle(0, 0, NO_ANCHOR_SIZE, NO_ANCHOR_SIZE);
+    private EnhRectangle2D lastPaintedRectangle = new EnhRectangle2D();
+    private static final int NO_ANCHOR_SIZE = 18;
+    private double anchorSize = NO_ANCHOR_SIZE;
+    private EnhRectangle2D TEMPLATE_RECTANGLE = new EnhRectangle2D(0, 0, NO_ANCHOR_SIZE, NO_ANCHOR_SIZE);
 
-    MutableRectangle rect;
+    protected MutableRectangle2D rect;
     private int draggingCorner;
     protected final Surface surface;
     private Repainter repainter;
@@ -66,8 +72,8 @@ public class RectangleTool implements PaintParticipant, MouseMotionListener, Mou
 //        new Exception("Create "  + System.identityHashCode(this) ).printStackTrace(); //XXX
     }
 
-    public Rectangle getRectangle() {
-        return rect == null ? null : new Rectangle(rect);
+    public EnhRectangle2D getRectangle() {
+        return rect == null ? null : new EnhRectangle2D(rect);
     }
 
     private void setDraggingCorner(int draggingCorner) {
@@ -90,91 +96,83 @@ public class RectangleTool implements PaintParticipant, MouseMotionListener, Mou
     }
 
     public void paint(Graphics2D g2d) {
-        Rectangle toPaint = rect == null ? TEMPLATE_RECTANGLE : rect;
-        lastPaintedRectangle.setBounds(toPaint);
+        EnhRectangle2D toPaint = rect == null ? TEMPLATE_RECTANGLE : rect;
+        lastPaintedRectangle.setFrame(toPaint);
         if (armed || committing) {
             PaintingStyle xfill = fillC.get();
             draw(toPaint, g2d, xfill);
         }
     }
 
-    protected void draw(Rectangle toPaint, Graphics2D g2d, PaintingStyle style) {
+    protected void draw(EnhRectangle2D toPaint, Graphics2D g2d, PaintingStyle style) {
         if (style.isFill()) {
-            g2d.setPaint (paintC.get().getPaint());
-            g2d.fillRect(toPaint.x, toPaint.y, toPaint.width, toPaint.height);
+            g2d.setPaint(paintC.get().getPaint());
+            g2d.fill(toPaint);
         }
         if (style.isOutline()) {
             g2d.setStroke(new BasicStroke(strokeC.get()));
-            g2d.setColor (outlineC.get());
-            g2d.drawRect(toPaint.x, toPaint.y, toPaint.width, toPaint.height);
+            g2d.setColor(outlineC.get());
+            g2d.draw(toPaint);
         }
-//        if (style.isFill()) {
-//            Paint paint = paintC.get().getPaint();
-//            g2d.setPaint(paint);
-//            g2d.fill(toPaint);
-//        }
-//        if (style.isOutline()) {
-//            g2d.setStroke(new BasicStroke(strokeC.get()));
-//            g2d.setPaint(this.outlineC.get());
-//            g2d.draw(toPaint);
-//        }
     }
 
     @Override
-    public void mouseDragged(MouseEvent e) {
-        mouseMoved(e);
+    public void mouseDragged(double x, double y, MouseEvent e) {
+        mouseMoved(x, y, e);
     }
 
     @Override
-    public void mouseMoved(MouseEvent e) {
+    public void mouseMoved(double x, double y, MouseEvent e) {
         armed = true;
-        Point p = snapPoint(e.getPoint(), e);
+//        Point2D p = snapPoint(new EqPointDouble(x, y), e);
+        Point2D p = snapPoint(new EqPointDouble(x, y), e);
         TEMPLATE_RECTANGLE.setLocation(p);
         if (rect != null) {
-            dragged(e.getPoint(), e.getModifiersEx());
+            dragged(p, e.getModifiersEx());
             repaintWithRect();
         } else {
             repaintNoRect(p);
         }
     }
 
-    private void dragged(Point p, int modifiers) {
+    private void dragged(Point2D p, int modifiers) {
         int currCorner = draggingCorner;
         int corner = rect.setPoint(p, currCorner);
 
         if ((modifiers & KeyEvent.SHIFT_DOWN_MASK) != 0) {
             rect.makeSquare(currCorner);
         }
-        if (corner == -2 || (corner != currCorner && corner != -1)) {
+        if (corner == MutableRectangle2D.NONE || (corner != currCorner && corner != -1)) {
             if (corner != -2) {
                 setDraggingCorner(corner);
             }
         }
     }
 
-    private void repaintNoRect(Point p) {
-//        Rectangle old = new Rectangle (TEMPLATE_RECTANGLE);
-//        TEMPLATE_RECTANGLE.setLocation(p);
-//        Rectangle repaintRect = old.union(TEMPLATE_RECTANGLE);
-//        c.repaint (repaintRect.x, repaintRect.y,  repaintRect.width, repaintRect.height);
+    private void repaintNoRect(Point2D p) {
         if (repainter != null) {
             repainter.requestRepaint(null);
         }
     }
 
     private void repaintWithRect() {
-//        Rectangle repaintRect = lastPaintedRectangle.union(rect);
-//        c.repaint (repaintRect.x, repaintRect.y,  repaintRect.width, repaintRect.height);
         if (repainter != null) {
             repainter.requestRepaint(null);
         }
     }
 
     @Override
-    public void mouseClicked(MouseEvent e) {
+    public void mouseClicked(double x, double y, MouseEvent e) {
+        mouseDragged(x, y, e);
+        if (e.getClickCount() >= 2) {
+            commit();
+        }
     }
 
-    private Point snapPoint(Point orig, MouseEvent e) {
+    private Point2D snapPoint(Point2D orig, MouseEvent e) {
+        if (!SnapSettings.getGlobal().isEnabled()) {
+            return orig;
+        }
         if (snapPoints == null || e.isControlDown()) {
             return orig;
         }
@@ -183,41 +181,36 @@ public class RectangleTool implements PaintParticipant, MouseMotionListener, Mou
             return orig;
         }
         Point2D result = pts.snap(orig);
-        if (result != orig) {
-//            System.out.println("SNAP " + orig.x + ", " + orig.y
-//                    + " to " + result.getX() + "," + result.getY());
-        }
-        return result instanceof Point ? (Point) result
-                : new Point((int) result.getX(), (int) result.getY());
+        return result;
     }
 
     @Override
-    public void mousePressed(MouseEvent e) {
-        Point p = e.getPoint();
+    public void mousePressed(double x, double y, MouseEvent e) {
+        EqPointDouble p = new EqPointDouble(x, y);
         TEMPLATE_RECTANGLE.setLocation(p);
         if (rect == null) {
-            p.x++;
-            p.y++;
-            rect = new MutableRectangle(snapPoint(e.getPoint(), e), p);
+            rect = new MutableRectangle2D(x, y, x + 1, y + 1);
             draggingCorner = rect.nearestCorner(p);
         }
     }
 
-    private static final int CLICK_DIST = 7;
-
     @Override
-    public void mouseReleased(MouseEvent e) {
-        Point p = e.getPoint();
+    public void mouseReleased(double x, double y, MouseEvent e) {
+        Point2D p = new EqPointDouble(x, y);
 //        boolean inBounds = c.contains(p);
 //        if (rect != null && inBounds) {
         if (rect != null) {
             int nearestCorner = rect.nearestCorner(p);
-            if (p.distance(rect.getLocation()) < CLICK_DIST) {
+
+            if (p.distance(rect.getLocation()) < rect.diagonalLength() / 4) {
                 p = snapPoint(p, e);
                 setDraggingCorner(nearestCorner);
                 rect.setLocation(p);
             } else {
                 setDraggingCorner(nearestCorner);
+                if ((e.getModifiersEx() & KeyEvent.SHIFT_DOWN_MASK) != 0) {
+                    rect.makeSquare(nearestCorner);
+                }
                 p = snapPoint(p, e);
                 rect.setPoint(p, nearestCorner);
                 armed = false;
@@ -243,14 +236,10 @@ public class RectangleTool implements PaintParticipant, MouseMotionListener, Mou
         }
     }
 
-    @Override
-    public void mouseEntered(MouseEvent e) {
-    }
-
     boolean armed;
 
     @Override
-    public void mouseExited(MouseEvent e) {
+    public void mouseExited(double x, double y, MouseEvent e) {
         armed = false;
         repaintNoRect(e.getPoint());
     }
@@ -264,22 +253,27 @@ public class RectangleTool implements PaintParticipant, MouseMotionListener, Mou
         if (rect == null) {
             return;
         }
-        Point p = rect.getLocation();
         switch (e.getKeyCode()) {
             case KeyEvent.VK_DOWN:
-                p.y++;
+                rect.y++;
                 break;
             case KeyEvent.VK_UP:
-                p.y--;
+                rect.y--;
                 break;
             case KeyEvent.VK_LEFT:
-                p.x--;
+                rect.x--;
                 break;
             case KeyEvent.VK_RIGHT:
-                p.x++;
+                rect.x++;
                 break;
             case KeyEvent.VK_ENTER:
                 commit();
+                break;
+            case KeyEvent.VK_ESCAPE:
+                rect = null;
+                repaintNoRect(null);
+                armed = false;
+                committing = false;
                 break;
         }
     }
@@ -288,17 +282,16 @@ public class RectangleTool implements PaintParticipant, MouseMotionListener, Mou
         return NbBundle.getMessage(getClass(), "Click_and_move_mouse_or_click-and-drag_to_draw");
     }
 
-    public void attach(Lookup.Provider layer) {
-//        new Exception("Detach "  + System.identityHashCode(this) ).printStackTrace(); //XXX
-    }
-
     public void detach() {
         rect = null;
-        TEMPLATE_RECTANGLE.setBounds(0, 0, NO_ANCHOR_SIZE, NO_ANCHOR_SIZE);
+        TEMPLATE_RECTANGLE.setFrame(0, 0, anchorSize, anchorSize);
         committing = false;
         armed = false;
         snapPoints = null;
-//        new Exception("Detach "  + System.identityHashCode(this) ).printStackTrace(); //XXX
+        if (zoom != null) {
+            zoom.removeChangeListener(this);
+            zoom = null;
+        }
     }
 
     public Cursor getCursor() {
@@ -311,7 +304,6 @@ public class RectangleTool implements PaintParticipant, MouseMotionListener, Mou
 
     public void attachRepainter(PaintParticipant.Repainter repainter) {
         this.repainter = repainter;
-//        new Exception("Attach repainter to "  + System.identityHashCode(this) + " " + repainter).printStackTrace(); //XXX
     }
 
     //XXX these should not be static, but the old code assumes we keep a tool
@@ -328,5 +320,28 @@ public class RectangleTool implements PaintParticipant, MouseMotionListener, Mou
     @Override
     public void accept(SnapPointsSupplier t) {
         this.snapPoints = t;
+    }
+
+    private Zoom zoom;
+
+    @Override
+    public void attach(Lookup.Provider on, ToolUIContext ctx) {
+        zoom = ctx.zoom();
+        zoom.addChangeListener(this);
+    }
+
+    @Override
+    public void stateChanged(ChangeEvent e) {
+        if (zoom != null) {
+            anchorSize = zoom.inverseScale(NO_ANCHOR_SIZE);
+            Rectangle toRepaint = TEMPLATE_RECTANGLE.getBounds();
+            TEMPLATE_RECTANGLE.width = anchorSize;
+            TEMPLATE_RECTANGLE.height = anchorSize;
+            if (repainter != null) {
+                // Ensure we cover the entire bounds that needs repainting
+                toRepaint.add(TEMPLATE_RECTANGLE);
+                repainter.requestRepaint(toRepaint);
+            }
+        }
     }
 }

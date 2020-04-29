@@ -1,12 +1,10 @@
-package net.java.dev.imagine.ui.common;
+package org.imagine.editor.api;
 
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.util.prefs.Preferences;
 import javax.swing.event.ChangeListener;
-import org.imagine.utils.java2d.CheckerboardBackground;
-import org.netbeans.paint.api.components.WeakChangeSupport;
 import org.openide.util.NbPreferences;
 
 /**

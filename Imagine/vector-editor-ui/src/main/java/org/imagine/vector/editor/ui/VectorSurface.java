@@ -219,7 +219,15 @@ public class VectorSurface extends SurfaceImplementation implements SnapPointsSu
             if (goal.isEditing()) {
                 PaintParticipant pp = tool.lookup(PaintParticipant.class);
                 if (pp != null) {
+//                    if (!zoom.isOneToOne()) {
+//                        double inv = zoom.inverseScale(1);
+//                        g.scale(inv, inv);
+//                    }
                     pp.paint(g, r, false);
+//                    if (!zoom.isOneToOne()) {
+//                        double sc = zoom.scale(1);
+//                        g.scale(sc, sc);
+//                    }
                     return true;
                 }
                 if (snapPainter != null) {

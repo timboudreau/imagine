@@ -8,6 +8,7 @@ import javax.swing.UIManager;
 import org.imagine.awt.GradientManager;
 import org.imagine.awt.key.ColorKey;
 import org.imagine.awt.key.PaintKey;
+import org.imagine.geometry.util.PooledTransform;
 import org.openide.util.Exceptions;
 
 /**
@@ -31,10 +32,9 @@ final class PaintTile extends Tile<PaintKey<?>> {
         return storage;
     }
 
-
     @Override
     protected void paintContent(PaintKey<?> item, Graphics2D g, int x, int y, int w, int h) {
-        g.setPaint(GradientManager.getDefault().findPaint(item));
+        g.setPaint(GradientManager.getDefault().findPaint(item, w, h));
         try {
             AffineTransform xform = transform().createInverse();
             float[] flts = scratchFloats;
@@ -50,7 +50,6 @@ final class PaintTile extends Tile<PaintKey<?>> {
         } catch (NoninvertibleTransformException ex) {
             Exceptions.printStackTrace(ex);
         }
-
     }
 
     @Override
@@ -62,8 +61,11 @@ final class PaintTile extends Tile<PaintKey<?>> {
         // editor and use that to scale the paint as it would look in context
         double baseWidth = 640;
         double baseHeight = 480;
-        AffineTransform result = AffineTransform.getScaleInstance(w / baseWidth, h / baseHeight);
-        result.concatenate(AffineTransform.getTranslateInstance(x, y));
+        AffineTransform result = PooledTransform.getScaleInstance(w / baseWidth, h / baseHeight, null);
+        PooledTransform.withTranslateInstance(x, y, xf -> {
+            result.concatenate(xf);
+        });
+//        result.concatenate(AffineTransform.getTranslateInstance(x, y));
         return result;
     }
 }

@@ -1,19 +1,8 @@
 package org.imagine.geometry.util;
 
-import com.mastfrog.util.preconditions.Exceptions;
-import com.mastfrog.util.thread.AtomicLinkedQueue;
 import java.awt.geom.AffineTransform;
-import java.lang.Thread.UncaughtExceptionHandler;
-import java.lang.ref.PhantomReference;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Profiling shows AffineTransforms to be a significant source of GC pressure;
@@ -37,6 +26,16 @@ import java.util.logging.Logger;
  * @author Tim Boudreau
  */
 public final class PooledTransform extends AffineTransform {
+
+    public String toString() {
+        return GeometryStrings.transformToString(this);
+    }
+
+    public static AffineTransform get(Object owner) {
+        PooledTransform Tx = POOL.takeFromPool(owner);
+        Tx.setToIdentity();
+        return Tx;
+    }
 
     public static AffineTransform getTranslateInstance(double tx, double ty, Object owner) {
         PooledTransform Tx = POOL.takeFromPool(owner);
@@ -134,7 +133,7 @@ public final class PooledTransform extends AffineTransform {
         return Tx;
     }
 
-    public static void getQuadrantRotateInstance(int numquadrants, Consumer<? super AffineTransform> c) {
+    public static void withQuadrantRotateInstance(int numquadrants, Consumer<? super AffineTransform> c) {
         PooledTransform Tx = POOL.takeFromPool();
         Tx.setToQuadrantRotation(numquadrants);
         try {
@@ -195,33 +194,61 @@ public final class PooledTransform extends AffineTransform {
         }
     }
 
-    private static final TransformPool POOL = new TransformPool();
+    public static void returnToPool(AffineTransform xform) {
+        if (xform == null || !(xform instanceof PooledTransform)) {
+            return;
+        }
+        POOL.returnToPool((PooledTransform) xform);
+    }
+
+    static final PhantomReferencePool<PooledTransform> POOL = new PhantomReferencePool(
+            Thread.NORM_PRIORITY + 1,
+            "AffineTransform", 200, PooledTransform::new);
 
     static {
         POOL.start();
     }
 
-    static int loops;
-
-    private static ThreadLocal<Object> SCOPE = new ThreadLocal<>();
-    static Set<TransformPool.Phant> phants = ConcurrentHashMap.newKeySet(50);
-
-    public static void inScope(Object o, Runnable r) {
-        Object old = SCOPE.get();
-        try {
-            SCOPE.set(o);
-            r.run();
-        } finally {
-            if (old == null) {
-                SCOPE.remove();
-            } else {
-                SCOPE.set(old);
-            }
-        }
-    }
-
     public static TransformSupplier scopedTo(Object o) {
         return new TransformSupplier(o);
+    }
+
+    public static AffineTransform copyOf(AffineTransform xform, Object owner) {
+        if (xform == null) {
+            return null;
+        }
+        double[] mx = new double[6];
+        xform.getMatrix(mx);
+        return withMatrix(mx[0], mx[1], mx[2], mx[3], mx[4], mx[5], owner);
+    }
+
+    public static AffineTransform withMatrix(double m00, double m10,
+            double m01, double m11,
+            double m02, double m12, Object owner) {
+        AffineTransform xform = POOL.takeFromPool(owner);
+        xform.setTransform(m00, m10, m01, m11, m02, m12);
+        return xform;
+    }
+
+    public static void withCopyOf(AffineTransform other, Consumer<AffineTransform> xf) {
+        POOL.borrow(borrowed -> {
+            borrowed.setTransform(other);
+            xf.accept(other);
+        });
+    }
+
+    public static <R> R lazyCopy(AffineTransform toCopy, BiFunction<AffineTransform, Consumer<Object>, R> c) {
+        return POOL.lazyTakeFromPool((copy, ownerConsumer) -> {
+            copy.setTransform(toCopy);
+            return c.apply(copy, ownerConsumer);
+        });
+    }
+
+    public static <R> R lazyTranslate(double x, double y, BiFunction<AffineTransform, Consumer<Object>, R> c) {
+        return POOL.lazyTakeFromPool((copy, ownerConsumer) -> {
+            copy.setToTranslation(x, y);
+            return c.apply(copy, ownerConsumer);
+        });
     }
 
     /**
@@ -241,6 +268,9 @@ public final class PooledTransform extends AffineTransform {
         }
 
         public AffineTransform copyOf(AffineTransform xform) {
+            if (xform == null) {
+                return null;
+            }
             double[] mx = new double[6];
             xform.getMatrix(mx);
             return withMatrix(mx[0], mx[1], mx[2], mx[3], mx[4], mx[5]);
@@ -299,116 +329,6 @@ public final class PooledTransform extends AffineTransform {
             PooledTransform Tx = POOL.takeFromPool(scope);
             Tx.setToRotation(theta);
             return Tx;
-        }
-    }
-
-    static final class TransformPool implements UncaughtExceptionHandler {
-
-        private final int maxSize = 100;
-        private final AtomicLinkedQueue<PooledTransform> available = new AtomicLinkedQueue<>();
-        private final AtomicInteger poolSize = new AtomicInteger();
-        private final ReferenceQueue<Object> rq = new ReferenceQueue<>();
-
-        void start() {
-            Thread t = new Thread(this::pollingLoop);
-            t.setDaemon(true);
-            t.setPriority(Thread.NORM_PRIORITY + 1);
-            t.setUncaughtExceptionHandler(this);
-            t.start();
-        }
-
-        void pollingLoop() {
-            Thread.currentThread().setName("PooledTransform recovery");
-            System.out.println("Polling loop start");
-            for (long loop = 0;; loop++) {
-                try {
-                    Reference<? extends Object> ref = rq.remove();
-                    if (ref == null) {
-                        System.out.println("no ref " + loop);
-                        continue;
-                    }
-                    ref.clear();
-                    loops++;
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(PooledTransform.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        }
-
-        PooledTransform takeFromPool() {
-            Object owner = SCOPE.get();
-
-            return takeFromPool(owner);
-        }
-
-        PooledTransform takeFromPool(Object owner) {
-            PooledTransform result = available.pop();
-            if (result == null) {
-                Reference<? extends Object> ref = rq.poll();
-                if (ref instanceof Phant) {
-                    result = ((Phant) ref).remove();
-                    if (result != null) {
-                        System.out.println("recycle " + System.identityHashCode(result));
-                        return result;
-                    }
-                }
-                result = new PooledTransform();
-                if (owner != null && phants.size() < maxSize) {
-                    Phant phant = new Phant(result, rq, result);
-                    phants.add(phant);
-                }
-                poolSize.set(0);
-            } else {
-                poolSize.getAndUpdate(val -> {
-                    return Math.max(val - 1, 0);
-                });
-            }
-            System.out.println("take from pool " + System.identityHashCode(result)
-                    + " size " + poolSize.get());
-            return result;
-        }
-
-        boolean returnToPool(PooledTransform xform) {
-            int count = poolSize.getAndUpdate(val -> {
-                return Math.min(val + 1, maxSize);
-            });
-            if (count < maxSize) {
-                System.out.println("Return to pool " + count);
-                available.add(xform);
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        @Override
-        public void uncaughtException(Thread t, Throwable e) {
-            Exceptions.printStackTrace(e);
-        }
-
-        static class Phant extends PhantomReference<Object> {
-
-            private final AtomicReference<PooledTransform> xform;
-
-            public Phant(Object referent, ReferenceQueue<? super Object> q, PooledTransform xform) {
-                super(referent, q);
-                this.xform = new AtomicReference<>(xform);
-            }
-
-            PooledTransform remove() {
-                PooledTransform xf = xform.getAndSet(null);
-                return xf;
-            }
-
-            @Override
-            public void clear() {
-                PooledTransform result = remove();
-                phants.remove(this);
-                if (result != null) {
-                    POOL.returnToPool(result);
-                }
-                super.clear();
-            }
         }
     }
 }

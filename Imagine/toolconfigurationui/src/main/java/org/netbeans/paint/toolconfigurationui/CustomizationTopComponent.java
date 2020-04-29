@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.MissingResourceException;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -13,6 +14,7 @@ import javax.swing.SwingConstants;
 import net.dev.java.imagine.api.tool.Tool;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
+import org.imagine.editor.api.ContextLog;
 import org.netbeans.paint.api.components.DefaultSharedLayoutData;
 import org.netbeans.paint.api.components.FontManagingPanelUI;
 import org.netbeans.paint.api.components.LayoutDataProvider;
@@ -24,7 +26,9 @@ import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
+import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
+import org.openide.windows.WindowManager;
 
 /**
  * Top component which displays the customizer, if any, for the currently
@@ -33,7 +37,7 @@ import org.openide.windows.TopComponent;
 @TopComponent.Description(preferredID = "customizers",
         //iconBase="SET/PATH/TO/ICON/HERE",
         persistenceType = TopComponent.PERSISTENCE_ALWAYS)
-@TopComponent.Registration(mode = "customizers", openAtStartup = true)
+//@TopComponent.Registration(mode = "customizers", openAtStartup = true)
 @ActionID(category = "Window", id = "org.netbeans.paint.toolconfigurationui.CustomizationTopComponent")
 @ActionReference(path = "Menu/Window", position = 10)
 @TopComponent.OpenActionRegistration(displayName = "#CTL_CustomizationAction",
@@ -80,6 +84,15 @@ public final class CustomizationTopComponent extends TopComponent implements Loo
         resultChanged(null);
     }
 
+    @Override
+    public void open() {
+        Mode mode = WindowManager.getDefault().findMode("customizers");
+        if (mode != null) {
+            mode.dockInto(this);
+        }
+        super.open();
+    }
+
     /**
      * Gets default instance. Don't use directly, it reserved for '.settings'
      * file only, i.e. deserialization routines, otherwise you can get
@@ -123,20 +136,74 @@ public final class CustomizationTopComponent extends TopComponent implements Loo
     @Override
     public void resultChanged(LookupEvent e) {
         if (e == null && !isDisplayable()) {
+            clog.log("CustComp set tool null for init");
             setTool(null);
         } else {
-            Collection c = res.allInstances();
-            if (c.size() > 0) {
-                setTool((Tool) c.iterator().next());
+            Collection<? extends Tool> c = res.allInstances();
+            if (!c.isEmpty()) {
+                Tool t = c.iterator().next();
+                clog.log("CustComp set tool " + t);
+                setTool(t);
             } else {
+                clog.log("CustComp set tool null for empty lkp res");
                 setTool(null);
             }
         }
     }
 
+    final ContextLog clog = ContextLog.get("selection");
+
+    private Lookup.Result<CustomizerProvider> toolLookupResult;
+
+    private void attachToToolsLookup(Tool tool) {
+        if (toolLookupResult != null) {
+            toolLookupResult.removeLookupListener(cpListener);
+            toolLookupResult = null;
+        }
+        if (tool != null) {
+            clog.log("CTC attach to lookup of " + tool.getName());
+            toolLookupResult = tool.getLookup().lookupResult(CustomizerProvider.class);
+            toolLookupResult.addLookupListener(cpListener);
+            cpListener.resultChanged(new LookupEvent(toolLookupResult));
+        } else {
+            clog.log("CTC no tool lookup to attach to");
+            cpListener.resultChanged(null);
+        }
+    }
+
+    private final CPListener cpListener = new CPListener();
+
+    final class CPListener implements LookupListener {
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void resultChanged(LookupEvent le) {
+            if (le == null) {
+                setCustomizerProvider(null, true);
+            } else {
+                Lookup.Result<CustomizerProvider> cpRes
+                        = (Lookup.Result<CustomizerProvider>) le.getSource();
+                Collection<? extends CustomizerProvider> coll = cpRes.allInstances();
+                if (!coll.isEmpty()) {
+                    setCustomizerProvider(coll.iterator().next(), false);
+                }
+            }
+        }
+
+    }
+
     private void setTool(Tool tool) {
-        CustomizerProvider provider = tool == null ? null
-                : tool.getLookup().lookup(CustomizerProvider.class);
+        attachToToolsLookup(tool);
+//        CustomizerProvider provider = tool == null ? null
+//                : tool.getLookup().lookup(CustomizerProvider.class);
+//        setCustomizerProvider(provider, tool == null);
+        setDisplayName(tool == null ? NbBundle.getMessage(CustomizationTopComponent.class,
+                "CTL_CustomizationTopComponent")
+                : NbBundle.getMessage(CustomizationTopComponent.class,
+                        "FMT_CustomizationTopComponent", tool.getName()));
+    }
+
+    private void setCustomizerProvider(CustomizerProvider provider, boolean noTool) throws MissingResourceException {
         JComponent comp = null;
         if (provider != null) {
             Customizer c = provider.getCustomizer();
@@ -144,21 +211,27 @@ public final class CustomizationTopComponent extends TopComponent implements Loo
                 comp = c.getComponent();
             }
         }
-        setInnerComponent(comp, tool == null);
-        setDisplayName(tool == null ? NbBundle.getMessage(CustomizationTopComponent.class,
-                "CTL_CustomizationTopComponent")
-                : NbBundle.getMessage(CustomizationTopComponent.class,
-                        "FMT_CustomizationTopComponent", tool.getName()));
+        setInnerComponent(comp, noTool);
+    }
+
+    private final JLabel noCustomizer
+            = new JLabel(NbBundle.getMessage(
+                    CustomizationTopComponent.class, "LBL_No_Customizer"));
+    private final JLabel empty
+            = new JLabel(NbBundle.getMessage(
+                    CustomizationTopComponent.class, "LBL_Empty"));
+
+    {
+        noCustomizer.setEnabled(false);
+        noCustomizer.setHorizontalTextPosition(SwingConstants.CENTER);
+        empty.setEnabled(false);
+        empty.setHorizontalTextPosition(SwingConstants.CENTER);
     }
 
     private void setInnerComponent(JComponent comp, boolean noTool) {
         if (comp == null) {
-            comp = new JLabel(NbBundle.getMessage(
-                    CustomizationTopComponent.class, noTool ? "LBL_Empty" : "LBL_No_Customizer"));
-            comp.setEnabled(false);
-            ((JLabel) comp).setHorizontalTextPosition(SwingConstants.CENTER);
+            comp = noTool ? empty : noCustomizer;
         }
-//        comp.setBackground(Color.WHITE); //XXX
         jScrollPane1.setViewportView(comp);
     }
 

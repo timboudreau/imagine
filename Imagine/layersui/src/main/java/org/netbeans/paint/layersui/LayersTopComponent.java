@@ -55,6 +55,7 @@ import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Picture;
 import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.spi.image.LayerImplementation;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.api.components.FontManagingPanelUI;
 import org.netbeans.paint.api.components.PopupSliderUI;
@@ -80,7 +81,7 @@ import org.openide.windows.WindowManager;
 @TopComponent.Description(preferredID = "LayersTopComponent",
         //iconBase="SET/PATH/TO/ICON/HERE",
         persistenceType = TopComponent.PERSISTENCE_ALWAYS)
-@TopComponent.Registration(mode = "layersMode", openAtStartup = true)
+//@TopComponent.Registration(mode = "layersMode", openAtStartup = true)
 @ActionID(category = "Window", id = "org.netbeans.paint.layersui.LayersTopComponent")
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
 @TopComponent.OpenActionRegistration(displayName = "#CTL_LayersAction",
@@ -186,17 +187,12 @@ public final class LayersTopComponent extends TopComponent implements LookupList
 
     @Override
     public void open() {
-        Mode m = WindowManager.getDefault().findMode("layers");
-
+        Mode m = WindowManager.getDefault().findMode("layersMode");
         if (m != null) {
             m.dockInto(this);
         }
         super.open();
     }
-    // public Dimension getPreferredSize () {
-    // Handles a bug that makes main window layout go insane
-    // return new Dimension (200, 300);
-    // }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -609,7 +605,8 @@ public final class LayersTopComponent extends TopComponent implements LookupList
 
                 g.setClip(r);
                 try {
-                    layer.paint(RenderingGoal.THUMBNAIL, g, r, true, true, Zoom.ONE_TO_ONE);
+                    layer.paint(RenderingGoal.THUMBNAIL, g, r, true, true, Zoom.ONE_TO_ONE,
+                            AspectRatio.create(r.getSize()));
                 } finally {
                     g.setClip(clip);
                 }

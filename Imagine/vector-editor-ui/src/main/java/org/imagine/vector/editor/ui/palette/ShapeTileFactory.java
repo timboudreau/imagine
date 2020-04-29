@@ -13,7 +13,6 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DnDConstants;
 import java.awt.event.ActionEvent;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -36,6 +35,7 @@ import javax.swing.filechooser.FileFilter;
 import org.imagine.awt.dnd.PaintKeyDropSupport;
 import org.imagine.awt.io.PaintKeyIO;
 import org.imagine.awt.key.PaintKey;
+import org.imagine.geometry.util.PooledTransform;
 import org.imagine.io.ByteArrayReadChannel;
 import org.imagine.io.KeyBinaryReader;
 import org.imagine.io.KeyBinaryWriter;
@@ -128,8 +128,9 @@ final class ShapeTileFactory<S extends ShapeElement> extends AbstractTileFactory
                 Rectangle2D.Double bds = new Rectangle2D.Double();
                 entry.addToBounds(bds);
                 if (bds.x != 0 || bds.y != 0) {
-                    AffineTransform xform = AffineTransform.getTranslateInstance(-bds.x, -bds.y);
-                    entry.applyTransform(xform);
+                    PooledTransform.withTranslateInstance(-bds.x, -bds.y, entry::applyTransform);
+//                    AffineTransform xform = AffineTransform.getTranslateInstance(-bds.x, -bds.y);
+//                    entry.applyTransform(xform);
                     entry.changed();
                 }
                 storage().save(entry.getName(), (S) entry, (thrown, str) -> {

@@ -42,6 +42,10 @@ public interface AspectRatio {
         return new SimpleAspectRatio(dim, null);
     }
 
+    static AspectRatio create(Dimension dim) {
+        return new SimpleAspectRatio(() -> dim, null);
+    }
+
     default boolean isFlexible() {
         return false;
     }

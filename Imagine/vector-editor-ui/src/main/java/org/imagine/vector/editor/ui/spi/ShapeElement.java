@@ -19,6 +19,7 @@ import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.graphics.BasicStrokeWrapper;
 import net.java.dev.imagine.api.vector.painting.VectorWrapperGraphics;
 import org.imagine.awt.key.PaintKey;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.PaintingStyle;
 
 /**
@@ -104,11 +105,11 @@ public interface ShapeElement {
 
     boolean canApplyTransform(AffineTransform xform);
 
-    boolean paint(RenderingGoal goal, Graphics2D g, Rectangle clip);
+    boolean paint(RenderingGoal goal, Graphics2D g, Rectangle clip, AspectRatio ratio);
 
-    Paint fill();
+    Paint fill(AspectRatio ratio);
 
-    Paint outline();
+    Paint outline(AspectRatio ratio);
 
     void translate(double x, double y);
 

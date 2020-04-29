@@ -7,6 +7,7 @@ import java.awt.geom.Point2D;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import org.imagine.geometry.util.GeometryUtils;
+import org.imagine.geometry.util.PooledTransform;
 
 /**
  * A pair of lines connected by a shared point which form a vector which has an
@@ -192,7 +193,12 @@ public interface LineVector extends AngleVector, Intersectable {
      * @return A new line vector
      */
     default LineVector translatedBy(double dx, double dy) {
-        return transformedBy(AffineTransform.getTranslateInstance(dx, dy));
+        AffineTransform xform = PooledTransform.getTranslateInstance(dx, dy, null);
+        try {
+            return transformedBy(xform);
+        } finally {
+            PooledTransform.returnToPool(xform);
+        }
     }
 
     /**

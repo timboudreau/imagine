@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.tool.Tool;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.vector.editor.ui.spi.LayerRenderingWidget;
 import org.imagine.vector.editor.ui.spi.WidgetSupplier;
 import org.netbeans.api.visual.widget.LayerWidget;
@@ -104,6 +105,15 @@ final class ToolWidgetLayer implements WidgetFactory, ChangeListener {
         Widget w = lastWidget;
         if (w != null && w instanceof LayerRenderingWidget) {
             return ((LayerRenderingWidget) w).setOpacity(opacity);
+        }
+        return SetterResult.HANDLED;
+    }
+
+    @Override
+    public SetterResult setAspectRatio(AspectRatio ratio) {
+        Widget w = lastWidget;
+        if (w != null && w instanceof LayerRenderingWidget) {
+            return ((LayerRenderingWidget) w).setAspectRatio(ratio);
         }
         return SetterResult.HANDLED;
     }

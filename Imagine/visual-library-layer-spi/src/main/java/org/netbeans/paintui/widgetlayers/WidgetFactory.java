@@ -2,6 +2,7 @@ package org.netbeans.paintui.widgetlayers;
 
 import java.awt.Point;
 import java.util.function.Consumer;
+import org.imagine.editor.api.AspectRatio;
 import org.openide.util.Lookup;
 
 /**
@@ -24,6 +25,11 @@ public interface WidgetFactory {
     public SetterResult setOpacity(float opacity);
 
     public void setName(String name);
+
+
+    default SetterResult setAspectRatio(AspectRatio ratio) {
+        return SetterResult.NOT_HANDLED;
+    }
 
 
 }

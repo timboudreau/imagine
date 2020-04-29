@@ -46,6 +46,7 @@ import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.tool.Tool;
+import net.dev.java.imagine.api.tool.ToolUIContextImplementation;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
@@ -54,7 +55,9 @@ import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.imagine.editor.api.Zoom;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
+import net.dev.java.imagine.spi.tool.ToolUIContext;
 import net.java.dev.imagine.api.image.RenderingGoal;
+import org.imagine.editor.api.ImageEditorBackground;
 import net.java.dev.imagine.ui.common.PositionStatusLineElementProvider;
 import org.imagine.editor.api.AspectRatio;
 import org.imagine.utils.java2d.GraphicsUtils;
@@ -128,6 +131,28 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
         }
         setFocusable(true);
     }
+
+    ToolUIContext uiContext = new ToolUIContextImplementation() {
+        @Override
+        public Zoom zoom() {
+            return zoomImpl;
+        }
+
+        @Override
+        public AspectRatio aspectRatio() {
+            return PaintCanvas.this.aspectRatio();
+        }
+
+        @Override
+        public ToolUIContext toToolUIContext() {
+            return uiContext;
+        }
+
+        @Override
+        public void fetchVisibleBounds(Rectangle into) {
+            into.setFrame(getVisibleRect());
+        }
+    }.toToolUIContext();
 
     AppPicture getPicture() {
         return picture;
@@ -206,7 +231,7 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
         Shape clip = g2d.getClip();
         g2d.setClip(r.intersection(g2d.getClipBounds()));
         if (!showGrid) {
-            g2d.setPaint(GraphicsUtils.checkerboardBackground());
+            g2d.setPaint(ImageEditorBackground.getDefault().style().getPaint());
             g.fillRect(r.x, r.y, r.width, r.height);
         }
 
@@ -289,7 +314,7 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
         this.tool = tool;
         if (tool != null && picture.getActiveLayer() != null) {
             LayerImplementation l = picture.getActiveLayer();
-            tool.attach(l.getLayer());
+            tool.attach(l.getLayer(), uiContext);
             PaintParticipant participant = get(tool, PaintParticipant.class);
             if (participant != null) {
                 participant.attachRepainter(this);
@@ -511,7 +536,7 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
                 tool.detach();
                 LayerImplementation layer = pictureImpl.getActiveLayer();
                 if (layer != null) {
-                    tool.attach(layer.getLayer());
+                    tool.attach(layer.getLayer(), uiContext);
                 }
             }
             for (Iterator i = pictureImpl.getLayers().iterator(); i.hasNext();) {

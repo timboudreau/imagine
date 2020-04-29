@@ -10,7 +10,6 @@ import java.awt.LinearGradientPaint;
 import java.awt.MultipleGradientPaint;
 import java.awt.MultipleGradientPaint.ColorSpaceType;
 import java.awt.MultipleGradientPaint.CycleMethod;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.prefs.Preferences;
@@ -26,6 +25,7 @@ import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import org.imagine.editor.api.AspectRatio;
+import org.imagine.geometry.util.PooledTransform;
 import org.netbeans.paint.api.components.fractions.FractionsAndColorsEditor;
 import org.netbeans.paint.api.components.points.PointSelector;
 import org.netbeans.paint.api.components.points.PointSelectorBackgroundPainter;
@@ -46,6 +46,9 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
 
     private final String name;
     private final PaintParams params = new PaintParams();
+    private int rev;
+    private int revAtLastGet = -1;
+    private LinearGradientPaint lastResult;
 
     public LinearGradientPaintCustomizer() {
         this(null, null);
@@ -87,6 +90,7 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
     }
 
     private void changed() {
+        rev++;
         fire();
     }
 
@@ -251,9 +255,17 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
 
     @Override
     public LinearGradientPaint get() {
-        LinearGradientPaint paint = new LinearGradientPaint(params.targetPoint, params.focusPoint, params.fractions, params.colors, params.cycleMethod, params.colorSpaceType,
-                AffineTransform.getTranslateInstance(0, 0));
-        return paint;
+        if (revAtLastGet != rev) {
+            revAtLastGet = rev;
+            return lastResult = PooledTransform.lazyTranslate(0, 0, (xform, ownerConsumer) -> {
+                LinearGradientPaint paint = new LinearGradientPaint(params.targetPoint,
+                        params.focusPoint, params.fractions, params.colors,
+                        params.cycleMethod, params.colorSpaceType, xform);
+                ownerConsumer.accept(paint);
+                return paint;
+            });
+        }
+        return lastResult;
     }
 
     @Override

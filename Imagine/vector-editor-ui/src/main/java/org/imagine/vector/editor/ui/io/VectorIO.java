@@ -25,6 +25,7 @@ import net.java.dev.imagine.api.vector.elements.Polygon;
 import net.java.dev.imagine.api.vector.elements.PolygonWrapper;
 import net.java.dev.imagine.api.vector.elements.Polyline;
 import net.java.dev.imagine.api.vector.elements.Rectangle;
+import net.java.dev.imagine.api.vector.elements.RhombusWrapper;
 import net.java.dev.imagine.api.vector.elements.RoundRect;
 import net.java.dev.imagine.api.vector.elements.StringWrapper;
 import net.java.dev.imagine.api.vector.elements.Text;
@@ -63,6 +64,7 @@ public class VectorIO {
     private static final byte FONT = 16;
     private static final byte PATH_TEXT = 17;
     private static final byte POLYGON_WRAPPER = 18;
+    private static final byte RHOMBUS = 19;
 
     private HashInconsistencyBehavior hashInconsistencyBehavior
             = HashInconsistencyBehavior.defaultBehavior();
@@ -104,6 +106,8 @@ public class VectorIO {
             return STROKE;
         } else if (shaped instanceof PolygonWrapper) {
             return POLYGON_WRAPPER;
+        } else if (shaped instanceof RhombusWrapper) {
+            return RHOMBUS;
         } else {
             throw new IOException("Unrecognized shape type "
                     + shaped.getClass().getName());
@@ -206,6 +210,9 @@ public class VectorIO {
             case POLYGON_WRAPPER:
                 result = readPolygonWrapper(reader);
                 break;
+            case RHOMBUS:
+                result = readRhombusWrapper(reader);
+                break;
             default:
                 throw new AssertionError(type + " unknown ");
         }
@@ -270,6 +277,9 @@ public class VectorIO {
                 break;
             case POLYGON_WRAPPER:
                 writePolygonWrapper((PolygonWrapper) shape, writer);
+                break;
+            case RHOMBUS:
+                writeRhombusWrapper((RhombusWrapper) shape, writer);
                 break;
             default:
                 throw new AssertionError(type + " " + shape);
@@ -650,4 +660,22 @@ public class VectorIO {
         }
         return new PolygonWrapper(dbls);
     }
+
+    private void writeRhombusWrapper(RhombusWrapper rhombusWrapper, KeyWriter writer) {
+        writer.writeDouble(rhombusWrapper.centerX());
+        writer.writeDouble(rhombusWrapper.centerY());
+        writer.writeDouble(rhombusWrapper.radiusX());
+        writer.writeDouble(rhombusWrapper.radiusY());
+        writer.writeDouble(rhombusWrapper.rotation());
+    }
+
+    private RhombusWrapper readRhombusWrapper(KeyReader reader) throws IOException {
+        double cx = reader.readDouble();
+        double cy = reader.readDouble();
+        double rx = reader.readDouble();
+        double ry = reader.readDouble();
+        double rot = reader.readDouble();
+        return new RhombusWrapper(cx, cy, rx, ry, rot);
+    }
+
 }

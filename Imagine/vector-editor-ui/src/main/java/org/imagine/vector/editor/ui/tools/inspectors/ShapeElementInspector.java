@@ -2,10 +2,10 @@ package org.imagine.vector.editor.ui.tools.inspectors;
 
 import java.awt.Component;
 import java.awt.Font;
-import java.awt.geom.AffineTransform;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.java.dev.imagine.api.vector.design.ShapeNames;
+import org.imagine.geometry.util.PooledTransform;
 import org.imagine.inspectors.spi.InspectorFactory;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.netbeans.paint.api.components.VerticalFlowLayout;
@@ -46,7 +46,10 @@ public class ShapeElementInspector extends InspectorFactory<ShapeElement> {
         result.add(lbl);
         JLabel details = new JLabel(info);
         result.add(details);
-        details.setFont(details.getFont().deriveFont(AffineTransform.getScaleInstance(0.9, 0.9)));
+        PooledTransform.withScaleInstance(0.9, 0.9, xf -> {
+            details.setFont(details.getFont().deriveFont(xf));
+        });
+//        details.setFont(details.getFont().deriveFont(AffineTransform.getScaleInstance(0.9, 0.9)));
         return result;
     }
 }

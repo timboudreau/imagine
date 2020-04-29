@@ -14,15 +14,15 @@ import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.Transparency;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import javax.swing.JComponent;
 import org.imagine.geometry.Quadrant;
+import org.imagine.geometry.util.PooledTransform;
 
 /**
- * Provides horizontal, vertical, diagonal and circle with
- * line through it cursors.
+ * Provides horizontal, vertical, diagonal and circle with line through it
+ * cursors.
  *
  * @author Tim Boudreau
  */
@@ -40,8 +40,8 @@ public final class Cursors {
     }
 
     /**
-     * Get the cursors instance for this component based
-     * on its background colors.
+     * Get the cursors instance for this component based on its background
+     * colors.
      *
      * @param comp
      * @return
@@ -261,16 +261,16 @@ public final class Cursors {
     }
 
     private static BufferedImage rotated(BufferedImage img, int quadrants) {
-        AffineTransform xform = AffineTransform.getQuadrantRotateInstance(
-                quadrants, img.getWidth() / 2D, img.getHeight() / 2D);
         BufferedImage nue = new BufferedImage(img.getWidth(), img.getHeight(),
                 img.getType());
-        Graphics2D g = (Graphics2D) nue.getGraphics();
-        try {
-            g.drawImage(img, xform, null);
-        } finally {
-            g.dispose();
-        }
+        PooledTransform.withQuadrantRotateInstance(quadrants, img.getWidth() / 2D, img.getHeight() / 2D, xform -> {
+            Graphics2D g = (Graphics2D) nue.getGraphics();
+            try {
+                g.drawImage(img, xform, null);
+            } finally {
+                g.dispose();
+            }
+        });
         return nue;
     }
 }

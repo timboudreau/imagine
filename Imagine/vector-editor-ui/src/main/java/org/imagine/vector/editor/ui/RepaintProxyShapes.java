@@ -28,6 +28,7 @@ import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.graphics.BasicStrokeWrapper;
 import org.imagine.awt.key.PaintKey;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.OnSnap;
@@ -254,8 +255,8 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
     }
 
     @Override
-    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, Zoom zoom) {
-        return shapes.paint(goal, g, bounds, zoom);
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, Zoom zoom, AspectRatio ratio) {
+        return shapes.paint(goal, g, bounds, zoom, ratio);
     }
 
     @Override
@@ -530,8 +531,8 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
         }
 
         @Override
-        public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle clip) {
-            return entry.paint(goal, g, clip);
+        public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle clip, AspectRatio ratio) {
+            return entry.paint(goal, g, clip, ratio);
         }
 
         @Override
@@ -557,13 +558,13 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
         }
 
         @Override
-        public Paint fill() {
-            return entry.fill();
+        public Paint fill(AspectRatio ratio) {
+            return entry.fill(ratio);
         }
 
         @Override
-        public Paint outline() {
-            return entry.outline();
+        public Paint outline(AspectRatio ratio) {
+            return entry.outline(ratio);
         }
 
         @Override

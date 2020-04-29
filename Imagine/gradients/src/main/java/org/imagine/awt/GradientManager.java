@@ -37,6 +37,7 @@ public abstract class GradientManager {
 
     int lastW = 640;
     int lastH = 480;
+
     public Paint paintFor(Paint orig, int w, int h) {
         lastW = w;
         lastH = h;
@@ -45,6 +46,8 @@ public abstract class GradientManager {
         }
         return findPaint(orig, w, h);
     }
+
+    public abstract Paint findPaint(PaintKey<?> key, int w, int h);
 
     public abstract Paint findPaint(PaintKey<?> key);
 

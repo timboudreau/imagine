@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
+import org.imagine.geometry.util.PooledTransform;
 
 /**
  * A triangle.
@@ -400,7 +401,7 @@ public class Triangle2D extends AbstractShape implements EnhancedShape, Tesselab
     }
 
     public void rotate(double degrees) {
-        applyTransform(AffineTransform.getRotateInstance(Math.toRadians(degrees)));
+        PooledTransform.withRotateInstance(Math.toRadians(degrees), this::applyTransform);
     }
 
     public void applyTransform(AffineTransform xform) {

@@ -1,6 +1,7 @@
 package org.imagine.geometry.util;
 
 import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.text.DecimalFormat;
 
@@ -188,6 +189,55 @@ public class GeometryStrings {
      */
     public static String toDegreesString(double degrees) {
         return DEGREES_FMT.format(degrees);
+    }
+
+    public static String transformToString(AffineTransform xform) {
+        if (xform == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder("(");
+        sb.append(typeString(xform.getType())).append(' ');
+        double[] mx = new double[6];
+        xform.getMatrix(mx);
+        doubleArrayToString(mx, sb);
+        return sb.append(')').toString();
+    }
+
+    private  static StringBuilder doubleArrayToString(double[] dbls, StringBuilder into) {
+        for (int i = 0; i < dbls.length; i++) {
+            into.append(toString(dbls[i]));
+            if (i != dbls.length) {
+                into.append(", ");
+            }
+        }
+        return into;
+    }
+
+    private static String typeString(int type) {
+        switch (type) {
+            case AffineTransform.TYPE_FLIP:
+                return "Flip";
+            case AffineTransform.TYPE_GENERAL_ROTATION:
+                return "General Rotation";
+            case AffineTransform.TYPE_GENERAL_SCALE:
+                return "General Scale";
+            case AffineTransform.TYPE_GENERAL_TRANSFORM:
+                return "General Transform";
+            case AffineTransform.TYPE_IDENTITY:
+                return "Identity";
+            case AffineTransform.TYPE_QUADRANT_ROTATION:
+                return "Quadrant Rotation";
+            case AffineTransform.TYPE_TRANSLATION:
+                return "Translation";
+            case AffineTransform.TYPE_UNIFORM_SCALE:
+                return "Uniform Scale";
+            case AffineTransform.TYPE_MASK_ROTATION:
+                return "Rotation";
+            case AffineTransform.TYPE_MASK_SCALE:
+                return "Scale";
+            default:
+                return "Unknown";
+        }
     }
 
     private GeometryStrings() {

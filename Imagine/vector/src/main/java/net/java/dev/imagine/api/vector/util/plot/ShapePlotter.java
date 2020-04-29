@@ -26,7 +26,6 @@ package net.java.dev.imagine.api.vector.util.plot;
 import org.imagine.geometry.EqLine;
 import org.imagine.geometry.Triangle2D;
 import java.awt.Shape;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.PathIterator;
 import static java.awt.geom.PathIterator.*;
 import java.awt.geom.Point2D;
@@ -37,6 +36,7 @@ import org.imagine.geometry.Angle;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.util.DoubleList;
 import org.imagine.geometry.util.GeometryUtils;
+import org.imagine.geometry.util.PooledTransform;
 
 /**
  * Basically, a recapitulation of the shape rasterizers in the JDK, so we can
@@ -226,10 +226,13 @@ public class ShapePlotter {
         // you the cell value with no contribution from neightbors), we
         // need to shift the shape leftward to wind up with plotted coordinates
         // that match
-        AffineTransform tx = AffineTransform.getTranslateInstance(TRANSLATE, TRANSLATE);
-        shape = tx.createTransformedShape(shape);
-//        System.out.println("PLOT " + shape);
-        plot(shape.getPathIterator(null));
+        PooledTransform.withTranslateInstance(TRANSLATE, TRANSLATE, xf -> {
+//            plot(xf.createTransformedShape(shape).getPathIterator(null));
+            plot(shape.getPathIterator(xf));
+        });
+//        AffineTransform tx = AffineTransform.getTranslateInstance(TRANSLATE, TRANSLATE);
+//        shape = tx.createTransformedShape(shape);
+//        plot(shape.getPathIterator(null));
     }
 
     public void plot(PathIterator iter) {

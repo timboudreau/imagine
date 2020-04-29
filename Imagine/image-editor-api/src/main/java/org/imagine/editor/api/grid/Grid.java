@@ -6,7 +6,6 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.Paint;
-import java.awt.Rectangle;
 import static java.awt.RenderingHints.KEY_ANTIALIASING;
 import static java.awt.RenderingHints.KEY_STROKE_CONTROL;
 import static java.awt.RenderingHints.VALUE_ANTIALIAS_ON;
@@ -18,11 +17,15 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
+import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.prefs.Preferences;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import org.imagine.editor.api.CheckerboardBackground;
+import org.imagine.editor.api.ImageEditorBackground;
 import org.openide.util.NbPreferences;
 import org.openide.util.WeakSet;
 
@@ -41,8 +44,9 @@ public final class Grid implements Serializable {
     private Color color = Color.GRAY;
     private GridStyle style = GridStyle.DOTS;
     private transient Set<ChangeListener> listeners;
-    private transient TexturePaint linesPaint;
-    private transient TexturePaint dotsPaint;
+    private transient Map<CheckerboardBackground, DoubleMap<TexturePaint>> linesPaintMapForBackground = new EnumMap<>(CheckerboardBackground.class);
+    private transient Map<CheckerboardBackground, DoubleMap<TexturePaint>> dotsPaintMapForBackground = new EnumMap<>(CheckerboardBackground.class);
+
 
     public Grid(int size, boolean enabled, Color color, GridStyle style) {
         this.size = size;
@@ -82,8 +86,6 @@ public final class Grid implements Serializable {
 
     public Grid copy() {
         Grid result = new Grid(size, enabled, color, style);
-        result.linesPaint = linesPaint;
-        result.dotsPaint = dotsPaint;
         return result;
     }
 
@@ -176,14 +178,8 @@ public final class Grid implements Serializable {
 
     private void fire(boolean discardPaints) {
         if (discardPaints) {
-            linesPaint = null;
-            dotsPaint = null;
-            if (linesZoomMap != null) {
-                linesZoomMap.clear();
-            }
-            if (dotsZoomMap != null) {
-                dotsZoomMap.clear();
-            }
+            linesPaintMapForBackground.clear();
+            dotsPaintMapForBackground.clear();
         }
         if (INSTANCE == this) {
             save();
@@ -204,14 +200,7 @@ public final class Grid implements Serializable {
     }
 
     public Paint getGridPaint() {
-        switch (style) {
-            case DOTS:
-                return dotsPaint();
-            case LINES:
-                return linesPaint();
-            default:
-                throw new AssertionError(style);
-        }
+        return getGridPaint(1);
     }
 
     public Paint getGridPaint(double zoom) {
@@ -249,7 +238,7 @@ public final class Grid implements Serializable {
     }
 
     /**
-     * Listen for changes.  Listeners are weakly referenced.
+     * Listen for changes. Listeners are weakly referenced.
      *
      * @param listener The listener
      */
@@ -266,62 +255,55 @@ public final class Grid implements Serializable {
         supp().remove(listener);
     }
 
-    public TexturePaint dotsPaint() {
-        if (dotsPaint != null) {
-            return dotsPaint;
+    private DoubleMap<TexturePaint> linesZoomMap(CheckerboardBackground bg) {
+        if (linesPaintMapForBackground == null) { // deserialized instance
+            linesPaintMapForBackground = new EnumMap<>(CheckerboardBackground.class);
         }
-        BufferedImage dots = createDotTextureImage();
-        return dotsPaint = new TexturePaint(dots, new Rectangle(
-                dots.getWidth(), dots.getHeight()));
+        DoubleMap<TexturePaint> result = linesPaintMapForBackground.get(bg);
+        if (result == null) {
+            result = DoubleMap.create(5);
+            linesPaintMapForBackground.put(bg, result);
+        }
+        return result;
     }
 
-    public TexturePaint linesPaint() {
-        if (linesPaint != null) {
-            return linesPaint;
+    private DoubleMap<TexturePaint> dotsZoomMap(CheckerboardBackground bg) {
+        if (dotsPaintMapForBackground == null) { // deserialized instance
+            dotsPaintMapForBackground = new EnumMap(CheckerboardBackground.class);
         }
-        BufferedImage lines = createLineTextureImage();
-        return linesPaint = new TexturePaint(lines, new Rectangle(
-                lines.getWidth(), lines.getHeight()));
+        DoubleMap<TexturePaint> result = dotsPaintMapForBackground.get(bg);
+        if (result == null) {
+            result = DoubleMap.create(5);
+            dotsPaintMapForBackground.put(bg, result);
+        }
+        return result;
     }
-
-    private transient DoubleMap<TexturePaint> linesZoomMap;
-    private transient DoubleMap<TexturePaint> dotsZoomMap;
 
     public TexturePaint linesPaint(double zoom) {
-        if (1D == zoom) {
-            return linesPaint();
+        CheckerboardBackground bg = ImageEditorBackground.getDefault().style();
+        DoubleMap<TexturePaint> linesZoomMap = linesZoomMap(bg);
+        TexturePaint result = linesZoomMap.get(zoom);
+        if (result != null) {
+            return result;
         }
-        if (linesZoomMap != null) {
-            TexturePaint result = linesZoomMap.get(zoom);
-            if (result != null) {
-                return result;
-            }
-        } else {
-            linesZoomMap = DoubleMap.create(5);
-        }
-        TexturePaint result = createLineTextureImage(zoom);
+        result = createLineTextureImage(zoom, bg);
         linesZoomMap.put(zoom, result);
         return result;
     }
 
     public TexturePaint dotsPaint(double zoom) {
-        if (1D == zoom) {
-            return dotsPaint();
+        CheckerboardBackground bg = ImageEditorBackground.getDefault().style();
+        DoubleMap<TexturePaint> dotsZoomMap = dotsZoomMap(bg);
+        TexturePaint result = dotsZoomMap.get(zoom);
+        if (result != null) {
+            return result;
         }
-        if (dotsZoomMap != null) {
-            TexturePaint result = dotsZoomMap.get(zoom);
-            if (result != null) {
-                return result;
-            }
-        } else {
-            dotsZoomMap = DoubleMap.create(5);
-        }
-        TexturePaint result = createDotTextureImage(zoom);
+        result = createDotTextureImage(zoom, bg);
         dotsZoomMap.put(zoom, result);
         return result;
     }
 
-    private TexturePaint createLineTextureImage(double scale) {
+    private TexturePaint createLineTextureImage(double scale, CheckerboardBackground bg) {
         int mult = 7;
         double sz = size * scale;
         double dim = sz * mult;
@@ -339,7 +321,7 @@ public final class Grid implements Serializable {
         try {
             g.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
             g.setRenderingHint(KEY_STROKE_CONTROL, VALUE_STROKE_PURE);
-            g.setColor(color);
+            g.setColor(bg.contrasting());
             for (double x = start; x <= dim + 2; x += sz) {
                 double coord = x;
                 line.setLine(0, coord, img.getWidth(), coord);
@@ -357,7 +339,7 @@ public final class Grid implements Serializable {
         return new TexturePaint(img, rect);
     }
 
-    private TexturePaint createDotTextureImage(double scale) {
+    private TexturePaint createDotTextureImage(double scale, CheckerboardBackground bg) {
         int mult = 7;
         double sz = size * scale;
         double dim = sz * mult;
@@ -366,14 +348,15 @@ public final class Grid implements Serializable {
                 .getLocalGraphicsEnvironment()
                 .getDefaultScreenDevice()
                 .getDefaultConfiguration()
-                .createCompatibleImage((int) Math.ceil(dim), (int) Math.ceil(dim), Transparency.TRANSLUCENT);
+                .createCompatibleImage((int) Math.ceil(dim), (int) Math.ceil(dim),
+                        Transparency.TRANSLUCENT);
         Graphics2D g = img.createGraphics();
         Rectangle2D.Double rect = new Rectangle2D.Double(sz, sz, Math.max(1, 1 * scale),
                 Math.max(1, 1 * scale));
         try {
             g.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
             g.setRenderingHint(KEY_STROKE_CONTROL, VALUE_STROKE_PURE);
-            g.setColor(color);
+            g.setColor(bg.contrasting());
             double half = scale / 2;
             for (double x = start; x <= dim + 2; x += sz) {
                 for (double y = start; y <= dim + 2; y += sz) {
@@ -390,57 +373,6 @@ public final class Grid implements Serializable {
         rect.width = dim;
         rect.height = dim;
         return new TexturePaint(img, rect);
-    }
-
-    private BufferedImage createLineTextureImage() {
-        int mult = 7;
-        int w = size * mult;
-        int h = size * mult;
-        BufferedImage img = GraphicsEnvironment
-                .getLocalGraphicsEnvironment()
-                .getDefaultScreenDevice()
-                .getDefaultConfiguration()
-                .createCompatibleImage(w, h, Transparency.TRANSLUCENT);
-        Graphics2D g = img.createGraphics();
-        try {
-            BasicStroke stroke = new BasicStroke(0.5F);
-            g.setStroke(stroke);
-            g.setColor(color);
-            g.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
-            g.setRenderingHint(KEY_STROKE_CONTROL, VALUE_STROKE_PURE);
-            for (int xy = size; xy <= w; xy += size) {
-                g.drawLine(xy, 0, xy, h);
-                g.drawLine(0, xy, w, xy);
-            }
-        } finally {
-            g.dispose();
-        }
-        return img;
-    }
-
-    private BufferedImage createDotTextureImage() {
-        int mult = 7;
-        int w = size * mult;
-        int h = size * mult;
-        BufferedImage img = GraphicsEnvironment
-                .getLocalGraphicsEnvironment()
-                .getDefaultScreenDevice()
-                .getDefaultConfiguration()
-                .createCompatibleImage(w, h, Transparency.TRANSLUCENT);
-        Graphics2D g = img.createGraphics();
-        try {
-            g.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
-            g.setRenderingHint(KEY_STROKE_CONTROL, VALUE_STROKE_PURE);
-            g.setColor(color);
-            for (int x = 0; x <= w; x += size) {
-                for (int y = 0; y <= w; y += size) {
-                    g.fillRect(x - 1, y - 1, 1, 1);
-                }
-            }
-        } finally {
-            g.dispose();
-        }
-        return img;
     }
 
     public void updateFrom(Grid grid) {

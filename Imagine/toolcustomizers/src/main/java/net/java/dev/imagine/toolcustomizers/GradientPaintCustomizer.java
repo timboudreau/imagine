@@ -143,8 +143,12 @@ public class GradientPaintCustomizer extends ListenableCustomizerSupport<Gradien
                     value.getPoint2(), color2Chooser.getColor(), value.isCyclic());
             fire();
         });
+        cyclicBox.addChangeListener(ce -> {
+            value = new GradientPaint(value.getPoint1(), value.getColor1(),
+                    value.getPoint2(), color2Chooser.getColor(), cyclicBox.isSelected());
+            fire();
+        });
         pnl.add(sel);
-
         return pnl;
     }
 
@@ -221,5 +225,4 @@ public class GradientPaintCustomizer extends ListenableCustomizerSupport<Gradien
     public GradientPaint get() {
         return value;
     }
-
 }

@@ -13,10 +13,12 @@ import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Consumer;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Transformable;
 import net.java.dev.imagine.api.vector.Versioned;
+import org.imagine.geometry.util.PooledTransform;
 import org.imagine.utils.java2d.GraphicsUtils;
 
 /**
@@ -57,14 +59,29 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable, V
     private AffineTransform transform;
     private int rev;
 
+    private Runnable matrixSnapshot() {
+        if (transform == null) {
+            return () -> {
+                this.transform = null;
+            };
+        }
+        double[] mx = new double[6];
+        transform.getMatrix(mx);
+        return () -> {
+            transform.setTransform(mx[0], mx[1], mx[2], mx[3], mx[4], mx[5]);
+        };
+    }
+
     public Runnable restorableSnapshot() {
         String s = name;
         float sz = size;
         int st = style;
+        Runnable xf = matrixSnapshot();
         return () -> {
             name = s;
             size = sz;
             style = st;
+            xf.run();
         };
     }
 
@@ -78,13 +95,25 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable, V
     }
 
     private FontWrapper(FontWrapper other) {
+        this(other, true);
+    }
+
+    private FontWrapper(FontWrapper other, AffineTransform newPooledTransform) {
+        this.rev = other.rev + 1;
+        this.name = other.name;
+        this.size = other.size;
+        this.style = other.style;
+        this.transform = newPooledTransform;
+    }
+
+    private FontWrapper(FontWrapper other, boolean copyTransform) {
         this.rev = other.rev;
         this.name = other.name;
         this.size = other.size;
         this.style = other.style;
         this.transform = other.transform == null
                 ? null
-                : new AffineTransform(other.transform);
+                : PooledTransform.copyOf(other.transform, this);
     }
 
     private FontWrapper(Font f) {
@@ -101,22 +130,27 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable, V
         this(name, size, style, null);
     }
 
+    @SuppressWarnings("LeakingThisInConstructor")
     private FontWrapper(String name, float size, int style, AffineTransform xform) {
         this.name = name;
         this.size = size;
         this.style = style;
-        this.transform = xform == null ? null : xform.isIdentity() ? null
-                : removeTranslation(xform);
+        this.transform = xform == null || xform.isIdentity() ? null
+                : PooledTransform.copyOf(removeTranslation(xform), this);
     }
 
     public AffineTransform getTransform() {
         return transform == null ? AffineTransform.getTranslateInstance(0, 0)
-                : new AffineTransform(transform);
+                : transform;
     }
 
     public void setTransform(AffineTransform xform) {
         if (!Objects.equals(xform, this.transform)) {
-            this.transform = xform;
+            if (this.transform == null) {
+                this.transform = PooledTransform.copyOf(xform, this);
+            } else {
+                this.transform.setTransform(xform);
+            }
             change();
         }
     }
@@ -129,15 +163,24 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable, V
         return nue;
     }
 
+    private static void withTranslationRemoved(AffineTransform xform, Consumer<AffineTransform> c) {
+        double x = xform.getTranslateX();
+        double y = xform.getTranslateY();
+        PooledTransform.withCopyOf(xform, borrowed -> {
+            borrowed.translate(-x, -y);
+            c.accept(borrowed);
+        });
+    }
+
     @Override
     public void applyTransform(AffineTransform xform) {
         if (xform == null || xform.isIdentity()) {
             return;
         }
         if (transform != null) {
-            transform.concatenate(removeTranslation(xform));
+            withTranslationRemoved(xform, transform::concatenate);
         } else {
-            transform = xform;
+            transform = PooledTransform.copyOf(xform, this);
         }
         change();
     }
@@ -147,17 +190,19 @@ public class FontWrapper implements Primitive, Attribute<Font>, Transformable, V
         if (transform.isIdentity()) {
             return copy();
         }
-        AffineTransform finalTransform;
         if (this.transform != null) {
-            AffineTransform copy = new AffineTransform(this.transform);
-            copy.concatenate(transform);
-            finalTransform = transform;
-        } else {
-            finalTransform = transform;
+            PooledTransform.lazyCopy(this.transform, (copy, ownerConsumer) -> {
+                copy.concatenate(transform);
+                FontWrapper nue = new FontWrapper(this, copy);
+                ownerConsumer.accept(nue);
+                return nue;
+            });
         }
-        FontWrapper result = new FontWrapper(this);
-        result.setTransform(finalTransform);
-        return result;
+        return PooledTransform.lazyCopy(transform, (copy, ownerConsumer) -> {
+            FontWrapper result = new FontWrapper(this, copy);
+            ownerConsumer.accept(result);
+            return result;
+        });
     }
 
     public Font toFont() {

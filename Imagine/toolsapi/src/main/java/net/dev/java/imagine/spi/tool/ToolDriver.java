@@ -165,11 +165,11 @@ public class ToolDriver<T, R> {
         }
 
         @Override
-        public void attach(Provider layer) {
+        public void attach(Provider layer, ToolUIContext ctx) {
             super.attach(layer);
             for (Attachable a : getLookup().lookupAll(Attachable.class)) {
                 if (a != this) {
-                    a.attach(layer);
+                    a.attach(layer, ctx);
                 }
             }
         }

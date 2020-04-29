@@ -6,11 +6,14 @@
 package org.imagine.vector.editor.ui.palette;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import javax.swing.BorderFactory;
 import net.java.dev.imagine.api.image.RenderingGoal;
+import org.imagine.editor.api.AspectRatio;
+import org.imagine.geometry.util.PooledTransform;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 
 /**
@@ -19,6 +22,7 @@ import org.imagine.vector.editor.ui.spi.ShapeElement;
  */
 final class ShapeTile extends Tile<ShapeElement> {
 
+    private Dimension scratchDim = new Dimension();
     public ShapeTile(String name) {
         super(name);
         setBackground(Color.WHITE);
@@ -31,7 +35,9 @@ final class ShapeTile extends Tile<ShapeElement> {
 
     @Override
     protected void paintContent(ShapeElement item, Graphics2D g, int x, int y, int w, int h) {
-        item.paint(RenderingGoal.THUMBNAIL, g, null);
+        scratchDim.width = w;
+        scratchDim.height = h;
+        item.paint(RenderingGoal.THUMBNAIL, g, null, AspectRatio.create(scratchDim));
     }
 
     private final Rectangle2D.Double scratch = new Rectangle2D.Double();
@@ -39,7 +45,7 @@ final class ShapeTile extends Tile<ShapeElement> {
     @Override
     protected AffineTransform recomputeTransform(ShapeElement item, double x, double y, double w, double h) {
         if (w <= 0 || h <= 0) {
-            return AffineTransform.getTranslateInstance(0, 0);
+            return PooledTransform.getTranslateInstance(0, 0, null);
         }
         x += 3;
         y += 3;
@@ -57,10 +63,11 @@ final class ShapeTile extends Tile<ShapeElement> {
         } else {
             ratio = yRatio;
         }
-        AffineTransform result = AffineTransform.getScaleInstance(ratio, ratio);
+        AffineTransform result = PooledTransform.getScaleInstance(ratio, ratio, this);
         double[] d = new double[]{scratch.x, scratch.y};
         result.transform(d, 0, d, 0, 1);
-        result.concatenate(AffineTransform.getTranslateInstance(-d[0] + x, -d[1] + y));
+        PooledTransform.withTranslateInstance(-d[0] + x, -d[1] + y, result::concatenate);
+//        result.concatenate(AffineTransform.getTranslateInstance(-d[0] + x, -d[1] + y));
 
 //        Rectangle2D b = result.createTransformedShape(r).getBounds2D();
 //        if (b.getWidth() > w || b.getHeight() > h) {

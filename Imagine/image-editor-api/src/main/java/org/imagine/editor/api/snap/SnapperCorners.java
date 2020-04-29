@@ -33,6 +33,9 @@ class SnapperCorners extends Snapper.RangeVisitVectorSnapper {
 
     @Override
     protected <T> boolean scan(double val, DoubleMap<T> map, double min, double max, DoubleMapPredicate<T> pred) {
+        if (map.isEmpty()) {
+            return false;
+        }
         boolean result = super.scan(val, map, min, max, pred);
         // Here, our maximum value adding in the threshold can be > 360 degrees,
         // in which case scan from 0 degrees to max-360, OR

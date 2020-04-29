@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.imagine.utils.java2d;
+package org.imagine.editor.api;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.TexturePaint;
@@ -23,15 +24,24 @@ import org.openide.util.NbBundle.Messages;
     "MEDIUM=Medium",})
 public enum CheckerboardBackground {
 
-    MEDIUM("org/imagine/utils/backgroundpattern.png"), //NOI18N
-    LIGHT("org/imagine/utils/backgroundpattern-light.png"), //NOI18N
-    DARK("org/imagine/utils/backgroundpattern-dark.png"), //NOI18N
+    MEDIUM("org/imagine/editor/api/backgroundpattern.png"), //NOI18N
+    LIGHT("org/imagine/editor/api/backgroundpattern-light.png"), //NOI18N
+    DARK("org/imagine/editor/api/backgroundpattern-dark.png"), //NOI18N
     ;
     private final String resource;
     private TexturePaint paint;
 
     CheckerboardBackground(String resource) {
         this.resource = resource;
+    }
+
+    public Color contrasting() {
+        switch(this) {
+            case LIGHT :
+                return new Color(10, 10, 10, 235);
+            default :
+                return new Color(255, 255, 255, 172);
+        }
     }
 
     public String toString() {

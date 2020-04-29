@@ -28,7 +28,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
-import static java.awt.geom.AffineTransform.getScaleInstance;
 import static java.awt.geom.AffineTransform.getTranslateInstance;
 import java.awt.geom.Line2D;
 import java.awt.geom.NoninvertibleTransformException;
@@ -46,6 +45,7 @@ import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.Triangle2D;
+import org.imagine.geometry.util.PooledTransform;
 import org.netbeans.paint.api.components.RadialSliderUI;
 import static org.netbeans.paint.api.components.points.PointSelectorMode.POINT_AND_LINE;
 import org.openide.util.Exceptions;
@@ -509,6 +509,7 @@ public final class PointSelector extends JComponent {
         return FMT.format(pt.getX()) + "," + FMT.format(pt.getY());
     }
 
+    AffineTransform local = PooledTransform.get(this);
     private AffineTransform toLocal() {
         double w = getWidth();
         double h = getHeight();
@@ -547,68 +548,21 @@ public final class PointSelector extends JComponent {
                 rectX = ins.left + (workingWidth / 2) - (rectW / 2);
             }
         }
-        AffineTransform transform = getTranslateInstance(-targetBounds.x, -targetBounds.y);
-        transform.concatenate(AffineTransform.getScaleInstance(rectW / targetBounds.width, rectH / targetBounds.height));
-        transform.preConcatenate(getTranslateInstance(rectX, rectY));
+//        AffineTransform transform = getTranslateInstance(-targetBounds.x, -targetBounds.y);
+        AffineTransform transform = local;
+        transform.setToTranslation(-targetBounds.x, -targetBounds.y);
+        PooledTransform.withScaleInstance(rectW / targetBounds.width, rectH / targetBounds.height, transform::concatenate);
+//        transform.concatenate(AffineTransform.getScaleInstance(rectW / targetBounds.width, rectH / targetBounds.height));
+        PooledTransform.withTranslateInstance(rectX, rectY, transform::preConcatenate);
+//        transform.preConcatenate(getTranslateInstance(rectX, rectY));
         return transform;
-    }
-
-    private AffineTransform ytoLocal() {
-        double w = getWidth();
-        double h = getHeight();
-        Insets ins = getInsets();
-        double workingHeight = Math.max(1, h - (ins.top + ins.bottom));
-        double workingWidth = Math.max(1, w - (ins.left + ins.right));
-
-        double heightToUse = workingHeight * inverseAspectRatio();
-
-        if (heightToUse > workingHeight) {
-            heightToUse = workingHeight;
-        }
-
-        double centerY = ins.top + (workingHeight / 2D);
-        double rectY = centerY - (heightToUse / 2D);
-        double scaleX = (workingWidth / targetBounds.getWidth());
-        double scaleY = scaleX;
-
-        AffineTransform xform
-                = getTranslateInstance(-targetBounds.getX(),
-                        -targetBounds.getY());
-        xform.concatenate(getScaleInstance(scaleX, scaleY));
-        xform.concatenate(getTranslateInstance(
-                ins.left, rectY));
-
-//        AffineTransform xform = getTranslateInstance(
-//                ins.left, rectY);
-//        xform.concatenate(getScaleInstance(scaleX, scaleY));
-//        xform.concatenate(getTranslateInstance(-targetBounds.getX(),
-//                -targetBounds.getY()));
-        return xform;
-    }
-
-    private AffineTransform xtoLocal() {
-        double w = getWidth();
-        double h = getHeight();
-        Insets ins = getInsets();
-        double workingHeight = Math.max(1, h - (ins.top + ins.bottom));
-        double workingWidth = Math.max(1, w - (ins.left + ins.right));
-
-        double heightToUse = workingWidth * (1D / aspectRatio());
-        double centerY = ins.top + (workingHeight / 2D);
-        double rectY = centerY - (heightToUse / 2D);
-        double scaleX = (workingWidth / targetBounds.getWidth());
-        double scaleY = scaleX;
-        AffineTransform xform = getTranslateInstance(
-                ins.left, rectY);
-        xform.concatenate(getScaleInstance(scaleX, scaleY));
-        xform.concatenate(getTranslateInstance(-targetBounds.getX(),
-                -targetBounds.getY()));
-        return xform;
     }
 
     private AffineTransform toGlobal() {
         try {
-            return toLocal().createInverse();
+            AffineTransform result = toLocal();
+            result.invert();
+            return result;
         } catch (NoninvertibleTransformException ex) {
             Exceptions.printStackTrace(ex);
             return getTranslateInstance(0, 0);

@@ -8,7 +8,6 @@ package org.netbeans.paintui;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Graphics2D;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -86,9 +85,7 @@ public class ImageEditorFactoryImpl extends ImageEditorFactory {
                             GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
                     Graphics2D g2d = (Graphics2D) nue.createGraphics();
 
-                    g2d.drawRenderedImage(bi,
-                            AffineTransform.getTranslateInstance(0,
-                                    0));
+                    g2d.drawRenderedImage(bi, null);
                     g2d.dispose();
                     bi = nue;
                 }

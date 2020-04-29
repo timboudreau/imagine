@@ -29,6 +29,7 @@ import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
 import net.java.dev.imagine.api.vector.painting.VectorWrapperGraphics;
 import org.imagine.awt.key.PaintKey;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.OnSnap;
@@ -411,8 +412,8 @@ public class Shapes implements HitTester, ShapesCollection {
         if (e != null) {
             return e;
         }
-        ShapeEntry en = new ShapeEntry(el.item(), el.fill(),
-                el.outline(), el.stroke(), el.isFill(), el.isDraw());
+        ShapeEntry en = new ShapeEntry(el.item(), el.getFillKey(),
+                el.getDrawKey(), el.getPaintingStyle(), el.stroke(), el.getName());
         return en;
     }
 
@@ -563,13 +564,13 @@ public class Shapes implements HitTester, ShapesCollection {
     }
 
     @Override
-    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle thumbnailBounds, Zoom zoom) {
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle thumbnailBounds, Zoom zoom, AspectRatio ratio) {
         GraphicsUtils.setHighQualityRenderingHints(g);
         int max = shapes.size() - 1;
         boolean result = false;
         for (int i = max; i >= 0; i--) {
             ShapeEntry se = shapes.get(i);
-            result |= se.paint(goal, g, thumbnailBounds);
+            result |= se.paint(goal, g, thumbnailBounds, ratio);
         }
         return result;
     }

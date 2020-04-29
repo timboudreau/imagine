@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.imagine.vector.editor.ui.io;
 
 import com.mastfrog.function.throwing.io.IOConsumer;
@@ -36,6 +31,7 @@ import net.java.dev.imagine.api.vector.elements.PathText;
 import net.java.dev.imagine.api.vector.elements.Polygon;
 import net.java.dev.imagine.api.vector.elements.Polyline;
 import net.java.dev.imagine.api.vector.elements.Rectangle;
+import net.java.dev.imagine.api.vector.elements.RhombusWrapper;
 import net.java.dev.imagine.api.vector.elements.RoundRect;
 import net.java.dev.imagine.api.vector.elements.StringWrapper;
 import net.java.dev.imagine.api.vector.elements.Text;
@@ -305,7 +301,8 @@ public class VectorIOTest {
             17.3, 17.5),
             new PathIteratorWrapper(path),
             new PathText(new PathIteratorWrapper(path), new StringWrapper("Foober", 7, 3.3), FontWrapper.create("Times New Roman", 13.5F, Font.BOLD),
-            AffineTransform.getRotateInstance(Math.toRadians(33.5)))
+            AffineTransform.getRotateInstance(Math.toRadians(33.5))),
+            new RhombusWrapper(35, 35, 10, 5, 15)
         };
         Path tmp = Paths.get(System.getProperty("java.io.tmpdir"));
         file = tmp.resolve("VectorIOTest-" + Long.toString(System.currentTimeMillis(), 36)

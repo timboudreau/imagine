@@ -314,7 +314,10 @@ public class CoordinateMapSingle<T> implements CoordinateMap<T> {
         assert containsCoordinate(newX, newY) : "Upper bound " + newX + "," + newY + " not present";
         int oldAddress = mapAddressFrom(oldX, oldY);
         int newAddress = mapAddressFrom(newX, newY);
-        assert oldAddress != newAddress;
+        if (oldAddress == newAddress) {
+            return this.map.get(oldAddress);
+        }
+//        assert oldAddress != newAddress;
         int srcIndex = map.indexOf(oldAddress);
         int destIndex = map.indexOf(newAddress);
         assert srcIndex != destIndex;

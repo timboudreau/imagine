@@ -19,6 +19,7 @@ import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Picture;
 import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.api.image.Surface;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.openide.util.Lookup;
@@ -179,7 +180,7 @@ public abstract class LayerImplementation<T extends LayerFactory> {
      * @param r A bounding rectangle if painting a thumbnail image, or null
      *  if full quality painting is desired
      */
-    public abstract boolean paint (RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, boolean paintWhenVisibleFalse, Zoom zoom);
+    public abstract boolean paint (RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, boolean paintWhenVisibleFalse, Zoom zoom, AspectRatio ratio);
 
     /** Get a surface for drawing into.  Looks for an instance of
      * SurfaceImplementation in the Lookup returned by getLookup().

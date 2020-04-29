@@ -30,6 +30,7 @@ import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.Polygon2D;
 import org.imagine.geometry.path.PathElementKind;
 import org.imagine.geometry.util.GeometryStrings;
+import org.imagine.geometry.util.PooledTransform;
 
 /**
  *
@@ -138,7 +139,7 @@ public class PolygonWrapper implements Strokable, Fillable,
     @Override
     public void translate(double x, double y) {
         if (x != 0 || y != 0) {
-            applyTransform(AffineTransform.getTranslateInstance(x, y));
+            PooledTransform.withTranslateInstance(x, y, this::applyTransform);
         }
     }
 

@@ -16,6 +16,7 @@ import java.awt.image.BufferedImage;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.spi.image.LayerImplementation;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.Zoom;
 import org.imagine.utils.painting.RepaintHandle;
 import org.netbeans.paint.api.editing.LayerFactory;
@@ -57,7 +58,8 @@ public final class RasterLayerFactory extends LayerFactory {
         g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-        other.paint(RenderingGoal.PRODUCTION, g, null, true, true, Zoom.ONE_TO_ONE);
+        other.paint(RenderingGoal.PRODUCTION, g, null, true, true, Zoom.ONE_TO_ONE,
+                AspectRatio.create(r.getSize()));
         g.dispose();
         RasterLayerImpl result = new RasterLayerImpl(this, null, img);
         result.setName(other.getName());

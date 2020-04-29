@@ -6,6 +6,9 @@ IO Bugs:
  * Should pad some file sections for future proofing
  * Failing tests of VectorIO with Shapes instance equality
  * Picture should save current zoom level
+ * Need recent files
+ * File still not associated correctly
+ * Current zoom level should be saved with picture
 
 Misc:
  * Raster layers should know if they contain a single-color, never-used image (or should not contain one until it is needed),
@@ -17,6 +20,15 @@ an empty image layer is blitting a rectangle of pure white pixel-by-pixel
  * Popup slider ui should also work on a single click, for tablet mode
 
 Vector Bugs:
+ * Rectangle tool mouse release doesn't respect shift-down for square
+ * Preferred height of colors and fractions editor is too tall for the settings window (or do better at minimum size computation and make the layout respect it)
+ * Resizing vector layers never resizes contents
+ * Mouse release while dragging when mouse is out of picture bounds results drag state not getting reset, and
+   exception thrown on next attempted drag
+ * Rectangle and others need to revalidate all control points after drag
+ * Rotation should not work on a rectangle
+ * Should not apply extent/angle snap to shapes that can only have right angles such as rectangle and round rects
+ * Oval needs to renormalize points after applying a transform, particularly rotation which can give negative dimensions
  * Ability to create a new picture starting with a Vector layer
  * Put back keyboard actions for rewrite of points widget
  * Stroke is not scaled to zoom when doing regular drawing, but is when editing

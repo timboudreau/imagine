@@ -1,9 +1,11 @@
 package org.imagine.vector.editor.ui.tools.inspectors;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import net.java.dev.imagine.api.vector.elements.TriangleWrapper;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.inspectors.spi.InspectorFactory;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
@@ -14,6 +16,7 @@ import org.netbeans.paint.api.components.number.NumericConstraint;
 import org.openide.awt.Mnemonics;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
+import org.openide.util.Utilities;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -36,6 +39,14 @@ public class TriangleInspector extends InspectorFactory<TriangleWrapper> {
         super(TriangleWrapper.class);
     }
 
+    private AspectRatio ratio() {
+        AspectRatio result = Utilities.actionsGlobalContext().lookup(AspectRatio.class);
+        if (result == null) {
+            result = AspectRatio.create(new Dimension(640, 480));
+        }
+        return result;
+    }
+
     @Override
     public Component get(TriangleWrapper obj, Lookup lookup, int item, int of) {
         ShapesCollection coll = lookup.lookup(ShapesCollection.class);
@@ -46,8 +57,10 @@ public class TriangleInspector extends InspectorFactory<TriangleWrapper> {
         Mnemonics.setLocalizedText(tesselate, Bundle.tesselate());
         tesselate.addActionListener(ae -> {
             TriangleWrapper[] nue = obj.tesselate();
+            AspectRatio ratio = ratio();
             for (int i = 0; i < nue.length; i++) {
-                coll.add(nue[i], shape.fill(), shape.outline(), shape.stroke(), shape.isDraw(), shape.isFill());
+                coll.add(nue[i], shape.fill(ratio), shape.outline(ratio),
+                        shape.stroke(), shape.isDraw(), shape.isFill());
             }
             shape.changed();
         });

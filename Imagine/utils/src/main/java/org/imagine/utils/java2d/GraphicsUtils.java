@@ -8,7 +8,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.Point;
-import java.awt.Rectangle;
 import static java.awt.RenderingHints.KEY_ALPHA_INTERPOLATION;
 import static java.awt.RenderingHints.KEY_ANTIALIASING;
 import static java.awt.RenderingHints.KEY_COLOR_RENDERING;
@@ -23,16 +22,13 @@ import static java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_ON;
 import static java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC;
 import static java.awt.RenderingHints.VALUE_STROKE_PURE;
 import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
-import java.awt.TexturePaint;
 import static java.awt.Transparency.TRANSLUCENT;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
-import java.text.DecimalFormat;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.imagine.utils.painting.RepaintHandle;
-import org.openide.util.ImageUtilities;
 
 /**
  * Miscellaneous shaoe, painting and Graphics2D related utilities.
@@ -147,18 +143,6 @@ public final class GraphicsUtils {
      */
     public static Composite combine(Composite a, Composite b) {
         return MetaComposite.combine(a, b);
-    }
-
-    private static TexturePaint CHECKERBOARD_BACKGROUND;
-
-    public static TexturePaint checkerboardBackground() {
-        if (CHECKERBOARD_BACKGROUND == null) {
-            CHECKERBOARD_BACKGROUND = new TexturePaint(
-                    ((BufferedImage) ImageUtilities.loadImage(
-                            "org/netbeans/paint/api/util/backgroundpattern.png")), //NOI18N
-                    new Rectangle(0, 0, 16, 16));
-        }
-        return CHECKERBOARD_BACKGROUND;
     }
 
     public static AffineTransform transformFor(Point2D oldPosition, Point2D newPosition) {
@@ -376,64 +360,4 @@ public final class GraphicsUtils {
         }
         return true;
     }
-
-    private static final DecimalFormat FMT = new DecimalFormat("######################0.############################################");
-
-    public static String transformToString(AffineTransform xform) {
-        if (xform == null) {
-            return "";
-        }
-        StringBuilder sb = new StringBuilder("(");
-        sb.append(typeString(xform.getType())).append(' ');
-        double[] mx = new double[6];
-        xform.getMatrix(mx);
-        doubleArrayToString(mx, sb);
-        return sb.append(')').toString();
-    }
-
-    public static String doubleArrayToString(double[] dbls) {
-        return doubleArrayToString(dbls, new StringBuilder()).toString();
-    }
-
-    public static StringBuilder doubleArrayToString(double[] dbls, StringBuilder into) {
-        for (int i = 0; i < dbls.length; i++) {
-            into.append(doubleToString(dbls[i]));
-            if (i != dbls.length) {
-                into.append(", ");
-            }
-        }
-        return into;
-    }
-
-    public static String doubleToString(double d) {
-        return FMT.format(d);
-    }
-
-    private static String typeString(int type) {
-        switch (type) {
-            case AffineTransform.TYPE_FLIP:
-                return "Flip";
-            case AffineTransform.TYPE_GENERAL_ROTATION:
-                return "General Rotation";
-            case AffineTransform.TYPE_GENERAL_SCALE:
-                return "General Scale";
-            case AffineTransform.TYPE_GENERAL_TRANSFORM:
-                return "General Transform";
-            case AffineTransform.TYPE_IDENTITY:
-                return "Identity";
-            case AffineTransform.TYPE_QUADRANT_ROTATION:
-                return "Quadrant Rotation";
-            case AffineTransform.TYPE_TRANSLATION:
-                return "Translation";
-            case AffineTransform.TYPE_UNIFORM_SCALE:
-                return "Uniform Scale";
-            case AffineTransform.TYPE_MASK_ROTATION:
-                return "Rotation";
-            case AffineTransform.TYPE_MASK_SCALE:
-                return "Scale";
-            default:
-                return "Unknown";
-        }
-    }
-
 }

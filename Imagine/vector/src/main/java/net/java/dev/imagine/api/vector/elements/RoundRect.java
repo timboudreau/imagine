@@ -400,6 +400,7 @@ public class RoundRect implements Vectors, Volume, Adjustable, Fillable, Strokab
         y = a.y;
         w = b.x - a.x;
         h = b.y - a.y;
+        renormalize();
         change();
     }
 

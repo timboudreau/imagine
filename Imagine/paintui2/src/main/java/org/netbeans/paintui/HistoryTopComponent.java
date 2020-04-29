@@ -96,6 +96,7 @@ public class HistoryTopComponent extends TopComponent implements LookupListener 
     public void removeNotify() {
         super.removeNotify();
         stopListening();
+        jl.setModel(new DefaultListModel());
     }
 
     @Override

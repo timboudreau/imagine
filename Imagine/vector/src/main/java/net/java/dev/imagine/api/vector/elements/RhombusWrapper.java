@@ -26,6 +26,7 @@ import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.geometry.EqLine;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.Rhombus;
+import org.imagine.geometry.util.GeometryUtils;
 
 /**
  *
@@ -45,6 +46,10 @@ public final class RhombusWrapper implements Strokable, Fillable,
 
     public RhombusWrapper(Rhombus rhombus) {
         this.rhombus = rhombus;
+    }
+
+    public RhombusWrapper(double cx, double cy, double rx, double ry, double rot) {
+        this(new Rhombus(cx, cy, rx, ry, rot));
     }
 
     private void change() {
@@ -90,6 +95,18 @@ public final class RhombusWrapper implements Strokable, Fillable,
     @Override
     public double centerY() {
         return rhombus.centerY();
+    }
+
+    public double radiusX() {
+        return rhombus.getXRadius();
+    }
+
+    public double radiusY() {
+        return rhombus.getYRadius();
+    }
+
+    public double rotation() {
+        return rhombus.rotation();
     }
 
     private Rhombus transform(Rhombus r, AffineTransform xform) {
@@ -269,8 +286,37 @@ public final class RhombusWrapper implements Strokable, Fillable,
         return EnumSet.of(ControlPointKind.PHYSICAL_POINT, ControlPointKind.RADIUS);
     }
 
+    @Override
     public String toString() {
         return rhombus.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (o == null) {
+            return false;
+        } else if (o instanceof RhombusWrapper) {
+            RhombusWrapper rho = (RhombusWrapper) o;
+            return GeometryUtils.isSamePoint(rho.centerX(), rho.centerY(), centerX(), centerY())
+                    && GeometryUtils.isSameCoordinate(rho.radiusX(), radiusX())
+                    && GeometryUtils.isSameCoordinate(rho.radiusY(), radiusY())
+                    && GeometryUtils.isSameCoordinate(rho.rotation(), rotation())
+                    ;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        long hash = 7;
+        hash = hash + (7 * Double.doubleToLongBits(centerX()));
+        hash = hash + (7 * Double.doubleToLongBits(centerY()));
+        hash = hash + (7 * Double.doubleToLongBits(radiusX()));
+        hash = hash + (7 * Double.doubleToLongBits(radiusY()));
+        hash = hash + (7 * Double.doubleToLongBits(rotation()));
+        return (int) (hash ^ (hash << 32));
     }
 
 }

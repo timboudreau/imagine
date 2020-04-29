@@ -14,7 +14,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
@@ -46,7 +45,9 @@ import net.dev.java.imagine.api.tool.aspects.NonPaintingTool;
 import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.effects.api.EffectReceiver;
 import org.imagine.editor.api.Zoom;
+import org.imagine.geometry.util.PooledTransform;
 import org.imagine.utils.java2d.GraphicsUtils;
+import org.imagine.utils.java2d.TrackingGraphics;
 import org.netbeans.paint.misc.image.ByteNIOBufferedImage;
 import org.netbeans.paint.misc.image.ImageHolder;
 import org.openide.ErrorManager;
@@ -205,10 +206,12 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         double oh = img.getHeight();
         double factorX = w / ow;
         double factorY = h / oh;
-        AffineTransform xform = AffineTransform.getScaleInstance(factorX, factorY);
-        img = GraphicsUtils.newBufferedImage(width, height, g -> {
-            GraphicsUtils.setHighQualityRenderingHints(g);
-            g.drawRenderedImage(img, xform);
+        PooledTransform.withScaleInstance(factorX, factorY, xform -> {
+//        AffineTransform xform = AffineTransform.getScaleInstance(factorX, factorY);
+            img = GraphicsUtils.newBufferedImage(width, height, g -> {
+                GraphicsUtils.setHighQualityRenderingHints(g);
+                g.drawRenderedImage(img, xform);
+            });
         });
     }
 
@@ -269,13 +272,18 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     public Graphics2D getGraphics() {
         unhibernateImmediately();
         Point p = getLocation();
-        Graphics2D result = GraphicsUtils.wrap(this, img.createGraphics(), p, img.getWidth(),
+        TrackingGraphics result = GraphicsUtils.wrap(this, img.createGraphics(), p, img.getWidth(),
                 img.getHeight());
         Shape sel = getSelection();
         if (sel != null) {
             result.setClip(sel);
         }
+
         return result;
+    }
+
+    public boolean isModified() {
+        return modifiedBounds.width > 0 || modifiedBounds.height > 0;
     }
 
     private static final Rectangle UNMODIFIED = new Rectangle(Integer.MAX_VALUE,
@@ -285,6 +293,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
     private static final Rectangle ALL_MODIFIED = new Rectangle(-1, -1, -1, -1);
     private Rectangle modifiedBounds = new Rectangle(UNMODIFIED);
 
+    @Override
     public void repaintArea(int x, int y, int w, int h) {
         if (!modifiedBounds.equals(ALL_MODIFIED)) {
             if (w != -1 && h != -1) {
@@ -320,9 +329,9 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         if (img instanceof ByteNIOBufferedImage) {
             return false;
         }
-        g.drawRenderedImage(img,
-                AffineTransform.getTranslateInstance(location.x,
-                        location.y));
+        PooledTransform.withTranslateInstance(location.x, location.y, xform -> {
+            g.drawRenderedImage(img, xform);
+        });
         return true;
     }
 
@@ -339,10 +348,17 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
         double xfactor = (double) r.width / (double) img.getWidth();
         double yfactor = (double) r.height / (double) img.getHeight();
 
-        AffineTransform xform = AffineTransform.getScaleInstance(xfactor,
-                yfactor);
-        xform.concatenate(AffineTransform.getTranslateInstance(r.x, r.y));
-        g2d.drawRenderedImage(img, xform);
+        PooledTransform.withScaleInstance(xfactor, yfactor, scale -> {
+            PooledTransform.withTranslateInstance(r.x, r.y, xlate -> {
+                scale.concatenate(xlate);
+                g2d.drawRenderedImage(img, scale);
+            });
+        });
+
+//        AffineTransform xform = AffineTransform.getScaleInstance(xfactor,
+//                yfactor);
+//        xform.concatenate(AffineTransform.getTranslateInstance(r.x, r.y));
+//        g2d.drawRenderedImage(img, xform);
 //        g2d.setColor(Color.BLACK);
 //        g2d.drawRect(r.x, r.y, r.width-1, r.height-1);
         return true;
@@ -382,7 +398,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             nue = op.filter(nue, null);
             Graphics2D g = nue.createGraphics();
             g.setClip(region);
-            g.drawRenderedImage(nue, AffineTransform.getTranslateInstance(0, 0));
+            g.drawRenderedImage(nue, null);
             repaintArea(regBounds);
         }
     }
@@ -413,8 +429,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             // composite
             if (region == null) {
                 g.setComposite(composite);
-                g.drawRenderedImage(img,
-                        AffineTransform.getTranslateInstance(0, 0));
+                g.drawRenderedImage(img, null);
                 repaintArea(0, 0, img.getWidth(), img.getHeight());
             } else {
                 Rectangle bds = new Rectangle(location.x, location.y,
@@ -439,9 +454,12 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
                 Rectangle selBds = region.getBounds();
 
                 try {
-                    g.drawRenderedImage(img,
-                            AffineTransform.getTranslateInstance(xOff,
-                                    yOff));
+                    PooledTransform.withTranslateInstance(xOff, yOff, xform -> {
+                        g.drawRenderedImage(img, xform);
+                    });
+//                    g.drawRenderedImage(img,
+//                            AffineTransform.getTranslateInstance(xOff,
+//                                    yOff));
                 } catch (RasterFormatException rfe) {
                     // Debugging stuff
                     IllegalStateException ise = new IllegalStateException("Fail: src "
@@ -477,9 +495,12 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
                 g.clearRect(0, 0, img.getWidth(), img.getHeight());
                 // Now that its empty, paint the original back into the
                 // non-selection area
-                g.drawRenderedImage(img,
-                        AffineTransform.getTranslateInstance(xOff,
-                                yOff));
+                PooledTransform.withTranslateInstance(xOff, yOff, xform -> {
+                    g.drawRenderedImage(img, xform);
+                });
+//                g.drawRenderedImage(img,
+//                        AffineTransform.getTranslateInstance(xOff,
+//                                yOff));
                 // And restore the clipping bounds
                 g.setClip(clip);
                 // And tell the editor what to repaint
@@ -689,14 +710,23 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
                 //need to grow the image in this state
                 return;
             }
-            BufferedImage nue = new BufferedImage(img.getWidth()
-                    + grow.width, img.getHeight() + grow.height, type);
-            Graphics2D g2d = nue.createGraphics();
-            g2d.drawRenderedImage(img, AffineTransform.getTranslateInstance(
-                    imageReplacePosition.x,
-                    imageReplacePosition.y));
-            g2d.dispose();
-            img = nue;
+            img = GraphicsUtils.newBufferedImage(img.getWidth() + grow.width, img.getHeight() + grow.height, g2d -> {
+                PooledTransform.withTranslateInstance(imageReplacePosition.x, imageReplacePosition.y, xform -> {
+                    g2d.drawRenderedImage(img, xform);
+                });
+            });
+
+//            BufferedImage nue = new BufferedImage(img.getWidth()
+//                    + grow.width, img.getHeight() + grow.height, type);
+//            Graphics2D g2d = nue.createGraphics();
+//            PooledTransform.withTranslateInstance(imageReplacePosition.x, imageReplacePosition.y, xform -> {
+//                g2d.drawRenderedImage(img, xform);
+//            });
+////            g2d.drawRenderedImage(img, AffineTransform.getTranslateInstance(
+////                    imageReplacePosition.x,
+////                    imageReplacePosition.y));
+//            g2d.dispose();
+//            img = nue;
             if (imageReplacePosition.x > 0 || imageReplacePosition.y > 0) {
                 OwnedEdit[] edits = myEdits();
                 for (int i = 0; i < edits.length; i++) {
@@ -782,8 +812,7 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             this.img = new BufferedImage(img.getWidth(), img.getHeight(),
                     img.getType() == 0 ? GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE
                     : img.getType());
-            this.img.createGraphics().drawRenderedImage(img,
-                    AffineTransform.getTranslateInstance(0, 0));
+            this.img.createGraphics().drawRenderedImage(img, null);
             this.location = loc;
             this.size = size;
         }
@@ -1263,9 +1292,13 @@ class RasterSurfaceImpl extends SurfaceImplementation implements RepaintHandle {
             g2d.clearRect(replaceBounds.x, replaceBounds.y, replaceData.getWidth(),
                     replaceData.getHeight());
 
-            g2d.drawRenderedImage(replaceData,
-                    AffineTransform.getTranslateInstance(replaceBounds.x,
-                            replaceBounds.y));
+            PooledTransform.withTranslateInstance(replaceBounds.x, replaceBounds.y, xform -> {
+                g2d.drawRenderedImage(replaceData, xform);
+            });
+
+//            g2d.drawRenderedImage(replaceData,
+//                    AffineTransform.getTranslateInstance(replaceBounds.x,
+//                            replaceBounds.y));
 
 //            if (DEBUG) {
 //                g2d.setColor (new Color (128,128,255,128));

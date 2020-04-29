@@ -49,4 +49,9 @@ public class CachingGradientManager extends GradientManager {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    @Override
+    public Paint findPaint(PaintKey<?> key, int w, int h) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
 }

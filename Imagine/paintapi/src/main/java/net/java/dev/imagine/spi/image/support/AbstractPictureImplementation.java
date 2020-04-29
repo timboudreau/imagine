@@ -35,6 +35,7 @@ import static net.java.dev.imagine.spi.image.PictureImplementation.POSITION_BOTT
 import static net.java.dev.imagine.spi.image.PictureImplementation.POSITION_TOP;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.imagine.editor.api.Zoom;
+import org.imagine.geometry.util.PooledTransform;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.api.util.RasterConverter;
@@ -81,7 +82,7 @@ public abstract class AbstractPictureImplementation extends PictureImplementatio
             if (surface != null) {
                 Graphics2D g = layer.getSurface().getGraphics();
                 try {
-                    g.drawRenderedImage(img, AffineTransform.getTranslateInstance(0, 0));
+                    g.drawRenderedImage(img, null);
                     return true;
                 } catch (NullPointerException e) {
                     Exceptions.printStackTrace(e);
@@ -512,8 +513,9 @@ public abstract class AbstractPictureImplementation extends PictureImplementatio
                                 Point loc = current.getBounds().getLocation();
                                 if (loc.x != 0 || loc.y != 0) {
                                     AffineTransform xform
-                                            = AffineTransform.getTranslateInstance(-loc.x, -loc.y);
+                                            = PooledTransform.getTranslateInstance(-loc.x, -loc.y, null);
                                     clip = xform.createTransformedShape(clip);
+                                    PooledTransform.returnToPool(xform);
                                 }
                             }
                             String name = NbBundle.getMessage(AbstractPictureImplementation.class,

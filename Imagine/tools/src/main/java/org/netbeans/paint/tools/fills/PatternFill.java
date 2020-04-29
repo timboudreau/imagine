@@ -2,18 +2,15 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package org.netbeans.paint.tools.fills;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.TexturePaint;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -35,6 +32,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
+import org.imagine.geometry.util.PooledTransform;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.api.util.ImageEditorProvider;
@@ -46,7 +44,6 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileStateInvalidException;
 import org.openide.filesystems.FileSystem.AtomicAction;
 import org.openide.filesystems.FileUtil;
-import org.openide.filesystems.Repository;
 import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
@@ -57,40 +54,42 @@ import org.openide.util.lookup.Lookups;
  * @author Tim Boudreau
  */
 public class PatternFill implements Fill, Customizable, Serializable {
+
     private final String path;
-    private transient Reference <Paint> ref;
+    private transient Reference<Paint> ref;
     private final String name;
+
     public PatternFill(FileObject fob) {
         path = fob.getPath();
         name = fob.getName();
         System.err.println("Created a pattern fill from " + path);
     }
-    
+
     public static PatternFill create(FileObject fileObject) {
-        return new PatternFill (fileObject);
+        return new PatternFill(fileObject);
     }
-    
+
     private static FileObject getBaseFolder() throws IOException {
-        FileObject result = FileUtil.getConfigRoot().getFileObject ("fills");
+        FileObject result = FileUtil.getConfigRoot().getFileObject("fills");
         if (result == null) {
             result = FileUtil.getConfigRoot().createFolder("fills");
         }
         return result;
     }
-    
-    private static URL createThumbnail (String name, BufferedImage img) throws IOException {
+
+    private static URL createThumbnail(String name, BufferedImage img) throws IOException {
         FileObject fld = FileUtil.getConfigRoot().getFileObject("FillThumbnails");
         if (fld == null) {
             fld = FileUtil.getConfigRoot().createFolder("FillThumbnails");
         }
-        FileObject tnail = fld.getFileObject (name, "png");
+        FileObject tnail = fld.getFileObject(name, "png");
         if (tnail == null) {
             tnail = fld.createData(name, "png");
         }
         FileLock lock = tnail.lock();
         OutputStream out = tnail.getOutputStream(lock);
         try {
-            BufferedImage small = new BufferedImage (16, 16, 
+            BufferedImage small = new BufferedImage(16, 16,
                     GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
             Graphics2D g = small.createGraphics();
             try {
@@ -98,8 +97,9 @@ public class PatternFill implements Fill, Customizable, Serializable {
                 float lgH = img.getHeight();
                 float smW = 16;
                 float smH = 16;
-                AffineTransform xform = AffineTransform.getScaleInstance(smW / lgW, smH / lgH);
-                g.drawRenderedImage(img, xform);
+                PooledTransform.withScaleInstance(smW / lgW, smH / lgH, xform -> {
+                    g.drawRenderedImage(img, xform);
+                });
             } finally {
                 g.dispose();
             }
@@ -110,8 +110,8 @@ public class PatternFill implements Fill, Customizable, Serializable {
         }
         return tnail.getURL();
     }
-    
-    public static PatternFill add (final BufferedImage img, final String name) throws IOException {
+
+    public static PatternFill add(final BufferedImage img, final String name) throws IOException {
         final FileObject root = getBaseFolder();
         final FileObject[] res = new FileObject[1];
         root.getFileSystem().runAtomicAction(new AtomicAction() {
@@ -129,9 +129,9 @@ public class PatternFill implements Fill, Customizable, Serializable {
                 if (img.getWidth() <= 16 && img.getHeight() <= 16) {
                     url = new URL("nbfs:/SystemFileSystem/" + fob.getPath()); //NOI18N
                 } else {
-                    url = createThumbnail (fob.getName(), img);
+                    url = createThumbnail(fob.getName(), img);
                 }
-                fob.setAttribute( "SystemFileSystem.icon", url); //NOI18N
+                fob.setAttribute("SystemFileSystem.icon", url); //NOI18N
                 //NOI18N
                 fob.setAttribute("instanceClass", PatternFill.class.getName()); //NOI18N
                 FileLock lock = fob.lock();
@@ -147,14 +147,14 @@ public class PatternFill implements Fill, Customizable, Serializable {
                 res[0] = fob;
             }
         });
-        return res[0] == null ? null : new PatternFill (res[0]);
+        return res[0] == null ? null : new PatternFill(res[0]);
     }
-    
+
     public static Collection<? extends PatternFill> all() {
-        return Lookups.forPath ("fills").lookupAll(PatternFill.class);
+        return Lookups.forPath("fills").lookupAll(PatternFill.class);
     }
-    
-    public static PatternFill add (FileObject src, String name) throws IOException {
+
+    public static PatternFill add(FileObject src, String name) throws IOException {
         File file = FileUtil.toFile(src);
         if (file == null) {
             return null;
@@ -176,8 +176,8 @@ public class PatternFill implements Fill, Customizable, Serializable {
         final JPanel result = new JPanel(new FlowLayout(FlowLayout.LEADING));
         final ImageEditorProvider prov = Lookup.getDefault().lookup(ImageEditorProvider.class);
         if (prov != null) {
-            JButton jb = new JButton (NbBundle.getMessage(PatternFill.class, "LBL_EDIT"));
-            jb.addActionListener (new ActionListener() {
+            JButton jb = new JButton(NbBundle.getMessage(PatternFill.class, "LBL_EDIT"));
+            jb.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     FileObject fob = FileUtil.getConfigRoot().getFileObject(path);
                     if (fob != null) {
@@ -188,13 +188,13 @@ public class PatternFill implements Fill, Customizable, Serializable {
                         }
                     }
                 }
-                
+
             });
-            result.add (jb);
+            result.add(jb);
         }
         return result;
     }
-    
+
     private FileObject getFileObject() {
         return FileUtil.getConfigRoot().getFileObject(path);
     }
@@ -203,10 +203,10 @@ public class PatternFill implements Fill, Customizable, Serializable {
         FileObject fob = getFileObject();
         if (fob == null) {
             System.err.println("File object not found");
-            return new Color (0,0,0,0);
+            return new Color(0, 0, 0, 0);
         }
         BufferedImage img = null;
-        for (Iterator<ImageReader> it =ImageIO.getImageReadersByFormatName("png"); it.hasNext();) {
+        for (Iterator<ImageReader> it = ImageIO.getImageReadersByFormatName("png"); it.hasNext();) {
             ImageReader r = it.next();
             try {
                 InputStream in = fob.getInputStream();
@@ -219,7 +219,7 @@ public class PatternFill implements Fill, Customizable, Serializable {
                     in.close();
                 }
             } catch (IOException ioe) {
-                Logger.getLogger(PatternFill.class.getName()).log (Level.FINE, 
+                Logger.getLogger(PatternFill.class.getName()).log(Level.FINE,
                         "Exception reading image " + fob.getPath(), ioe);
                 ioe.printStackTrace();
             }
@@ -229,22 +229,22 @@ public class PatternFill implements Fill, Customizable, Serializable {
         }
         if (img == null) {
             System.err.println("Image not loaded");
-            return new Color (0,0,0,0);
+            return new Color(0, 0, 0, 0);
         }
-        Rectangle2D.Double r = new Rectangle2D.Double (0, 0, img.getWidth(), img.getHeight());
+        Rectangle2D.Double r = new Rectangle2D.Double(0, 0, img.getWidth(), img.getHeight());
         return new TexturePaint(img, r);
     }
-    
+
     @Override
     public String toString() {
         return name;
     }
 
     public void addChangeListener(ChangeListener l) {
-        
+
     }
 
     public void removeChangeListener(ChangeListener l) {
-        
+
     }
 }

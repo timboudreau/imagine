@@ -18,6 +18,7 @@ import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.api.vector.Shaped;
 import org.imagine.awt.key.PaintKey;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.OnSnap;
@@ -98,7 +99,7 @@ public interface ShapesCollection extends Hibernator, Iterable<ShapeElement> {
 
     Rectangle getBounds();
 
-    boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, Zoom zoom);
+    boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, Zoom zoom, AspectRatio ratio);
 
     ShapesCollection snapshot();
 

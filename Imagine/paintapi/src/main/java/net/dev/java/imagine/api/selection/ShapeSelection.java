@@ -203,7 +203,7 @@ public final class ShapeSelection extends Selection<Shape> {
     public String toString() {
         if (content == null) return "Empty ShapeSelection";
         StringBuilder sb = new StringBuilder("ShapeSelection: ");
-        PathIterator it = content.getPathIterator(AffineTransform.getTranslateInstance(0d, 0d));
+        PathIterator it = content.getPathIterator(null);
         double[] d = new double[6];
         while (!it.isDone()) {
             int op = it.currentSegment(d);

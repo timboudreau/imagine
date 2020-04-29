@@ -26,6 +26,7 @@ import javax.swing.JComponent;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.UIManager;
+import org.imagine.geometry.util.PooledTransform;
 
 /**
  *
@@ -199,7 +200,7 @@ public final class FontCellRenderer implements ListCellRenderer {
 
         @Override
         public void paint(Graphics g) {
-            g.setColor(Color.WHITE);
+            g.setColor(UIManager.getColor("control"));
             g.fillRect(0, 0, getWidth(), getHeight());
             Font f = targetFont;
             if (f != null) {
@@ -207,8 +208,10 @@ public final class FontCellRenderer implements ListCellRenderer {
                 if (image != null) {
                     AffineTransform xform = null;
                     if (image.getHeight() < getHeight()) {
-                        xform = AffineTransform.getTranslateInstance(
-                                0, (getHeight() - image.getHeight()) / 2);
+                        xform = PooledTransform.getTranslateInstance(
+                                0, (getHeight() - image.getHeight()) / 2, null);
+//                        xform = AffineTransform.getTranslateInstance(
+//                                0, (getHeight() - image.getHeight()) / 2);
                     }
                     if (selectionBackground != null) {
                         g.setColor(selectionBackground);
@@ -218,6 +221,9 @@ public final class FontCellRenderer implements ListCellRenderer {
                         }
                     }
                     ((Graphics2D) g).drawRenderedImage(image, xform);
+                    if (xform != null) {
+                        PooledTransform.returnToPool(xform);
+                    }
                 } else {
                     System.err.println("No image for font: " + f.getName());
                 }

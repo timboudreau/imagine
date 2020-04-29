@@ -11,19 +11,20 @@ package org.netbeans.paint.tools;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
+import java.awt.geom.Ellipse2D;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Surface;
 import static org.netbeans.paint.tools.RectangleTool.strokeC;
 import org.imagine.editor.api.PaintingStyle;
+import org.imagine.geometry.EnhRectangle2D;
 import org.openide.util.NbBundle;
 
 /**
  *
  * @author Tim Boudreau
  */
-@ToolDef(name="Oval", iconPath="org/netbeans/paint/tools/resources/oval.png")
+@ToolDef(name="Oval", iconPath="org/netbeans/paint/tools/resources/oval.svg")
 @Tool(Surface.class)
 public class OvalTool extends RectangleTool {
 
@@ -37,16 +38,19 @@ public class OvalTool extends RectangleTool {
         return NbBundle.getMessage (OvalTool.class, "Oval");
     }
 
+    private final Ellipse2D.Double ell = new Ellipse2D.Double();
+
     @Override
-    protected void draw (Rectangle toPaint, Graphics2D g2d, PaintingStyle style) {
+    protected void draw (EnhRectangle2D toPaint, Graphics2D g2d, PaintingStyle style) {
+        ell.setFrame(toPaint);
         if (style.isFill()) {
             g2d.setPaint (paintC.get().getPaint());
-            g2d.fillOval(toPaint.x, toPaint.y, toPaint.width, toPaint.height);
+            g2d.fill(ell);
         }
         if (style.isOutline()) {
             g2d.setStroke(new BasicStroke(strokeC.get()));
             g2d.setColor (outlineC.get());
-            g2d.drawOval(toPaint.x, toPaint.y, toPaint.width, toPaint.height);
+            g2d.draw(ell);
         }
     }
 }

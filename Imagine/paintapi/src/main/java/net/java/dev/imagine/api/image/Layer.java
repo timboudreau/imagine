@@ -21,6 +21,7 @@ import net.java.dev.imagine.Accessor;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.spi.image.PictureImplementation;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.Zoom;
 import org.openide.util.Lookup;
 import org.openide.util.Mutex;
@@ -225,8 +226,8 @@ public final class Layer implements Lookup.Provider {
      *  if full quality painting is desired
      */
     public boolean paint (RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection,
-            boolean paintWhenVisibleFalse, Zoom zoom) {
-        return impl.paint (goal, g, bounds, showSelection, paintWhenVisibleFalse, zoom);
+            boolean paintWhenVisibleFalse, Zoom zoom, AspectRatio ratio) {
+        return impl.paint (goal, g, bounds, showSelection, paintWhenVisibleFalse, zoom, ratio);
     }
 
     public void commitLastPropertyChangeToUndoHistory() {

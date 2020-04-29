@@ -31,6 +31,8 @@ import org.imagine.geometry.util.GeometryUtils;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.Exceptions;
 import net.java.dev.imagine.api.vector.Vectors;
+import org.imagine.geometry.util.GeometryStrings;
+import org.imagine.geometry.util.PooledTransform;
 
 /**
  * Wraps a string and the font used to render it so it can be turned into a
@@ -49,9 +51,13 @@ public class Text implements Primitive, Vectors, Adjustable, Textual, Versioned 
     private int rev;
 
     public Text(StringWrapper string, FontWrapper font, AffineTransform xform) {
+        this(string, font, xform, true);
+    }
+
+    public Text(StringWrapper string, FontWrapper font, AffineTransform xform, boolean copyTransform) {
         this.text = string;
         this.font = font;
-        this.xform = xform;
+        this.xform = copyTransform &&  xform != null ? PooledTransform.copyOf(xform, this) : xform;
     }
 
     public Text(StringWrapper string, FontWrapper font) {
@@ -93,13 +99,31 @@ public class Text implements Primitive, Vectors, Adjustable, Textual, Versioned 
         invalidateCachedShape();
     }
 
+    private Runnable transformSnapshot() {
+        if (xform == null) {
+            return () -> {
+                this.xform = null;
+            };
+        }
+        double[] mx = new double[6];
+        xform.getMatrix(mx);
+        return () -> {
+            if (this.xform == null) {
+                this.xform = PooledTransform.getTranslateInstance(0, 0, this);
+                this.xform.setTransform(mx[0], mx[1], mx[2], mx[3], mx[4], mx[5]);
+            } else {
+                this.xform.setTransform(mx[0], mx[1], mx[2], mx[3], mx[4], mx[5]);
+            }
+        };
+    }
+
     @Override
     public Runnable restorableSnapshot() {
         Runnable tr = text.restorableSnapshot();
         Runnable fr = font.restorableSnapshot();
-        AffineTransform xf = xform == null ? null : new AffineTransform(xform);
+        Runnable xf = transformSnapshot();
         return () -> {
-            xform = xf;
+            xf.run();
             tr.run();
             fr.run();
             invalidateCachedShape();
@@ -142,7 +166,11 @@ public class Text implements Primitive, Vectors, Adjustable, Textual, Versioned 
     }
 
     public void setTransform(AffineTransform xform) {
-        this.xform = xform;
+        if (this.xform != null) {
+            this.xform.setTransform(xform);
+        } else {
+            this.xform = PooledTransform.copyOf(xform, this);
+        }
         change();
     }
 
@@ -270,11 +298,14 @@ public class Text implements Primitive, Vectors, Adjustable, Textual, Versioned 
         StringWrapper txt = text.copy();
         FontWrapper fnt = font.copy();
         if (xform != null) {
-            AffineTransform xf = new AffineTransform(xform);
-            xf.preConcatenate(transform);
-            return new Text(txt, fnt, xf);
+            return PooledTransform.lazyCopy(xform, (copy, ownerConsumer) -> {
+                copy.preConcatenate(transform);
+                Text result = new Text(txt, font, copy, false);
+                ownerConsumer.accept(result);
+                return result;
+            });
         }
-        Text result = new Text(txt, fnt, transform);
+        Text result = new Text(txt, fnt, transform, true);
         result.rev = rev;
         return result;
     }
@@ -283,11 +314,17 @@ public class Text implements Primitive, Vectors, Adjustable, Textual, Versioned 
     public Text copy() {
         StringWrapper txt = text.copy();
         FontWrapper fnt = font.copy();
-        Text result = new Text(txt, fnt, xform == null || xform.isIdentity()
-                ? null
-                : new AffineTransform(xform));
-        result.rev = rev;
-        return result;
+        if (xform == null) {
+            Text result = new Text(txt, fnt);
+            result.rev = rev;
+            return result;
+        }
+        return PooledTransform.lazyCopy(xform, (copy, ownerConsumer) -> {
+            Text result = new Text(txt, font, copy, false);
+            result.rev = rev + 1;
+            ownerConsumer.accept(result);
+            return result;
+        });
     }
 
     @Override
@@ -356,7 +393,7 @@ public class Text implements Primitive, Vectors, Adjustable, Textual, Versioned 
     @Override
     public String toString() {
         return "Text{" + "text=" + text + ", font=" + font + ' '
-                + GraphicsUtils.transformToString(xform) + '}';
+                + GeometryStrings.transformToString(xform) + '}';
     }
 
     private void invalidateCachedShape() {

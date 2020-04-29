@@ -72,6 +72,8 @@ import org.openide.util.Utilities;
 class AppPicture extends PictureImplementation {
     private LayersState state;
 
+    private final AspectRatio ratio = AspectRatio.create(this::getSize);
+
     public AppPicture(RepaintHandle handle, Dimension size) {
         addRepaintHandle (handle);
         state = new LayersState(this);
@@ -170,7 +172,7 @@ class AppPicture extends PictureImplementation {
         boolean result = false;
         for (Iterator i = state.layers.iterator(); i.hasNext(); ) {
             LayerImplementation l = (LayerImplementation)i.next();
-            result |= l.paint(goal, g, r, showSelection, r != null, zoom);
+            result |= l.paint(goal, g, r, showSelection, r != null, zoom, ratio);
         }
         return result;
     }
@@ -705,7 +707,7 @@ class AppPicture extends PictureImplementation {
                 if (allLayers) {
                     AppPicture.this.paint(RenderingGoal.PRODUCTION, g, null, false, Zoom.ONE_TO_ONE);
                 } else {
-                    layer.paint(RenderingGoal.PRODUCTION, g, null, false, false, Zoom.ONE_TO_ONE);
+                    layer.paint(RenderingGoal.PRODUCTION, g, null, false, false, Zoom.ONE_TO_ONE, aspectRatio);
                 }
                 g.dispose();
                 if (!isCut) {

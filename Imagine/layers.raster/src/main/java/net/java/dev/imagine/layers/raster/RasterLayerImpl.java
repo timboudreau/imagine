@@ -19,7 +19,6 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -39,7 +38,9 @@ import net.java.dev.imagine.api.image.Hibernator;
 import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.effects.spi.ImageSource;
 import net.java.dev.imagine.spi.image.LayerImplementation;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.Zoom;
+import org.imagine.geometry.util.PooledTransform;
 import org.imagine.utils.painting.RepaintHandle;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.imagine.utils.java2d.GraphicsUtils;
@@ -135,8 +136,13 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
     }
 
     @Override
-    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignoreVisibility, Zoom zoom) {
+    public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignoreVisibility, Zoom zoom, AspectRatio ratio) {
         if (!visible && !ignoreVisibility) {
+            return false;
+        }
+        if (!surface.isModified()) {
+            // XXX we should paint the background color provided at layer construction here,
+            // if any
             return false;
         }
         if (bounds != null) {
@@ -191,7 +197,7 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
         }
     }
     private List<PropertyChangeListener> listeners = Collections.<PropertyChangeListener>synchronizedList(
-            new ArrayList<PropertyChangeListener>());
+            new ArrayList<>());
 
     public void addPropertyChangeListener(PropertyChangeListener l) {
         listeners.add(l);
@@ -321,16 +327,16 @@ public class RasterLayerImpl extends LayerImplementation implements Hibernator {
         @Override
         public BufferedImage createImageCopy(Dimension size) {
             BufferedImage img = surface.getImage();
-            BufferedImage nue = new BufferedImage(size.width, size.height, GraphicsUtils.DEFAULT_BUFFERED_IMAGE_TYPE);
-            double w = size.width;
-            double h = size.height;
-            double xfactor = w / (double) img.getWidth();
-            double yfactor = h / (double) img.getHeight();
-            AffineTransform xform = AffineTransform.getScaleInstance(xfactor, yfactor);
-            Graphics2D g = nue.createGraphics();
-            g.drawRenderedImage(img, xform);
-            g.dispose();
-            return nue;
+
+            return GraphicsUtils.newBufferedImage(size.width, size.height, g -> {
+                double w = size.width;
+                double h = size.height;
+                double xfactor = w / (double) img.getWidth();
+                double yfactor = h / (double) img.getHeight();
+                PooledTransform.withScaleInstance(xfactor, yfactor, scale -> {
+                    g.drawRenderedImage(img, scale);
+                });
+            });
         }
 
     }

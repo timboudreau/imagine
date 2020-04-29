@@ -16,6 +16,7 @@ import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import net.dev.java.imagine.spi.tool.ToolImplementation;
+import net.dev.java.imagine.spi.tool.ToolUIContext;
 import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import static net.java.dev.imagine.api.toolcustomizers.Constants.FILL;
@@ -45,6 +46,7 @@ abstract class MultiStateTool extends ToolImplementation<Surface> implements Cus
     private InputHandler currentHandler = InputHandler.NO_OP;
     private boolean active;
     private Repainter repainter;
+    protected ToolUIContext ctx;
 
     public MultiStateTool(Surface obj) {
         super(obj);
@@ -63,9 +65,10 @@ abstract class MultiStateTool extends ToolImplementation<Surface> implements Cus
     }
 
     @Override
-    public final void attach(Lookup.Provider on) {
+    public final void attach(Lookup.Provider on, ToolUIContext ctx) {
         onAttach();
         active = true;
+        this.ctx = ctx;
         currentHandler = createInitialInputHandler();
     }
 
@@ -112,8 +115,9 @@ abstract class MultiStateTool extends ToolImplementation<Surface> implements Cus
         }
     }
 
-    protected static float zoomFactor() {
-        Zoom zoom = Utilities.actionsGlobalContext().lookup(Zoom.class);
+    protected float zoomFactor() {
+        Zoom zoom = ctx == null ? Utilities.actionsGlobalContext().lookup(Zoom.class)
+                : ctx.zoom();
         if (zoom != null) {
             zoom.getZoom();
         }
@@ -337,5 +341,4 @@ abstract class MultiStateTool extends ToolImplementation<Surface> implements Cus
             }
         }
     }
-
 }

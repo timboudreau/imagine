@@ -11,6 +11,7 @@ import com.mastfrog.function.DoubleSextaConsumer;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RectangularShape;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
 /**
@@ -23,8 +24,8 @@ public class EnhRectangle2D extends Rectangle2D.Double implements EnhancedShape,
     public EnhRectangle2D() {
     }
 
-    public EnhRectangle2D(double d, double d1, double d2, double d3) {
-        super(d, d1, d2, d3);
+    public EnhRectangle2D(double x, double y, double w, double h) {
+        super(x, y, w, h);
     }
 
     public EnhRectangle2D(EnhRectangle2D other) {
@@ -42,6 +43,11 @@ public class EnhRectangle2D extends Rectangle2D.Double implements EnhancedShape,
     public static EnhRectangle2D of(RectangularShape shape) {
         return shape instanceof EnhRectangle2D ? (EnhRectangle2D) shape
                 : new EnhRectangle2D(shape.getX(), shape.getY(), shape.getWidth(), shape.getHeight());
+    }
+
+    public void setLocation(Point2D loc) {
+        this.x = loc.getX();
+        this.y = loc.getY();
     }
 
     @Override
@@ -67,6 +73,10 @@ public class EnhRectangle2D extends Rectangle2D.Double implements EnhancedShape,
     @Override
     public EnhRectangle2D getBounds2D() {
         return copy();
+    }
+
+    public double diagonalLength() {
+        return Point2D.distance(x, y, x + width, y + height);
     }
 
     @Override
@@ -165,5 +175,9 @@ public class EnhRectangle2D extends Rectangle2D.Double implements EnhancedShape,
 
     public boolean isSquare() {
         return GeometryUtils.isSameCoordinate(width, height);
+    }
+
+    public String toString() {
+        return GeometryStrings.toString(this);
     }
 }

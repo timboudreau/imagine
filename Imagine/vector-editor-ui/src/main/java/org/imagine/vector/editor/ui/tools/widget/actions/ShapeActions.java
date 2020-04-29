@@ -50,6 +50,7 @@ import org.imagine.editor.api.grid.Grid;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.EqLine;
 import org.imagine.geometry.EqPointDouble;
+import org.imagine.geometry.util.PooledTransform;
 import org.imagine.vector.editor.ui.palette.PaintPalettes;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
@@ -321,7 +322,10 @@ public class ShapeActions {
                     double offY = center.y - cy;
                     if (offX != 0 || offY != 0) {
                         coll.edit(Bundle.opCenterOnCanvas(entry.getName()), entry, () -> {
-                            entry.applyTransform(AffineTransform.getTranslateInstance(-offX, -offY));
+                            PooledTransform.withTranslateInstance(-offX, -offY, xf -> {
+                                entry.applyTransform(xf);
+                            });
+//                            entry.applyTransform(AffineTransform.getTranslateInstance(-offX, -offY));
                         });
                     }
                 });
@@ -350,31 +354,51 @@ public class ShapeActions {
                     });
         });
 
+        AffineTransform testScale = AffineTransform.getScaleInstance(-1, 1);
         actions.action(Bundle.actionFlipHorizontal())
                 .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_F, 0))
                 .sensitiveTo(ShapesCollection.class).sensingPresence()
                 .sensitiveTo(ShapeElement.class)
                 .testingEach(el -> {
-                    return el.canApplyTransform(AffineTransform.getScaleInstance(-1, 1));
+                    return el.canApplyTransform(testScale);
                 }).finish((shapes, el) -> {
             shapes.edit(Bundle.opFlipHorizontal(), el, () -> {
                 Rectangle2D.Double origBounds = new Rectangle2D.Double();
                 el.addToBounds(origBounds);
-                AffineTransform xf = AffineTransform.getScaleInstance(-1, 1);
-                if (el.item().is(Text.class) && el.item().as(Text.class).transform() == null) {
-                    // This works only for text, which internally diddles
-                    // with transforms
-                    el.applyTransform(xf);
-                    el.changed();
-                    el.applyTransform(AffineTransform.getTranslateInstance((-origBounds.getX() * 2) - origBounds.getWidth(), 0));
-                    el.changed();
-                } else {
-                    // XXX if a PathIteratorWrapper, maybe center
-                    // on the non-virtual points?
-                    el.applyTransform(xf);
-                    el.changed();
-                    el.translate((origBounds.x * 2) + origBounds.width, 0);
-                }
+                PooledTransform.withScaleInstance(-1, 1, xf -> {
+                    if (el.item().is(Text.class) && el.item().as(Text.class).transform() == null) {
+                        // This works only for text, which internally diddles
+                        // with transforms
+                        el.applyTransform(xf);
+                        el.changed();
+                        PooledTransform.withTranslateInstance((-origBounds.getX() * 2) - origBounds.getWidth(), 0, xl -> {
+                            el.applyTransform(xl);
+                        });
+                        el.applyTransform(AffineTransform.getTranslateInstance((-origBounds.getX() * 2) - origBounds.getWidth(), 0));
+                        el.changed();
+                    } else {
+                        // XXX if a PathIteratorWrapper, maybe center
+                        // on the non-virtual points?
+                        el.applyTransform(xf);
+                        el.changed();
+                        el.translate((origBounds.x * 2) + origBounds.width, 0);
+                    }
+                });
+//                AffineTransform xf = AffineTransform.getScaleInstance(-1, 1);
+//                if (el.item().is(Text.class) && el.item().as(Text.class).transform() == null) {
+//                    // This works only for text, which internally diddles
+//                    // with transforms
+//                    el.applyTransform(xf);
+//                    el.changed();
+//                    el.applyTransform(AffineTransform.getTranslateInstance((-origBounds.getX() * 2) - origBounds.getWidth(), 0));
+//                    el.changed();
+//                } else {
+//                    // XXX if a PathIteratorWrapper, maybe center
+//                    // on the non-virtual points?
+//                    el.applyTransform(xf);
+//                    el.changed();
+//                    el.translate((origBounds.x * 2) + origBounds.width, 0);
+//                }
                 ctrl.shapeGeometryChanged(el);
             }).hook(() -> {
                 ctrl.shapeGeometryChanged(el);
@@ -386,27 +410,46 @@ public class ShapeActions {
                 .sensitiveTo(ShapesCollection.class).sensingPresence()
                 .sensitiveTo(ShapeElement.class)
                 .testingEach(el -> {
-                    return el.canApplyTransform(AffineTransform.getScaleInstance(1, -1));
+                    return el.canApplyTransform(testScale);
                 }).finish((shapes, el) -> {
             shapes.edit(Bundle.opFlipVertical(), el, () -> {
                 Rectangle2D.Double origBounds = new Rectangle2D.Double();
                 el.addToBounds(origBounds);
-                AffineTransform xf = AffineTransform.getScaleInstance(1, -1);
-                if (el.item().is(Text.class) && el.item().as(Text.class).transform() == null) {
-                    // This works only for text, which internally diddles
-                    // with transforms
-                    el.applyTransform(xf);
-                    el.changed();
-                    el.applyTransform(AffineTransform.getTranslateInstance(0, (-origBounds.getY() * 2) - origBounds.getHeight()));
-                    el.changed();
-                } else {
-                    // XXX if a PathIteratorWrapper, maybe center
-                    // on the non-virtual points?
-                    el.applyTransform(xf);
-                    el.changed();
-                    el.translate(0, (origBounds.y * 2) + origBounds.height);
-
-                }
+                PooledTransform.withScaleInstance(1, -1, xf -> {
+                    if (el.item().is(Text.class) && el.item().as(Text.class).transform() == null) {
+                        // This works only for text, which internally diddles
+                        // with transforms
+                        el.applyTransform(xf);
+                        el.changed();
+                        PooledTransform.withTranslateInstance(0, (-origBounds.getY() * 2) - origBounds.getHeight(), xlate -> {
+                            el.applyTransform(xlate);
+                        });
+//                        el.applyTransform(AffineTransform.getTranslateInstance(0, (-origBounds.getY() * 2) - origBounds.getHeight()));
+                        el.changed();
+                    } else {
+                        // XXX if a PathIteratorWrapper, maybe center
+                        // on the non-virtual points?
+                        el.applyTransform(xf);
+                        el.changed();
+                        el.translate(0, (origBounds.y * 2) + origBounds.height);
+                    }
+                });
+//                AffineTransform xf = AffineTransform.getScaleInstance(1, -1);
+//                if (el.item().is(Text.class) && el.item().as(Text.class).transform() == null) {
+//                    // This works only for text, which internally diddles
+//                    // with transforms
+//                    el.applyTransform(xf);
+//                    el.changed();
+//                    el.applyTransform(AffineTransform.getTranslateInstance(0, (-origBounds.getY() * 2) - origBounds.getHeight()));
+//                    el.changed();
+//                } else {
+//                    // XXX if a PathIteratorWrapper, maybe center
+//                    // on the non-virtual points?
+//                    el.applyTransform(xf);
+//                    el.changed();
+//                    el.translate(0, (origBounds.y * 2) + origBounds.height);
+//
+//                }
                 ctrl.shapeGeometryChanged(el);
             }).hook(() -> {
                 ctrl.shapeGeometryChanged(el);
@@ -509,7 +552,7 @@ public class ShapeActions {
                 a.action(name).sensitiveTo(ShapeElement.class)
                         .testingAll(shapes -> {
                             for (ShapeElement el : shapes) {
-                                if (!el.canApplyTransform(xform)) {
+                                if (!el.canApplyTransform(testScale)) {
                                     return false;
                                 }
                             }

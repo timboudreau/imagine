@@ -5,6 +5,7 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import javax.swing.BorderFactory;
@@ -110,6 +111,19 @@ public final class InspectorTopComponent extends TopComponent implements TriCons
     }
 
     @Override
+    public void componentOpened() {
+        // do nothing
+    }
+
+    @Override
+    public void componentClosed() {
+        active = false;
+        apply(Lookup.EMPTY, Collections.emptyList(), Collections.emptyList());
+        fontManagingPanel.removeAll();
+    }
+
+
+    @Override
     public void apply(Lookup lkp, List<? extends InspectorFactory<?>> removed, List<? extends InspectorFactory<?>> added) {
         if (active) {
             // Otherwise, changing focus to this component will clobber
@@ -152,16 +166,6 @@ public final class InspectorTopComponent extends TopComponent implements TriCons
             }
         }
         return any;
-    }
-
-    @Override
-    public void componentOpened() {
-        // do nothing
-    }
-
-    @Override
-    public void componentClosed() {
-        // do nothing
     }
 
     @Override

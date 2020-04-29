@@ -4,12 +4,13 @@ import com.mastfrog.util.collections.ArrayUtils;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
 import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.support.AbstractLayerImplementation;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.Zoom;
+import org.imagine.geometry.util.PooledTransform;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
@@ -34,6 +35,7 @@ final class VectorLayer extends AbstractLayerImplementation {
     VectorLayer(String name, RepaintHandle handle, Dimension canvasSize, VectorLayerFactory factory, Shapes shapes) {
         super(factory, true, name);
         this.canvasSize = canvasSize;
+        assert canvasSize != null : "Null canvas size";
         this.shapes = shapes;
         repainter = handle;
         addRepaintHandle(handle);
@@ -117,8 +119,7 @@ final class VectorLayer extends AbstractLayerImplementation {
         double nh = height;
         double xfactor = nw / ow;
         double yfactor = nh / oh;
-        AffineTransform xform = AffineTransform.getScaleInstance(xfactor, yfactor);
-        shapes.applyTransform(xform);
+        PooledTransform.withScaleInstance(xfactor, yfactor, shapes::applyTransform);
     }
 
     @Override
@@ -131,7 +132,8 @@ final class VectorLayer extends AbstractLayerImplementation {
     }
 
     @Override
-    protected boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, Zoom zoom) {
+    protected boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, 
+            boolean showSelection, Zoom zoom, AspectRatio ratio) {
         if (bounds != null) {
             if (bounds.isEmpty()) {
                 return false;
@@ -145,7 +147,7 @@ final class VectorLayer extends AbstractLayerImplementation {
         }
         boolean result = false;
         if (!surface.toolIsPaintingScene()) {
-            result = shapes.paint(goal, g, bounds, zoom);
+            result = shapes.paint(goal, g, bounds, zoom, ratio);
         }
         if (goal.isEditing()) {
             result |= surface.paint(goal, g, bounds, zoom);

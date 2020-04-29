@@ -3,9 +3,11 @@ package net.dev.java.imagine.api.tool;
 import java.awt.Toolkit;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.imagine.editor.api.ContextLog;
 import org.netbeans.api.annotations.common.NonNull;
 import org.openide.util.Lookup;
 import org.openide.util.Parameters;
@@ -61,6 +63,7 @@ public class SelectedTool {
         return selected != null && toolName.equals(selected.getName());
     }
 
+    private static final ContextLog CLOG = ContextLog.get("selection");
     /**
      * Set the selected tool
      * @param selectedTool The selected tool
@@ -68,9 +71,10 @@ public class SelectedTool {
     public final void setSelectedTool(Tool selectedTool) {
         //XXX use an accessor and hide this method?
 //        assert EventQueue.isDispatchThread() : "Not on EQ thread";
-        if (selected != null && selected.equals(selectedTool) || (selected == null && selectedTool == null)) {
+        if (Objects.equals(selected, selectedTool)) {
             return;
         }
+        CLOG.log("setSelectedTool " + selectedTool);
         Tool old = selected;
         if (onChange(old, selectedTool)) {
             if (old != null) {

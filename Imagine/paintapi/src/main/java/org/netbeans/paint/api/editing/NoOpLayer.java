@@ -24,6 +24,7 @@ import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.Zoom;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.Lookup;
@@ -187,7 +188,7 @@ final class NoOpLayer extends LayerFactory {
         }
 
         @Override
-        public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignoreVisibility, Zoom zoom) {
+        public boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, boolean showSelection, boolean ignoreVisibility, Zoom zoom, AspectRatio ratio) {
             g.setColor(new Color(136, 50, 50));
             Rectangle r = getBounds();
             g.fill(r);

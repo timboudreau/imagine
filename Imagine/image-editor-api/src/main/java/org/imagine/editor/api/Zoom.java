@@ -52,8 +52,8 @@ public interface Zoom {
     }
 
     default AffineTransform getInverseTransform() {
-        float zoom = getZoom();
-        return AffineTransform.getScaleInstance(1D / zoom, 1D / zoom);
+        double factor = 1D / getZoom();
+        return AffineTransform.getScaleInstance(factor, factor);
     }
 
     default BasicStroke getStroke(double val) {
@@ -68,10 +68,28 @@ public interface Zoom {
         return getStroke(1);
     }
 
+    default boolean isOneToOne() {
+        return getZoom() == 1F;
+    }
+
     public static Zoom ONE_TO_ONE = new Zoom() {
+        private final AffineTransform xform = new AffineTransform();
+
         @Override
         public float getZoom() {
             return 1;
+        }
+
+        @Override
+        public AffineTransform getZoomTransform() {
+            xform.setToIdentity();
+            return xform;
+        }
+
+        @Override
+        public AffineTransform getInverseTransform() {
+            xform.setToIdentity();
+            return xform;
         }
 
         @Override

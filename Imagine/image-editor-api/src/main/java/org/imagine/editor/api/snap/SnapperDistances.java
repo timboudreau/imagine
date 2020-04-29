@@ -60,7 +60,7 @@ final class SnapperDistances extends BasicSnapper {
             result = result2;
         }
         if (result != null) {
-            System.out.println("SNAP DISTANCE + " + result + " for " + axis);
+//            System.out.println("SNAP DISTANCE + " + result + " for " + axis);
         }
         return result;
     }
@@ -130,7 +130,7 @@ final class SnapperDistances extends BasicSnapper {
         if (xPoint == null && yPoint == null) {
             return false;
         }
-        System.out.println("Snap of " + lv + " gets " + xPoint + ", " + yPoint);
+//        System.out.println("Snap of " + lv + " gets " + xPoint + ", " + yPoint);
         boolean result = false;
         if (xPoint != null || yPoint != null) {
             result = snapHandler.test(xPoint, yPoint);

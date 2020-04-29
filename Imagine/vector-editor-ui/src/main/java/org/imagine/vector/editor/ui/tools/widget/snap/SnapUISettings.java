@@ -3,6 +3,7 @@ package org.imagine.vector.editor.ui.tools.widget.snap;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Paint;
+import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.SnapKind;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
@@ -101,15 +102,40 @@ public class SnapUISettings {
     }
 
     public Paint drawColor(SnapKind kind, ShapeElement selection) {
-        return new Color(60, 60, 80, 182);
+        switch (ImageEditorBackground.getDefault().style()) {
+            case LIGHT:
+                return new Color(60, 60, 80, 182);
+            default:
+                return new Color(180, 180, 255, 182);
+        }
+    }
+
+    public Paint drawShadowColor(SnapKind kind, ShapeElement selection) {
+        switch (ImageEditorBackground.getDefault().style()) {
+            case LIGHT:
+                return new Color(255, 255, 255, 182);
+            default:
+                return new Color(100, 100, 100, 182);
+        }
     }
 
     public Paint captionColor(SnapKind kind) {
-        return new Color(80, 80, 80, 140);
+        switch (ImageEditorBackground.getDefault().style()) {
+            case LIGHT:
+                return new Color(80, 80, 80, 140);
+            default:
+                return new Color(255, 255, 255, 220);
+        }
+
     }
 
     public Paint captionFillColor(SnapKind kind) {
-        return new Color(255, 255, 255, 180);
+        switch (ImageEditorBackground.getDefault().style()) {
+            case LIGHT:
+                return new Color(255, 255, 255, 180);
+            default:
+                return new Color(10, 10, 10, 200);
+        }
     }
 
     public Paint originFillColor(SnapKind kind, ShapeElement selection) {
@@ -122,10 +148,6 @@ public class SnapUISettings {
 
     public Paint indicatorLineColor(SnapKind kind, ShapeElement selection) {
         return new Color(100, 100, 130, 140);
-    }
-
-    public Paint drawShadowColor(SnapKind kind, ShapeElement selection) {
-        return new Color(255, 255, 255, 182);
     }
 
     public double drawShadowOffset(SnapKind kind, Zoom zoom) {

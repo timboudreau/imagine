@@ -10,20 +10,20 @@ package org.netbeans.paint.tools;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Surface;
 import org.imagine.geometry.Circle;
 import static org.netbeans.paint.tools.RectangleTool.strokeC;
 import org.imagine.editor.api.PaintingStyle;
+import org.imagine.geometry.EnhRectangle2D;
 import org.openide.util.NbBundle;
 
 /**
  *
  * @author Tim Boudreau
  */
-@ToolDef(name = "Circle", iconPath = "org/netbeans/paint/tools/resources/circle.png")
+@ToolDef(name = "Circle", iconPath = "org/netbeans/paint/tools/resources/circle.svg")
 @Tool(Surface.class)
 public class CircleTool extends RectangleTool {
 
@@ -37,7 +37,7 @@ public class CircleTool extends RectangleTool {
     }
 
     @Override
-    protected void draw(Rectangle toPaint, Graphics2D g2d, PaintingStyle style) {
+    protected void draw(EnhRectangle2D toPaint, Graphics2D g2d, PaintingStyle style) {
         Circle circ = new Circle(toPaint.getCenterX(), toPaint.getCenterY(),
                 Math.min(toPaint.getWidth(), toPaint.getHeight()));
         if (style.isFill()) {

@@ -10,7 +10,6 @@ package org.netbeans.paint.tools;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import net.dev.java.imagine.spi.tool.Tool;
@@ -19,13 +18,15 @@ import net.java.dev.imagine.api.image.Surface;
 import org.imagine.geometry.Rhombus;
 import static org.netbeans.paint.tools.RectangleTool.strokeC;
 import org.imagine.editor.api.PaintingStyle;
+import org.imagine.geometry.EnhRectangle2D;
+import org.imagine.geometry.EqPointDouble;
 import org.openide.util.NbBundle;
 
 /**
  *
  * @author Tim Boudreau
  */
-@ToolDef(name = "Rhombus", iconPath = "org/netbeans/paint/tools/resources/rhombus.png")
+@ToolDef(name = "Rhombus", iconPath = "org/netbeans/paint/tools/resources/rhombus.svg")
 @Tool(Surface.class)
 public class RhombusTool extends RectangleTool {
 
@@ -41,7 +42,7 @@ public class RhombusTool extends RectangleTool {
     }
 
     @Override
-    protected void draw(Rectangle toPaint, Graphics2D g2d, PaintingStyle style) {
+    protected void draw(EnhRectangle2D toPaint, Graphics2D g2d, PaintingStyle style) {
         Rhombus rhom = new Rhombus(toPaint, rotation);
         if (style.isFill()) {
             g2d.setPaint(paintC.get().getPaint());
@@ -57,24 +58,24 @@ public class RhombusTool extends RectangleTool {
     private Point2D startPoint;
 
     @Override
-    public void mousePressed(MouseEvent e) {
-        startPoint = e.getPoint();
-        super.mousePressed(e);
+    public void mousePressed(double x, double y, MouseEvent e) {
+        startPoint = new EqPointDouble(x, y);
+        super.mousePressed(x, y, e);
     }
 
     @Override
-    public void mouseDragged(MouseEvent e) {
+    public void mouseDragged(double x, double y, MouseEvent e) {
         if (e.isShiftDown() && startPoint != null) {
             double dist = startPoint.distance(e.getPoint());
             rotation = dist;
             e.consume();
         }
-        super.mouseDragged(e);
+        super.mouseDragged(x, y, e);
     }
 
     @Override
-    public void mouseReleased(MouseEvent e) {
-        super.mouseReleased(e);
+    public void mouseReleased(double x, double y, MouseEvent e) {
+        super.mouseReleased(x, y, e);
         startPoint = null;
     }
 }

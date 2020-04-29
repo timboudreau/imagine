@@ -43,6 +43,7 @@ import org.imagine.editor.api.snap.Thresholds;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.LineVector;
+import org.imagine.geometry.util.PooledTransform;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.ShapeEntry;
 import org.imagine.vector.editor.ui.ShapeSnapPointEntry;
@@ -138,16 +139,18 @@ public class DesignWidgetManager implements DesignerControl {
     private Widget temporaryDragImageWidget;
     private final ShapeActions shapeActions = new ShapeActions(this);
     private final Thresholds thresholds;
+    private final SceneZoom sceneZoom;
 
     public DesignWidgetManager(Scene scene, ShapesCollection coll, MutableProxyLookup lookup) {
         this.scene = scene;
         this.shapes = coll;
         this.selectionLookup = lookup;
+        sceneZoom = new SceneZoom();
         focusAction = new FocusAction(selectionLookup, this::onFocusedWidgetChanged);
         moveAction = new MoveInSceneCoordinateSpaceAction();
 //        popupAction = ShapePopupActions.popupMenuAction(this);
         popupAction = shapeActions.popupMenuAction();
-        thresholds = new ThresholdsOverZoom(new SceneZoom());
+        thresholds = new ThresholdsOverZoom(sceneZoom);
     }
 
     public DesignWidgetManager(Scene scene, ShapesCollection coll) {
@@ -169,6 +172,23 @@ public class DesignWidgetManager implements DesignerControl {
     }
 
     class SceneZoom implements Zoom, Supplier<Zoom> {
+
+        private final AffineTransform xform = PooledTransform.get(this);
+        private final AffineTransform inverse = PooledTransform.get(this);
+
+        @Override
+        public AffineTransform getZoomTransform() {
+            double z = scene.getZoomFactor();
+            xform.setToScale(z, z);
+            return xform;
+        }
+
+        @Override
+        public AffineTransform getInverseTransform() {
+            double z = 1D / scene.getZoomFactor();
+            inverse.setToScale(z, z);
+            return inverse;
+        }
 
         @Override
         public float getZoom() {
@@ -207,10 +227,9 @@ public class DesignWidgetManager implements DesignerControl {
         nextPrevKeyAction = new NextPrevKeyAction(new NextPrevProviderImpl(selectionLookup, widget, this::onFocusedWidgetChanged));
         LayerWidget selectionLayer = new LayerWidget(scene);
 
-        SceneZoom fakeZoom = new SceneZoom();
 //        widget.addChild(snapLayer = new SnapDecorationsLayer(scene));
         widget.addChild(snapLayer = new SnapDecorationsLayer2(scene,
-                new SceneRepaintHandle(), selectionLookup, fakeZoom));
+                new SceneRepaintHandle(), selectionLookup, sceneZoom));
 
 //        widget.parentFor(ShapeElement.class).getActions().addAction(shapeAcceptAction);
         widget.addPriorAction(shapeAcceptAction);
@@ -641,7 +660,7 @@ public class DesignWidgetManager implements DesignerControl {
     OneShapeWidget createShapeWidget(Scene scene, ShapeElement entry) {
         OneShapeWidget result = new OneShapeWidget(scene, entry, shapes,
                 props.decorationController(), shapeDrag, uiState,
-                shapeKeyHandler);
+                shapeKeyHandler, widget.aspectRatio());
         WidgetAction.Chain actions = result.getActions();
         actions.addAction(popupAction);
         actions.addAction(nextPrevKeyAction);
@@ -1040,14 +1059,16 @@ public class DesignWidgetManager implements DesignerControl {
             double origAngle = Circle.angleOf(center, original);
             double currentAngle = Circle.angleOf(center, current);
             double diff = currentAngle - origAngle;
-            return AffineTransform.getRotateInstance(Math.toRadians(diff),
-                    center.getX(), center.getY());
+            return PooledTransform.getRotateInstance(Math.toRadians(diff),
+                    center.getX(), center.getY(), null);
         }
 
         private void updateRotation(Point2D original, Point2D current, OneShapeWidget el) {
             ShapeElement temp = currentProxyControlPoint.owner();
             Shaped orig = el.realShape().item();
-            Shaped rotated = (Shaped) orig.as(Transformable.class).copy(angle(original, current, el));
+            AffineTransform xform = angle(original, current, el);
+            Shaped rotated = (Shaped) orig.as(Transformable.class).copy(xform);
+            PooledTransform.returnToPool(xform);
             assert el.realShape() != temp : "Have original, not temporary copy to edit";
             temp.setShape(rotated);
             el.revalidate();

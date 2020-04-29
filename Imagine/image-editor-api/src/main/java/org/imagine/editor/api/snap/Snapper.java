@@ -34,6 +34,9 @@ abstract class Snapper {
             SnapPoints<T> pts, BiPredicate<SnapCoordinate<T>, SnapCoordinate<T>> snapHandler);
 
     protected final <T> boolean visitMiddleOut(DoubleMap<T> map, double min, double max, DoubleMapPredicate<T> c) {
+        if (map.isEmpty()) {
+            return false;
+        }
         return map.visitMiddleOut(min, max, c);
     }
 

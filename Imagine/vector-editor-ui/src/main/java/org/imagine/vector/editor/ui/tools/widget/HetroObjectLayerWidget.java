@@ -5,6 +5,7 @@
  */
 package org.imagine.vector.editor.ui.tools.widget;
 
+import java.awt.Dimension;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,6 +20,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.Zoom;
 import org.imagine.vector.editor.ui.spi.LayerRenderingWidget;
 import org.imagine.vector.editor.ui.tools.widget.util.ViewL;
@@ -52,6 +54,9 @@ public class HetroObjectLayerWidget extends LayerWidget implements LayerRenderin
     private final Lookup lkp;
     private boolean added;
     private List<WidgetAction> priorActions = new ArrayList<>();
+    private AspectRatio aspectRatio = AspectRatio.create(() -> {
+        return new Dimension(640, 480);
+    });
 
     private HetroObjectLayerWidget(WidgetFactory factory, Scene scene, List<LayerWidget> layers, Lookup lkp) {
         super(scene);
@@ -63,6 +68,16 @@ public class HetroObjectLayerWidget extends LayerWidget implements LayerRenderin
     @Override
     public Lookup getLookup() {
         return lkp;
+    }
+
+    public AspectRatio aspectRatio() {
+        return aspectRatio;
+    }
+
+    @Override
+    public SetterResult setAspectRatio(AspectRatio ratio) {
+        this.aspectRatio = ratio;
+        return SetterResult.HANDLED;
     }
 
     @Override

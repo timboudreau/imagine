@@ -21,7 +21,7 @@
                 <plugin>
                     <groupId>org.apache.netbeans.utilities</groupId>
                     <artifactId>nbm-maven-plugin</artifactId>
-                    <version>4.4</version>
+                    <version>4.5</version>
                     <extensions>true</extensions>
                     <configuration>
                         <branding.token>${nbcluster}</branding.token>
@@ -70,7 +70,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.1.1</version>
+                    <version>3.2.0</version>
                     <configuration>
                         <overview>${basedir}/src/main/javadoc/overview.html</overview>
                         <quiet>true</quiet>
@@ -343,6 +343,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.sun.activation</groupId>
+                <artifactId>javax.activation</artifactId>
+                <version>1.2.0</version>
+            </dependency>
+            <dependency>
                 <groupId>com.jhlabs</groupId>
                 <artifactId>filters</artifactId>
                 <version>2.0.235-1</version>
@@ -470,19 +475,19 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
-                <version>5.5.2</version>
+                <version>5.6.2</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-params</artifactId>
-                <version>5.5.2</version>
+                <version>5.6.2</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>5.5.2</version>
+                <version>5.6.2</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

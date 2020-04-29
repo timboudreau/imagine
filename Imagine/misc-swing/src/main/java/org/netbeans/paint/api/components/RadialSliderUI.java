@@ -26,7 +26,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
@@ -40,6 +39,7 @@ import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.SliderUI;
+import org.imagine.geometry.util.PooledTransform;
 
 /**
  *
@@ -179,20 +179,22 @@ public class RadialSliderUI extends SliderUI {
         Rectangle2D textAreaBounds = circ.halfBounds(Quadrant.forAngle(angle).opposite(), false, true);
         double widthFactor = textAreaBounds.getWidth() / txtW;
         double heightFactor = textAreaBounds.getHeight() / txtH;
-        font = font.deriveFont(AffineTransform.getScaleInstance(widthFactor, heightFactor));
-        fm = g.getFontMetrics(font);
-        double txtTop = textAreaBounds.getCenterY() + (fm.getHeight() / (north ? -2D : 2D));
-        if (!north) {
-            txtTop = textAreaBounds.getCenterY() + (fm.getHeight() / 2D);
-        } else {
-            txtTop = textAreaBounds.getCenterY();
-        }
-        double txtX = textAreaBounds.getX();
-        g.setFont(font);
-        Color fg = slider.getForeground();
-        fg = new Color(fg.getRed(), fg.getGreen(), fg.getBlue(), 128);
-        g.setColor(fg);
-        g.drawString(txt, (float) txtX, (float) txtTop);
+        PooledTransform.withScaleInstance(widthFactor, heightFactor, xform -> {
+            Font fontFinal = font.deriveFont(xform);
+            FontMetrics fmFinal = g.getFontMetrics(fontFinal);
+            double txtTop = textAreaBounds.getCenterY() + (fmFinal.getHeight() / (north ? -2D : 2D));
+            if (!north) {
+                txtTop = textAreaBounds.getCenterY() + (fmFinal.getHeight() / 2D);
+            } else {
+                txtTop = textAreaBounds.getCenterY();
+            }
+            double txtX = textAreaBounds.getX();
+            g.setFont(fontFinal);
+            Color fg = slider.getForeground();
+            fg = new Color(fg.getRed(), fg.getGreen(), fg.getBlue(), 128);
+            g.setColor(fg);
+            g.drawString(txt, (float) txtX, (float) txtTop);
+        });
     }
 
     private void drawSmallCaption(Graphics2D g, JSlider slider, double angle, SliderState state, Circle circ) {
@@ -237,18 +239,21 @@ public class RadialSliderUI extends SliderUI {
         Rectangle2D textAreaBounds = circ.outBounds(quad);
         double widthFactor = textAreaBounds.getWidth() / txtW;
         double heightFactor = textAreaBounds.getHeight() / txtH;
-        font = font.deriveFont(AffineTransform.getScaleInstance(widthFactor, heightFactor));
-        fm = g.getFontMetrics(font);
-        double txtTop;
-        if (!north) {
-            txtTop = textAreaBounds.getCenterY() + (fm.getDescent() / 1D);
-        } else {
-            txtTop = textAreaBounds.getCenterY() + (fm.getHeight() / 2D);
-        }
-        double txtX = textAreaBounds.getX();
-        g.setFont(font);
-        g.setColor(lineColor.darker());
-        g.drawString(txt, (float) txtX, (float) txtTop);
+
+        PooledTransform.withScaleInstance(widthFactor, heightFactor, xform -> {
+            Font fontFinal = font.deriveFont(xform);
+            FontMetrics fmFinal = g.getFontMetrics(fontFinal);
+            double txtTop;
+            if (!north) {
+                txtTop = textAreaBounds.getCenterY() + (fmFinal.getDescent() / 1D);
+            } else {
+                txtTop = textAreaBounds.getCenterY() + (fmFinal.getHeight() / 2D);
+            }
+            double txtX = textAreaBounds.getX();
+            g.setFont(fontFinal);
+            g.setColor(lineColor.darker());
+            g.drawString(txt, (float) txtX, (float) txtTop);
+        });
     }
 
     private interface LC {

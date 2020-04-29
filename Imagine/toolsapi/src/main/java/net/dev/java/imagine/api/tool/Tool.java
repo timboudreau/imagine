@@ -8,6 +8,7 @@ import javax.swing.Icon;
 import net.dev.java.imagine.spi.tool.ToolDefinition;
 import net.dev.java.imagine.spi.tool.ToolDriver;
 import net.dev.java.imagine.spi.tool.ToolImplementation;
+import net.dev.java.imagine.spi.tool.ToolUIContext;
 import net.dev.java.imagine.spi.tool.impl.DefaultTools;
 import net.dev.java.imagine.spi.tool.impl.ToolFactory;
 import org.openide.filesystems.FileObject;
@@ -90,7 +91,12 @@ public final class Tool {
         return lookup;
     }
     private ToolImplementation<?> current = null;
-    
+
+
+    public boolean attach(Lookup.Provider layer) {
+        new Exception("Call attach(Lookup.Provider, ToolUIContext instead").printStackTrace();
+        return attach(layer, ToolUIContext.DUMMY_INSTANCE);
+    }
     /**
      * Attach this tool to a Layer (or other Lookup.Provider).  This
      * signals that the tool is about to be used.
@@ -98,9 +104,9 @@ public final class Tool {
      * @param layer The layer
      * @return True if attachment succeeds
      */
-    public boolean attach(Lookup.Provider layer) {
+    public boolean attach(Lookup.Provider layer, ToolUIContext ctx) {
         ToolImplementation<?> impl = getImplementation(layer);
-        ToolImplementation<?> old = null;
+        ToolImplementation<?> old;
         synchronized (lock) {
             old = current;
             if (impl == current) {
@@ -114,7 +120,7 @@ public final class Tool {
         }
         if (impl != null) {
             lookup.set(impl.getLookup());
-            impl.attach(layer);
+            impl.attach(layer, ctx);
         } else {
             lookup.set(null);
         }
@@ -137,6 +143,13 @@ public final class Tool {
 
     public boolean canAttach(Lookup.Provider layer) {
         return getImplementation(layer) != null;
+    }
+
+    public boolean isAttachedTo(Lookup.Provider layer) {
+        if (current == null) {
+            return false;
+        }
+        return current == getImplementation(layer);
     }
 
     private ToolImplementation<?> getImplementation(Lookup.Provider layer) {

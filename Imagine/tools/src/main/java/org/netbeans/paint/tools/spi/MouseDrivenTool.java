@@ -21,6 +21,7 @@ import net.dev.java.imagine.api.tool.aspects.Attachable;
 import net.java.dev.imagine.api.image.Layer;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
+import net.dev.java.imagine.spi.tool.ToolUIContext;
 import net.java.dev.imagine.api.image.Surface;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
@@ -35,20 +36,22 @@ import org.openide.util.lookup.Lookups;
  * 
  * @author Timothy Boudreau
  */
-public abstract class MouseDrivenTool extends MouseAdapter implements /*Tool,*/ MouseMotionListener, Attachable {
+public abstract class MouseDrivenTool extends MouseAdapter implements MouseMotionListener, Attachable {
 
     private JComponent customizer = null;
     private final ChangeSupport changes = new ChangeSupport(this);
     protected Surface surface;
     protected Lookup.Provider layer;
+    private ToolUIContext ctx;
     
     protected MouseDrivenTool(Surface surface) {
         this.surface = surface;
     }
 
-    public final void attach(Lookup.Provider layer) {
+    public final void attach(Lookup.Provider layer, ToolUIContext ctx) {
         activated(layer.getLookup().lookup(Layer.class));
         this.layer = layer;
+        this.ctx = ctx;
     }
 
     protected void activated(Layer layer) {
@@ -60,6 +63,7 @@ public abstract class MouseDrivenTool extends MouseAdapter implements /*Tool,*/ 
     
     protected void deactivated() {
         this.layer = null;
+        this.ctx = null;
     }
 
     public final void detach() {

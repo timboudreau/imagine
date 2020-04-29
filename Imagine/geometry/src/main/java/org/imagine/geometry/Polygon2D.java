@@ -48,6 +48,7 @@ import javax.swing.JFrame;
 import static javax.swing.JFrame.EXIT_ON_CLOSE;
 import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
+import org.imagine.geometry.util.PooledTransform;
 
 /**
  * A polygon which implements EnhancedShape to provide decoration-friendly
@@ -741,7 +742,7 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
             g.setStroke(new BasicStroke(2));
             g.draw(shape);
 
-            g.setFont(g.getFont().deriveFont(AffineTransform.getScaleInstance(0.6, 0.6)));
+            g.setFont(g.getFont().deriveFont(PooledTransform.getScaleInstance(0.6, 0.6, gr)));
 
             Circle circ = new Circle(0, 0, 3);
             g.setColor(Color.WHITE);

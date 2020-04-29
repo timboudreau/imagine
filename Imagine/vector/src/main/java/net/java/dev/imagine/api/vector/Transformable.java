@@ -6,6 +6,7 @@
 package net.java.dev.imagine.api.vector;
 
 import java.awt.geom.AffineTransform;
+import org.imagine.geometry.util.PooledTransform;
 
 /**
  *
@@ -20,11 +21,13 @@ public interface Transformable extends Primitive {
     }
 
     default void applyScale(double scale) {
-        applyTransform(AffineTransform.getScaleInstance(scale, scale));
+        PooledTransform.withScaleInstance(scale, scale, this::applyTransform);
+//        applyTransform(AffineTransform.getScaleInstance(scale, scale));
     }
 
     default void applyScale(double scaleX, double scaleY) {
-        applyTransform(AffineTransform.getScaleInstance(scaleX, scaleY));
+        PooledTransform.withScaleInstance(scaleX, scaleY, this::applyTransform);
+//        applyTransform(AffineTransform.getScaleInstance(scaleX, scaleY));
     }
 
     /**
@@ -40,6 +43,7 @@ public interface Transformable extends Primitive {
         if (x == 0D && y == 0D) {
             return;
         }
-        applyTransform(AffineTransform.getTranslateInstance(x, y));
+        PooledTransform.withTranslateInstance(x, y, this::applyTransform);
+//        applyTransform(AffineTransform.getTranslateInstance(x, y));
     }
 }

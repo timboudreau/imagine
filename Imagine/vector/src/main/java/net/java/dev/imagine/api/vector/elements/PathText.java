@@ -46,10 +46,11 @@ import org.imagine.geometry.util.DoubleList;
 import org.imagine.geometry.util.GeometryUtils;
 import org.imagine.utils.java2d.GraphicsUtils;
 import static org.imagine.utils.java2d.GraphicsUtils.transformHashCode;
-import static org.imagine.utils.java2d.GraphicsUtils.transformToString;
 import static org.imagine.utils.java2d.GraphicsUtils.transformsEqual;
 import org.openide.util.Exceptions;
 import net.java.dev.imagine.api.vector.Vectors;
+import static org.imagine.geometry.util.GeometryStrings.transformToString;
+import org.imagine.geometry.util.PooledTransform;
 
 /**
  * Wraps a string and the font used to render it so it can be turned into a
@@ -76,11 +77,12 @@ public class PathText implements Primitive, Vectors, Adjustable, Textual, Versio
     private Shaped shape;
     private int rev;
 
+    @SuppressWarnings("LeakingThisInConstructor")
     public PathText(PathText other, AffineTransform xform) {
         this.shape = other.shape.copy();
         this.text = other.text.copy();
         this.font = other.font.copy();
-        this.xform = xform;
+        this.xform = xform == null ? null : PooledTransform.copyOf(xform, this);
         this.rev = xform == null ? other.rev : other.rev + 1;
         this.leadingMultiplier = other.leadingMultiplier;
         this.cachedShape = xform != null ? null : other.cachedShape;
@@ -91,11 +93,12 @@ public class PathText implements Primitive, Vectors, Adjustable, Textual, Versio
         this.renderingVersion = other.renderingVersion;
     }
 
+    @SuppressWarnings("LeakingThisInConstructor")
     public PathText(PathText other) {
         this.shape = other.shape.copy();
         this.text = other.text.copy();
         this.font = other.font.copy();
-        this.xform = other.xform == null ? null : new AffineTransform(other.xform);
+        this.xform = other.xform == null ? null : PooledTransform.copyOf(other.xform, this);
         this.rev = other.rev;
         this.leadingMultiplier = other.leadingMultiplier;
         this.cachedShape = other.cachedShape;
@@ -106,10 +109,11 @@ public class PathText implements Primitive, Vectors, Adjustable, Textual, Versio
         this.renderingVersion = other.renderingVersion;
     }
 
+    @SuppressWarnings("LeakingThisInConstructor")
     public PathText(Shaped shape, StringWrapper string, FontWrapper font, AffineTransform xform) {
         this.text = string;
         this.font = font;
-        this.xform = xform;
+        this.xform = PooledTransform.copyOf(xform, this);
         this.shape = shape;
     }
 
@@ -153,11 +157,24 @@ public class PathText implements Primitive, Vectors, Adjustable, Textual, Versio
     @Override
     public void translate(double x, double y) {
         if (xform == null) {
-            xform = AffineTransform.getTranslateInstance(x, y);
+            xform = PooledTransform.getTranslateInstance(x, y, this);
         } else {
-            xform.preConcatenate(AffineTransform.getTranslateInstance(x, y));
+            PooledTransform.withTranslateInstance(x, y, xform::preConcatenate);
         }
         invalidateCachedShape();
+    }
+
+    private Runnable matrixSnapshot() {
+        if (xform == null) {
+            return () -> {
+                this.xform = null;
+            };
+        }
+        double[] mx = new double[6];
+        xform.getMatrix(mx);
+        return () -> {
+            xform.setTransform(mx[0], mx[1], mx[2], mx[3], mx[4], mx[5]);
+        };
     }
 
     @Override
@@ -170,17 +187,17 @@ public class PathText implements Primitive, Vectors, Adjustable, Textual, Versio
         Shaped oldShape = shape;
         FontWrapper oldFont = font;
         StringWrapper oldText = text;
-        AffineTransform xf = xform == null ? null : new AffineTransform(xform);
+        Runnable matrixRestore = matrixSnapshot();
         return () -> {
             font = oldFont;
             text = oldText;
             rev = oldRev;
-            xform = xf;
             shape = oldShape;
             renderingVersion = rv;
             tr.run();
             fr.run();
             sh.run();
+            matrixRestore.run();
             invalidateCachedShape();
         };
     }
@@ -221,7 +238,11 @@ public class PathText implements Primitive, Vectors, Adjustable, Textual, Versio
     }
 
     public void setTransform(AffineTransform xform) {
-        this.xform = xform;
+        if (this.xform != null) {
+            this.xform.setTransform(xform);
+        } else {
+            this.xform = PooledTransform.copyOf(xform, this);
+        }
         invalidateCachedShape();
     }
 
@@ -269,7 +290,11 @@ public class PathText implements Primitive, Vectors, Adjustable, Textual, Versio
     @Override
     public void setLocation(double x, double y) {
         Pt loc = getLocation();
-        xform.preConcatenate(AffineTransform.getTranslateInstance(loc.x - x, loc.y - y));
+        if (this.xform == null) {
+            this.xform = PooledTransform.getTranslateInstance(loc.x - x, loc.y - y, this);
+        } else {
+            PooledTransform.withTranslateInstance(loc.x - x, loc.y - y, xform::preConcatenate);
+        }
         invalidateCachedShape();
     }
 
@@ -283,7 +308,7 @@ public class PathText implements Primitive, Vectors, Adjustable, Textual, Versio
     public void applyTransform(AffineTransform xform) {
         if (xform != null && !xform.isIdentity()) {
             if (this.xform == null) {
-                this.xform = xform;
+                this.xform = PooledTransform.copyOf(xform, this);
             } else {
                 this.xform.preConcatenate(xform);
             }
@@ -359,10 +384,7 @@ public class PathText implements Primitive, Vectors, Adjustable, Textual, Versio
 
     @Override
     public PathText copy(AffineTransform xform) {
-        PathText nue = new PathText(this);
-        if (xform != null && !xform.isIdentity()) {
-            nue.applyTransform(xform);
-        }
+        PathText nue = new PathText(this, xform);
         return nue;
     }
 
@@ -551,8 +573,7 @@ public class PathText implements Primitive, Vectors, Adjustable, Textual, Versio
                 } else {
                     scale = Math.min(length / lastGlyphXPosition, length / (origOutlineBounds.getX() + origOutlineBounds.getWidth()));
                 }
-                System.out.println("scale " + scale);
-                scaleXform = AffineTransform.getScaleInstance(scale, scale);
+                scaleXform = PooledTransform.getScaleInstance(scale, scale, null);
                 scaleXform.transform(glyphPositions, 0, glyphPositions, 0, glyphPositions.length / 2);
             }
             float[] glyphOffsets = new float[glyphPositions.length / 2];
@@ -560,13 +581,11 @@ public class PathText implements Primitive, Vectors, Adjustable, Textual, Versio
                 glyphOffsets[i / 2] = glyphPositions[i] - glyphPositions[i - 2];
             }
             List<Shape> allShapes = new ArrayList<>(glyphs);
-            AffineTransform scaler = scaleXform;
-
 //            allShapes.add(tanLine);
             // Pending:  What we really need is to get the tangent
             // at both the start and end of the line, and use the
             // average angle at the center point
-            PositionerImpl2 positioner = new PositionerImpl2(gv, scaler,
+            PositionerImpl2 positioner = new PositionerImpl2(gv, scaleXform,
                     glyphOffsets, allShapes, glyphs, height);
 
             ShapePlotter.position(path, positioner, plotter -> {
@@ -575,9 +594,14 @@ public class PathText implements Primitive, Vectors, Adjustable, Textual, Versio
                 plotter.setInterval(0.25);
                 plotter.setTangentLength(height / 2);
             });
+
             // If the line wasn't long enough, just keep going in
             // whatever direction the line was headed in
             positioner.finish();
+            if (scaleXform != null) {
+                PooledTransform.returnToPool(scaleXform);
+                scaleXform = null;
+            }
 
             double x = x();
             double y = y();

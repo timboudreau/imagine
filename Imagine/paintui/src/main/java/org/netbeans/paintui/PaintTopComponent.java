@@ -283,6 +283,7 @@ public class PaintTopComponent extends TopComponent implements ChangeListener,
         List l = new ArrayList(10);
         l.add(this);
         l.addAll(Arrays.asList(this, canvas.zoomImpl,
+                canvas.uiContext,
                 getUndoRedo(), picture.getPicture()));
         Layer layer = null;
         Selection<?> sel = null;

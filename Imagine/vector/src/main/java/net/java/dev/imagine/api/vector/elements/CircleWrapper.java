@@ -177,7 +177,7 @@ public class CircleWrapper implements Strokable, Fillable, Volume, Adjustable, V
     }
 
     @Override
-    public Vectors copy(AffineTransform transform) {
+    public CircleWrapper copy(AffineTransform transform) {
         switch (transform.getType()) {
             case AffineTransform.TYPE_QUADRANT_ROTATION:
             case AffineTransform.TYPE_GENERAL_ROTATION:

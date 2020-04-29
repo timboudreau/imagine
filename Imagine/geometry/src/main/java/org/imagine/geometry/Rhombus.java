@@ -334,7 +334,7 @@ public final class Rhombus implements Shape, EnhancedShape {
 
     @Override
     public boolean contains(Point2D p) {
-        return toPath().contains(p.getX(), p.getY());
+        return contains(p.getX(), p.getY());
     }
 
     @Override

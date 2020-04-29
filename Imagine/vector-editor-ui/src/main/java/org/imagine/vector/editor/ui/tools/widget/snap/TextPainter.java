@@ -5,7 +5,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.text.DecimalFormat;
 import org.imagine.editor.api.Zoom;
@@ -20,6 +19,7 @@ import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.PieWedge;
 import org.imagine.geometry.Quadrant;
 import org.imagine.geometry.util.GeometryStrings;
+import org.imagine.geometry.util.PooledTransform;
 import org.imagine.utils.painting.RepaintHandle;
 
 /**
@@ -94,7 +94,6 @@ class TextPainter {
 //                settings.captionFillColor(SnapKind.POSITION),
 //                settings.captionColor(SnapKind.POSITION)
 //        );
-
         FontMetrics fm = g.getFontMetrics();
         int txtWidth = fm.stringWidth(txt);
         int txtHeight = fm.getMaxAscent() + fm.getMaxDescent();
@@ -116,7 +115,10 @@ class TextPainter {
         double offset = set.captionLineOffset(zoom);
         line.shiftPerpendicular(direction ? offset * 2 : -(offset * 2));
         String txt = text();
-        g.setFont(FONT.deriveFont(zoom.getInverseTransform()));
+        PooledTransform.withScaleInstance(1D / zoom.getZoom(), 1D / zoom.getZoom(), xf -> {
+            g.setFont(FONT.deriveFont(xf));
+        });
+//        g.setFont(FONT.deriveFont(zoom.getInverseTransform()));
         FontMetrics fm = g.getFontMetrics();
         int txtWidth = fm.stringWidth(txt);
         int txtHeight = fm.getMaxAscent() + fm.getMaxDescent();
@@ -139,22 +141,25 @@ class TextPainter {
             scratchRect.x + scratchRect.width + (margin * 2),
             scratchRect.y + scratchRect.height + (margin * 2)
         };
-        AffineTransform xform = AffineTransform.getRotateInstance(
-                Math.toRadians(rotTxt), mid.x, mid.y);
-        xform.transform(pts, 0, pts, 0, 2);
-        lastBounds.setFrameFromDiagonal(pts[0], pts[1], pts[2], pts[3]);
-        g = (Graphics2D) g.create();
-        try {
-            g.transform(xform);
-            g.setPaint(set.captionFillColor(SnapKind.POSITION));
-            g.fill(scratchRect);
-            g.setPaint(set.captionColor(SnapKind.POSITION));
-            g.drawString(txt, (float) scratchRect.x + margin,
-                    (float) scratchRect.y + margin
-                    + fm.getMaxAscent());
-        } finally {
-            g.dispose();
-        }
+        PooledTransform.withRotateInstance(Math.toRadians(rotTxt), mid.x, mid.y, xform -> {
+            xform.transform(pts, 0, pts, 0, 2);
+//        AffineTransform xform = PooledTransform.getRotateInstance(
+//                Math.toRadians(rotTxt), mid.x, mid.y, null);
+//        xform.transform(pts, 0, pts, 0, 2);
+            lastBounds.setFrameFromDiagonal(pts[0], pts[1], pts[2], pts[3]);
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                g2.transform(xform);
+                g2.setPaint(set.captionFillColor(SnapKind.POSITION));
+                g2.fill(scratchRect);
+                g2.setPaint(set.captionColor(SnapKind.POSITION));
+                g2.drawString(txt, (float) scratchRect.x + margin,
+                        (float) scratchRect.y + margin
+                        + fm.getMaxAscent());
+            } finally {
+                g2.dispose();
+            }
+        });
     }
     private final Rectangle2D.Double scratchRect = new Rectangle2D.Double();
 
@@ -197,7 +202,6 @@ class TextPainter {
                 settings.captionFillColor(SnapKind.POSITION),
                 settings.captionColor(SnapKind.POSITION)
         );
-
     }
 
 }

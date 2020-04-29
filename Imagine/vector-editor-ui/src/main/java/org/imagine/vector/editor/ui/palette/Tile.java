@@ -14,6 +14,7 @@ import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
+import org.imagine.geometry.util.PooledTransform;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.Exceptions;
 
@@ -46,7 +47,10 @@ abstract class Tile<T> extends JComponent implements Comparable<Tile<?>> {
             }
         }
         setToolTipText(name);
-        setFont(f.deriveFont(AffineTransform.getScaleInstance(0.8, 0.8)));
+        Font ff = f;
+        PooledTransform.withScaleInstance(0.8, 0.8, xf -> {
+            setFont(ff.deriveFont(xf));
+        });
     }
 
     @Override
@@ -59,7 +63,7 @@ abstract class Tile<T> extends JComponent implements Comparable<Tile<?>> {
     }
 
     protected void populatePopupMenu(JPopupMenu menu) {
-        
+
     }
 
     @Override
@@ -78,18 +82,19 @@ abstract class Tile<T> extends JComponent implements Comparable<Tile<?>> {
     }
 
     private void resetTransform() {
+        PooledTransform.returnToPool(xform);
         xform = null;
     }
 
     void setItem(T item) {
         T oldItem = this.item;
 //        if (!Objects.equals(oldItem, item)) {
-            this.item = item;
-            resetTransform();
-            onItemLoadedOrReplaced(oldItem, item);
-            invalidate();
-            revalidate();
-            repaint();
+        this.item = item;
+        resetTransform();
+        onItemLoadedOrReplaced(oldItem, item);
+        invalidate();
+        revalidate();
+        repaint();
 //        }
     }
 
@@ -135,7 +140,7 @@ abstract class Tile<T> extends JComponent implements Comparable<Tile<?>> {
             int w = getWidth() - (ins.left + ins.right);
             int h = getHeight() - (ins.top + ins.bottom);
             if (w <= 0 || h <= 0) {
-                return AffineTransform.getTranslateInstance(0, 0);
+                return PooledTransform.getTranslateInstance(0, 0, null);
             }
             xform = recomputeTransform(x, y, w, h);
         }
@@ -157,7 +162,7 @@ abstract class Tile<T> extends JComponent implements Comparable<Tile<?>> {
             }
         }
         if (result == null) {
-            result = AffineTransform.getTranslateInstance(0, 0);
+            result = PooledTransform.getTranslateInstance(0, 0, null);
         }
         return result;
     }
@@ -256,8 +261,10 @@ abstract class Tile<T> extends JComponent implements Comparable<Tile<?>> {
         float fw = fm.stringWidth(s);
         float minD = Math.max(fh, fw);
         float minWH = Math.min(w, h) / 2;
-        AffineTransform fontXform = AffineTransform.getScaleInstance(minWH / minD, minWH / minD);
+
+        AffineTransform fontXform = PooledTransform.getScaleInstance(minWH / minD, minWH / minD, null);
         f = f.deriveFont(fontXform);
+        PooledTransform.returnToPool(fontXform);
         g.setFont(f);
         fw = g.getFontMetrics().stringWidth(s);
         fh = g.getFontMetrics().getMaxAscent() + g.getFontMetrics().getMaxDescent();
