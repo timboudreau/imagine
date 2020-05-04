@@ -19,17 +19,20 @@ import org.openide.windows.WindowManager;
 @Messages("SHAPES_PALETTE=Shapes")
 public final class ShapesPaletteTC extends AbstractPaletteTC {
 
+    static final String PREFERRED_ID = "shapesPalette";
+    static final String PALETTES_MODE = "palettes";
+
     public ShapesPaletteTC() {
         setLayout(new OneComponentLayout());
         add(PaintPalettes.createShapesPaletteComponent());
         setHtmlDisplayName(Bundle.SHAPES_PALETTE());
         setDisplayName(Bundle.SHAPES_PALETTE());
         setName(preferredID());
-        setIcon(ImageUtilities.loadImage("org/imagine/inspectors/gradientfill.png", false));
+        setIcon(ImageUtilities.loadImage("org/imagine/inspectors/gradientfill.png", false)); //XXX
     }
 
     @Override
-    protected void componentActivated() {
+    protected void onComponentActivated() {
         PaintPalettes.activated(this);
     }
 
@@ -40,15 +43,13 @@ public final class ShapesPaletteTC extends AbstractPaletteTC {
 
     @Override
     protected String preferredID() {
-        return "shapesPalette";
+        return PREFERRED_ID;
     }
 
     @Override
     public void open() {
-        System.out.println("Shapes Palette tc opening");
-        Mode mode = WindowManager.getDefault().findMode("palettes");
+        Mode mode = WindowManager.getDefault().findMode(PALETTES_MODE);
         if (mode != null) {
-            System.out.println("   docking into " + mode);
             mode.dockInto(this);
         }
         super.open();
@@ -58,7 +59,7 @@ public final class ShapesPaletteTC extends AbstractPaletteTC {
 
     public static synchronized ShapesPaletteTC getInstance() {
         if (INSTANCE == null) {
-            INSTANCE = (ShapesPaletteTC) WindowManager.getDefault().findTopComponent("shapesPalette");
+            INSTANCE = (ShapesPaletteTC) WindowManager.getDefault().findTopComponent(PREFERRED_ID);
         }
         return INSTANCE;
     }
@@ -73,9 +74,6 @@ public final class ShapesPaletteTC extends AbstractPaletteTC {
     public static void openPalette() {
         ShapesPaletteTC nue = getInstance();
         nue.open();
-        if (PaintPalettes.wasLastActive(nue)) {
-            nue.requestVisible();
-        }
     }
 
     public static void closePalette() {
@@ -85,7 +83,7 @@ public final class ShapesPaletteTC extends AbstractPaletteTC {
         }
         for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
             if (tc instanceof ShapesPaletteTC) {
-                tc.close();
+                ((ShapesPaletteTC) tc).closeWithoutUpdateOrder();
                 return;
             }
         }

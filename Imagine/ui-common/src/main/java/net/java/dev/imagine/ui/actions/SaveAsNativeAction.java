@@ -14,6 +14,7 @@ import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
 import net.java.dev.imagine.api.image.Picture;
 import net.java.dev.imagine.api.io.SaveSupport;
+import net.java.dev.imagine.ui.common.RecentFiles;
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
 import org.openide.filesystems.FileChooserBuilder;
 import org.openide.util.Exceptions;
@@ -30,9 +31,9 @@ public class SaveAsNativeAction extends GenericContextSensitiveAction<Picture> {
 
     public SaveAsNativeAction() {
         super("ACT_SaveAsNative", Picture.class);
-	setIcon(
-              ImageUtilities.loadImage (
-	      "net/java/dev/imagine/ui/actions/save24.png")); //NOI18N
+        setIcon(
+                ImageUtilities.loadImage(
+                        "net/java/dev/imagine/ui/actions/save24.png")); //NOI18N
     }
 
     @Override
@@ -57,6 +58,7 @@ public class SaveAsNativeAction extends GenericContextSensitiveAction<Picture> {
                 // XXX make a backup first, and restore on failure?
                 performSave(t, path);
                 t.associateFile(path);
+                RecentFiles.getDefault().add(RecentFiles.Category.IMAGINE_NATIVE, path);
             } catch (IOException | RuntimeException | Error ex) {
                 Exceptions.printStackTrace(ex);
                 // don't leave turds
@@ -94,6 +96,7 @@ public class SaveAsNativeAction extends GenericContextSensitiveAction<Picture> {
         fcb.setTitle(NbBundle.getMessage(SaveAsNativeAction.class, "TTL_SaveAsNative"));
         fcb.setDefaultWorkingDirectory(new File(System.getProperty("user.home")));
         fcb.setFilesOnly(true);
+        fcb.setFileHiding(true);
         File file = fcb.showSaveDialog();
         return file == null ? null : file.toPath();
     }
@@ -108,7 +111,8 @@ public class SaveAsNativeAction extends GenericContextSensitiveAction<Picture> {
 
         @Override
         public boolean accept(File f) {
-            return f.getName().endsWith("." + supp.fileExtension());
+            return !f.isHidden() && (f.getName().endsWith("." + supp.fileExtension())
+                    || f.isDirectory());
         }
 
         @Override

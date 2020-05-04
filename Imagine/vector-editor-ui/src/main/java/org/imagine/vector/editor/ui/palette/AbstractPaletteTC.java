@@ -8,14 +8,15 @@ import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
-import org.openide.windows.TopComponent;
+import org.imagine.nbutil.ActivationOrderTopComponent;
+import static org.openide.windows.TopComponent.PERSISTENCE_ALWAYS;
 import org.openide.windows.WindowManager;
 
 /**
  *
  * @author Tim Boudreau
  */
-abstract class AbstractPaletteTC extends TopComponent {
+abstract class AbstractPaletteTC extends ActivationOrderTopComponent {
 
     private HBL hbl;
 
@@ -57,8 +58,9 @@ abstract class AbstractPaletteTC extends TopComponent {
 
     private static Dimension preferredSize(JComponent of) {
         Container c = of.getTopLevelAncestor();
-        Dimension size = c.getSize();
+        Dimension size;
         if (c != null) {
+            size = c.getSize();
             if (size.width > 0 && size.height > 0) {
                 return adjustDimension(size);
             }

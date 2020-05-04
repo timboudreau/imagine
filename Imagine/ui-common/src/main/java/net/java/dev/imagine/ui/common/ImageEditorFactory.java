@@ -7,7 +7,7 @@ package net.java.dev.imagine.ui.common;
 
 import java.awt.Dimension;
 import java.io.File;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -36,6 +36,10 @@ public abstract class ImageEditorFactory {
         return true;
     }
 
+    public RecentFiles.Category category() {
+        return RecentFiles.Category.IMAGINE_NATIVE;
+    }
+
     @Override
     public final boolean equals(Object o) {
         return o != null && (o == this || o.getClass() == getClass());
@@ -60,12 +64,13 @@ public abstract class ImageEditorFactory {
 
     public abstract void openNew(Dimension dim, BackgroundStyle bg);
 
-    public abstract void openExisting(File file);
+    // XXX this should be an async callback with the result
+    public abstract boolean openExisting(File file);
 
     public abstract boolean canOpen(File file);
 
     public void openMany(File[] files, Consumer<Set<File>> unopened) {
-        Set<File> result = new HashSet<>();
+        Set<File> result = new LinkedHashSet<>();
         for (File f : files) {
             if (canOpen(f)) {
                 openExisting(f);

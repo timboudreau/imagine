@@ -44,10 +44,9 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         Set<String> result = Collections.singleton(Effect.class.getCanonicalName());
-        System.out.println("Get supported types " + result);
         return result;
     }
-    
+
     public List<? extends TypeMirror> getTypeParameters(TypeElement type) {
         //Get the non-generics type name of ToolImplementation
         TypeMirror effectStubType = processingEnv.getTypeUtils().erasure(processingEnv.getElementUtils().getTypeElement(EffectStub.class.getName()).asType());
@@ -61,7 +60,6 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
                     continue;
                 }
                 seen.add(sup);
-                System.err.println("TRY SUPERTYPE " + sup);
                 //If it subclasses ToolImplementation
                 if (processingEnv.getTypeUtils().erasure(sup).equals(effectStubType)) {
                     //Go look for the type parameters
@@ -75,16 +73,12 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
         //Was not a subclass of ToolImplementation, just a plain old mouse listener or similar
         return null;
     }
-    
 
     @Override
     protected boolean handleProcess(Set<? extends TypeElement> set, RoundEnvironment env) throws LayerGenerationException {
         TypeMirror stubType = processingEnv.getTypeUtils().erasure(processingEnv.getElementUtils().getTypeElement(EffectStub.class.getName()).asType());
-        System.err.println("Process " + set);
         Set<? extends Element> elements = env.getElementsAnnotatedWith(Effect.class);
-        System.err.println(elements.size() + " effect elements: " + elements);
         for (Element e : elements) {
-            System.err.println("PROCESS " + e);
             TypeElement type = (TypeElement) e;
 
             if (e.getModifiers().contains(Modifier.ABSTRACT)) {
@@ -112,7 +106,6 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
             }
 
 //            ADD CHECK THAT TYPE PARAMETERS MATCH ANNOTATION PARAMETERS
-
 //            List<? extends TypeMirror> params = getTypeParameters(type);
 //            System.err.println("Type params " + params);
 //            if (params == null || params.isEmpty()) {
@@ -135,6 +128,7 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
 
             LayerBuilder b = layer(e);
             LayerBuilder.File effectsDir = b.folder(net.java.dev.imagine.effects.api.Effect.EFFECT_FOLDER);
+            effectsDir.intvalue("position", 700);
             effectsDir.bundlevalue("displayName", "net.java.dev.imagine.effects.api.Bundle", "effects");
             b = effectsDir.write();
             LayerBuilder.File effectFile = b.file(net.java.dev.imagine.effects.api.Effect.EFFECT_FOLDER + '/' + name + ".instance");
@@ -154,6 +148,7 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
             b = actionsFolder.write();
             LayerBuilder.File effectActions = b.folder("Actions/Effects");
             effectActions.bundlevalue("displayName", "net.java.dev.imagine.effects.api.Bundle", "effects");
+            effectActions.intvalue("position", 1150);
             b = effectActions.write();
 
             LayerBuilder.File action = b.file("Actions/Effects/" + name + ".instance");
@@ -168,6 +163,7 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
             menuFolder.position(200);
             b = menuFolder.write();
             LayerBuilder.File fxMenu = b.folder("Menu/Effects");
+            fxMenu.intvalue("position", 1150);
             fxMenu.bundlevalue("displayName", "net.java.dev.imagine.effectsapi.Bundle", "effects");
 
             b.shadowFile("Actions/Effects/" + name + ".instance", "Menu/Effects", null).write();
@@ -188,11 +184,8 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
         AnnotationMirror found = null;
         outer:
         for (AnnotationMirror a : item.getAnnotationMirrors()) {
-            System.err.println("check AM " + a + " - " + a.getAnnotationType().asElement().getEnclosedElements());
             for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e : a.getElementValues().entrySet()) {
-                System.err.println("KEY " + e.getKey() + " TYPES " + types(e.getKey()));
                 AnnotationValue av = e.getValue();
-                System.err.println("AV " + av + " val " + av.getValue());
                 if (e.getKey().getSimpleName().contentEquals(annotationMemberName) && e.getValue().getValue() instanceof DeclaredType) {
                     found = a;
                     DeclaredType dt = (DeclaredType) e.getValue().getValue();
@@ -204,7 +197,6 @@ public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
             }
         }
         if (result == null && found == null) {
-            System.err.println("Huh? " + item + " - " + annotationMemberName);
             for (AnnotationMirror a : item.getAnnotationMirrors()) {
                 for (Element el : a.getAnnotationType().asElement().getEnclosedElements()) {
                     if (el instanceof ExecutableElement) {

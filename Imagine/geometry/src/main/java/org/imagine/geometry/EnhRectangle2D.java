@@ -8,6 +8,8 @@ package org.imagine.geometry;
 import com.mastfrog.function.DoubleBiConsumer;
 import com.mastfrog.function.DoubleQuadConsumer;
 import com.mastfrog.function.DoubleSextaConsumer;
+import java.awt.BasicStroke;
+import java.awt.Shape;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RectangularShape;
@@ -179,5 +181,21 @@ public class EnhRectangle2D extends Rectangle2D.Double implements EnhancedShape,
 
     public String toString() {
         return GeometryStrings.toString(this);
+    }
+
+    public EnhRectangle2D add(Shape shapeForBounds) {
+        add(shapeForBounds.getBounds2D());
+        return this;
+    }
+
+    public EnhRectangle2D add(Shape shapeForBounds, BasicStroke stroke) {
+        return add(shapeForBounds, stroke == null ? 0 : stroke.getLineWidth());
+    }
+
+    public EnhRectangle2D add(Shape shapeForBounds, double stroke) {
+        Rectangle2D bds = shapeForBounds.getBounds2D();
+        bds.setFrame(bds.getX() - stroke, bds.getY() - stroke, bds.getX() + bds.getWidth() + stroke, bds.getY() + bds.getHeight() + stroke);
+        add(bds);
+        return this;
     }
 }

@@ -13,6 +13,7 @@ import net.java.dev.imagine.api.image.Picture;
 import net.java.dev.imagine.api.io.SaveSupport;
 import static net.java.dev.imagine.ui.actions.SaveAsNativeAction.performSave;
 import static net.java.dev.imagine.ui.actions.SaveAsNativeAction.showFileChooser;
+import net.java.dev.imagine.ui.common.RecentFiles;
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
 import org.openide.util.Exceptions;
 import org.openide.util.ImageUtilities;
@@ -57,6 +58,7 @@ public class SaveNativeAction extends GenericContextSensitiveAction<Picture> {
             try {
                 // XXX make a backup first, and restore on failure?
                 performSave(t, path);
+                RecentFiles.getDefault().add(RecentFiles.Category.IMAGINE_NATIVE, path);
             } catch (IOException | RuntimeException | Error ex) {
                 Exceptions.printStackTrace(ex);
                 // don't leave turds

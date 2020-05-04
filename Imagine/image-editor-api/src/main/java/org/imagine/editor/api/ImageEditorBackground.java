@@ -19,7 +19,7 @@ public final class ImageEditorBackground {
 
     static {
         Preferences prefs = NbPreferences.forModule(ImageEditorBackground.class);
-        int ord = prefs.getInt("lastImageEditorBackground", 0);
+        int ord = prefs.getInt("lastImageEditorBackground", CheckerboardBackground.LIGHT.ordinal());
         CheckerboardBackground[] all = CheckerboardBackground.values();
         if (ord < all.length && ord >= 0) {
             INSTANCE.style = all[ord];

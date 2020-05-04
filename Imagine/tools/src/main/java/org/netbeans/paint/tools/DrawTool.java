@@ -26,7 +26,7 @@ import net.java.dev.imagine.api.toolcustomizers.Customizers;
  *
  * @author Tim Boudreau
  */
-@Tool(name = "Draw", value = Surface.class)
+@Tool(name = "Draw", value = Surface.class, toolbarPosition = 1100)
 @ToolDef(iconPath = "org/netbeans/paint/tools/resources/draw.png", position = 1000)
 public class DrawTool extends MouseAdapter implements CustomizerProvider {
 

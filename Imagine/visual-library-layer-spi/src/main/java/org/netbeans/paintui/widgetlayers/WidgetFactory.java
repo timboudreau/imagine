@@ -6,30 +6,31 @@ import org.imagine.editor.api.AspectRatio;
 import org.openide.util.Lookup;
 
 /**
- * Object which is responsible for populating one Widget
+ * Object which is responsible for populating one Widget for one layer of one
+ * picture.
  */
 public interface WidgetFactory {
 
     /**
      * Add children to the widget, set layout, etc.
      */
-    public void attach(Consumer<Lookup[]> additionalLookupConsumer);
+    void attach(Consumer<Lookup[]> additionalLookupConsumer);
 
     /**
      * Remove children from the widget, leave it in a clean state.
      */
-    public void detach();
+    void detach();
 
-    public SetterResult setLocation(Point location);
+    SetterResult setLocation(Point location);
 
-    public SetterResult setOpacity(float opacity);
+    SetterResult setOpacity(float opacity);
 
-    public void setName(String name);
+    void setName(String name);
 
+    boolean isUsingInternalWidget();
 
     default SetterResult setAspectRatio(AspectRatio ratio) {
         return SetterResult.NOT_HANDLED;
     }
-
 
 }

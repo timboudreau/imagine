@@ -10,29 +10,31 @@
  * Code is Sun Microsystems, Inc. Portions Copyright 1997-2005 Sun
  * Microsystems, Inc. All Rights Reserved. */
 package net.java.dev.imagine.ui.actions;
-import java.io.IOException;
+
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
 import org.netbeans.paint.api.editor.IO;
-import org.openide.ErrorManager;
+import org.openide.util.Exceptions;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 
-public class SaveAsAction extends GenericContextSensitiveAction <IO> {
+public class SaveAsAction extends GenericContextSensitiveAction<IO> {
+
     public SaveAsAction() {
         super("ACT_SaveAs", IO.class);
         setIcon(
                 ImageUtilities.loadImage(
-                "net/java/dev/imagine/ui/actions/save24.png")); //NOI18N
+                        "net/java/dev/imagine/ui/actions/save24.png")); //NOI18N
     }
+
     public SaveAsAction(Lookup lookup) {
         super(lookup);
     }
-                
+
     public void performAction(IO io) {
-        try {
-            io.saveAs();
-        } catch (IOException ioe) {
-            ErrorManager.getDefault().notify(ioe);
-        }
+        io.saveAs((thrown, path) -> {
+            if (thrown != null) {
+                Exceptions.printStackTrace(thrown);
+            }
+        });
     }
 }

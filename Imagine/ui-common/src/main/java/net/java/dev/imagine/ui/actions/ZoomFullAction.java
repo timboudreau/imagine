@@ -8,7 +8,6 @@
  */
 package net.java.dev.imagine.ui.actions;
 
-import javax.swing.ImageIcon;
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
 import org.imagine.editor.api.Zoom;
 import org.openide.util.ImageUtilities;
@@ -27,15 +26,17 @@ public class ZoomFullAction extends GenericContextSensitiveAction<Zoom> {
      */
     public ZoomFullAction() {
         super(Utilities.actionsGlobalContext(), Zoom.class);
-        setIcon(new ImageIcon(
-                ImageUtilities.loadImage("net/java/dev/imagine/ui/actions/zoomFull.png"))); //NOI18N
-        putValue(NAME, NbBundle.getMessage(ZoomInAction.class, "ACT_ZoomFull")); //NOI18N
+        init();
     }
 
     public ZoomFullAction(Lookup lkp) {
-        super(lkp);
-        setIcon(new ImageIcon(
-                ImageUtilities.loadImage("net/java/dev/imagine/ui/actions/zoomFull.png"))); //NOI18N
+        super(lkp, Zoom.class);
+        init();
+    }
+
+    private void init() {
+        setIcon(ImageUtilities.loadImageIcon(
+                "net/java/dev/imagine/ui/actions/zoom-one-to-one.svg", false)); //NOI18N
         putValue(NAME, NbBundle.getMessage(ZoomInAction.class, "ACT_ZoomFull")); //NOI18N
     }
 

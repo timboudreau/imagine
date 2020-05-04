@@ -8,7 +8,6 @@
  */
 package org.netbeans.paint.tools;
 
-import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.geom.RoundRectangle2D;
 import java.text.DecimalFormat;
@@ -28,7 +27,7 @@ import org.openide.util.NbBundle;
  * @author Tim Boudreau
  */
 @ToolDef(name = "Rounded_Rectangle", iconPath = "org/netbeans/paint/tools/resources/roundrect.svg")
-@Tool(Surface.class)
+@Tool(value=Surface.class, toolbarPosition=400)
 public class RoundRectTool extends RectangleTool {
 
     public RoundRectTool(Surface surface) {
@@ -36,6 +35,7 @@ public class RoundRectTool extends RectangleTool {
     }
 
     static final RoundRectangle2D.Double scratchRR = new RoundRectangle2D.Double();
+
     @Override
     protected void draw(EnhRectangle2D toPaint, Graphics2D g2d, PaintingStyle style) {
         scratchRR.setFrame(toPaint);
@@ -50,7 +50,11 @@ public class RoundRectTool extends RectangleTool {
 //            g2d.fillRoundRect(toPaint.x, toPaint.y, toPaint.width, toPaint.height, arcWidth, arcHeight);
         }
         if (style.isOutline()) {
-            g2d.setStroke(new BasicStroke(strokeC.get()));
+            if (toPaint == TEMPLATE_RECTANGLE) {
+                g2d.setStroke(scaledStroke());
+            } else {
+                g2d.setStroke(strokeC.get());
+            }
             g2d.setColor(outlineC.get());
 //            g2d.drawRoundRect(toPaint.x, toPaint.y, toPaint.width, toPaint.height, arcWidth, arcHeight);
             g2d.draw(scratchRR);
@@ -75,6 +79,7 @@ public class RoundRectTool extends RectangleTool {
             Double.class, Constants.ARC_HEIGHT_PERCENTAGE, 0D, 1D, 0.25D, RoundRectTool::toPercentage);
 
     private static final DecimalFormat FMT = new DecimalFormat("##0.#%");
+
     static String toPercentage(double val) {
         return FMT.format(val);
     }

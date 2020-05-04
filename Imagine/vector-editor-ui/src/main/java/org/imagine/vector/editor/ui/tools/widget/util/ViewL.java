@@ -4,7 +4,6 @@ import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
-import java.awt.geom.Point2D;
 import javax.swing.JComponent;
 import org.imagine.geometry.EqPointDouble;
 import org.netbeans.api.visual.widget.Scene;
@@ -20,16 +19,23 @@ public final class ViewL extends MouseAdapter implements MouseMotionListener {
     private final Point lastPoint = new Point();
     private int lastEventType;
 
-    public static Point2D.Double lastPoint(Widget widget) {
-//        Point p = get(widget)._lastPoint();
-//        widget.getScene().convertViewToScene(p);
-//        return new Point2D.Double(p.x, p.y);
+    public static EqPointDouble lastPoint(Widget widget) {
+        Point p = get(widget)._lastPoint();
+        widget.getScene().convertViewToScene(p);
+        return new EqPointDouble(p.x, p.y);
+//        Point viewLocation = get(widget)._lastPoint();
+//
+//        Point sceneLoc = widget.getScene().getLocation();
+//
+//        double zoomFactor = widget.getScene().getZoomFactor();
+//
+//        return new EqPointDouble (((double) viewLocation.x / zoomFactor) - sceneLoc.x, ((double) viewLocation.y / zoomFactor) - sceneLoc.y);
+    }
+
+    public static EqPointDouble lastPoint2D(Widget widget) {
         Point viewLocation = get(widget)._lastPoint();
-
         Point sceneLoc = widget.getScene().getLocation();
-
         double zoomFactor = widget.getScene().getZoomFactor();
-
         return new EqPointDouble (((double) viewLocation.x / zoomFactor) - sceneLoc.x, ((double) viewLocation.y / zoomFactor) - sceneLoc.y);
     }
 

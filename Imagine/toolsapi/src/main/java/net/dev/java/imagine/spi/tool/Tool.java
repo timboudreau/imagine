@@ -1,5 +1,6 @@
 package net.dev.java.imagine.spi.tool;
 
+import static java.lang.Integer.MAX_VALUE;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -29,4 +30,8 @@ public @interface Tool {
      * may correcpond to a ToolDef name on some class.
      */
     String name() default ToolDef.DEFAULT_NAME;
+
+    int menuPosition() default MAX_VALUE;
+
+    int toolbarPosition() default MAX_VALUE;
 }

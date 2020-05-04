@@ -6,7 +6,6 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package net.java.dev.imagine.api.toolcustomizers;
 
 import java.awt.EventQueue;
@@ -22,20 +21,22 @@ import org.openide.util.ChangeSupport;
  *
  * @author Tim Boudreau
  */
-public abstract class AbstractCustomizer <T extends Object> extends ListenableCustomizerSupport <T> {
+public abstract class AbstractCustomizer<T> extends ListenableCustomizerSupport<T> {
+
     private final String name;
     private JPanel component;
+
     public AbstractCustomizer(String name) {
         this.name = name;
     }
-    
+
     public final JComponent getComponent() {
         if (component != null) {
             return component;
         }
         JPanel result = new SharedLayoutPanel();
         for (JComponent comp : getComponents()) {
-            result.add (comp);
+            result.add(comp);
         }
         return component = result;
     }
@@ -46,7 +47,7 @@ public abstract class AbstractCustomizer <T extends Object> extends ListenableCu
 
     public T get() {
 //        if (c != null) {
-            return getValue();
+        return getValue();
 //        }
 //        return null;
     }
@@ -54,6 +55,7 @@ public abstract class AbstractCustomizer <T extends Object> extends ListenableCu
     protected abstract T getValue();
 
     private JComponent[] c;
+
     public final JComponent[] getComponents() {
         if (c == null) {
             c = createComponents();
@@ -62,6 +64,7 @@ public abstract class AbstractCustomizer <T extends Object> extends ListenableCu
     }
 
     private final ChangeSupport supp = new ChangeSupport(this);
+
     public void addChangeListener(ChangeListener l) {
         assert EventQueue.isDispatchThread();
         supp.addChangeListener(l);
@@ -69,7 +72,8 @@ public abstract class AbstractCustomizer <T extends Object> extends ListenableCu
 
     protected void change() {
         supp.fireChange();
-        saveValue (get());
+        saveValue(get());
+        fire();
     }
 
     public void removeChangeListener(ChangeListener l) {
@@ -78,5 +82,6 @@ public abstract class AbstractCustomizer <T extends Object> extends ListenableCu
     }
 
     protected abstract JComponent[] createComponents();
-    protected abstract void saveValue (T value);
+
+    protected abstract void saveValue(T value);
 }

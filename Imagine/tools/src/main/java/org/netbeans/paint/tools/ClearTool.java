@@ -28,7 +28,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Tim Boudreau
  */
-@Tool(name="Clear", value=Surface.class)
+@Tool(name="Clear", value=Surface.class, toolbarPosition = 1200)
 @ToolDef(iconPath="org/netbeans/paint/tools/resources/clear.png")
 public class ClearTool extends MouseAdapter implements /* Tool, */ KeyListener {
     private final Surface surface;

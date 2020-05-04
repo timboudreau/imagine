@@ -25,6 +25,7 @@ import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import org.imagine.editor.api.AspectRatio;
+import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.util.PooledTransform;
 import org.netbeans.paint.api.components.fractions.FractionsAndColorsEditor;
 import org.netbeans.paint.api.components.points.PointSelector;
@@ -258,6 +259,9 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
         if (revAtLastGet != rev) {
             revAtLastGet = rev;
             return lastResult = PooledTransform.lazyTranslate(0, 0, (xform, ownerConsumer) -> {
+                if (params.focusPoint.exactlyEqual(params.targetPoint)) {
+                    params.targetPoint.x += 0.1;
+                }
                 LinearGradientPaint paint = new LinearGradientPaint(params.targetPoint,
                         params.focusPoint, params.fractions, params.colors,
                         params.cycleMethod, params.colorSpaceType, xform);
@@ -282,8 +286,8 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
             Color.ORANGE};
         float[] fractions = new float[]{0, 0.25F, 0.625F, 1};
         float radius = 100;
-        Point2D.Double focusPoint = new Point2D.Double(100, 100);
-        Point2D.Double targetPoint = new Point2D.Double(104, 107);
+        EqPointDouble focusPoint = new EqPointDouble(100, 100);
+        EqPointDouble targetPoint = new EqPointDouble(104, 107);
         MultipleGradientPaint.CycleMethod cycleMethod
                 = MultipleGradientPaint.CycleMethod.REFLECT;
 

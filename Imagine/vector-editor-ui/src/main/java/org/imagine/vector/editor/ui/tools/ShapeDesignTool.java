@@ -15,6 +15,7 @@ import net.dev.java.imagine.spi.tool.ToolImplementation;
 import org.imagine.editor.api.snap.SnapPointsSupplier;
 import org.imagine.geometry.Circle;
 import org.imagine.inspectors.spi.Inspectors;
+import org.imagine.vector.editor.ui.palette.PaintPalettes;
 import org.imagine.vector.editor.ui.spi.WidgetSupplier;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
@@ -34,7 +35,7 @@ import org.openide.util.lookup.ProxyLookup;
  */
 @ToolDef(category = "vector", name = "SHAPE_DESIGN",
         iconPath = "org/netbeans/paint/tools/resources/points.svg")
-@Tool(ShapesCollection.class)
+@Tool(value = ShapesCollection.class, toolbarPosition = 3100)
 @Messages("SHAPE_DESIGN=Shape Design")
 public class ShapeDesignTool extends ToolImplementation<ShapesCollection>
         implements WidgetSupplier, PaintParticipant, CustomizerProvider {
@@ -59,9 +60,7 @@ public class ShapeDesignTool extends ToolImplementation<ShapesCollection>
 
     @Override
     public void attach(Lookup.Provider layer) {
-        System.out.println("Open palettes");
-        ShapesPaletteTC.openPalette();
-        PaintsPaletteTC.openPalette();
+        PaintPalettes.openPalettes();
         Inspectors.openUI(true);
         layerLookup.setOtherLookups(layer.getLookup());
     }

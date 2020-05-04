@@ -32,8 +32,8 @@ import org.netbeans.paint.tools.spi.MouseDrivenTool;
  *
  * @author Timothy Boudreau
  */
-@ToolDef(name="Move", iconPath="org/netbeans/paint/tools/resources/move.png")
-@Tool(Surface.class)
+@ToolDef(name="Move", iconPath="org/netbeans/paint/tools/resources/move-layer.svg")
+@Tool(value=Surface.class, toolbarPosition=2000)
 public class MoveTool extends MouseDrivenTool implements KeyListener, NonPaintingTool, Attachable, PaintParticipant {
 
     //XXX make sensitive to Movable instead

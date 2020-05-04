@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.imagine.svg.io;
 
 import java.awt.Shape;
@@ -28,7 +23,7 @@ class ExtShapeConverter extends SVGShape {
     @Override
     public Element toSVG(Shape shape) {
         if (shape instanceof Circle) {
-//            return handleCircle((Circle) shape);
+            return handleCircle((Circle) shape);
         } else if (shape instanceof Polygon2D) {
             return handlePolygon((Polygon2D) shape);
         } else if (shape instanceof Triangle2D) {

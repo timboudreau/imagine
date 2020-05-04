@@ -40,12 +40,13 @@ public class NativeImageEditorFactory extends ImageEditorFactory {
     }
 
     @Override
-    public void openExisting(File file) {
+    public boolean openExisting(File file) {
         for (LoadSupport<?, ?, ?> supp : Lookup.getDefault().lookupAll(LoadSupport.class)) {
             if (file.getName().endsWith("." + supp.fileExtension())) {
-                open(file.toPath(), supp);
+                return open(file.toPath(), supp);
             }
         }
+        return false;
     }
 
     @Override
@@ -63,11 +64,13 @@ public class NativeImageEditorFactory extends ImageEditorFactory {
         return false;
     }
 
-    private void open(Path toPath, LoadSupport<?, ?, ?> supp) {
+    private boolean open(Path toPath, LoadSupport<?, ?, ?> supp) {
         try {
             supp.open(toPath);
+            return true;
         } catch (IOException ex) {
             Exceptions.printStackTrace(ex);
         }
+        return false;
     }
 }

@@ -1,5 +1,6 @@
 package org.imagine.vector.editor.ui.palette;
 
+import static org.imagine.vector.editor.ui.palette.ShapesPaletteTC.PALETTES_MODE;
 import org.netbeans.paint.api.components.OneComponentLayout;
 import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle.Messages;
@@ -18,13 +19,20 @@ import org.openide.windows.WindowManager;
 @Messages("PAINTS_PALETTE=Fills")
 public final class PaintsPaletteTC extends AbstractPaletteTC {
 
+    static final String PREFERRED_ID = "paintsPalette";
+
     public PaintsPaletteTC() {
         setLayout(new OneComponentLayout());
         add(PaintPalettes.createPaintPaletteComponent());
         setHtmlDisplayName(Bundle.PAINTS_PALETTE());
         setDisplayName(Bundle.PAINTS_PALETTE());
         setName(preferredID());
-        setIcon(ImageUtilities.loadImage("org/imagine/inspectors/gradientfill.png", false));
+        setIcon(ImageUtilities.loadImage("org/imagine/inspectors/gradientfill.png", false)); //XXX
+    }
+
+    @Override
+    protected void onComponentActivated() {
+        PaintPalettes.activated(this);
     }
 
     @Override
@@ -39,7 +47,7 @@ public final class PaintsPaletteTC extends AbstractPaletteTC {
 
     @Override
     protected String preferredID() {
-        return "paintsPalette";
+        return PREFERRED_ID;
     }
 
     private static PaintsPaletteTC INSTANCE;
@@ -53,28 +61,18 @@ public final class PaintsPaletteTC extends AbstractPaletteTC {
 
     public static synchronized PaintsPaletteTC getInstance() {
         if (INSTANCE == null) {
-            INSTANCE = (PaintsPaletteTC) WindowManager.getDefault().findTopComponent("paintsPalette");
+            INSTANCE = (PaintsPaletteTC) WindowManager.getDefault().findTopComponent(PREFERRED_ID);
         }
         return INSTANCE;
     }
 
     @Override
     public void open() {
-        System.out.println("PaintsPaletteTC open");
-        Mode mode = WindowManager.getDefault().findMode("palettes");
+        Mode mode = WindowManager.getDefault().findMode(PALETTES_MODE);
         if (mode != null) {
-            System.out.println("  docking into palettes mode");
             mode.dockInto(this);
         }
         super.open();
-    }
-
-    public static void openPalette() {
-        PaintsPaletteTC nue = getInstance();
-        nue.open();
-        if (PaintPalettes.wasLastActive(nue)) {
-            nue.requestVisible();
-        }
     }
 
     public static void closePalette() {
@@ -84,7 +82,7 @@ public final class PaintsPaletteTC extends AbstractPaletteTC {
         }
         for (TopComponent tc : TopComponent.getRegistry().getOpened()) {
             if (tc instanceof PaintsPaletteTC) {
-                tc.close();
+                ((PaintsPaletteTC) tc).closeWithoutUpdateOrder();
                 return;
             }
         }

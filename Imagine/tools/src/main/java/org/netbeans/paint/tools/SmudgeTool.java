@@ -17,9 +17,7 @@ import javax.swing.Icon;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Hibernator;
-import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Surface;
-import org.netbeans.paint.api.util.RasterConverter;
 import org.netbeans.paint.tools.spi.MouseDrivenTool;
 
 /**
@@ -27,7 +25,7 @@ import org.netbeans.paint.tools.spi.MouseDrivenTool;
  * @author Tim Boudreau
  */
 @ToolDef(name="TOOL_SMUDGE", iconPath="org/netbeans/paint/tools/resources/smudge.png")
-@Tool(Surface.class)
+@Tool(value=Surface.class, toolbarPosition=1400)
 public class SmudgeTool extends MouseDrivenTool {
     private int radius = 20;
     public SmudgeTool(Surface surface) {

@@ -27,7 +27,6 @@ import net.java.dev.imagine.effects.api.EffectReceiver;
 import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.imagine.editor.api.Zoom;
-import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.vector.editor.ui.spi.WidgetSupplier;
 import org.imagine.vector.editor.ui.undo.ContentsEdit;
 
@@ -129,9 +128,10 @@ public class VectorSurface extends SurfaceImplementation implements SnapPointsSu
 
     private CollectionEngine createEngine(boolean unexpected, String name) {
         Dimension d = shapes.getBounds().getSize();
-        engine = new CollectionEngine(tool.getDisplayName(), handle, location, d.width, d.height);
+        String nm = tool == null ? name : tool.getDisplayName();
+        engine = new CollectionEngine(nm, handle, location, d.width, d.height);
         if (unexpected) {
-            beginUndoableOperation(name == null ? tool.getDisplayName() : name);
+            beginUndoableOperation(nm);
             engine.graphics.onDispose(this::endUndoableOperation);
         }
         return engine;
@@ -141,11 +141,12 @@ public class VectorSurface extends SurfaceImplementation implements SnapPointsSu
     public Graphics2D getGraphics() {
         if (engine != null) {
             return engine.graphics();
-        } else if (tool != null) {
+//        } else if (tool != null) {
+        } else {
             engine = createEngine(true, null);
             return engine.graphics();
         }
-        return GraphicsUtils.noOpGraphics();
+//        return GraphicsUtils.noOpGraphics();
     }
 
     @Override
@@ -189,7 +190,10 @@ public class VectorSurface extends SurfaceImplementation implements SnapPointsSu
                             handle.repaintArea(rect);
                         }
                     });
+                } else {
+                    System.out.println("No items painted");
                 }
+
             } finally {
                 engine = null;
             }

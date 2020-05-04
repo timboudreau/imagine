@@ -14,6 +14,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,10 +42,6 @@ public abstract class LoadSupport<R extends RepaintHandle, D, I extends PictureI
     private final int typeId;
     private final String fileExtension;
     private static final Logger LOG = Logger.getLogger(LoadSupport.class.getName());
-
-    static {
-        LOG.setLevel(Level.FINER);
-    }
 
     // XXX should support multiple factory types - saving does
     protected LoadSupport(PictureFactory<R, D, I> pictureFactory,
@@ -84,6 +83,27 @@ public abstract class LoadSupport<R extends RepaintHandle, D, I extends PictureI
         // do nothing
     }
 
+    public BiFunction<Dimension, BiConsumer<RepaintHandle, Function<List<LayerImplementation>, Picture>>, Void> create(boolean open) {
+        System.out.println("\nstart create sequence - open? " + open);
+        return (Dimension dim, BiConsumer<RepaintHandle, Function<List<LayerImplementation>, Picture>> next) -> {
+            System.out.println("  Called back with dim " + dim);
+            R handle = pictureFactory.newRepaintHandle(dim, null);
+            System.out.println("  Got dimension " + dim + " and repaint handle " + handle
+                + ", calling " + next);
+            next.accept(handle, (List<LayerImplementation> layers) -> {
+                System.out.println("  create with " + layers.size() + " layers: " + layers);
+                I pictureImpl = pictureFactory.toPicture(dim, handle, layers, null);
+                System.out.println("     got picture impl " + pictureImpl);
+                if (open) {
+                    System.out.println("        opening " + pictureImpl);
+                    open(pictureImpl);
+                }
+                return pictureImpl.getPicture();
+            });
+            return null;
+        };
+    }
+
     private Map<String, String> hints() {
         Map<String, String> hints = new HashMap<>();
         populateLayerSaverHints(hints);
@@ -105,7 +125,11 @@ public abstract class LoadSupport<R extends RepaintHandle, D, I extends PictureI
 
     public Picture load(Path path, boolean open) throws IOException {
         try (FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
-            return doLoad(channel, open);
+            Picture result = doLoad(channel, open);
+            if (result != null) {
+                result.associateFile(path);
+            }
+            return result;
         }
     }
 

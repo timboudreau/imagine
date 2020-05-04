@@ -1,10 +1,13 @@
 package net.java.dev.imagine.ui.toolbar;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -71,6 +74,15 @@ public final class GridEditor extends JPanel {
         add(slider);
         add(gridColor);
         add(gridStyle);
+        gridLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 1 && !e.isPopupTrigger()) {
+                    gridEnabled.doClick();
+                }
+            }
+        });
+        setMinimumSize(new Dimension(32, 32));
     }
 
     public Grid getGrid() {

@@ -1,5 +1,7 @@
 package org.imagine.vector.editor.ui.tools.inspectors;
 
+import org.imagine.editor.api.Join;
+import org.imagine.editor.api.Cap;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
@@ -33,7 +35,6 @@ import org.netbeans.paint.api.components.number.NumericConstraint;
 import static org.netbeans.paint.api.components.number.StandardNumericConstraints.DOUBLE;
 import org.openide.awt.Mnemonics;
 import org.openide.util.Lookup;
-import org.openide.util.NbBundle;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.lookup.ServiceProvider;
 
@@ -150,12 +151,26 @@ public class ShapeElementPropertiesInspector extends InspectorFactory<ShapeEleme
                 }
             }
         }
-        StrokeCustomizer sc = new StrokeCustomizer(shape.stroke(), newStroke -> {
-            coll.edit(Bundle.EDIT_STROKE(shape.getName()), shape, () -> {
-                shape.setStroke(newStroke);
+        Customizer<BasicStroke> strokeCustomizer = Customizers.getCustomizer(
+                BasicStroke.class, shape.getName(), shape.stroke());
+
+//        StrokeCustomizer sc = new StrokeCustomizer(shape.stroke(), newStroke -> {
+//            coll.edit(Bundle.EDIT_STROKE(shape.getName()), shape, () -> {
+//                shape.setStroke(newStroke);
+//            });
+//        });
+        pnl.add(strokeCustomizer.getComponent());
+        if (strokeCustomizer instanceof ListenableCustomizer<?>) {
+            ListenableCustomizer<BasicStroke> lc = 
+                    (ListenableCustomizer<BasicStroke>) strokeCustomizer;
+            lc.listen(stroke -> {
+                coll.edit(Bundle.EDIT_STROKE(shape.getName()), shape, () -> {
+                    shape.setStroke(stroke);
+                });
             });
-        });
-        pnl.add(sc);
+        } else {
+            System.out.println("Not a listenable customizer: " + strokeCustomizer);
+        }
         if (shape.item() instanceof PathText) {
             pnl.add(new PathTextInspector().get(((PathText) shape.item()), lookup, item, of));
         }
@@ -217,80 +232,7 @@ public class ShapeElementPropertiesInspector extends InspectorFactory<ShapeEleme
             joinBox.addItemListener(il);
             add(sub3);
         }
-
-        @Messages({"ROUND=Round", "BUTT=Butt", "SQUARE=Square"})
-        enum Cap {
-            ROUND,
-            BUTT,
-            SQUARE;
-
-            static Cap forStroke(BasicStroke stroke) {
-                switch (stroke.getEndCap()) {
-                    case BasicStroke.CAP_BUTT:
-                        return BUTT;
-                    case BasicStroke.CAP_ROUND:
-                        return ROUND;
-                    case BasicStroke.CAP_SQUARE:
-                        return SQUARE;
-                    default:
-                        throw new AssertionError("Unknown stroke type " + stroke.getEndCap());
-                }
-            }
-
-            int constant() {
-                switch (this) {
-                    case BUTT:
-                        return BasicStroke.CAP_BUTT;
-                    case ROUND:
-                        return BasicStroke.CAP_ROUND;
-                    case SQUARE:
-                        return BasicStroke.CAP_SQUARE;
-                    default:
-                        throw new AssertionError(this);
-                }
-            }
-
-            public String toString() {
-                return NbBundle.getMessage(Join.class, name());
-            }
-        }
-
-        @Messages({"BEVEL=Bevel", "MITER=Miter"})
-        enum Join {
-            BEVEL,
-            MITER,
-            ROUND;
-
-            int constant() {
-                switch (this) {
-                    case BEVEL:
-                        return BasicStroke.JOIN_BEVEL;
-                    case MITER:
-                        return BasicStroke.JOIN_MITER;
-                    case ROUND:
-                        return BasicStroke.JOIN_ROUND;
-                    default:
-                        throw new AssertionError(this);
-                }
-            }
-
-            public static Join forStroke(BasicStroke stroke) {
-                switch (stroke.getLineJoin()) {
-                    case BasicStroke.JOIN_BEVEL:
-                        return BEVEL;
-                    case BasicStroke.JOIN_MITER:
-                        return MITER;
-                    case BasicStroke.JOIN_ROUND:
-                        return ROUND;
-                    default:
-                        throw new AssertionError("Unknown line join type " + stroke.getLineJoin());
-                }
-            }
-
-            public String toString() {
-                return NbBundle.getMessage(Join.class, name());
-            }
-        }
-
     }
+
+
 }

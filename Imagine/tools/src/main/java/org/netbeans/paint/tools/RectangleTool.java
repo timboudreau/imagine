@@ -11,7 +11,6 @@ package org.netbeans.paint.tools;
 import java.awt.BasicStroke;
 import net.dev.java.imagine.api.tool.aspects.Attachable;
 import net.dev.java.imagine.spi.tool.Tool;
-import java.lang.Float;
 import net.dev.java.imagine.spi.tool.ToolDef;
 import static org.netbeans.paint.tools.MutableRectangle.*;
 import java.awt.Color;
@@ -53,13 +52,13 @@ import org.imagine.geometry.EqPointDouble;
  * @author Tim Boudreau
  */
 @ToolDef(name = "Rectangle", iconPath = "org/netbeans/paint/tools/resources/rect.svg")
-@Tool(Surface.class)
+@Tool(value=Surface.class, toolbarPosition=100)
 public class RectangleTool implements PaintParticipant, ScalingMouseListener, KeyListener, CustomizerProvider, Attachable, SnapPointsConsumer, ChangeListener {
 
     private EnhRectangle2D lastPaintedRectangle = new EnhRectangle2D();
     private static final int NO_ANCHOR_SIZE = 18;
     private double anchorSize = NO_ANCHOR_SIZE;
-    private EnhRectangle2D TEMPLATE_RECTANGLE = new EnhRectangle2D(0, 0, NO_ANCHOR_SIZE, NO_ANCHOR_SIZE);
+    protected EnhRectangle2D TEMPLATE_RECTANGLE = new EnhRectangle2D(0, 0, NO_ANCHOR_SIZE, NO_ANCHOR_SIZE);
 
     protected MutableRectangle2D rect;
     private int draggingCorner;
@@ -110,10 +109,24 @@ public class RectangleTool implements PaintParticipant, ScalingMouseListener, Ke
             g2d.fill(toPaint);
         }
         if (style.isOutline()) {
-            g2d.setStroke(new BasicStroke(strokeC.get()));
+            if (toPaint == TEMPLATE_RECTANGLE) {
+                // At high zoom, the stroke can be bigger than the scaled template
+                // object
+                g2d.setStroke(scaledStroke());
+            } else {
+                g2d.setStroke(strokeC.get());
+            }
             g2d.setColor(outlineC.get());
             g2d.draw(toPaint);
         }
+    }
+
+    protected BasicStroke scaledStroke() {
+        BasicStroke stroke = strokeC.get();
+        if (zoom != null) {
+            stroke = zoom.inverseScaleStroke(stroke);
+        }
+        return stroke;
     }
 
     @Override
@@ -311,7 +324,7 @@ public class RectangleTool implements PaintParticipant, ScalingMouseListener, Ke
     protected static final FillCustomizer paintC = FillCustomizer.getDefault();
     protected static final Customizer<Color> outlineC = Customizers.getCustomizer(Color.class, FOREGROUND);
     protected static final Customizer<PaintingStyle> fillC = Customizers.getCustomizer(PaintingStyle.class, FILL);
-    protected static final Customizer<Float> strokeC = Customizers.getCustomizer(Float.class, STROKE, 0.05F, 10F);
+    protected static final Customizer<BasicStroke> strokeC = Customizers.getCustomizer(BasicStroke.class, "Stroke", null);
 
     public Customizer getCustomizer() {
         return new AggregateCustomizer("foo", fillC, outlineC, strokeC, paintC);
@@ -328,6 +341,7 @@ public class RectangleTool implements PaintParticipant, ScalingMouseListener, Ke
     public void attach(Lookup.Provider on, ToolUIContext ctx) {
         zoom = ctx.zoom();
         zoom.addChangeListener(this);
+        stateChanged(null);
     }
 
     @Override

@@ -7,6 +7,7 @@ package org.imagine.vector.editor.ui.tools.widget.actions.generic;
 
 import com.mastfrog.util.strings.Strings;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -53,7 +54,14 @@ final class Sense<T> implements Supplier<T>, LookupListener {
     }
 
     public boolean isExactlyOne() {
-        return all().size() == 1;
+        Collection<? extends T> a = all();
+        if (a.isEmpty()) {
+            return false;
+        }
+        if (a.size() == 1) {
+            return true;
+        }
+        return new HashSet<>(a).size() == 1;
     }
 
     public boolean isMoreThanOne() {

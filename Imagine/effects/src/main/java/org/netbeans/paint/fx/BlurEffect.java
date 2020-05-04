@@ -28,7 +28,6 @@ import java.util.Hashtable;
 import net.java.dev.imagine.effects.api.Preview;
 import net.java.dev.imagine.effects.spi.CompositeEffectStub;
 import net.java.dev.imagine.effects.spi.Effect;
-import net.java.dev.imagine.effects.spi.ImageSource;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
@@ -81,7 +80,7 @@ public class BlurEffect implements Effect, Effect.Applicator {
         return Type.COMPOSITE;
     }
     */
-@Effect(position=100)
+@Effect(position=100, name="Blur", canPreview = true)
 public class BlurEffect extends CompositeEffectStub<Void> {
 
     @Override
@@ -91,7 +90,6 @@ public class BlurEffect extends CompositeEffectStub<Void> {
 
     @Override
     public Preview<?, Void, Composite> createPreview(Lookup.Provider layer) {
-        ImageSource src = layer.getLookup().lookup(ImageSource.class);
         return super.createPreview(layer); //To change body of generated methods, choose Tools | Templates.
     }
     

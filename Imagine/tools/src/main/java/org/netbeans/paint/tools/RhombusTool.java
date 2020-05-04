@@ -8,7 +8,6 @@
  */
 package org.netbeans.paint.tools;
 
-import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
@@ -27,7 +26,7 @@ import org.openide.util.NbBundle;
  * @author Tim Boudreau
  */
 @ToolDef(name = "Rhombus", iconPath = "org/netbeans/paint/tools/resources/rhombus.svg")
-@Tool(Surface.class)
+@Tool(value=Surface.class, toolbarPosition=600)
 public class RhombusTool extends RectangleTool {
 
     private double rotation;
@@ -49,7 +48,11 @@ public class RhombusTool extends RectangleTool {
             g2d.fill(rhom);
         }
         if (style.isOutline()) {
-            g2d.setStroke(new BasicStroke(strokeC.get()));
+            if (toPaint == TEMPLATE_RECTANGLE) {
+                g2d.setStroke(scaledStroke());
+            } else {
+                g2d.setStroke(strokeC.get());
+            }
             g2d.setColor(outlineC.get());
             g2d.draw(rhom);
         }

@@ -63,7 +63,7 @@ final class ShapeTile extends Tile<ShapeElement> {
         } else {
             ratio = yRatio;
         }
-        AffineTransform result = PooledTransform.getScaleInstance(ratio, ratio, this);
+        AffineTransform result = PooledTransform.getScaleInstance(ratio, ratio, null);
         double[] d = new double[]{scratch.x, scratch.y};
         result.transform(d, 0, d, 0, 1);
         PooledTransform.withTranslateInstance(-d[0] + x, -d[1] + y, result::concatenate);

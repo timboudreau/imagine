@@ -54,6 +54,10 @@ public abstract class MouseDrivenTool extends MouseAdapter implements MouseMotio
         this.ctx = ctx;
     }
 
+    protected final ToolUIContext ctx() {
+        return ctx == null ? ToolUIContext.DUMMY_INSTANCE : ctx;
+    }
+
     protected void activated(Layer layer) {
         if (surface == null) {
             surface = layer.getSurface();

@@ -27,7 +27,7 @@ public final class MetaTransferable implements Transferable {
 
     public MetaTransferable add(Transferable xfer) {
         if (xfer instanceof MetaTransferable) {
-            throw new IllegalArgumentException("Do not next MetaTransferables");
+            throw new IllegalArgumentException("Do not nest MetaTransferables");
         }
         delegates.add(xfer);
         flavors = null;

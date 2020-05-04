@@ -195,6 +195,11 @@ final class PhantomReferencePool<T> {
     private boolean isOwned(T obj) {
         for (Phant<T> p : phantoms) {
             if (p.poolItem.get() == obj) {
+                if (p instanceof DebugPhant<?>) {
+                    throw new AssertionError("Returning an object owned by "
+                            + " instance " + ((DebugPhant<?>) p).referentIdentity
+                            + " of type " + (((DebugPhant<?>) p)).referentClass);
+                }
                 return true;
             }
         }

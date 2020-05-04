@@ -113,25 +113,25 @@ public interface ShapeElement {
 
     void translate(double x, double y);
 
-    public void setPaintingStyle(PaintingStyle style);
+    void setPaintingStyle(PaintingStyle style);
 
-    public PaintingStyle getPaintingStyle();
+    PaintingStyle getPaintingStyle();
 
-    public void setFill(PaintKey<?> fill);
+    void setFill(PaintKey<?> fill);
 
-    public void setFill(Paint fill);
+    void setFill(Paint fill);
 
-    public void setDraw(PaintKey<?> fill);
+    void setDraw(PaintKey<?> fill);
 
-    public void setDraw(Paint draw);
+    void setDraw(Paint draw);
 
-    public Paint getFill();
+    Paint getFill();
 
-    public Paint getDraw();
+    Paint getDraw();
 
-    public PaintKey<?> getFillKey();
+    PaintKey<?> getFillKey();
 
-    public PaintKey<?> getDrawKey();
+    PaintKey<?> getDrawKey();
 
     Runnable restorableSnapshot();
 

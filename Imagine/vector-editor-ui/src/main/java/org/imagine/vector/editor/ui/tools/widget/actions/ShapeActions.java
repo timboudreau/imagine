@@ -58,6 +58,7 @@ import org.imagine.vector.editor.ui.spi.ShapesCollection;
 import org.imagine.vector.editor.ui.tools.CSGOperation;
 import org.imagine.vector.editor.ui.tools.widget.DesignerControl;
 import org.imagine.vector.editor.ui.tools.widget.actions.generic.ActionsBuilder;
+import org.imagine.vector.editor.ui.tools.widget.util.ViewL;
 import org.netbeans.api.visual.action.ActionFactory;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.widget.Widget;
@@ -76,6 +77,7 @@ public class ShapeActions {
     private final ActionsBuilder actions;
 
     private ThreadLocal<Point> currentPoint = ThreadLocal.withInitial(Point::new);
+    private ThreadLocal<EqPointDouble> currentPoint2D = ThreadLocal.withInitial(EqPointDouble::new);
     private final DesignerControl ctrl;
 
     @Messages({
@@ -202,7 +204,7 @@ public class ShapeActions {
                 .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_CUT, 0))
                 .separatorBefore()
                 // XXX need a clipboard type for multiple elements
-                .sensitiveTo(ShapesCollection.class).sensingExactlyOne()
+                .sensitiveTo(ShapesCollection.class).sensingPresence()
                 .sensitiveTo(ShapeElement.class).sensingPresence()
                 .finish((shapes, element) -> {
                     Transferable xfer = PaintPalettes.createTransferable(element);
@@ -221,7 +223,7 @@ public class ShapeActions {
                 .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_C, Utilities.isMac() ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK))
                 .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_COPY, 0))
                 // XXX need a clipboard type for multiple elements
-                .sensitiveTo(ShapesCollection.class).sensingExactlyOne()
+                .sensitiveTo(ShapesCollection.class).sensingPresence()
                 .sensitiveTo(ShapeElement.class).sensingPresence()
                 .finish((shapes, element) -> {
                     Transferable xfer = PaintPalettes.createTransferable(element);
@@ -655,10 +657,12 @@ public class ShapeActions {
                         .sensitiveTo(ShapeElement.class).sensingPresence()
                         .sensitiveTo(ShapesCollection.class).sensingPresence()
                         .testingBothWith((element, shapes) -> {
-                            List<? extends ShapeElement> atPoint = shapes.shapesAtPoint(lastPopupLocation.x, lastPopupLocation.y);
+                            EqPointDouble pt = currentPoint2D.get();
+                            List<? extends ShapeElement> atPoint = shapes.shapesAtPoint(pt.x, pt.y);
                             return atPoint.size() > 1;
                         }).finish((element, shapes) -> {
-                    List<? extends ShapeElement> atPoint = shapes.shapesAtPoint(lastPopupLocation.x, lastPopupLocation.y);
+                    EqPointDouble pt = currentPoint2D.get();
+                    List<? extends ShapeElement> atPoint = shapes.shapesAtPoint(pt.x, pt.y);
                     atPoint.remove(element);
                     Set<ShapeElement> allRemoved = new HashSet<>(atPoint.size() + 1);
                     Set<ShapeElement> allAdded = new HashSet<>(1);
@@ -770,7 +774,7 @@ public class ShapeActions {
         actions.action(Bundle.actionDuplicate())
                 .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0))
                 .sensitiveTo(ShapesCollection.class).sensingPresence()
-                .sensitiveTo(ShapeElement.class).sensingExactlyOne()
+                .sensitiveTo(ShapeElement.class).sensingPresence()
                 .finish((shapes, element) -> {
                     shapes.contentsEdit(Bundle.opDuplicate(element.getName()), () -> {
                         ShapeElement nue = shapes.duplicate(element);
@@ -872,6 +876,7 @@ public class ShapeActions {
         }
         JPopupMenu menu = new JPopupMenu();
         currentPoint.set(localLocation);
+        currentPoint2D.set(ViewL.lastPoint2D(widget));
         try {
             actions.applyToPopup(menu, new ProxyLookup(widget.getLookup(), Utilities.actionsGlobalContext()));
         } finally {

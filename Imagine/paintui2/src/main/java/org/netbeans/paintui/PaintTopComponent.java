@@ -12,6 +12,7 @@
  */
 package org.netbeans.paintui;
 
+import com.mastfrog.function.throwing.io.IOBiFunction;
 import net.java.dev.imagine.ui.common.BackgroundStyle;
 import net.java.dev.imagine.ui.common.UndoMgr;
 import net.java.dev.imagine.ui.common.UIContextLookupProvider;
@@ -27,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -60,8 +63,12 @@ import org.netbeans.api.progress.ProgressHandleFactory;
 import org.netbeans.paint.api.components.FileChooserUtils;
 import org.netbeans.paintui.PictureScene.PI;
 import net.java.dev.imagine.ui.actions.spi.Selectable;
+import net.java.dev.imagine.ui.common.ImageEditorFactory;
+import net.java.dev.imagine.ui.common.RecentFiles;
+import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.ContextLog;
-import org.netbeans.api.visual.widget.Scene;
+import org.imagine.editor.api.ImageEditor;
+import org.imagine.editor.api.Zoom;
 import org.netbeans.api.visual.widget.Scene.SceneListener;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
@@ -71,6 +78,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import org.openide.nodes.Node;
+import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
 import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
@@ -132,7 +140,10 @@ import org.openide.windows.TopComponent;
     "WHITE=White",
     "RASTER_IMAGES=Raster Images (png, jpg, gif, ...)",
     "# {0} - imageCount",
-    "OPENING_IMAGES=Opening {0} images"
+    "OPENING_IMAGES=Opening {0} images",
+    "# {0} - fileExtension",
+    "UNKNOWN_FILE_EXTENSION=Not a known image file extension: {0}",
+    "TTL_UNKNOWN_FILE_EXTENSION=Could Not Save"
 })
 @TopComponent.Description(preferredID = "PaintTopComponent",
         //iconBase="SET/PATH/TO/ICON/HERE",
@@ -143,7 +154,7 @@ import org.openide.windows.TopComponent;
 @TopComponent.OpenActionRegistration(displayName = "#CTL_PaintAction",
         preferredID = "PaintTopComponent")
 public final class PaintTopComponent extends TopComponent implements
-        ChangeListener, LookupListener, IO, Selectable, Resizable {
+        ChangeListener, LookupListener, IO, Selectable, Resizable, ImageEditor {
 
     private final PictureScene canvas; //The component the user draws on
     private static int ct = 0; //A counter we use to provide names for new images
@@ -165,6 +176,20 @@ public final class PaintTopComponent extends TopComponent implements
     public PaintTopComponent() {
         this(new PictureScene());
         init();
+    }
+
+    @Override
+    public Dimension getAvailableSize() {
+        return getSize();
+    }
+
+    @Override
+    public AspectRatio getPictureAspectRatio() {
+        return canvas.aspectRatio();
+    }
+
+    public Zoom getZoom() {
+        return canvas.getZoom();
     }
 
     @Override
@@ -203,7 +228,7 @@ public final class PaintTopComponent extends TopComponent implements
         this.file = origin;
         updateActivatedNode(origin);
         init();
-        setDisplayName(origin.getName());
+        setDisplayName(fileName(origin.toPath()));
     }
 
     public PaintTopComponent(Dimension dim, BackgroundStyle backgroundStyle) {
@@ -233,7 +258,12 @@ public final class PaintTopComponent extends TopComponent implements
         Path pth = picture.getPicture().associatedFile();
         if (pth != null) {
             file = pth.toFile();
-            displayName = file.getName();
+            displayName = fileName(pth);
+            try {
+                updateActivatedNode(file);
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
+            }
         } else {
             displayName = NbBundle.getMessage(
                     PaintTopComponent.class,
@@ -244,12 +274,8 @@ public final class PaintTopComponent extends TopComponent implements
         setDisplayName(displayName);
         stateChanged(new ChangeEvent(picture));
 
-//        Dimension sz = new Dimension(picture.getSize());
-//        sz.width = Math.max(sz.width, 500);
-//        sz.height = Math.max(sz.height, 500);
-//        setPreferredSize(sz);
         setLayout(new BorderLayout());
-        InnerPanel inner = new InnerPanel(canvas.createView(), canvas);
+        InnerPanel inner = new InnerPanel(canvas.createView(), canvas, canvas.zoom());
         canvas.addSceneListener(inner);
         JScrollPane pane = new JScrollPane(inner);
         pane.getViewport().setScrollMode(JViewport.BLIT_SCROLL_MODE);
@@ -267,11 +293,15 @@ public final class PaintTopComponent extends TopComponent implements
 
         private final JComponent inner;
         private Dimension prefSize;
+        private final PictureScene scene;
+        private final Zoom zoom;
 
-        InnerPanel(JComponent inner, Scene scene) {
+        InnerPanel(JComponent inner, PictureScene scene, Zoom zoom) {
             this.inner = inner;
             add(inner);
             setBorder(BorderFactory.createEmptyBorder());
+            this.scene = scene;
+            this.zoom = zoom;
         }
 
         @Override
@@ -281,8 +311,46 @@ public final class PaintTopComponent extends TopComponent implements
 //            return inner.getPreferredSize();
         }
 
+        private boolean pristine = true;
+
+        private void ensureZoom() {
+            if (pristine) {
+                Rectangle r = scene.getBounds();
+                if (r == null) {
+                    scene.validate();
+                    r = scene.getBounds();
+                }
+                if (r == null) {
+                    return;
+                }
+                // If we are opening an extremely small or large image,
+                // adjust the zoom level to fit the image within the visible area
+                Dimension pictureSize = r.getSize();
+                Dimension currentSize = getParent().getSize();
+                System.out.println("\n\nPristine validate " + currentSize + " and " + pictureSize);
+                if (currentSize.width != 0 && currentSize.height != 0
+                        && pictureSize.width != 0 && pictureSize.height != 0) {
+                    pristine = false;
+                    int myArea = currentSize.width * currentSize.height;
+                    int pictureArea = pictureSize.width * pictureSize.height;
+                    if (pictureArea < myArea / 4) {
+                        if (pictureSize.width > pictureSize.height) {
+                            double widthFactor = (double) currentSize.width / pictureSize.width;
+                            zoom.setZoom((float) widthFactor);
+                            System.out.println("\n\nSCALE TO WIDTH " + widthFactor + "\n\n");
+                        } else {
+                            double heightFactor = (double) currentSize.height / pictureSize.height;
+                            zoom.setZoom((float) heightFactor);
+                            System.out.println("\n\nSCALE TO HEIGHT " + heightFactor + "\n\n");
+                        }
+                    }
+                }
+            }
+        }
+
         @Override
         public void doLayout() {
+            ensureZoom();
             Dimension d = inner.getPreferredSize();
             int offX = 0;
             int offY = 0;
@@ -395,24 +463,6 @@ public final class PaintTopComponent extends TopComponent implements
                 lastSurface.setTool(null);
             }
         }
-        //What the heck was this?
-        // Ah, a way for layers to provide their own palettes
-        /*
-        Collection <? extends TopComponent> tcs = layerImpl.getLookup().lookupAll (TopComponent.class);
-        for (TopComponent tc : tcs) {
-            tc.open();
-            tc.requestVisible();
-        }
-        layerTopComponents.removeAll(tcs);
-        for (TopComponent old : layerTopComponents) {
-            old.close();
-        }
-        layerTopComponents.clear();
-        for (TopComponent nue : tcs) {
-            layerTopComponents.add (nue);
-        }
-         */
-
         List<Object> l = new ArrayList<>(10);
         l.add(this);
         l.addAll(Arrays.asList(this, canvas.getZoom(),
@@ -456,31 +506,42 @@ public final class PaintTopComponent extends TopComponent implements
         updateActiveTool();
     }
 
-    public void save() throws IOException {
+    public void save(BiConsumer<Exception, Path> c) {
         if (this.file != null) {
-            doSave(file);
+            IO_POOL.submit(() -> {
+                try {
+                    doSave(file);
+                    c.accept(null, file.toPath());
+                } catch (Exception ex) {
+                    c.accept(ex, null);
+                }
+            });
         } else {
-            saveAs();
+            saveAs(c);
         }
     }
 
-    public void saveAs() throws IOException {
+    @Override
+    public void saveAs(BiConsumer<Exception, Path> c) {
         JFileChooser ch = FileChooserUtils.getFileChooser("image");
         if (ch.showSaveDialog(this) == JFileChooser.APPROVE_OPTION
                 && ch.getSelectedFile() != null) {
-
             File f = ch.getSelectedFile();
-            if (!f.getPath().endsWith(".png")) { //NOI18N
-                f = new File(f.getPath() + ".png"); //NOI18N
-            }
             if (!f.exists()) {
-                if (!f.createNewFile()) {
-                    String failMsg = NbBundle.getMessage(
-                            PaintTopComponent.class,
-                            "MSG_SaveFailed", new Object[]{f.getPath()} //NOI18N
-                    );
-                    JOptionPane.showMessageDialog(this, failMsg);
-                    return;
+                try {
+                    if (!f.createNewFile()) {
+                        String failMsg = NbBundle.getMessage(
+                                PaintTopComponent.class,
+                                "MSG_SaveFailed", new Object[]{f.getPath()} //NOI18N
+                        );
+                        EventQueue.invokeLater(() -> {
+                            JOptionPane.showMessageDialog(this, failMsg);
+                            c.accept(null, null);
+                        });
+                        return;
+                    }
+                } catch (IOException ex) {
+                    c.accept(ex, null);
                 }
             } else {
                 String overwriteMsg = NbBundle.getMessage(
@@ -489,25 +550,81 @@ public final class PaintTopComponent extends TopComponent implements
                 );
                 if (JOptionPane.showConfirmDialog(this, overwriteMsg)
                         != JOptionPane.OK_OPTION) {
-
+                    c.accept(null, null);
                     return;
                 }
             }
-            doSave(f);
+            File ff = f;
+            IO_POOL.submit(() -> {
+                File realFile;
+                try {
+                    realFile = doSave(ff);
+                } catch (IOException ex) {
+                    EventQueue.invokeLater(() -> {
+                        c.accept(ex, null);
+                    });
+                    return;
+                }
+                EventQueue.invokeLater(() -> {
+                    if (realFile == null) {
+                        c.accept(null, null);
+                    } else {
+                        Path p = realFile.toPath();
+                        canvas.picture().getPicture().associateFile(p);
+                        setDisplayName(fileName(p));
+                        RecentFiles.getDefault().add(RecentFiles.Category.IMAGE, p);
+                        c.accept(null, p);
+                    }
+                });
+            });
         }
     }
 
-    private void doSave(File f) throws IOException {
+    private static String fileName(Path p) {
+        String s = p.getFileName().toString();
+        int ix = s.lastIndexOf('.');
+        if (ix > 0) {
+            return s.substring(0, ix);
+        }
+        return s;
+    }
+
+    private File findFormatAndSaveImage(File f, IOBiFunction<String, File, File> io) throws IOException {
+        String ext = extensionOf(f);
+        if (!f.getName().endsWith(ext)) {
+            f = new File(f.getPath() + '.' + ext);
+        }
+        boolean hasReader = ImageIO.getImageReadersBySuffix(ext).hasNext();
+        if (!hasReader) {
+            JOptionPane.showMessageDialog(this, Bundle.UNKNOWN_FILE_EXTENSION(ext),
+                    Bundle.TTL_UNKNOWN_FILE_EXTENSION(), JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
+        return io.apply(ext, f);
+    }
+
+    private static String extensionOf(File file) {
+        String nm = file.getName();
+        int len = nm.length();
+        int ix = nm.lastIndexOf('.');
+        if (ix != len - 1 && ix > 0) {
+            return nm.substring(ix + 1, len);
+        }
+        return "png";
+    }
+
+    private File doSave(File f) throws IOException {
         BufferedImage img = canvas.toImage();
-        ImageIO.write(img, "png", f);
-        this.file = f;
-        String statusMsg = NbBundle.getMessage(PaintTopComponent.class,
-                "MSG_Saved", new Object[]{f.getPath()}); //NOI18N
-        StatusDisplayer.getDefault().setStatusText(statusMsg);
-        setDisplayName(f.getName());
-        updateActivatedNode(f);
-        StatusDisplayer.getDefault().setStatusText(NbBundle.getMessage(PaintTopComponent.class,
-                "MSG_SAVED", f.getPath())); //NOI18N
+        return findFormatAndSaveImage(f, (fmt, file) -> {
+            ImageIO.write(img, fmt, file);
+            String statusMsg = NbBundle.getMessage(PaintTopComponent.class,
+                    "MSG_Saved", new Object[]{f.getPath()}); //NOI18N
+            StatusDisplayer.getDefault().setStatusText(statusMsg);
+            this.file = f;
+            setDisplayName(fileName(f.toPath()));
+            updateActivatedNode(f);
+            return file;
+        });
     }
 
     @Override
@@ -642,7 +759,32 @@ public final class PaintTopComponent extends TopComponent implements
     }
 
     @Override
-    public void reload() throws IOException {
+    public void reload(BiConsumer<Exception, Path> bi) {
+        PI pic = canvas.getPicture();
+        Path pth = pic.getPicture().associatedFile();
+        if (pth != null) {
+            if (!Files.exists(pth)) {
+                bi.accept(null, null);
+            }
+            IO_POOL.submit(() -> {
+                File file = pth.toFile();
+                for (ImageEditorFactory factory : Lookup.getDefault().lookupAll(ImageEditorFactory.class)) {
+                    if (factory.canOpen(file)) {
+                        if (factory.openExisting(file)) {
+                            RecentFiles.getDefault().add(factory.category(), file.toPath());
+                            EventQueue.invokeLater(() -> {
+                                undoManager.discardAllEdits();
+                                close();
+                            });
+                        } else {
+                            EventQueue.invokeLater(() -> {
+                                bi.accept(null, null);
+                            });
+                        }
+                    }
+                }
+            });
+        }
     }
 
     @Override

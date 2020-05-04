@@ -20,7 +20,7 @@ import org.openide.util.actions.Presenter;
  *
  * @author Tim Boudreau
  */
-public final class ZoomSubmenuAction extends GenericContextSensitiveAction<Zoom> implements Presenter.Menu/*, Presenter.Toolbar */{
+public final class ZoomSubmenuAction extends GenericContextSensitiveAction<Zoom> implements Presenter.Menu/*, Presenter.Toolbar */ {
 
     public ZoomSubmenuAction() {
         super("ACT_Zoom", Zoom.class);
@@ -68,7 +68,7 @@ public final class ZoomSubmenuAction extends GenericContextSensitiveAction<Zoom>
         }
 
         private void init() {
-            int intValue = (int) (zoom * 100);
+            int intValue = (int) (zoom * 10);
             DecimalFormat fmt = new DecimalFormat(NbBundle.getMessage(ZoomOneAction.class, "FMT_Zoom"));
             putValue(NAME, fmt.format(intValue));
         }

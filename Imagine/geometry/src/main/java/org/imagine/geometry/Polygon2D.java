@@ -196,6 +196,7 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
         if (at == currPoints - 1) {
             points = Arrays.copyOf(points, points.length - 2);
         } else {
+            // XXX something is broken here
             double[] nue = new double[points.length - 1];
             System.arraycopy(points, 0, nue, 0, arrayOffset);
             System.arraycopy(points, arrayOffset + 2, nue, arrayOffset,

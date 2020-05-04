@@ -5,6 +5,7 @@ import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
+import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -12,6 +13,7 @@ import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Fillable;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Shaped;
+import net.java.dev.imagine.api.vector.Transformable;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.elements.Clear;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
@@ -45,11 +47,12 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
 
     private PaintWrapper lastPaint;
     private final List<Entry> entries = new ArrayList<>();
-    private Rectangle bounds = new Rectangle();
+    private final Rectangle bounds = new Rectangle();
     private Primitive lastTarget;
 
     @Override
     public void accept(Primitive t) {
+        System.out.println("SC accept " + t);
         t.as(Attribute.class, attr -> {
             t.as(Background.class, bg -> {
                 clear.set(bg);
@@ -69,18 +72,22 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
         });
         t.as(Fillable.class, fill -> {
             boolean f = fill.isFill();
+            PaintWrapper pp = lastPaint;
             if (lastPaint != null) {
                 if (f) {
                     bg.set(lastPaint);
-                    lastPaint = null;
+//                    lastPaint = null;
                 } else {
                     fg.set(lastPaint);
-                    lastPaint = null;
+//                    lastPaint = null;
                 }
             }
             if (f) {
                 emitFill(t);
             } else {
+                if (!fg.isSet() && pp != null) {
+                    fg.set(pp);
+                }
                 emitDraw(t);
             }
         }, () -> {
@@ -226,18 +233,36 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
         if (target.equals(lastTarget)) {
             addFillToLastTarget();
         } else {
-            Entry e = new Entry((Shaped) target, clear, bg, fg, font, stroke,
+            Shaped shaped = transformed(target);
+            Entry e = new Entry(shaped, clear, bg, fg, font, stroke,
                     xform, false, true);
             entries.add(e);
             this.lastTarget = target;
         }
     }
 
+    private Shaped transformed(Primitive target) {
+            Shaped shaped = (Shaped) target;
+            if (xform.isSet()) {
+                AffineTransformWrapper xf = xform.get();
+                AffineTransform f = xf.getAffineTransform();
+                if (!f.isIdentity()) {
+                    if (shaped.is(Transformable.class)) {
+                        Transformable t = (Transformable) shaped;
+                        shaped = (Shaped) t.copy(f);
+                    }
+                }
+            }
+            return shaped;
+
+    }
+
     void emitDraw(Primitive target) {
         if (target.equals(lastTarget)) {
             addDrawToLastTarget();
         } else {
-            Entry e = new Entry((Shaped) target, clear, bg, fg, font, stroke,
+            Shaped shaped = transformed(target);
+            Entry e = new Entry(shaped, clear, bg, fg, font, stroke,
                     xform, false, true);
             entries.add(e);
             this.lastTarget = target;

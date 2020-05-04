@@ -87,7 +87,8 @@ public class GradientExtensionHandler extends DefaultExtensionHandler {
 
         addMgpAttributes(gradElem, genCtx, gradient);
 
-        return new SVGPaintDescriptor("url(#" + id + ")", SVG_OPAQUE_VALUE, gradElem);
+        SVGPaintDescriptor result = new SVGPaintDescriptor("url(#" + id + ")", SVG_OPAQUE_VALUE, gradElem);
+        return result;
     }
 
     private void addMgpAttributes(Element gradElem, SVGGeneratorContext genCtx, MultipleGradientPaint gradient) {
@@ -138,7 +139,8 @@ public class GradientExtensionHandler extends DefaultExtensionHandler {
             stop.setAttribute(SVG_OFFSET_ATTRIBUTE, (int) (fracs[i] * 100.0f) + "%");
             stop.setAttribute(SVG_STOP_COLOR_ATTRIBUTE, pd.getPaintValue());
 
-            if (colors[i].getAlpha() != 255) {
+            int alpha = colors[i].getAlpha();
+            if (alpha != 255) {
                 stop.setAttribute(SVG_STOP_OPACITY_ATTRIBUTE, pd.getOpacityValue());
             }
 

@@ -2,10 +2,9 @@
 <!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
 <filesystem>
      <folder name="Menu">
-	 <file name="org-netbeans-paint-effectsui-EffectsMenu.instance"/>
-	 <attr name="org-netbeans-paint-effectsui-EffectsMenu.instance/org-netbeans-paint-toolsui-ToolsMenu.instance"
-	    boolvalue="true"/>
-         <attr name="position" intvalue="200"/>
+	 <file name="org-netbeans-paint-effectsui-EffectsMenu.instance">
+             <attr name="position" intvalue="1000"/>
+         </file>
      </folder>
 </filesystem>
 

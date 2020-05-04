@@ -42,6 +42,7 @@
 package net.java.dev.colorchooser;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DnDConstants;
@@ -54,6 +55,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -180,7 +182,6 @@ public final class ColorChooser extends JComponent {
      * in the process of selecting (the palette or color chooser is open),
      * this will be the last known value, until such time as the user selects
      * a color and an action event is fired.
-     *
      */
     public Color getColor() {
         return color;
@@ -327,12 +328,14 @@ public final class ColorChooser extends JComponent {
      * </ul>
      */
     public void setPalettes(Palette[] palettes) {
-        if (palettes != null && palettes.length > 8) {
+        if (palettes != null && palettes.length > 9) {
             throw new IllegalArgumentException("Must be <= 8 palettes"); //NOI18N
         }
         Palette[] old = this.palettes;
         if (palettes == null) {
             palettes = Palette.getDefaultPalettes(continuousPalette);
+            palettes = Arrays.copyOf(palettes, palettes.length + 1);
+            palettes[palettes.length-1] = new AlphaPalette(this);
         }
         this.palettes = palettes;
         firePropertyChange("palettes", old, palettes.clone()); //NOI18N
@@ -498,6 +501,8 @@ public final class ColorChooser extends JComponent {
 
         JButton jb = new JButton("GC");
         final ColorChooser cc = new ColorChooser();
+
+        cc.setPreferredSize(new Dimension(32,32));
         JTextArea area = new JTextArea(ColorParser.toMinimalString(cc.getColor()));
         cc.addActionListener((ActionEvent ae) -> {
             jb1.setForeground(cc.getColor());
@@ -511,6 +516,7 @@ public final class ColorChooser extends JComponent {
 
         cc.setDragDropEnabled(true);
         cc2.setDragDropEnabled(true);
+        cc2.setPreferredSize(new Dimension(32,32));
 
         area.setDragEnabled(true);
 

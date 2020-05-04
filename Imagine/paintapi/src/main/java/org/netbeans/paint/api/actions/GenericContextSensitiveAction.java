@@ -222,6 +222,7 @@ public abstract class GenericContextSensitiveAction<T> implements ContextAwareAc
 
     protected final void setIcon(Icon icon) {
         putValue(Action.SMALL_ICON, icon);
+        putValue(Action.LARGE_ICON_KEY, icon);
     }
 
     protected final void setIcon(Image img) {

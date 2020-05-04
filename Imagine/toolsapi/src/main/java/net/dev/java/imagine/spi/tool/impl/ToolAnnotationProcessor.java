@@ -241,6 +241,7 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
             //A folder for shadow files pointing to actions in a menu
             LayerBuilder.File toolsMenu = b.folder(menuFolder.getPath() + "/ToolActions");
             toolsMenu.bundlevalue("displayName", defaultBundle, "ToolActions");
+            toolsMenu.intvalue("position", 450);
             b = toolsMenu.write();
 
             LayerBuilder.File toolbarsFolder = b.folder("Toolbars");
@@ -249,6 +250,7 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
             //A folder for shadow files pointing to actions in a toolbar
             LayerBuilder.File toolsToolbar = b.folder(toolbarsFolder.getPath() + "/ToolActions");
             toolsToolbar.bundlevalue("displayName", defaultBundle, "ToolActions");
+            toolsToolbar.intvalue("position", 10000);
             b = toolsToolbar.write();
 
             //Now build entries for all tool definitions and impls
@@ -291,8 +293,18 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
                     continue;
                 }
                 b = oneToolFolder.write();
+
+                int menuPosition = Integer.MAX_VALUE;
+                int toolbarPosition = Integer.MAX_VALUE;
+
                 //Write out .instance files for every implementation
                 for (ToolImplEntry tl : impls) {
+                    if (menuPosition == Integer.MAX_VALUE) {
+                        menuPosition = tl.menuPosition();
+                    }
+                    if (toolbarPosition == Integer.MAX_VALUE) {
+                        toolbarPosition = tl.toolbarPosition();
+                    }
                     String implFileName = toolFolderPath + '/' + tl.layerFileName();
                     LayerBuilder.File implFile = b.file(implFileName);
                     //standard netbeans boilerplate
@@ -330,10 +342,12 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
                 //create links in toolbar and menu folders
                 LayerBuilder.File menuShadow
                         = b.shadowFile(actionFile.getPath(), toolsMenu.getPath(), td.name());
+                menuShadow.intvalue("position", menuPosition);
                 b = menuShadow.write();
 
                 LayerBuilder.File toolbarShadow
                         = b.shadowFile(actionFile.getPath(), toolsToolbar.getPath(), td.name());
+                toolbarShadow.intvalue("position", toolbarPosition);
                 b = toolbarShadow.write();
             }
         }
@@ -368,6 +382,36 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
 
         public ImplementedTypes getTypes() {
             return types;
+        }
+
+        public boolean hasToolbarPosition() {
+            return anno.toolbarPosition() != Integer.MAX_VALUE
+                    || anno.menuPosition() != Integer.MAX_VALUE;
+        }
+
+        public int toolbarPosition() {
+            int result = anno.toolbarPosition();
+            if (result == Integer.MAX_VALUE) {
+                result = anno.menuPosition();
+            }
+            return result;
+        }
+
+        public int menuPosition() {
+            int result = anno.menuPosition();
+            if (result == Integer.MAX_VALUE) {
+                result = anno.toolbarPosition();
+            }
+            return result;
+        }
+
+        public boolean hasMenuPosition() {
+            return menuPosition() != Integer.MAX_VALUE
+                    || toolbarPosition() != Integer.MAX_VALUE;
+        }
+
+        public boolean hasPosition() {
+            return hasMenuPosition() || hasToolbarPosition();
         }
 
         public List<? extends TypeMirror> getToolImplementationTypeParameters() {

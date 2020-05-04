@@ -546,4 +546,9 @@ public class WrapperGraphics extends TrackingGraphics {
     public void areaModified(int x, int y, int w, int h) {
         changed(x, y, w, h);
     }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + other + ")";
+    }
 }

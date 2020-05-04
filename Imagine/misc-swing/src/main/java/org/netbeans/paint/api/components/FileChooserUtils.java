@@ -162,7 +162,9 @@ public class FileChooserUtils {
         public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             String s = value == null ? "" : value.toString();
             if (value != null && value.toString().length() > 25) {
-                String trunc = "..." + s.substring(s.length() - 23);
+                String trunc = "\u2026" + s.substring(s.length() - 23);
+                value = trunc;
+                list.setToolTipText(s);
             }
             return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
         }

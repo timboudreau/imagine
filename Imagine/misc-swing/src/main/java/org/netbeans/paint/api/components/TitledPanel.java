@@ -33,8 +33,8 @@ public abstract class TitledPanel extends JPanel implements LayoutDataProvider {
     private boolean expanded = false;
     private final JLabel nameLabel = new JLabel ();
     private final JPanel infoButtonPanel = new JPanel();
-    private final JButton configButton = new JButton();
-    private final JPanel buttonAndNamePanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
+    protected final JButton configButton = new JButton();
+    protected final JPanel buttonAndNamePanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
     protected TitledPanel (Class clazz, String bundleKey) {
         this (NbBundle.getMessage(clazz, bundleKey));
     }

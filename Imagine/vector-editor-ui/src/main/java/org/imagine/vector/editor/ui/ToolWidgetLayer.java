@@ -64,6 +64,12 @@ final class ToolWidgetLayer implements WidgetFactory, ChangeListener {
                 container.getScene().validate();
             }
         }
+        toolWidgetActive = lastWidget != null;
+    }
+
+    private boolean toolWidgetActive;
+    public boolean isUsingInternalWidget() {
+        return toolWidgetActive;
     }
 
     @Override
@@ -78,6 +84,7 @@ final class ToolWidgetLayer implements WidgetFactory, ChangeListener {
             if (layerWidget.getParentWidget() != null) {
                 layerWidget.removeFromParent();
             }
+            toolWidgetActive = true;
             container.addChild(layerWidget);
             container.getScene().validate();
         }
@@ -88,7 +95,10 @@ final class ToolWidgetLayer implements WidgetFactory, ChangeListener {
         Zoom zoom = controller.getZoom();
         zoom.removeChangeListener(this);
         layerWidget.removeFromParent();
+//        layerWidget.removeChildren();
         lookupConsumer.setDelegate(null);
+        toolWidgetActive = false;
+        lastWidget = null;
     }
 
     @Override

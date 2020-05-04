@@ -21,6 +21,7 @@
                         <publicPackage>org.imagine.editor.api</publicPackage>
                         <publicPackage>org.imagine.editor.api.grid</publicPackage>
                         <publicPackage>org.imagine.editor.api.snap</publicPackage>
+                        <publicPackage>org.imagine.editor.api.util</publicPackage>
                     </publicPackages>
                 </configuration>
             </plugin>

@@ -56,8 +56,8 @@ public class ImageEditorFactoryImpl extends ImageEditorFactory {
     }
 
     @Override
-    public void openExisting(File file) {
-        load(file, (err, img, origin) -> {
+    public boolean openExisting(File file) {
+        return load(file, (err, img, origin) -> {
             if (err != null) {
                 Exceptions.printStackTrace(err);
                 return;
@@ -74,7 +74,8 @@ public class ImageEditorFactoryImpl extends ImageEditorFactory {
         });
     }
 
-    private void load(File file, OpenConsumer img) {
+    private boolean load(File file, OpenConsumer img) {
+        // 
         IMAGE_OPEN.submit(() -> {
             try {
                 BufferedImage bi = ImageIO.read(file);
@@ -93,6 +94,7 @@ public class ImageEditorFactoryImpl extends ImageEditorFactory {
                 img.accept(ex, null, file);
             }
         });
+        return true;
     }
 
     interface OpenConsumer {

@@ -338,9 +338,12 @@ public class OneShapeWidget extends Widget {
             }
             if (el.isDraw()) {
                 g.setPaint(el.outline(ratio));
-                g.setStroke(el.stroke());
+                BasicStroke stroke = el.stroke();
+                if (stroke != null) {
+                    g.setStroke(el.stroke());
 //                el.item().as(PathText.class).draw(g);
-                g.fill(shape);
+                    g.draw(shape);
+                }
             }
 
             if (getState().isFocused()) {
@@ -354,15 +357,18 @@ public class OneShapeWidget extends Widget {
             }
         } else {
             if (el.isFill()) {
-                Paint bg = el.getFill();
+                Paint bg = el.fill(ratio);
                 if (bg != null) {
                     g.setPaint(bg);
                     g.fill(shape);
                 }
             }
             if (el.isDraw()) {
-                Paint fg = el.getDraw();
-                if (fg != null) {
+                Paint fg = el.outline(ratio);
+                BasicStroke stroke = el.stroke();
+                if (fg != null && stroke != null) {
+                    g.setPaint(fg);
+                    g.setStroke(el.stroke());
                     g.draw(shape);
                 }
             }

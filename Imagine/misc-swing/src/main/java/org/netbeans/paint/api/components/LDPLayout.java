@@ -7,6 +7,9 @@ import java.awt.Insets;
 import java.awt.LayoutManager;
 import java.util.LinkedList;
 import java.util.Objects;
+import javax.swing.JComboBox;
+import javax.swing.JSlider;
+import net.java.dev.colorchooser.ColorChooser;
 
 /**
  * A layout manager which gets data a shared ancestor about grid column
@@ -147,6 +150,7 @@ public final class LDPLayout implements LayoutManager {
         SharedLayoutData data = SharedLayoutData.find(parent);
         int h = MIN_ROW_HEIGHT;
         int maxBaseline = 0;
+        int workingWidth = parent.getWidth() - (ins.left + ins.right);
         for (Component c : comps) {
             Dimension d = c.getPreferredSize();
             int baseline = c.getBaseline(d.width, d.height);
@@ -175,6 +179,12 @@ public final class LDPLayout implements LayoutManager {
                 int colpos = data.xPosForColumn(i);
                 Dimension d = comps[i].getPreferredSize();
                 int baseline = c.getBaseline(d.width, d.height);
+                if (i == comps.length -1 && isFillComponent(c)) {
+                    d.width = workingWidth - colpos;
+                }
+                if (colpos + d.width > workingWidth - ins.left) {
+                    d.width = (ins.left + workingWidth) - colpos;
+                }
                 if (baseline < 0) {
                     c.setBounds(colpos, y, d.width, h);
                 } else {
@@ -186,5 +196,16 @@ public final class LDPLayout implements LayoutManager {
                 }
             }
         }
+    }
+
+    private boolean isFillComponent(Component comp) {
+        if (comp instanceof JSlider) {
+            JSlider sl = (JSlider) comp;
+            return !(sl.getUI() instanceof PopupSliderUI);
+        }
+        if (comp instanceof JComboBox || comp instanceof ColorChooser) {
+            return false;
+        }
+        return true;
     }
 }

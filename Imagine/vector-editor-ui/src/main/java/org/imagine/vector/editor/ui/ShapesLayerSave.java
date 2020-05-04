@@ -27,10 +27,6 @@ public class ShapesLayerSave implements LayerSaveHandler<VectorLayer> {
     static ShapesLayerSave INSTANCE = new ShapesLayerSave();
     private static final Logger LOG = Logger.getLogger(ShapesLayerSave.class.getName());
 
-    static {
-        LOG.setLevel(Level.ALL);
-    }
-
     protected static void fine(Supplier<String> supp) {
         if (LOG.isLoggable(Level.FINE)) {
             LOG.log(Level.FINE, supp.get());

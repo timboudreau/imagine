@@ -14,7 +14,6 @@ package net.java.dev.imagine.ui.actions;
 
 import java.util.Arrays;
 import java.util.Collection;
-import javax.swing.ImageIcon;
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
 import org.imagine.editor.api.Zoom;
 import org.openide.util.ImageUtilities;
@@ -30,15 +29,16 @@ public class ZoomInAction extends GenericContextSensitiveAction<Zoom> {
 
     public ZoomInAction() {
         super(Utilities.actionsGlobalContext(), Zoom.class);
-        setIcon(new ImageIcon(
-                ImageUtilities.loadImage("net/java/dev/imagine/ui/actions/zoomIn.png")));//NOI18N
-        putValue(NAME, NbBundle.getMessage(ZoomInAction.class, "ACT_ZoomIn")); //NOI18N
+        init();
     }
 
     public ZoomInAction(Lookup lkp) {
         super(lkp);
-        setIcon(new ImageIcon(
-                ImageUtilities.loadImage("net/java/dev/imagine/ui/actions/zoomIn.png")));//NOI18N
+        init();
+    }
+
+    private void init() {
+        setIcon(ImageUtilities.loadImage("net/java/dev/imagine/ui/actions/zoom-in.svg"));//NOI18N
         putValue(NAME, NbBundle.getMessage(ZoomInAction.class, "ACT_ZoomIn")); //NOI18N
     }
 

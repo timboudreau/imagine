@@ -697,6 +697,10 @@ public class TinySets {
                     throw new NoSuchElementException("Last element was null - "
                             + "assuming iteration not started.");
                 }
+                if (delegate instanceof SingleSet<?>) {
+                    delegate = delegate.removing(last);
+                    return;
+                }
                 if (delegate instanceof MultiSet<?>) {
                     MultiSet<?> ms = (MultiSet<?>) delegate;
                     if (ms.size() > 3) {

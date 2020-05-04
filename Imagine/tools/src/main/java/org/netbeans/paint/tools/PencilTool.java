@@ -39,7 +39,7 @@ import org.openide.util.NbBundle;
  * @author Timothy Boudreau
  */
 @ToolDef(iconPath="org/netbeans/paint/tools/resources/pencil.png", name="NAME_PencilTool")
-@Tool(Surface.class)
+@Tool(value=Surface.class, toolbarPosition=1300)
 public class PencilTool extends MouseDrivenTool implements ChangeListener, ActionListener, CustomizerProvider, Customizer {
     public PencilTool(Surface surface) {
         super(surface);

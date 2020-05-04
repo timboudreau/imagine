@@ -64,6 +64,36 @@ public final class FloatList /* extends AbstractList<Double> */ implements Itera
         this.vals = Arrays.copyOf(arr, arr.length);
     }
 
+    public boolean contains(float value) {
+        return indexOf(value) >= 0;
+    }
+
+    public int indexOf(float value) {
+        if (sorted) {
+            return Arrays.binarySearch(vals, 0, size, value);
+        }
+        for (int i = 0; i < size; i++) {
+            if (value == vals[i]) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public float first() {
+        if (size == 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        return vals[0];
+    }
+
+    public float last() {
+        if (size == 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        return vals[size - 1];
+    }
+
     private FloatList(float[] vals, int size, int initialCapacity, boolean sorted) {
         this.vals = vals;
         this.size = size;
@@ -244,6 +274,14 @@ public final class FloatList /* extends AbstractList<Double> */ implements Itera
             trim();
         }
         return this;
+    }
+
+    public void setAsFloat(int index, float value) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException(index + " of " + size);
+        }
+        sorted = false;
+        vals[index] = value;
     }
 
     public void put(float[] arr, int length) {

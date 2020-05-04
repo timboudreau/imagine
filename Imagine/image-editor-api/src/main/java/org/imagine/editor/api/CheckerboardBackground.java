@@ -30,6 +30,8 @@ public enum CheckerboardBackground {
     ;
     private final String resource;
     private TexturePaint paint;
+    private static final int LIGHT_ALPHA = 220;
+    private static final int DARK_ALPHA = 172;
 
     CheckerboardBackground(String resource) {
         this.resource = resource;
@@ -38,9 +40,20 @@ public enum CheckerboardBackground {
     public Color contrasting() {
         switch(this) {
             case LIGHT :
-                return new Color(10, 10, 10, 235);
+                return new Color(10, 10, 10, LIGHT_ALPHA);
             default :
-                return new Color(255, 255, 255, 172);
+                return new Color(255, 255, 255, DARK_ALPHA);
+        }
+    }
+
+    public Color nonContrasting() {
+        switch(this) {
+            case LIGHT :
+                return Color.BLACK;
+            case DARK :
+                return Color.LIGHT_GRAY;
+            default :
+                return Color.WHITE;
         }
     }
 

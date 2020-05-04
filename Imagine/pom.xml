@@ -33,18 +33,6 @@
                         <!--<finalName>${project.artifactId}</finalName>-->
                         <moduleType>autoload</moduleType>
                     </configuration>
-
-                    <!--                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>nbm-maven-plugin</artifactId>
-                    <version>4.1</version>
-                    <extensions>true</extensions>
-                    <configuration>
-                        <cluster>imagine</cluster>
-                        <useOSGiDependencies>false</useOSGiDependencies>
-                        <brandingToken>${brandingToken}</brandingToken>
-                        <moduleType>autoload</moduleType>
-                        <cluster>${brandingToken}</cluster>
-                    </configuration>-->
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -139,6 +127,7 @@
         <module>borrowed</module>
         <module>io</module>
         <module>svg-io</module>
+        <module>nbutil</module>
     </modules>
     <repositories>
         <repository>
@@ -185,6 +174,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>mastfrog-utils</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nbutil</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

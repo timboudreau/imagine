@@ -194,7 +194,8 @@ public final class NewCanvasAction extends org.openide.util.actions.CallableSyst
         }
 
         @Override
-        public void openExisting(File file) {
+        public boolean openExisting(File file) {
+            return false;
         }
 
         @Override

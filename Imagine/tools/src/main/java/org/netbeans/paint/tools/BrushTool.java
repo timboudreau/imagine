@@ -26,8 +26,8 @@ import org.netbeans.paint.tools.spi.Brush;
 import org.netbeans.paint.tools.spi.MouseDrivenTool;
 import org.openide.util.NbBundle;
 
-@ToolDef(name = "Brush", iconPath = "org/netbeans/paint/tools/resources/brush.png")
-@Tool(Surface.class)
+@ToolDef(name = "Brush", iconPath = "org/netbeans/paint/tools/resources/brush.svg")
+@Tool(value=Surface.class, toolbarPosition=100)
 public final class BrushTool extends MouseDrivenTool implements CustomizerProvider, Customizer, PaintParticipant {
 
     private boolean emit;

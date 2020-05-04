@@ -1,5 +1,6 @@
 package org.imagine.editor.api;
 
+import com.mastfrog.util.strings.Strings;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -12,54 +13,174 @@ import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.openide.util.Exceptions;
 
 /**
- * Some debug stuff.
+ * Some simple debug logging with zero overhead when off.
  *
  * @author Tim Boudreau
  */
-public final class ContextLog {
+public abstract class ContextLog {
 
     private static final ZonedDateTime INIT_TIME = ZonedDateTime.now();
     private static final Map<String, ContextLog> logs = new ConcurrentHashMap<>();
-    private final String name;
-    private FileChannel channel;
+    private static final String SYSPROP_FILE = "context.logs.file"; // NOI18N
+    private static final String SYSPROP = "context.logs"; // NOI18N
+    private static final Set<String> fileLogs = new HashSet<>();
+    private static final Set<String> consoleOnly = new HashSet<>();
+    private static final boolean empty;
 
     static {
-        Thread t = new Thread((Runnable) () -> {
-            for (ContextLog log : logs.values()) {
-                log.close();
+        String fileLogProp = System.getProperty(SYSPROP_FILE);
+
+        if (fileLogProp != null) {
+            for (CharSequence seq : Strings.splitUniqueNoEmpty(',', fileLogProp)) {
+                fileLogs.add(seq.toString());
             }
-        });
-        t.setName("Context log flush");
-        t.setDaemon(true);
-        Runtime.getRuntime().addShutdownHook(t);
+        }
+        String consoleOnlyProp = System.getProperty(SYSPROP);
+        if (consoleOnlyProp != null) {
+            for (CharSequence seq : Strings.splitUniqueNoEmpty(',', consoleOnlyProp)) {
+                consoleOnly.add(seq.toString());
+            }
+        }
+        empty = fileLogs.isEmpty() && consoleOnly.isEmpty();
+        if (!fileLogs.isEmpty()) {
+            Thread t = new Thread((Runnable) () -> {
+                for (Map.Entry<String, ContextLog> e : logs.entrySet()) {
+                    ContextLog log = e.getValue();
+                    log.log("Close " + e.getKey());
+                    log.close();
+                }
+                logs.clear();
+            });
+            t.setName("Context log flush");
+            t.setDaemon(true);
+            Runtime.getRuntime().addShutdownHook(t);
+        }
+    }
+
+    ContextLog() {
+        // do nothing
     }
 
     public static ContextLog get(String name) {
+        if (empty) {
+            return new NoOpLog();
+        }
         ContextLog log = logs.get(name);
         if (log == null) {
-            log = new ContextLog(name);
+            if (fileLogs.contains(name)) {
+                log = new RealLog(name);
+            } else if (consoleOnly.contains(name)) {
+                log = new ConsoleLog(name);
+            } else {
+                log = new NoOpLog();
+            }
             logs.put(name, log);
         }
         return log;
     }
 
-    private ContextLog(String name) {
-        this.name = name;
-        Path dir = Paths.get(System.getProperty("java.io.tmpdir"));
-        Path file = dir.resolve(name + "-" + startTime());
-        try {
-            channel = FileChannel.open(file, StandardOpenOption.APPEND,
-                    StandardOpenOption.CREATE_NEW);
-        } catch (IOException ex) {
-            ex.printStackTrace();
+    private static final class NoOpLog extends ContextLog {
+
+        @Override
+        public void log(Supplier<String> msg) {
+            // do nothing
+        }
+
+        @Override
+        public void log(String msg) {
+            // do nothing
         }
     }
+
+    private static final class ConsoleLog extends ContextLog {
+
+        private final String name;
+
+        ConsoleLog(String name) {
+            this.name = name;
+        }
+
+        public void log(Supplier<String> msg) {
+            log(msg.get());
+        }
+
+        public void log(String msg) {
+            Duration dur = Duration.ofMillis(System.currentTimeMillis() - INIT_TIME.toInstant().toEpochMilli());
+            log(dur, msg);
+        }
+
+        private void log(Duration dur, String msg) {
+            String fmt = format(dur, true);
+            String output = fmt + " " + name + ": " + msg;
+            System.out.println("CL:" + output);
+        }
+    }
+
+    private static final class RealLog extends ContextLog {
+
+        private final String name;
+        private FileChannel channel;
+
+        private RealLog(String name) {
+            this.name = name;
+            Path dir = Paths.get(System.getProperty("java.io.tmpdir"));
+            Path file = dir.resolve(name + "-" + startTime());
+            try {
+                channel = FileChannel.open(file, StandardOpenOption.APPEND,
+                        StandardOpenOption.CREATE_NEW);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        public void log(Supplier<String> msg) {
+            log(msg.get());
+        }
+
+        public void log(String msg) {
+            Duration dur = Duration.ofMillis(System.currentTimeMillis() - INIT_TIME.toInstant().toEpochMilli());
+            log(dur, msg);
+        }
+
+        private void log(Duration dur, String msg) {
+            String fmt = format(dur, true);
+            String output = fmt + " " + name + ": " + msg;
+            System.out.println("CL:" + output);
+            if (channel != null) {
+                ByteBuffer buf = ByteBuffer.wrap((output + "\n").getBytes(UTF_8));
+                try {
+                    channel.write(buf);
+                } catch (IOException ex) {
+                    // do nothing
+                }
+            }
+        }
+
+        void close() {
+            if (channel == null) {
+                return;
+            }
+            try {
+                channel.force(true);
+                channel.close();
+                channel = null;
+            } catch (IOException ex) {
+                Exceptions.printStackTrace(ex);
+            }
+        }
+    }
+
+    public abstract void log(Supplier<String> msg);
+
+    public abstract void log(String msg);
 
     private static String startTime() {
         return INIT_TIME.getYear() + "-"
@@ -69,17 +190,7 @@ public final class ContextLog {
 
     }
 
-    private void close() {
-        if (channel == null) {
-            return;
-        }
-        try {
-            channel.force(true);
-            channel.close();
-            channel = null;
-        } catch (IOException ex) {
-            Exceptions.printStackTrace(ex);
-        }
+    void close() {
     }
 
     public static void log(String s, String log) {
@@ -90,33 +201,11 @@ public final class ContextLog {
         get(s).log(log);
     }
 
-    public void log(Supplier<String> msg) {
-        log(msg.get());
-    }
-
-    public void log(String msg) {
-        Duration dur = Duration.ofMillis(System.currentTimeMillis() - INIT_TIME.toInstant().toEpochMilli());
-        log(dur, msg);
-    }
-
-    private void log(Duration dur, String msg) {
-        String fmt = format(dur, true);
-        String output = fmt + " " + name + ": " + msg;
-        System.out.println("CL:" + output);
-        if (channel != null) {
-            ByteBuffer buf = ByteBuffer.wrap((output + "\n").getBytes(UTF_8));
-            try {
-                channel.write(buf);
-            } catch (IOException ex) {
-                // do nothing
-            }
-        }
-    }
-
     private static final NumberFormat TWO_DIGITS = new DecimalFormat("00");
     private static final NumberFormat THREE_DIGITS = new DecimalFormat("000");
     private static final NumberFormat MANY_DIGITS = new DecimalFormat("######00");
 
+    // borrowed from Mastfrog TimeUtil
     /**
      * Format a duration to clock format of
      * <code>days:hours:minutes:seconds.millis</code> omitting any leading
@@ -174,5 +263,4 @@ public final class ContextLog {
             sb.append(fmt.format(val));
         }
     }
-
 }

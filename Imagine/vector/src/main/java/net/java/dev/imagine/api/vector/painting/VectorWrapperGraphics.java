@@ -43,6 +43,7 @@ import java.awt.image.RenderedImage;
 import java.awt.image.renderable.RenderableImage;
 import java.text.AttributedCharacterIterator;
 import java.util.Map;
+import java.util.Objects;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.elements.Arc;
@@ -90,6 +91,7 @@ public class VectorWrapperGraphics extends Graphics2D {
     private final VectorRepaintHandle handle;
     private final Point location;
     private final int w;
+    private boolean receiving = false;
     private final int h;
     private Runnable onDispose;
 
@@ -105,6 +107,25 @@ public class VectorWrapperGraphics extends Graphics2D {
         location.x = Math.min(0, location.x);
         location.y = Math.min(0, location.y);
         this.other.translate(-location.x, -location.y);
+    }
+
+    @Override
+    public Graphics create() {
+        VectorWrapperGraphics result = new VectorWrapperGraphics(handle, (Graphics2D) other.create(),
+                new Point(location), w, h);
+        System.out.println("VWG create child");
+//        if (onDispose != null) {
+//            Runnable origOnDispose = onDispose;
+//            Runnable childOnDispose = () -> {
+//                
+//            };
+//        }
+        return result;
+    }
+
+    public String toString() {
+        return super.toString() + " - onDispose " + onDispose
+                + " over " + other + " with " + handle + " at " + location;
     }
 
     public void onDispose(Runnable run) {
@@ -124,23 +145,24 @@ public class VectorWrapperGraphics extends Graphics2D {
     }
 
     public static Shaped primitiveFor(Shape shape, boolean fill) {
+        Shaped result = null;
         if (shape instanceof Rhombus) {
-            return new RhombusWrapper((Rhombus) shape, fill);
+            result = new RhombusWrapper((Rhombus) shape, fill);
         } else if (shape instanceof java.awt.Rectangle) {
             java.awt.Rectangle r = (java.awt.Rectangle) shape;
             Rectangle rect = new Rectangle(r.x, r.y, r.width, r.height, fill);
-            return rect;
+            result = rect;
         } else if (shape instanceof Rectangle2D) {
             Rectangle2D r = (Rectangle2D) shape;
             Rectangle rect = new Rectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight(), fill);
-            return rect;
+            result = rect;
         } else if (shape instanceof Circle) {
             Circle circ = (Circle) shape;
-            return new CircleWrapper(circ, fill);
+            result = new CircleWrapper(circ, fill);
         } else if (shape instanceof Rectangle2D) {
             Rectangle2D r = (Rectangle2D) shape;
             Rectangle rect = new Rectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight(), fill);
-            return rect;
+            result = rect;
         } else if (shape instanceof Ellipse2D) {
             Ellipse2D ell = (Ellipse2D) shape;
             if (ell.getWidth() == ell.getHeight()) {
@@ -150,33 +172,40 @@ public class VectorWrapperGraphics extends Graphics2D {
                 return new CircleWrapper(cx, cy, rad);
             }
             Oval ov = new Oval(ell.getX(), ell.getY(), ell.getWidth(), ell.getHeight(), fill);
-            return ov;
+            result = ov;
         } else if (shape instanceof Polygon2D) {
             Polygon2D p = (Polygon2D) shape;
-            return new PolygonWrapper(p, fill);
+            result = new PolygonWrapper(p, fill);
         } else if (shape instanceof java.awt.Polygon) {
             java.awt.Polygon p = (java.awt.Polygon) shape;
             PolygonWrapper polygon = new PolygonWrapper(p.xpoints, p.ypoints, p.npoints, fill);
-            return polygon;
+            result = polygon;
         } else if (shape instanceof RoundRectangle2D) {
             RoundRectangle2D r = (RoundRectangle2D) shape;
-            return new RoundRect(r.getX(), r.getY(), r.getWidth(), r.getHeight(), r.getArcWidth(), r.getArcHeight(), fill);
+            result = new RoundRect(r.getX(), r.getY(), r.getWidth(), r.getHeight(), r.getArcWidth(), r.getArcHeight(), fill);
         } else if (shape instanceof Arc2D) {
             Arc2D arc = (Arc2D) shape;
-            return new Arc(arc.getX(), arc.getY(), arc.getWidth(), arc.getHeight(), arc.getAngleStart(), arc.getAngleExtent(), fill);
+            result = new Arc(arc.getX(), arc.getY(), arc.getWidth(), arc.getHeight(), arc.getAngleStart(), arc.getAngleExtent(), fill);
         } else if (shape instanceof Line2D) {
             Line2D line = (Line2D) shape;
-            return new Line(line.getX1(), line.getY1(), line.getX2(), line.getY2());
+            result = new Line(line.getX1(), line.getY1(), line.getX2(), line.getY2());
         } else if (shape instanceof Triangle2D) {
-            return new TriangleWrapper((Triangle2D) shape, fill);
+            result = new TriangleWrapper((Triangle2D) shape, fill);
         } else {
-            Shape interpreted = ShapeCharacteristics.bestShapeFor(shape);
-            if (interpreted != null) {
-                System.out.println("INTERPRETED SHAPE " + interpreted);
-                return primitiveFor(interpreted, fill);
+            Shaped foreign = ForeignPaintObjectHandler.getShape(shape);
+            if (foreign != null) {
+                result = foreign;
+            } else {
+                Shape interpreted = ShapeCharacteristics.bestShapeFor(shape);
+                if (interpreted != null) {
+                    System.out.println("INTERPRETED SHAPE " + interpreted);
+                    return primitiveFor(interpreted, fill);
+                }
+                result = new PathIteratorWrapper(shape.getPathIterator(null), fill);
             }
-            return new PathIteratorWrapper(shape.getPathIterator(null), fill);
         }
+        System.out.println("push shape " + result);
+        return result;
     }
 
     @Override
@@ -394,6 +423,13 @@ public class VectorWrapperGraphics extends Graphics2D {
                     push(new TexturePaintWrapper((TexturePaint) paint));
                 } else if (paint.getClass() == LinearGradientPaint.class) {
                     push(new LinearPaintWrapper((LinearGradientPaint) paint));
+                } else if (Color.class.isInstance(paint)) {
+                    push(new ColorWrapper((Color) paint));
+                } else {
+                    Primitive foreign = ForeignPaintObjectHandler.getPaint(paint);
+                    if (foreign != null) {
+                        push(foreign);
+                    }
                 }
             }
         }
@@ -409,6 +445,10 @@ public class VectorWrapperGraphics extends Graphics2D {
                 push((Primitive) s);
             } else if (s instanceof BasicStroke) {
                 push(new BasicStrokeWrapper((BasicStroke) s));
+            }
+            Primitive foreign = ForeignPaintObjectHandler.getStroke(s);
+            if (foreign != null) {
+                push(foreign);
             }
         }
         if (s instanceof BasicStroke) {
@@ -493,20 +533,31 @@ public class VectorWrapperGraphics extends Graphics2D {
 
     @Override
     public void transform(AffineTransform tx) {
+        AffineTransform old = other.getTransform();
         other.transform(tx);
         if (!receiving) {
-            push(new AffineTransformWrapper(tx));
+            AffineTransform real = other.getTransform();
+            if (!Objects.equals(real, old)) {
+                push(new AffineTransformWrapper(real));
+            }
         }
     }
 
     @Override
     public void setTransform(AffineTransform tx) {
+        AffineTransform old = other.getTransform();
         other.setTransform(tx);
         if (!receiving) {
             if (tx == null) {
                 tx = AffineTransform.getTranslateInstance(0, 0);
             }
-            push(new AffineTransformWrapper(tx));
+            // Particularly SVG generated by Illustrator sets the transform
+            // again and again for every element, and applying the same
+            // transform over and over
+            AffineTransform real = other.getTransform();
+            if (!Objects.equals(real, old)) {
+                push(new AffineTransformWrapper(real));
+            }
         }
     }
 
@@ -551,12 +602,6 @@ public class VectorWrapperGraphics extends Graphics2D {
     @Override
     public FontRenderContext getFontRenderContext() {
         return other.getFontRenderContext();
-    }
-
-    @Override
-    public Graphics create() {
-        return new VectorWrapperGraphics(handle, (Graphics2D) other.create(),
-                new Point(location), w, h);
     }
 
     @Override
@@ -727,8 +772,9 @@ public class VectorWrapperGraphics extends Graphics2D {
         changed(xPoints, yPoints, nPoints);
     }
 
-    private void push(Primitive serializable) {
-        handle.drawn(serializable);
+    private void push(Primitive primitive) {
+        System.out.println("Push " + primitive);
+        handle.drawn(primitive);
     }
 
     @Override
@@ -739,8 +785,6 @@ public class VectorWrapperGraphics extends Graphics2D {
         other.drawPolygon(xPoints, yPoints, nPoints);
         changed(xPoints, yPoints, nPoints);
     }
-
-    private boolean receiving = false;
 
     @Override
     public void fillPolygon(int xPoints[], int yPoints[], int nPoints) {
@@ -766,6 +810,9 @@ public class VectorWrapperGraphics extends Graphics2D {
     @Override
     public boolean drawImage(Image img, int x, int y, int width, int height, ImageObserver observer) {
         boolean result = other.drawImage(img, x, y, width, height, observer);
+        if (!receiving) {
+            push(new ImageWrapper(x, y, img));
+        }
         if (result) {
             changed();
         }
@@ -775,6 +822,9 @@ public class VectorWrapperGraphics extends Graphics2D {
     @Override
     public boolean drawImage(Image img, int x, int y, Color bgcolor, ImageObserver observer) {
         boolean result = other.drawImage(img, x, y, bgcolor, observer);
+        if (!receiving) {
+            push(new ImageWrapper(x, y, img));
+        }
         if (result) {
             changed();
         }
@@ -784,6 +834,9 @@ public class VectorWrapperGraphics extends Graphics2D {
     @Override
     public boolean drawImage(Image img, int x, int y, int width, int height, Color bgcolor, ImageObserver observer) {
         boolean result = other.drawImage(img, x, y, width, height, bgcolor, observer);
+        if (!receiving) {
+            push(new ImageWrapper(x, y, img));
+        }
         if (result) {
             changed();
         }
@@ -793,6 +846,9 @@ public class VectorWrapperGraphics extends Graphics2D {
     @Override
     public boolean drawImage(Image img, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2, ImageObserver observer) {
         boolean result = other.drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, observer);
+        if (!receiving) {
+            push(new ImageWrapper(dx1, dy1, img));
+        }
         if (result) {
             changed();
         }
@@ -802,15 +858,26 @@ public class VectorWrapperGraphics extends Graphics2D {
     @Override
     public boolean drawImage(Image img, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2, Color bgcolor, ImageObserver observer) {
         boolean result = other.drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, bgcolor, observer);
+        if (!receiving) {
+            push(new ImageWrapper(dx1, dy1, img));
+        }
         if (result) {
             changed();
         }
         return result;
     }
 
+    private boolean disposed;
+
     @Override
     public void dispose() {
+        if (onDispose != null) {
+            onDispose.run();
+            onDispose = null;
+        }
         other.dispose();
+        System.out.println("VWG disposed");
+        disposed = true;
     }
 
     public void draw(java.awt.Rectangle rect) {

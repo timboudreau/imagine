@@ -28,11 +28,11 @@ final class VectorLayer extends AbstractLayerImplementation {
     private MPL lkp;
     private Dimension canvasSize;
 
-    VectorLayer(String name, RepaintHandle handle, Dimension canvasSize, VectorLayerFactory factory) {
+    VectorLayer(String name, RepaintHandle handle, Dimension canvasSize, VectorLayerFactoryImpl factory) {
         this(name, handle, canvasSize, factory, new Shapes(true));
     }
 
-    VectorLayer(String name, RepaintHandle handle, Dimension canvasSize, VectorLayerFactory factory, Shapes shapes) {
+    VectorLayer(String name, RepaintHandle handle, Dimension canvasSize, VectorLayerFactoryImpl factory, Shapes shapes) {
         super(factory, true, name);
         this.canvasSize = canvasSize;
         assert canvasSize != null : "Null canvas size";
@@ -45,9 +45,14 @@ final class VectorLayer extends AbstractLayerImplementation {
     VectorLayer(VectorLayer layer, boolean deepCopy) {
         super(layer.getFactory(), layer.isResolutionIndependent(), layer.getName());
         repainter = layer.repainter;
+        canvasSize = new Dimension(layer.canvasSize);
         addRepaintHandle(layer.repainter);
         this.shapes = deepCopy ? layer.shapes.copy() : layer.shapes;
         surface = new VectorSurface(this.shapes, getMasterRepaintHandle());
+    }
+
+    public boolean hasActiveInternalWidget() {
+        return widgetHooks.isWidgetActive();
     }
 
     @Override
@@ -132,7 +137,7 @@ final class VectorLayer extends AbstractLayerImplementation {
     }
 
     @Override
-    protected boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds, 
+    protected boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds,
             boolean showSelection, Zoom zoom, AspectRatio ratio) {
         if (bounds != null) {
             if (bounds.isEmpty()) {

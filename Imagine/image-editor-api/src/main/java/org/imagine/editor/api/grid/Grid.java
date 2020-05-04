@@ -40,7 +40,7 @@ public final class Grid implements Serializable {
     private static final long serialVersionUID = 10290134;
     private static final Grid INSTANCE = new Grid();
     private int size = 16;
-    private boolean enabled = true;
+    private boolean enabled = false;
     private Color color = Color.GRAY;
     private GridStyle style = GridStyle.DOTS;
     private transient Set<ChangeListener> listeners;

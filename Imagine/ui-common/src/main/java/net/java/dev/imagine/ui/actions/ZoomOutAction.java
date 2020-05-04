@@ -14,7 +14,6 @@ package net.java.dev.imagine.ui.actions;
 
 import java.util.Collection;
 import javax.swing.Action;
-import javax.swing.ImageIcon;
 import static net.java.dev.imagine.ui.actions.ZoomInAction.MAX_ZOOM;
 import static net.java.dev.imagine.ui.actions.ZoomInAction.prev;
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
@@ -31,18 +30,23 @@ import org.openide.util.Utilities;
 public class ZoomOutAction extends GenericContextSensitiveAction<Zoom> {
 
     private static final String ICON_BASE
-            = "net/java/dev/imagine/ui/actions/zoomOut.png";
+            = "net/java/dev/imagine/ui/actions/zoom-out.svg";
 
     public ZoomOutAction() {
         super(Utilities.actionsGlobalContext(), Zoom.class); //NOI18N
-        setIcon(new ImageIcon(
-                ImageUtilities.loadImage(ICON_BASE)));
-        putValue(Action.NAME, NbBundle.getMessage(ZoomOutAction.class,
-                "ACT_ZoomOut"));
+        init();
     }
 
     public ZoomOutAction(Lookup lookup) {
         super(lookup);
+        init();
+    }
+
+    private void init() {
+        setIcon(
+                ImageUtilities.loadImageIcon(ICON_BASE, false));
+        putValue(Action.NAME, NbBundle.getMessage(ZoomOutAction.class,
+                "ACT_ZoomOut"));
     }
 
     private float nextZoom(float zoom) {

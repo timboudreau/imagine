@@ -11,31 +11,31 @@
  * Microsystems, Inc. All Rights Reserved.
  */
 package net.java.dev.imagine.ui.actions;
-import java.io.IOException;
+
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
 import org.netbeans.paint.api.editor.IO;
-import org.openide.ErrorManager;
+import org.openide.util.Exceptions;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 
-public final class SaveCanvasAction extends GenericContextSensitiveAction <IO> {
+public final class SaveCanvasAction extends GenericContextSensitiveAction<IO> {
 
     public SaveCanvasAction() {
-	super ("ACT_Save", IO.class);
-	setIcon(
-              ImageUtilities.loadImage (
-	      "net/java/dev/imagine/ui/actions/save24.png")); //NOI18N
+        super("ACT_Save", IO.class);
+        setIcon(
+                ImageUtilities.loadImage(
+                        "net/java/dev/imagine/ui/actions/save24.png")); //NOI18N
     }
 
     public SaveCanvasAction(Lookup lookup) {
-        super (lookup);
+        super(lookup);
     }
 
-    public void performAction (IO io) {
-	try {
-	    io.save();
-	} catch (IOException ioe) {
-	    ErrorManager.getDefault().notify (ioe);
-	}
+    public void performAction(IO io) {
+        io.save((thrown, path) -> {
+            if (thrown != null) {
+                Exceptions.printStackTrace(thrown);
+            }
+        });
     }
 }

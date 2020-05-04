@@ -50,7 +50,7 @@ public class SnapperLengths extends Snapper.VectorSnapper {
             bestIndex = ix1;
             useTrailing = true;
         } else if (ix2 >= 0 && ix1 < 0) {
-            bestIndex = 2;
+            bestIndex = ix2;
         } else if (ix1 == ix2) {
             bestIndex = ix1;
         } else {
@@ -62,6 +62,9 @@ public class SnapperLengths extends Snapper.VectorSnapper {
             } else {
                 bestIndex = ix2;
             }
+        }
+        if (bestIndex >= map.size()) {
+            return false;
         }
         EqLine line = useTrailing ? vect.trailingLine() : vect.leadingLine();
         EqPointDouble pt = useTrailing ? line.getP2() : line.getP1();

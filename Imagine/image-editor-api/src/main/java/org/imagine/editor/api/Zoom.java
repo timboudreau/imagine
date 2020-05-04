@@ -72,6 +72,24 @@ public interface Zoom {
         return getZoom() == 1F;
     }
 
+    default BasicStroke inverseScaleStroke(BasicStroke stroke) {
+        double z = getZoom();
+        if (z == 1) {
+            return stroke;
+        }
+        float w = inverseScale(stroke.getLineWidth());
+        float m = Math.max(1, inverseScale(stroke.getMiterLimit()));
+        float p = inverseScale(stroke.getDashPhase());
+        float[] dashes = stroke.getDashArray();
+        if (dashes != null) {
+            for (int i = 0; i < dashes.length; i++) {
+                dashes[i] = inverseScale(dashes[i]);
+            }
+        }
+        return new BasicStroke(w, stroke.getEndCap(), stroke.getLineJoin(),
+                m, dashes, p);
+    }
+
     public static Zoom ONE_TO_ONE = new Zoom() {
         private final AffineTransform xform = new AffineTransform();
 

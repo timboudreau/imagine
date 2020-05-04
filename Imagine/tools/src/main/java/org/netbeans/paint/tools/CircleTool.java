@@ -8,7 +8,6 @@
  */
 package org.netbeans.paint.tools;
 
-import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
@@ -24,7 +23,7 @@ import org.openide.util.NbBundle;
  * @author Tim Boudreau
  */
 @ToolDef(name = "Circle", iconPath = "org/netbeans/paint/tools/resources/circle.svg")
-@Tool(Surface.class)
+@Tool(value=Surface.class, toolbarPosition=200)
 public class CircleTool extends RectangleTool {
 
     public CircleTool(Surface surf) {
@@ -45,8 +44,12 @@ public class CircleTool extends RectangleTool {
             g2d.fill(circ);
         }
         if (style.isOutline()) {
-            g2d.setStroke(new BasicStroke(strokeC.get()));
-            g2d.setColor(outlineC.get());
+            if (toPaint == TEMPLATE_RECTANGLE) {
+                g2d.setStroke(scaledStroke());
+            } else {
+                g2d.setStroke(strokeC.get());
+            }
+            g2d.setPaint(outlineC.get());
             g2d.draw(circ);
         }
     }

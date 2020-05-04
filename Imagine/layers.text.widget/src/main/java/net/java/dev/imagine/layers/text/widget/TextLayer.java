@@ -90,17 +90,17 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
         addRepaintHandle(handle);
         System.out.println("created a text layer");
     }
-    
+
     public ObjectSelection<Text> getSelection() {
         return selection;
     }
-    
+
     public boolean isSelected(Text text) {
         return selection.contains(Collections.singleton(text));
     }
-    
+
     private Composite composite;
-    
+
     Composite getComposite() {
         return composite;
     }
@@ -129,8 +129,8 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
                 TextLayer.this.composite = null;
             } else {
                 if (TextLayer.this.composite != null) {
-                    TextLayer.this.composite =
-                            GraphicsUtils.combine(TextLayer.this.composite, composite);
+                    TextLayer.this.composite
+                            = GraphicsUtils.combine(TextLayer.this.composite, composite);
                 } else {
                     TextLayer.this.composite = composite;
                 }
@@ -145,10 +145,10 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
 
         @Override
         public Dimension getSize() {
-            return new Dimension(0,0); //doesn't matter
+            return new Dimension(0, 0); //doesn't matter
         }
     }
-    
+
     private class S implements ShapeConverter<Text>, Universe<Collection<Text>> {
 
         @Override
@@ -236,6 +236,10 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
         WF(Widget container) {
             this.container = container;
             items.addChangeListener(WeakListeners.change(this, items));
+        }
+
+        public boolean isUsingInternalWidget() {
+            return true;
         }
 
         @Override
@@ -335,7 +339,7 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
             return null;
         }
     }
-    
+
     TextItems getItems() {
         return items;
     }
@@ -452,7 +456,6 @@ class TextLayer extends LayerImplementation<TextLayerFactory> {
 //            return Customizers.getCustomizer(Font.class, "default");
 //        }
 //    }
-    
     private class CP implements CustomizerProvider, Customizer<Font> {
 
         private Font font = Fonts.getDefault().get();

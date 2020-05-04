@@ -2,6 +2,7 @@ package net.java.dev.imagine.ui.toolbar;
 
 import com.mastfrog.util.strings.Strings;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -61,6 +62,14 @@ public final class SnapEditor extends JPanel {
         Mnemonics.setLocalizedText(button, Bundle.snapTo());
         Mnemonics.setLocalizedText(enableLabel, Bundle.enableSnap());
         enableLabel.setLabelFor(box);
+        enableLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 1 && !e.isPopupTrigger()) {
+                    box.doClick();
+                }
+            }
+        });
         add(enableLabel);
         add(box);
         box.setHorizontalTextPosition(SwingConstants.LEADING);
@@ -71,6 +80,8 @@ public final class SnapEditor extends JPanel {
         box.setFont(f);
         button.setFont(f);
         enableLabel.setFont(f);
+        // Avoid an unfilled gap underneath this alongside 32x32 icons
+        setMinimumSize(new Dimension(32, 32));
     }
 
     public SnapSettings getSettings() {

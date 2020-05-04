@@ -1,5 +1,6 @@
 package org.netbeans.paintui;
 
+import com.mastfrog.function.state.Bool;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Graphics2D;
@@ -50,7 +51,8 @@ public class ImageEditorFactoryImpl extends ImageEditorFactory {
     }
 
     @Override
-    public void openExisting(File file) {
+    public boolean openExisting(File file) {
+        Bool result = Bool.create();
         load(file, (err, img, origin) -> {
             if (err != null) {
                 Exceptions.printStackTrace(err);
@@ -62,10 +64,12 @@ public class ImageEditorFactoryImpl extends ImageEditorFactory {
                 last.setDisplayName(origin.getName());
                 last.open();
                 last.requestActive();
+                result.set();
             } catch (IOException ex) {
                 Exceptions.printStackTrace(ex);
             }
         });
+        return result.getAsBoolean();
     }
 
     private void load(File file, OpenConsumer img) {

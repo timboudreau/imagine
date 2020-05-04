@@ -146,6 +146,44 @@ public final class DoubleList /* extends AbstractList<Double> */ implements Iter
         return size;
     }
 
+    public boolean contains(double value) {
+        return indexOf(value) >= 0;
+    }
+
+    public double first() {
+        if (size == 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        return vals[0];
+    }
+
+    public double last() {
+        if (size == 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        return vals[size - 1];
+    }
+
+    public void setAsDouble(int index, double value) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException(index + " of " + size);
+        }
+        sorted = false;
+        vals[index] = value;
+    }
+
+    public int indexOf(double value) {
+        if (sorted) {
+            return Arrays.binarySearch(vals, 0, size, value);
+        }
+        for (int i = 0; i < size; i++) {
+            if (value == vals[i]) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     public double sum() {
         double result = 0;
         for (int i = 0; i < size; i++) {

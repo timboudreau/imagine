@@ -40,7 +40,7 @@ import static net.java.dev.imagine.api.toolcustomizers.Constants.*;
  * @author Tim Boudreau
  */
 @ToolDef(name="Line", iconPath="org/netbeans/paint/tools/resources/line.png")
-@Tool(Surface.class)
+@Tool(value=Surface.class, toolbarPosition=700)
 public class LineTool implements /* Tool, */ PaintParticipant, MouseMotionListener, MouseListener, KeyListener, CustomizerProvider {
     private PaintParticipant.Repainter repainter;
     private final Surface surface;

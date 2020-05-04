@@ -68,7 +68,9 @@ public class PictureLoadSupport extends
 
         @Override
         public PictureScene.RH newRepaintHandle(Dimension pictureSize, BackgroundStyle backgroundStyle) {
-            PictureScene scene = new PictureScene(pictureSize, backgroundStyle, false);
+            PictureScene scene = new PictureScene(pictureSize, 
+                    backgroundStyle == null ? BackgroundStyle.TRANSPARENT : backgroundStyle,
+                    false);
             return scene.rh();
         }
 

@@ -197,6 +197,19 @@ final class DefaultColorChooserUI extends ColorChooserUI {
         Color col = chooser.transientColor() != null
                 ? chooser.transientColor() : chooser.getColor();
 
+        if (col.getAlpha() != 255) {
+            int halfWidth = chooser.getWidth() / 2;
+            int halfHeight = chooser.getHeight() / 2;
+            Color gray1 = new Color(128, 128, 128);
+            Color gray2 = new Color(164,164,164);
+            g.setColor(gray1);
+            g.fillRect(0, 0, halfWidth, halfHeight);
+            g.fillRect(halfWidth, halfHeight, halfWidth, halfHeight);
+            g.setColor(gray2);
+            g.fillRect(halfWidth, 0, halfWidth, halfHeight);
+            g.fillRect(0, halfHeight, halfWidth, halfHeight);
+        }
+
         g.setColor(col);
         g.fillRect(0, 0, chooser.getWidth() - 1, chooser.getHeight() - 1);
         if (chooser.hasFocus()) {

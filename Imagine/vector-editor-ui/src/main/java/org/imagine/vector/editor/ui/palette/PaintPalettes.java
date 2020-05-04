@@ -1,8 +1,8 @@
 package org.imagine.vector.editor.ui.palette;
 
 import com.mastfrog.abstractions.Wrapper;
-import com.mastfrog.function.state.Obj;
 import com.mastfrog.util.preconditions.Exceptions;
+import java.awt.EventQueue;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -18,6 +18,7 @@ import javax.swing.JComponent;
 import org.imagine.awt.dnd.PaintKeyDropSupport;
 import org.imagine.awt.io.PaintKeyIO;
 import org.imagine.awt.key.PaintKey;
+import org.imagine.editor.api.util.ActivationOrder;
 import org.imagine.io.ByteArrayReadChannel;
 import org.imagine.io.KeyBinaryReader;
 import org.imagine.vector.editor.ui.ShapeEntry;
@@ -25,7 +26,10 @@ import org.imagine.vector.editor.ui.io.HashInconsistencyBehavior;
 import org.imagine.vector.editor.ui.io.VectorIO;
 import static org.imagine.vector.editor.ui.palette.PaintPalettes.shapeMimeTypes;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
+import org.openide.awt.StatusDisplayer;
 import org.openide.filesystems.FileUtil;
+import org.openide.util.Mutex;
+import org.openide.util.NbBundle.Messages;
 
 /**
  *
@@ -33,37 +37,74 @@ import org.openide.filesystems.FileUtil;
  */
 public final class PaintPalettes {
 
-    private static Obj<String> lastActive = Obj.create();
+    private static final ActivationOrder<String> order = new ActivationOrder(3, s -> s.hashCode());
 
-    static void activated(AbstractPaletteTC paletteTC) {
-        lastActive.set(paletteTC.preferredID());
+    private static final Runnable OPENER;
+
+    static {
+        OPENER = order.sequenceBuilder()
+                .add(PaintsPaletteTC.PREFERRED_ID,
+                        () -> {
+                            PaintsPaletteTC tc = PaintsPaletteTC.getInstance();
+                            if (tc != null) {
+                                tc.ensureOpenWithoutUpdateOrder(true);
+                            }
+                        }).add(ShapesPaletteTC.PREFERRED_ID,
+                        () -> {
+                            ShapesPaletteTC tc = ShapesPaletteTC.getInstance();
+                            if (tc != null) {
+                                tc.ensureOpenWithoutUpdateOrder(true);
+                            }
+                        }).build();
     }
 
-    static boolean wasLastActive(AbstractPaletteTC tc) {
-        if (!lastActive.isSet()) {
-            activated(tc);
-        }
-        return tc.preferredID().equals(lastActive.get());
+    static void activated(AbstractPaletteTC paletteTC) {
+        order.activated(paletteTC.preferredID());
+    }
+
+    public static void openPalettes() {
+        Mutex.EVENT.readAccess(OPENER);
+    }
+
+    public static void closePalettes() {
+        PaintsPaletteTC.closePalette();
+        ShapesPaletteTC.closePalette();
     }
 
     public static Collection<? extends DataFlavor> shapeMimeTypes() {
         return ShapeEntryTransferHandler.flavors();
     }
 
+    @Messages(
+            {"# {0} - shapeName",
+                "SAVED_SHAPE=Saved Shape {0} to palette"})
     public static void addToShapePalette(ShapeElement el) {
         PaletteBackend<ShapeElement> stor = PaintStorage.get("shapes", ShapePaletteStorage::new);
         stor.save(null, el, (thrown, name) -> {
             if (thrown != null) {
                 Exceptions.printStackTrace(thrown);
+            } else {
+                EventQueue.invokeLater(() -> {
+                    StatusDisplayer.getDefault().setStatusText(Bundle.SAVED_SHAPE(name));
+                    ShapesPaletteTC.getInstance().requestVisible();
+                });
             }
         });
     }
 
+    @Messages({
+        "# {0} - shapeName",
+        "SAVED_FILL=Saved Fill {0} to palette"})
     public static void addToPaintPalette(PaintKey<?> key) {
         PaletteBackend<PaintKey<?>> stor = PaintStorage.get("paints", PaintStorage::new);
         stor.save(null, key, (thrown, name) -> {
             if (thrown != null) {
                 Exceptions.printStackTrace(thrown);
+            } else {
+                EventQueue.invokeLater(() -> {
+                    StatusDisplayer.getDefault().setStatusText(Bundle.SAVED_FILL(name));
+                    PaintsPaletteTC.getInstance().requestVisible();
+                });
             }
         });
     }

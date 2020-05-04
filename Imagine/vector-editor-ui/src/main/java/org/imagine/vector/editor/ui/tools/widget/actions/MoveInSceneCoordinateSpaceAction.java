@@ -75,7 +75,7 @@ public class MoveInSceneCoordinateSpaceAction extends WidgetAction.LockedAdapter
         if (state != null && widget == state.widget) {
             state.commit(scenePoint(widget));
             state = null;
-            return WidgetAction.State.CONSUMED;
+            return State.createLocked(widget, this);
         } else if (state != null) {
             abort();
         }
@@ -95,7 +95,8 @@ public class MoveInSceneCoordinateSpaceAction extends WidgetAction.LockedAdapter
 //            if (dragInProgress) {
 //            return State.createLocked(widget, this);
 //            } else {
-                return State.CONSUMED;
+//                return State.CONSUMED;
+            return State.createLocked(widget, this);
 //            }
         }
         return WidgetAction.State.REJECTED;

@@ -8,7 +8,6 @@
  */
 package org.netbeans.paint.tools;
 
-import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
@@ -28,7 +27,7 @@ import org.openide.util.NbBundle;
  * @author Tim Boudreau
  */
 @ToolDef(name = "Triangle", iconPath = "org/netbeans/paint/tools/resources/triangle.svg")
-@Tool(Surface.class)
+@Tool(value=Surface.class, toolbarPosition=300)
 public class TriangleTool extends RectangleTool {
 
     private double rotation;
@@ -55,7 +54,11 @@ public class TriangleTool extends RectangleTool {
             g2d.fill(tri);
         }
         if (style.isOutline()) {
-            g2d.setStroke(new BasicStroke(strokeC.get()));
+            if (toPaint == TEMPLATE_RECTANGLE) {
+                g2d.setStroke(scaledStroke());
+            } else {
+                g2d.setStroke(strokeC.get());
+            }
             g2d.setColor(outlineC.get());
             g2d.draw(tri);
         }

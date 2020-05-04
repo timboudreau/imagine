@@ -34,7 +34,8 @@ import org.openide.util.NbPreferences;
  *
  * @author Tim Boudreau
  */
-public final class FontCustomizer extends ListenableCustomizerSupport<Font> implements ListenableCustomizer<Font> {
+public final class FontCustomizer extends ListenableCustomizerSupport<Font>
+        implements ListenableCustomizer<Font> {
 
     private final String name;
     private String fontName;

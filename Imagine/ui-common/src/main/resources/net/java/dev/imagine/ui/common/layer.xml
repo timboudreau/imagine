@@ -9,12 +9,14 @@
             <file name="net-java-dev-imagine-ui-actions-SaveAsAction.instance"/>
             <file name="net-java-dev-imagine-ui-actions-SaveNativeAction.instance"/>
             <file name="net-java-dev-imagine-ui-actions-SaveAsNativeAction.instance"/>
+            <file name="net-java-dev-imagine-ui-actions-RecentFilesAction.instance"/>
             <file name="net-java-dev-imagine-ui-actions-ExitAction.instance"/>
         </folder>
         <folder name="Image">
             <file name="net-java-dev-imagine-ui-actions-ZoomOutAction.instance"/>
             <file name="net-java-dev-imagine-ui-actions-ZoomFullAction.instance"/>
             <file name="net-java-dev-imagine-ui-actions-ZoomInAction.instance"/>
+            <file name="net-java-dev-imagine-ui-actions-ZoomToFitAction.instance"/>
             <file name="net-java-dev-imagine-ui-actions-ResizeAction.instance"/>
         </folder>
         <folder name="Snap">
@@ -57,6 +59,7 @@
         <!--<file name="Tools_hidden"/>-->
         <!--<file name="View_hidden"/>-->
         <folder name="File">
+            <attr name="position" intvalue="0"/>
             <file name="org-netbeans-core-actions-SystemExit.instance_hidden"/>
             <file name="net-java-dev-imagine-ui-actions-ExitAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-ExitAction.instance"/>
@@ -75,6 +78,11 @@
             <file name="net-java-dev-imagine-ui-actions-OpenFileAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-OpenFileAction.instance"/>
                 <attr name="position" intvalue="100"/>
+            </file>
+
+            <file name="net-java-dev-imagine-ui-actions-RecentFilesAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-RecentFilesAction.instance"/>
+                <attr name="position" intvalue="150"/>
             </file>
 
             <file name="org-netbeans-paintui-separatorAfter2.instance">
@@ -104,12 +112,8 @@
                 <attr name="position" intvalue="600"/>
             </file>
         </folder>
-        <attr name="File/Edit" boolvalue="true"/>
-        <attr name="Effects/Help" boolvalue="true"/>
-        <attr name="Edit/Snap" boolvalue="true"/>
-        <attr name="Snap/Effects" boolvalue="true"/>
-
         <folder name="Edit">
+            <attr name="position" intvalue="100"/>
             <file name="org-netbeans-core-actions-JumpNextAction.shadow_hidden"/>
             <file name="org-netbeans-core-actions-JumpPrevAction.shadow_hidden"/>
             <file name="org-openide-actions-CopyAction.instance_hidden"/>
@@ -126,7 +130,6 @@
                 <attr name="position" intvalue="0"/>
             </file>
 
-            <attr name="net-java-dev-imagine-ui-actions-UndoAction.shadow/net-java-dev-imagine-ui-actions-RedoAction.shadow" boolvalue="true"/>
 
             <file name="net-java-dev-imagine-ui-actions-RedoAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Edit/net-java-dev-imagine-ui-actions-RedoAction.instance"/>
@@ -185,63 +188,77 @@
             </file>
         </folder>
 
-        <folder name="Snap">
+        <folder name="Editor">
+            <attr name="position" intvalue="200"/>
             <attr name="displayName" bundlevalue="net.java.dev.imagine.ui.common.Bundle#Toolbars/Snap"/>
+            <file name="net-java-dev-imagine-ui-actions-ImageEditorBackgroundAction.instance">
+                <attr name="position" intvalue="100"/>
+            </file>
             <file name="net-java-dev-imagine-ui-toolbar-SnapEditorAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Snap/net-java-dev-imagine-ui-toolbar-SnapEditorAction.instance"/>
-                <attr name="position" intvalue="1300"/>
+                <attr name="position" intvalue="200"/>
             </file>
             <file name="net-java-dev-imagine-ui-toolbar-GridEditorAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Snap/net-java-dev-imagine-ui-toolbar-GridEditorAction.instance"/>
-                <attr name="position" intvalue="1200"/>
-            </file>
-        </folder>
-
-        <folder name="Image">
-            <file name="net-java-dev-imagine-ui-actions-ResizeAction.shadow">
-                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ResizeAction.instance"/>
-                <attr name="position" intvalue="0"/>
+                <attr name="position" intvalue="300"/>
             </file>
 
             <file name="sep1.instance">
                 <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
-                <attr name="position" intvalue="100"/>
+                <attr name="position" intvalue="400"/>
             </file>
 
             <file name="net-java-dev-imagine-ui-actions-ZoomInAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomInAction.instance"/>
-                <attr name="position" intvalue="200"/>
+                <attr name="position" intvalue="500"/>
             </file>
 
             <file name="net-java-dev-imagine-ui-actions-ZoomOutAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomOutAction.instance"/>
-                <attr name="position" intvalue="300"/>
+                <attr name="position" intvalue="600"/>
+            </file>
+
+            <file name="net-java-dev-imagine-ui-actions-ZoomToFit.shadow">
+                <attr name="instanceClass" stringvalue="net.java.dev.imagine.ui.actions.ZoomToFit"/>
+                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomToFit.instance"/>
+                <attr name="position" intvalue="700"/>
             </file>
 
             <file name="net-java-dev-imagine-ui-actions-ZoomFullAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomFullAction.instance"/>
-                <attr name="position" intvalue="400"/>
+                <attr name="position" intvalue="800"/>
             </file>
 
             <file name="net-java-dev-imagine-ui-actions-ZoomSubmenuAction.instance">
-                <attr name="position" intvalue="500"/>
+                <attr name="position" intvalue="900"/>
             </file>
-            
-            <file name="net-java-dev-imagine-ui-actions-ImageEditorBackgroundAction.instance">
-                <attr name="position" intvalue="500"/>
-            </file>
-            
         </folder>
 
+        <folder name="Image">
+            <attr name="position" intvalue="300"/>
+            <file name="net-java-dev-imagine-ui-actions-ResizeAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ResizeAction.instance"/>
+                <attr name="position" intvalue="0"/>
+            </file>
+        </folder>
+
+        <file name="Tools_hidden"/>
+        <folder name="View">
+            <file name="org-netbeans-core-multiview-SplitAction.instance_hidden"/>
+        </folder>
         <folder name="Window">
+            <attr name="position" intvalue="3000"/>
             <!-- XXX -->
             <file name="Output_hidden"/>
             <file name="ProgressListAction.shadow_hidden"/>
             <file name="ViewFavoritesTabAction.shadow_hidden"/>
             <file name="ViewRuntimeTabAction.shadow_hidden"/>
-            <file name="net-java-dev-imagine-ui-actions-NewCanvasAction.shadow">
-                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ImageEditorBackgroundAction.instance"/>
-            </file>
+        </folder>
+        <folder name="View">
+            <attr name="position" intvalue="2000"/>
+        </folder>
+        <folder name="Help">
+            <attr name="position" intvalue="4000"/>
         </folder>
 
     </folder>
@@ -249,58 +266,66 @@
         <folder name="Memory_hidden"/>
         <folder name="Debug_hidden"/>
         <folder name="File">
+            <attr name="position" intvalue="0"/>
             <file name="net-java-dev-imagine-ui-actions-NewCanvasAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-NewCanvasAction.instance"/>
+                <attr name="position" intvalue="0"/>
             </file>
-            <attr name="net-java-dev-imagine-ui-actions-NewCanvasAction.shadow/net-java-dev-imagine-ui-actions-OpenFileAction.shadow" boolvalue="true"/>
 
             <file name="net-java-dev-imagine-ui-actions-OpenFileAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-OpenFileAction.instance"/>
+                <attr name="position" intvalue="100"/>
             </file>
-            <attr name="net-java-dev-imagine-ui-actions-OpenFileAction.shadow/net-java-dev-imagine-ui-actions-SaveCanvasAction.shadow" boolvalue="true"/>
-
             <file name="net-java-dev-imagine-ui-actions-SaveNativeAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/File/net-java-dev-imagine-ui-actions-SaveNativeAction.instance"/>
+                <attr name="position" intvalue="200"/>
             </file>
-            <attr name="net-java-dev-imagine-ui-actions-SaveCanvasAction.shadow/net-java-dev-imagine-ui-actions-NewCanvasAction.shadow" boolvalue="false"/>
         </folder>
         <folder name="Zoom">
-            <file name="org-netbeans-paintui-ZoomPanel.instance"/>
-            <attr name="net-java-dev-imagine-ui-actions-ZoomInAction.shadow/net-java-dev-imagine-ui-actions-ZoomOutAction.shadow" boolvalue="true"/>
-
+            <attr name="position" intvalue="200"/>
+            <file name="org-netbeans-paintui-ZoomPanel.instance">
+                <attr name="position" intvalue="100"/>
+            </file>
             <file name="net-java-dev-imagine-ui-actions-ZoomOutAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomOutAction.instance"/>
+                <attr name="position" intvalue="300"/>
             </file>
             <file name="net-java-dev-imagine-ui-actions-ZoomInAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomInAction.instance"/>
+                <attr name="position" intvalue="200"/>
+            </file>
+            <file name="net-java-dev-imagine-ui-actions-ZoomToFit.shadow">
+                <attr name="instanceClass" stringvalue="net.java.dev.imagine.ui.actions.ZoomToFit"/>
+                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomToFit.instance"/>
+                <attr name="position" intvalue="400"/>
             </file>
             <file name="net-java-dev-imagine-ui-actions-ZoomFullAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomFullAction.instance"/>
+                <attr name="position" intvalue="500"/>
             </file>
         </folder>
-        <attr name="Snap/Zoom" boolvalue="true"/>
-        <folder name="Snap">
-            <attr name="displayName" bundlevalue="net.java.dev.imagine.ui.common.Bundle#Toolbars/Snap"/>
+        <folder name="Editor">
+            <attr name="position" intvalue="300"/>
+            <attr name="displayName" bundlevalue="net.java.dev.imagine.ui.common.Bundle#Toolbars/Editor"/>
+            <file name="net-java-dev-imagine-ui-actions-ImageEditorBackgroundAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ImageEditorBackgroundAction.instance"/>
+                <attr name="position" intvalue="100"/>
+            </file>
             <file name="net-java-dev-imagine-ui-toolbar-GridEditorAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Snap/net-java-dev-imagine-ui-toolbar-GridEditorAction.instance"/>
-                <attr name="position" intvalue="1200"/>
+                <attr name="position" intvalue="200"/>
             </file>
             <file name="net-java-dev-imagine-ui-toolbar-SnapEditorAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Snap/net-java-dev-imagine-ui-toolbar-SnapEditorAction.instance"/>
-                <attr name="position" intvalue="1300"/>
-            </file>
-            <file name="net-java-dev-imagine-ui-actions-ImageEditorBackgroundAction.shadow">
-                <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ImageEditorBackgroundAction.instance"/>
+                <attr name="position" intvalue="300"/>
             </file>
         </folder>
-
-        <!--        <folder name="Memory">
-            <attr name="SystemFileSystem.localizingBundle" stringvalue="org.netbeans.core.Bundle"/>
+        <folder name="Memory2">
+            <attr name="displayName" bundlevalue="net.java.dev.imagine.ui.common.Bundle#Toolbars/Memory2"/>
+            <attr name="position" intvalue="400"/>
             <file name="org-openide-actions-GarbageCollectAction.instance"/>
-        </folder>-->
-
+        </folder>
     </folder>
-
 
     <folder name="Shortcuts">
         <file name="D-N.shadow">
@@ -317,6 +342,9 @@
         </file>
         <file name="D-EQUALS.shadow">
             <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomInAction.instance"/>
+        </file>
+        <file name="EQUALS.shadow">
+            <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomToFitAction.instance"/>
         </file>
         <file name="PLUS.shadow">
             <attr name="originalFile" stringvalue="Actions/Image/net-java-dev-imagine-ui-actions-ZoomInAction.instance"/>

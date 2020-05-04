@@ -31,6 +31,10 @@ class ToolWidgetSupplier extends WidgetLayer implements BiConsumer<Tool, Tool> {
         }
     }
 
+    public boolean isWidgetActive() {
+        return lastLayer != null && lastLayer.isUsingInternalWidget();
+    }
+
     @Override
     public WidgetFactory createWidgetController(Widget container, WidgetController controller) {
         if (container == lastContainer && lastLayer != null) {

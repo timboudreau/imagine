@@ -64,7 +64,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Tim Boudreau
  */
-@Tool(Surface.class)
+@Tool(value=Surface.class, toolbarPosition=800)
 @ToolDef(name="Image", iconPath="org/netbeans/paint/tools/resources/image.png")
 public class ImageTool implements MouseListener, MouseMotionListener, KeyListener, PaintParticipant, CustomizerProvider, Customizer, Attachable {
     private BufferedImage image = null;
@@ -153,8 +153,8 @@ public class ImageTool implements MouseListener, MouseMotionListener, KeyListene
         }
         BufferedImage img = image;
 
-        double w = bds.width;
-        double h = bds.height;
+        double w = bds == null ? img.getWidth() : bds.width;
+        double h = bds == null ? img.getHeight() : bds.height;
         double iw = img.getWidth();
         double ih = img.getHeight();
 

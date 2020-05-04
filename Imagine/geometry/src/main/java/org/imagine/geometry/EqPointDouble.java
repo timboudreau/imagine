@@ -37,6 +37,10 @@ public final class EqPointDouble extends Point2D.Double implements Comparable<Po
         return new EqPoint(getX(), getY());
     }
 
+    public EqPointDouble copy() {
+        return new EqPointDouble(this);
+    }
+
     public static EqPointDouble of(Point2D p) {
         if (p == null) {
             return null;
@@ -71,6 +75,13 @@ public final class EqPointDouble extends Point2D.Double implements Comparable<Po
 
     public Point toPoint() {
         return new Point((int) Math.round(x), (int) Math.round(y));
+    }
+
+    public boolean equals(Point2D pt, double tolerance) {
+        if (pt == this) {
+            return true;
+        }
+        return GeometryUtils.isSamePoint(x, y, pt.getX(), pt.getY());
     }
 
     @Override

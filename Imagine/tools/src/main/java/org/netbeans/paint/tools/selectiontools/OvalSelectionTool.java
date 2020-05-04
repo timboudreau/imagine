@@ -31,8 +31,8 @@ import org.openide.util.ChangeSupport;
  *
  * @author Timothy Boudreau
  */
-@Tool(Selection.class)
-@ToolDef(name="NAME_OvalSelectionTool", iconPath="org/netbeans/paint/tools/resources/ovalselection.png", category="selection")
+@Tool(value=Selection.class, toolbarPosition=5000)
+@ToolDef(name="NAME_OvalSelectionTool", iconPath="org/netbeans/paint/tools/resources/oval-select.svg", category="selection")
 public class OvalSelectionTool extends MouseDrivenTool implements PaintParticipant {
     private final Selection selection;
 

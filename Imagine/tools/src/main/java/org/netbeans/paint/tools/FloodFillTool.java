@@ -36,7 +36,7 @@ import org.openide.util.lookup.Lookups;
  */
 
 @ToolDef(name="FLOOD_FILL", iconPath="org/netbeans/paint/tools/resources/floodfill.png")
-@Tool(Surface.class)
+@Tool(value=Surface.class, toolbarPosition=900)
 public class FloodFillTool extends MouseAdapter implements /* Tool, MouseListener, */ CustomizerProvider, PaintParticipant, Attachable {
 
     //Flood fill algorithm from http://www.codecodex.com/wiki/index.php?title=Implementing_the_flood_fill_algorithm

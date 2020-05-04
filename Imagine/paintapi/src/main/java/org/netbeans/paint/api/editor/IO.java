@@ -10,23 +10,30 @@
  * Code is Sun Microsystems, Inc. Portions Copyright 1997-2005 Sun
  * Microsystems, Inc. All Rights Reserved.
  */
-
 package org.netbeans.paint.api.editor;
 
-import java.io.IOException;
+import java.nio.file.Path;
+import java.util.function.BiConsumer;
+import org.openide.util.RequestProcessor;
 
 /**
  * Interface that will be in the image component's Lookup, which enables
- * saving/reloading of a file.  Note that the actual implementation should
- * implement SaveCookie so the standard NetBeans SaveAction will work 
- * against it (so our UI could also work as an IDE plugin, and we don't
- * have to write our own save action).
- * 
+ * saving/reloading of a file. Note that the actual implementation should
+ * implement SaveCookie so the standard NetBeans SaveAction will work against it
+ * (so our UI could also work as an IDE plugin, and we don't have to write our
+ * own save action).
+ *
  * @author Timothy Boudreau
  */
 public interface IO {
-    public void save() throws IOException;
-    public void saveAs() throws IOException;
-    public void reload() throws IOException;
-    public boolean canReload();
+
+    static final RequestProcessor IO_POOL = new RequestProcessor("IO", 2);
+
+    void save(BiConsumer<Exception, Path> callback);
+
+    void saveAs(BiConsumer<Exception, Path> callback);
+
+    void reload(BiConsumer<Exception, Path> callback);
+
+    boolean canReload();
 }

@@ -1,6 +1,7 @@
 package org.imagine.editor.api;
 
 import java.awt.Dimension;
+import java.awt.geom.Dimension2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.function.BooleanSupplier;
@@ -17,6 +18,25 @@ public interface AspectRatio {
     double width();
 
     double height();
+
+    default Dimension2D toDimension() {
+        return new Dimension2D(){
+            @Override
+            public double getWidth() {
+                return width();
+            }
+
+            @Override
+            public double getHeight() {
+                return height();
+            }
+
+            @Override
+            public void setSize(double width, double height) {
+                throw new UnsupportedOperationException("Read only.");
+            }
+        };
+    }
 
     default Rectangle2D.Double rectangle() {
         return new Rectangle2D.Double(0, 0, width(), height());

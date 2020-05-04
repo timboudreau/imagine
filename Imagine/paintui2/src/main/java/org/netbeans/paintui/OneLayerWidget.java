@@ -4,6 +4,7 @@ import com.mastfrog.util.collections.ArrayUtils;
 import java.awt.AlphaComposite;
 import java.awt.Composite;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.beans.PropertyChangeEvent;
@@ -12,10 +13,12 @@ import javax.swing.JComponent;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.spi.image.LayerImplementation;
+import org.imagine.editor.api.ContextLog;
 import org.imagine.utils.painting.RepaintHandle;
 import org.netbeans.api.visual.border.BorderFactory;
 import org.netbeans.api.visual.widget.Widget;
 import org.imagine.utils.java2d.GraphicsUtils;
+import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.paintui.widgetlayers.WidgetLayer;
 import org.netbeans.paintui.widgetlayers.WidgetFactory;
 import org.openide.util.Lookup;
@@ -28,22 +31,24 @@ import org.openide.util.lookup.ProxyLookup;
  */
 final class OneLayerWidget extends Widget {
 
+    private static final ContextLog ALOG = ContextLog.get("toolactions");
     private final InternalRepaintHandle repaintHandle = new InternalRepaintHandle();
     final LayerImplementation layer;
     private final PCL pcl = new PCL();
     private final WidgetLayer widgetLayer;
     private LKP lkp;
+    private WidgetFactory currentFactory;
+    private boolean attached;
 
     public OneLayerWidget(LayerImplementation layer, PictureScene scene, WidgetLayer widgetLayer) {
         super(scene);
         this.layer = layer;
         setOpaque(false);
-        layer.addRepaintHandle(repaintHandle);
-        layer.addPropertyChangeListener(pcl);
+        setVisible(layer.isVisible());
         setBorder(BorderFactory.createEmptyBorder());
+        // XXX listen for changes of WidgetLayer result in layer's lookup?
         this.widgetLayer = widgetLayer;
         lkp = new LKP(Lookups.fixed(this), layer.getLookup());
-        addNotify();
     }
 
     @Override
@@ -51,56 +56,65 @@ final class OneLayerWidget extends Widget {
         return lkp;
     }
 
-    private WidgetFactory factory;
-    private boolean attached;
-    void addNotify() {
+    @Override
+    protected void notifyStateChanged(ObjectState previousState, ObjectState state) {
+        ALOG.log(() -> "LayerWidget " + layer.getName() + " state "
+            + previousState + " -> " + state);
+    }
+
+    public boolean hasWidgetLayer() {
+        return attached;
+    }
+
+    public boolean isLayersWidgetActive() {
+        return hasWidgetLayer() && currentFactory != null
+                && currentFactory.isUsingInternalWidget();
+    }
+
+    @Override
+    protected void notifyAdded() {
+        layer.addRepaintHandle(repaintHandle);
+        layer.addPropertyChangeListener(pcl);
         if (widgetLayer != null) {
-            factory = widgetLayer.createWidgetController(this, (PictureScene) getScene());
-            if (factory != null) {
+            currentFactory = widgetLayer.createWidgetController(this, scene());
+            if (currentFactory != null) {
                 attached = true;
-                factory.setAspectRatio(((PictureScene) getScene()).aspectRatio());
-                factory.setOpacity(layer.getOpacity());
+                currentFactory.setAspectRatio(scene().aspectRatio());
+                currentFactory.setOpacity(layer.getOpacity());
+                currentFactory.setName(layer.getName());
 //                factory.setLocation(layer.getBounds().getLocation());
-                factory.attach(lkp::lookups);
+                currentFactory.attach(lkp::lookups);
             } else {
                 attached = false;
             }
         }
     }
 
-    void removeNotify() {
+    @Override
+    protected void notifyRemoved() {
         layer.removeRepaintHandle(repaintHandle);
         layer.removePropertyChangeListener(pcl);
-        if (factory != null) {
-            factory.detach();
+        if (currentFactory != null) {
+            currentFactory.detach();
             attached = false;
-            factory = null;
+            currentFactory = null;
         }
     }
 
     @Override
     protected Rectangle calculateClientArea() {
-        if (factory != null) {
+        if (currentFactory != null) {
             return super.calculateClientArea();
         }
-        /*
-        //Have the layer corner always at 0,0
-        Rectangle r = new Rectangle(layer.getBounds());
-        if (r.x > 0) {
-            r.width += r.x;
-            r.x = 0;
-        }
-        if (r.y > 0) {
-            r.height += r.y;
-            r.y = 0;
-        }
-        return r;
-         */
         Rectangle result = layer.getBounds();
         result.width += Math.max(0, result.x);
         result.height += Math.max(0, result.y);
         result.x = 0;
         result.y = 0;
+        if (result.isEmpty()) {
+            Dimension d = ((PictureScene) getScene()).picture().getPicture().getSize();
+            return new Rectangle(0, 0, d.width, d.height);
+        }
         return result;
     }
 
@@ -116,9 +130,8 @@ final class OneLayerWidget extends Widget {
             g.setComposite(comp);
         }
         try {
-//            layer.paint(g, layer.getBounds(), false, false, ((PictureScene)getScene()).getZoom());
-            layer.paint(RenderingGoal.EDITING, g, null, false, false, ((PictureScene)getScene()).getZoom(),
-                    ((PictureScene)getScene()).aspectRatio());
+            layer.paint(RenderingGoal.EDITING, g, null, false, false, scene().getZoom(),
+                    scene().aspectRatio());
         } finally {
             if (old != null) {
                 g.setComposite(old);
@@ -128,9 +141,11 @@ final class OneLayerWidget extends Widget {
 
     @Override
     public String toString() {
-        return "Widget for " + layer + " at " 
-                + getPreferredBounds() + " "
-                + getPreferredLocation();
+        return "Widget for " + layer;
+    }
+
+    private PictureScene scene() {
+        return (PictureScene) getScene();
     }
 
     private final class PCL implements PropertyChangeListener {
@@ -182,6 +197,7 @@ final class OneLayerWidget extends Widget {
     }
 
     static class LKP extends ProxyLookup {
+
         private final Lookup[] defaults;
 
         public LKP(Lookup... defaults) {

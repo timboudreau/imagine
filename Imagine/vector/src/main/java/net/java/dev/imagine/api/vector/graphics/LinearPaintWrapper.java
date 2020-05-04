@@ -14,6 +14,7 @@ import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Transformable;
+import org.imagine.geometry.util.FloatList;
 import org.imagine.utils.java2d.GraphicsUtils;
 
 /**
@@ -41,12 +42,105 @@ public class LinearPaintWrapper implements Primitive, PaintWrapper, Attribute<Li
         this.centerY = centerY;
         this.focusX = focusX;
         this.focusY = focusY;
-        this.fractions = fractions;
+        if (centerX == focusX && centerY == focusY) {
+            this.focusX += 0.001;
+            this.focusY += 0.001;
+        }
+        this.fractions = fixFractions(colors.length, fractions);
         this.colors = colors;
         this.cycleMethod = cycleMethod;
         this.colorSpaceType = colorSpaceType;
         this.xpar = xpar;
         this.transform = transform;
+//        checkFractions(fractions);
+    }
+
+    static float[] fixFractions(int colorsSize, float[] fractions) {
+        float last = fractions[0];
+        boolean bad = false;
+        for (int i = 1; i < fractions.length; i++) {
+            float f = fractions[i];
+            if (f < 0 || f > 1) {
+                bad = true;
+                break;
+            }
+            if (last >= f) {
+                bad = true;
+                break;
+            }
+            last = f;
+        }
+        if (bad) {
+            // Some saved files with duplicate fractions exist
+            FloatList fl = new FloatList(fractions.length);
+            for (int i = 0; i < fractions.length; i++) {
+                float f = fractions[i];
+                if (f < 0 || f > 1) {
+                    if (i == 0) {
+                        fl.add(0);
+                    } else {
+                        if (fl.isEmpty()) {
+                            fl.add(0);
+                        }
+                        float prev = fl.isEmpty() ? -0.001F : fl.getFloat(fl.size() - 1);
+                        fl.add(prev + 0.001F);
+                    }
+                    continue;
+                }
+                if (i > 0) {
+                    float prev = fl.isEmpty() ? -0.001F : fl.getFloat(fl.size() - 1);
+                    if (prev >= f) {
+                        f = prev + 0.001F;
+                    }
+                }
+                fl.add(f);
+            }
+            fl.sort();
+            if (fl.size() < colorsSize) {
+                if (fl.size() == 0) {
+                    float frac = 1F / colorsSize;
+                    for (int i = 0; i < colorsSize; i++) {
+                        fl.add(frac * i);
+                    }
+                } else {
+                    last = fl.last();
+                    if (last >= 1F) {
+                        int needAdd = (colorsSize - fl.size());
+                        fl.setAsFloat(fl.size() - 1, fl.last() - (needAdd * 0.001F));
+                        float val = fl.last();
+                        for (int i = 0; i < needAdd; i++) {
+                            val += 0.001F;
+                            fl.add(val);
+                        }
+                    }
+                }
+            }
+            return fl.toFloatArray();
+        } else {
+            return fractions;
+        }
+
+    }
+
+    static void checkFractions(float[] fractions) {
+        if (fractions.length == 0) {
+            throw new IllegalArgumentException("Empty fractions array");
+        }
+        float last = fractions[0];
+        for (int i = 1; i < fractions.length; i++) {
+            float f = fractions[i];
+            if (f < 0 || f > 1) {
+                throw new IllegalArgumentException("Fractions must be increasing from 0 to 1, but "
+                        + "found out-of-range value " + f + " at " + i + " in "
+                        + Arrays.toString(fractions));
+            }
+            if (last >= f) {
+                throw new IllegalArgumentException("Fractions must be increasing from 0 to 1, but "
+                        + "found out-of-sequence value " + f + " at " + i + " in "
+                        + Arrays.toString(fractions));
+            }
+            last = f;
+        }
     }
 
     public LinearPaintWrapper(LinearGradientPaint p) {
@@ -250,25 +344,6 @@ public class LinearPaintWrapper implements Primitive, PaintWrapper, Attribute<Li
 
     public int[] getColors() {
         return colors;
-    }
-
-    private void checkFractions(float[] fractions) {
-        if (fractions == null) {
-            throw new IllegalArgumentException("Null fractions array");
-        }
-        float last = Float.MIN_VALUE;
-        for (int i = 0; i < fractions.length; i++) {
-            if (fractions[i] <= last) {
-                throw new IllegalArgumentException("Fractions out of order at "
-                        + i + " in " + Arrays.toString(fractions));
-            }
-            if (fractions[i] < 0 || fractions[i] > 1) {
-                throw new IllegalArgumentException("Fractions must be between "
-                        + "0.0 and 1.0 but found " + fractions[i] + " at "
-                        + i);
-            }
-            last = fractions[i];
-        }
     }
 
     public void setColorsAndFractions(int[] colors, float[] fractions) {

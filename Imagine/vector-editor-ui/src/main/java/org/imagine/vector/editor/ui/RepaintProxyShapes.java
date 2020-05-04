@@ -32,6 +32,7 @@ import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.OnSnap;
+import org.imagine.geometry.EnhRectangle2D;
 import org.imagine.utils.Holder;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
@@ -397,7 +398,14 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
 
         @Override
         public boolean setStroke(BasicStrokeWrapper wrapper) {
-            return entry.setStroke(wrapper);
+            boolean result;
+            EnhRectangle2D rect = new EnhRectangle2D();
+            addToBounds(rect);
+            if (result = entry.setStroke(wrapper)) {
+                addToBounds(rect);
+                handle.repaintArea(rect);
+            }
+            return result;
         }
 
         @Override
@@ -422,7 +430,11 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
 
         @Override
         public Runnable restorableSnapshot() {
-            return entry.restorableSnapshot();
+            Runnable snap = entry.restorableSnapshot();
+            return () -> {
+                snap.run();
+                handle.repaintArea(getBounds());
+            };
         }
 
         @Override
@@ -575,10 +587,18 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
         }
 
         private void wrapMutation(Runnable mutation) {
-            Rectangle bds = entry.getBounds();
+            EnhRectangle2D r = new EnhRectangle2D();
+            addToBounds(r);
             mutation.run();
-            bds.add(entry.getBounds());
-            handle.repaintArea(bds);
+            addToBounds(r);
+            BasicStroke stroke = stroke();
+            if (stroke != null) {
+                r.x -= stroke.getLineWidth();
+                r.y -= stroke.getLineWidth();
+                r.width += stroke.getLineWidth() * 2;
+                r.height += stroke.getLineWidth() * 2;
+            }
+            handle.repaintArea(r);
         }
 
         @Override
@@ -592,9 +612,9 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
 
         @Override
         public void setPaintingStyle(PaintingStyle style) {
-            Rectangle bds = getBounds();
-            entry.setPaintingStyle(style);
-            handle.repaintArea(bds);
+            wrapMutation(() -> {
+                entry.setPaintingStyle(style);
+            });
         }
 
         @Override

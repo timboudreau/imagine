@@ -17,14 +17,17 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.filechooser.FileFilter;
 import net.java.dev.imagine.ui.common.ImageEditorFactory;
+import net.java.dev.imagine.ui.common.RecentFiles;
 import org.openide.awt.StatusDisplayer;
 import org.openide.filesystems.FileChooserBuilder;
 import org.openide.util.ImageUtilities;
@@ -62,39 +65,50 @@ public class OpenFileAction extends AbstractAction {
                         "TTL_OpenDlg"))
                 .showMultiOpenDialog();
         if (f != null && f.length > 0) {
-            if (f.length == 1) {
+            openFile(f);
+        }
+    }
+
+    static void openFile(File[] f) {
+        if (f.length == 1) {
+            for (ImageEditorFactory factory : Lookup.getDefault().lookupAll(ImageEditorFactory.class)) {
+                if (factory.canOpen(f[0])) {
+                    if (factory.openExisting(f[0])) {
+                        RecentFiles.getDefault().add(factory.category(), f[0].toPath());
+                    }
+                }
+            }
+        } else {
+            Map<ImageEditorFactory, List<File>> m = new HashMap<>();
+            for (File file : f) {
                 for (ImageEditorFactory factory : Lookup.getDefault().lookupAll(ImageEditorFactory.class)) {
-                    if (factory.canOpen(f[0])) {
-                        factory.openExisting(f[0]);
+                    if (factory.canOpen(file)) {
+                        List<File> files = m.get(factory);
+                        if (files == null) {
+                            files = new ArrayList<>(f.length);
+                            m.put(factory, files);
+                        }
+                        files.add(file);
                     }
                 }
-            } else {
-                Map<ImageEditorFactory, List<File>> m = new HashMap<>();
-                for (File file : f) {
-                    for (ImageEditorFactory factory : Lookup.getDefault().lookupAll(ImageEditorFactory.class)) {
-                        if (factory.canOpen(file)) {
-                            List<File> files = m.get(factory);
-                            if (files == null) {
-                                files = new ArrayList<>(f.length);
-                                m.put(factory, files);
-                            }
-                            files.add(file);
+            }
+            for (Map.Entry<ImageEditorFactory, List<File>> en : m.entrySet()) {
+                en.getKey().openMany(f, (unopened) -> {
+                    StringBuilder sb = new StringBuilder();
+                    for (File un : unopened) {
+                        if (sb.length() > 0) {
+                            sb.append(", ");
                         }
+                        sb.append(un.getName());
                     }
-                }
-                for (Map.Entry<ImageEditorFactory, List<File>> en : m.entrySet()) {
-                    en.getKey().openMany(f, (unopened) -> {
-                        StringBuilder sb = new StringBuilder();
-                        for (File un : unopened) {
-                            if (sb.length() > 0) {
-                                sb.append(", ");
-                            }
-                            sb.append(un.getName());
-                        }
-                        StatusDisplayer.getDefault().setStatusText(
-                                NbBundle.getMessage(OpenFileAction.class, "UNABLE_TO_OPEN", sb));
-                    });
-                }
+                    StatusDisplayer.getDefault().setStatusText(
+                            NbBundle.getMessage(OpenFileAction.class, "UNABLE_TO_OPEN", sb));
+                    Set<File> successes = new HashSet<>(en.getValue());
+                    successes.removeAll(unopened);
+                    for (File f1 : successes) {
+                        RecentFiles.getDefault().add(en.getKey().category(), f1.toPath());
+                    }
+                });
             }
         }
     }

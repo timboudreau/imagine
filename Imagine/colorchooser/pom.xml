@@ -18,19 +18,16 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>5.5.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
-            <version>5.5.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.5.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -39,12 +36,10 @@
             <plugin>
                 <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <version>4.3</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publicPackages>
                         <publicPackage>net.java.dev.colorchooser</publicPackage>
-                        <publicPackage>org.netbeans.api.annotations.common</publicPackage>
                     </publicPackages>
                 </configuration>
             </plugin>

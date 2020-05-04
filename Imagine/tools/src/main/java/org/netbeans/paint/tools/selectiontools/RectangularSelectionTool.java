@@ -36,8 +36,8 @@ import static org.netbeans.paint.tools.selectiontools.MutableRectangle.*;
  *
  * @author Timothy Boudreau
  */
-@Tool(Selection.class)
-@ToolDef(name="NAME_RectangularSelectionTool", iconPath="org/netbeans/paint/tools/resources/rectangularselection.png", category="selection")
+@Tool(value=Selection.class, toolbarPosition=4900)
+@ToolDef(name="NAME_RectangularSelectionTool", iconPath="org/netbeans/paint/tools/resources/rect-selection.svg", category="selection")
 public class RectangularSelectionTool extends MouseDrivenTool implements PaintParticipant {
     private final Selection sel;
 

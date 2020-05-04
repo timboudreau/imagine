@@ -30,6 +30,9 @@ public final class VerticalFlowLayout implements LayoutManager {
         Component[] comps = parent.getComponents();
         for (int i = 0; i < comps.length; i++) {
             Component c = comps[i];
+            if (!c.isVisible()) {
+                continue;
+            }
             Dimension ps = f.apply(c);
             result.width = Math.max(result.width, ps.width);
             if (i != comps.length - 1) {
@@ -70,6 +73,9 @@ public final class VerticalFlowLayout implements LayoutManager {
         int bottom = sz.height - ins.bottom;
         for (int i = 0; i < comps.length; i++) {
             Component c = comps[i];
+            if (!c.isVisible()) {
+                continue;
+            }
             Dimension ps = useMinimum ? c.getMinimumSize() : c.getPreferredSize();
             if (x + ps.width < sz.width - ins.right) {
                 ps.width = (sz.width - ins.right) - x;

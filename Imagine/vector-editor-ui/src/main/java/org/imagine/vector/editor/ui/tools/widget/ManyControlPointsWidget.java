@@ -190,13 +190,16 @@ public class ManyControlPointsWidget extends Widget {
     public void shapeDeleted(ShapeElement el) {
         Rectangle2D.Double repaint = repaintScratchRect();
         points.conditionallyRemove(cps -> {
+            Set<ShapeControlPoint> toRemove = new HashSet<>(20);
             for (Iterator<ShapeControlPoint> it = cps.iterator(); it.hasNext();) {
                 ShapeControlPoint scp = it.next();
                 if (scp.owner().id() == el.id()) {
-                    it.remove();
+//                    it.remove();
+                    toRemove.add(scp);
                     reverseIndex.remove(scp);
                 }
             }
+            cps.removeAll(toRemove);
             return cps.isEmpty();
         });
         repaint(repaint);

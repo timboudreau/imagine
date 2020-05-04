@@ -8,6 +8,7 @@ package net.dev.java.imagine.api.tool.aspects;
 import java.awt.EventQueue;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -55,11 +56,12 @@ public abstract class ListenableCustomizerSupport<T> implements Customizer<T> {
 
     protected final void fireImmediately() {
         T obj = null;
+        List<Reference<Consumer<? super T>>> toRemove = new ArrayList<>();
         for (Iterator<Reference<Consumer<? super T>>> it = listeners.iterator(); it.hasNext();) {
             Reference<Consumer<? super T>> r = it.next();
             Consumer<? super T> c = r.get();
             if (c == null) {
-                it.remove();
+                toRemove.add(r);
             } else {
                 if (obj == null) {
                     obj = get();
@@ -72,6 +74,7 @@ public abstract class ListenableCustomizerSupport<T> implements Customizer<T> {
             }
         }
         onAfterFire();
+        listeners.removeAll(toRemove);
     }
 
     private final Notifier notifier = new Notifier();

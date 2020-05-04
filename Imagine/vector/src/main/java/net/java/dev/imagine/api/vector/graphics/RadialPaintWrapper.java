@@ -13,6 +13,7 @@ import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Transformable;
+import static net.java.dev.imagine.api.vector.graphics.LinearPaintWrapper.fixFractions;
 import org.imagine.utils.java2d.GraphicsUtils;
 
 /**
@@ -38,13 +39,14 @@ public class RadialPaintWrapper implements Primitive, PaintWrapper, Attribute<Ra
         this.centerY = centerY;
         this.focusX = focusX;
         this.focusY = focusY;
-        this.fractions = fractions;
+        this.fractions = fixFractions(colors.length, fractions);
         this.colors = colors;
         this.cycleMethod = cycleMethod;
         this.colorSpaceType = colorSpaceType;
         this.xpar = xpar;
         this.radius = radius;
         this.transform = transform;
+//        checkFractions(fractions);
     }
 
     public RadialPaintWrapper(RadialGradientPaint p) {

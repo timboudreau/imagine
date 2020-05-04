@@ -20,6 +20,8 @@ import java.awt.Shape;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.text.DecimalFormat;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.swing.BorderFactory;
@@ -37,18 +39,21 @@ import javax.swing.border.BevelBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.api.components.RadialSliderUI;
 import org.netbeans.paint.api.components.StringConverter;
 import org.openide.awt.Mnemonics;
 import org.openide.util.ChangeSupport;
 import org.openide.util.NbBundle;
+import org.openide.util.WeakSet;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class AffineTransformCustomizer implements Customizer<AffineTransform> {
+public class AffineTransformCustomizer implements Customizer<AffineTransform>,
+        ListenableCustomizer<AffineTransform> {
 
     private final AffineTransform value;
     private final String name;
@@ -117,6 +122,26 @@ public class AffineTransformCustomizer implements Customizer<AffineTransform> {
         return sb.toString();
     }
 
+    private final WeakSet<Consumer<? super AffineTransform>> listeners = new WeakSet<>();
+
+    private void change() {
+        Set<Consumer<? super AffineTransform>> l = new HashSet<>(listeners);
+        if (!l.isEmpty()) {
+            AffineTransform xform = new AffineTransform(get());
+            for (Consumer<? super AffineTransform> c : l) {
+                c.accept(xform);
+            }
+        }
+    }
+
+    @Override
+    public Runnable listen(Consumer<? super AffineTransform> consumer) {
+        listeners.add(consumer);
+        return () -> {
+            listeners.remove(consumer);
+        };
+    }
+
     private JPanel panel;
 
     @Override
@@ -141,6 +166,7 @@ public class AffineTransformCustomizer implements Customizer<AffineTransform> {
             type.setText(typeString());
             pre.refresh();
             updating[0] = false;
+            change();
         };
         MatrixComponent mx = new MatrixComponent(() -> {
             double[] d = new double[6];
@@ -148,6 +174,7 @@ public class AffineTransformCustomizer implements Customizer<AffineTransform> {
             return d;
         }, updater, () -> {
             value.setToIdentity();
+            change();
         });
         JPanel inner = new JPanel(new GridBagLayout());
         pnl.add(inner, BorderLayout.EAST);
@@ -158,7 +185,7 @@ public class AffineTransformCustomizer implements Customizer<AffineTransform> {
         c.gridy++;
 
         RadialSliderUI.attach(slider);
-        RadialSliderUI.setStringConverter(slider, new StringConverter(){
+        RadialSliderUI.setStringConverter(slider, new StringConverter() {
             @Override
             public String valueToString(JSlider sl) {
                 return valueToString(sl.getValue());
@@ -192,6 +219,7 @@ public class AffineTransformCustomizer implements Customizer<AffineTransform> {
             mx.refresh();
             pre.refresh();
             type.setText(typeString());
+            change();
         };
         slider.addChangeListener(ch);
         inner.add(slider, c);
@@ -210,6 +238,7 @@ public class AffineTransformCustomizer implements Customizer<AffineTransform> {
 //            ch.stateChanged(null);
             mx.refresh();
             pre.repaint();
+            change();
         });
 
         return panel = pnl;
@@ -439,6 +468,5 @@ public class AffineTransformCustomizer implements Customizer<AffineTransform> {
         public void removeChangeListener(ChangeListener l) {
             supp.removeChangeListener(l);
         }
-
     }
 }

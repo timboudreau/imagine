@@ -124,6 +124,14 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>borrowed</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nbutil</artifactId>
+        </dependency>          
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>toolcustomizers</artifactId>
         </dependency>
         <dependency>

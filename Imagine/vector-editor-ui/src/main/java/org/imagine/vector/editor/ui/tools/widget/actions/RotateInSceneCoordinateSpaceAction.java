@@ -49,7 +49,8 @@ public class RotateInSceneCoordinateSpaceAction extends WidgetAction.LockedAdapt
         if (state != null && widget == state.widget) {
             state.commit(scenePoint(widget));
             state = null;
-            return WidgetAction.State.CONSUMED;
+//            return WidgetAction.State.CONSUMED;
+            return State.createLocked(widget, this);
         } else if (state != null) {
             abort();
         }

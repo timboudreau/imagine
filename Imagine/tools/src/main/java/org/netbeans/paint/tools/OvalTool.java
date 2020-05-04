@@ -9,7 +9,6 @@
 
 package org.netbeans.paint.tools;
 
-import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
 import net.dev.java.imagine.spi.tool.Tool;
@@ -25,7 +24,7 @@ import org.openide.util.NbBundle;
  * @author Tim Boudreau
  */
 @ToolDef(name="Oval", iconPath="org/netbeans/paint/tools/resources/oval.svg")
-@Tool(Surface.class)
+@Tool(value=Surface.class, toolbarPosition=500)
 public class OvalTool extends RectangleTool {
 
     /** Creates a new instance of OvalTool */
@@ -48,7 +47,7 @@ public class OvalTool extends RectangleTool {
             g2d.fill(ell);
         }
         if (style.isOutline()) {
-            g2d.setStroke(new BasicStroke(strokeC.get()));
+            g2d.setStroke(strokeC.get());
             g2d.setColor (outlineC.get());
             g2d.draw(ell);
         }

@@ -19,7 +19,7 @@ public final class SnapSettings implements Serializable {
 
     private static SnapSettings INSTANCE = new SnapSettings();
     final Set<SnapKind> kinds;
-    private boolean enabled = true;
+    private boolean enabled = false;
     private transient WeakSet<ChangeListener> listeners;
 
     public SnapSettings() {
@@ -156,7 +156,8 @@ public final class SnapSettings implements Serializable {
         Preferences prefs = NbPreferences.forModule(SnapSettings.class);
         Set<SnapKind> values = EnumSet.noneOf(SnapKind.class);
         for (SnapKind k : defaultKinds) {
-            boolean ena = prefs.getBoolean("snap-" + k.name(), true);
+            boolean ena = prefs.getBoolean("snap-" + k.name(),
+                    k == SnapKind.POSITION || k == SnapKind.GRID);
             if (ena) {
                 values.add(k);
             }

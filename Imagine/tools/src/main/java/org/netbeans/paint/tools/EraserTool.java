@@ -41,7 +41,7 @@ import org.openide.util.NbBundle;
  * @author Timothy Boudreau
  */
 @ToolDef(iconPath="org/netbeans/paint/tools/resources/eraser.png", name="Eraser")
-@Tool(Surface.class)
+@Tool(value=Surface.class, toolbarPosition=1000)
 public class EraserTool extends MouseDrivenTool implements ChangeListener, ActionListener, CustomizerProvider {
 
     public EraserTool(Surface surface) {

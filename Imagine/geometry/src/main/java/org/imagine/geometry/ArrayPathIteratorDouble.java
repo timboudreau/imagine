@@ -26,7 +26,7 @@ public final class ArrayPathIteratorDouble implements PathIterator {
     public ArrayPathIteratorDouble(IntMap<Integer> windingRules, byte[] types, double[] data, AffineTransform xform) {
         this.windingRules = windingRules;
         this.types = types;
-        assert data.length % 2 == 0;
+        assert data.length % 2 == 0 : "Odd number of coordinates in what should be an array of x/y coords: " + data.length;
         if (xform == null || xform.isIdentity()) {
             this.data = data;
         } else {

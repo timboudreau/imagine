@@ -1,5 +1,6 @@
 package net.java.dev.imagine.api.toolcustomizers;
 
+import java.awt.BasicStroke;
 import org.imagine.utils.TimedExpirationMap;
 import java.awt.Color;
 import java.awt.EventQueue;
@@ -23,6 +24,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.java.dev.imagine.toolcustomizers.AffineTransformCustomizer;
+import net.java.dev.imagine.toolcustomizers.BasicStrokeCustomizer;
 import net.java.dev.imagine.toolcustomizers.BooleanCustomizer;
 import net.java.dev.imagine.toolcustomizers.ColorCustomizer;
 import net.java.dev.imagine.toolcustomizers.EnumCustomizer;
@@ -243,6 +245,8 @@ public final class Customizers {
             result = (Customizer<T>) new LinearGradientPaintCustomizer(name, (LinearGradientPaint) existingValue);
         } else if (type == RadialGradientPaint.class) {
             result = (Customizer<T>) new RadialGradientPaintCustomizer(name, (RadialGradientPaint) existingValue);
+        } else if (type == BasicStroke.class) {
+            result = (Customizer<T>) new BasicStrokeCustomizer(name, (BasicStroke) existingValue);
         } else {
             CustomizerFactory fac = findFactory(type);
             if (fac != null) {

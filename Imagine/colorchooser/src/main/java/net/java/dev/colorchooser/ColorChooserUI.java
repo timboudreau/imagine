@@ -1,8 +1,8 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
- * 
+ *
  * Copyright 2000-2008 Tim Boudreau. All rights reserved.
- * 
+ *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common
  * Development and Distribution License("CDDL") (collectively, the
@@ -20,7 +20,7 @@
  * License Header, with the fields enclosed by brackets [] replaced by
  * your own identifying information:
  * "Portions Copyrighted [year] [name of copyright owner]"
- * 
+ *
  * If you wish your version of this file to be governed by only the CDDL
  * or only the GPL Version 2, indicate your decision by adding
  * "[Contributor] elects to include this software in this distribution
@@ -31,7 +31,7 @@
  * However, if you add GPL Version 2 code and therefore, elected the GPL
  * Version 2 license, then the option applies only if the new code is
  * made subject to such option by the copyright holder.
- * 
+ *
  * Contributor(s):
  */
 package net.java.dev.colorchooser;
@@ -40,6 +40,8 @@ import com.bric.swing.ColorPicker;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
@@ -55,6 +57,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
 
 /**
@@ -105,6 +108,7 @@ public abstract class ColorChooserUI extends ComponentUI {
     protected void installListeners(ColorChooser c) {
         L l = new L();
         c.addMouseListener(l);
+        c.addMouseMotionListener(l);
         c.addFocusListener(l);
         c.addKeyListener(l);
         c.putClientProperty("uiListener", l); //NOI18N
@@ -183,6 +187,12 @@ public abstract class ColorChooserUI extends ComponentUI {
         int result = ((mods & me.SHIFT_DOWN_MASK) != 0) ? 1 : 0;
         result += ((mods & InputEvent.CTRL_DOWN_MASK) != 0) ? 2 : 0;
         result += ((mods & InputEvent.ALT_DOWN_MASK) != 0) ? 4 : 0;
+        if (me instanceof MouseEvent) {
+            MouseEvent m = (MouseEvent) me;
+            if (m.getButton() == 3) {
+                result += 8;
+            }
+        }
         return result;
     }
 
@@ -229,10 +239,32 @@ public abstract class ColorChooserUI extends ComponentUI {
 
     public Dimension getPreferredSize(JComponent c) {
         if (!c.isPreferredSizeSet()) {
-            return new Dimension(18, 18);
+            Dimension result = computePreferredSize(c);
+            if (result == null) {
+                result = new Dimension(18, 18);
+            }
+            return result;
         } else {
             return super.getPreferredSize(c);
         }
+    }
+
+    private Dimension computePreferredSize(JComponent c) {
+        Font f = UIManager.getFont("controlFont");
+        if (f == null) {
+            f = UIManager.getFont("Label.font");
+        }
+        if (f == null) {
+            f = c.getFont();
+        }
+        FontMetrics fm = c.getFontMetrics(f);
+        if (fm != null) {
+            int height = fm.getMaxAscent() + fm.getMaxDescent();
+            int width = fm.stringWidth("Z");
+            int size = Math.min(18, Math.max(height, width));
+            return new Dimension(size, size);
+        }
+        return null;
     }
 
     static boolean MAC = false;
@@ -291,8 +323,8 @@ public abstract class ColorChooserUI extends ComponentUI {
 
         @Override
         public void mouseDragged(MouseEvent e) {
+            ColorChooser chooser = (ColorChooser) e.getSource();
             if (e.getButton() == 2) {
-                ColorChooser chooser = (ColorChooser) e.getSource();
                 if (chooser.isDragDropEnabled()) {
                     String txt = chooser.getColorAsText();
                     try {
@@ -306,6 +338,7 @@ public abstract class ColorChooserUI extends ComponentUI {
             }
         }
 
+        @Override
         public void mouseClicked(MouseEvent e) {
             int mask = MAC ? KeyEvent.CTRL_DOWN_MASK : KeyEvent.META_DOWN_MASK;
             if ((e.getModifiersEx() & mask) != 0) {
@@ -317,8 +350,9 @@ public abstract class ColorChooserUI extends ComponentUI {
             }
         }
 
+        @Override
         public void mousePressed(MouseEvent me) {
-            if (me.isPopupTrigger() || me.getButton() == 2) {
+            if (me.getButton() == 2) {
                 return;
             }
             ColorChooser chooser = (ColorChooser) me.getSource();
@@ -329,18 +363,24 @@ public abstract class ColorChooserUI extends ComponentUI {
             Point p = me.getPoint();
             SwingUtilities.convertPointToScreen(p, chooser);
             initPaletteIndex(chooser, me);
-            PalettePopup.getDefault().setPalette(chooser.getPalettes()[getPaletteIndex()]);
-            if (chooser.hasFocus()) {
-                PalettePopup.getDefault().showPopup(chooser, p);
-            } else {
-                nextFocusPopupLocation = p;
-                chooser.requestFocus();
-                return;
+            int ix = getPaletteIndex();
+            System.out.println("Palette index " + ix + " for " + me.getButton());
+            Palette[] palettes = chooser.getPalettes();
+            if (ix < palettes.length) {
+                PalettePopup.getDefault().setPalette(chooser.getPalettes()[ix]);
+                if (chooser.hasFocus()) {
+                    PalettePopup.getDefault().showPopup(chooser, p);
+                } else {
+                    nextFocusPopupLocation = p;
+                    chooser.requestFocus();
+                    return;
+                }
+                me.consume();
+                nextFocusPopupLocation = null;
             }
-            me.consume();
-            nextFocusPopupLocation = null;
         }
 
+        @Override
         public void mouseReleased(MouseEvent me) {
             if (me.isPopupTrigger()) {
                 return;
@@ -351,15 +391,26 @@ public abstract class ColorChooserUI extends ComponentUI {
                 return;
             }
             nextFocusPopupLocation = null;
-            if (PalettePopup.getDefault().isPopupVisible(chooser)) {
-                PalettePopup.getDefault().hidePopup(chooser);
+            PalettePopup popup = PalettePopup.getDefault();
+            if (popup.isPopupVisible(chooser)) {
+                Palette current = popup.currentPalette();
+                popup.hidePopup(chooser);
+                Color oldColor = chooser.getColor();
                 Color transientColor = chooser.transientColor();
                 if (transientColor != null) {
+                    if (!(current instanceof AlphaPalette)) {
+                        if (oldColor != null && oldColor.getAlpha() != 255) {
+                            transientColor = new Color(transientColor.getRed(),
+                                    transientColor.getGreen(), transientColor.getBlue(),
+                                    oldColor.getAlpha());
+                        }
+                    }
                     RecentColors.getDefault().add(transientColor);
                     Color old = new Color(
                             transientColor.getRed(),
                             transientColor.getGreen(),
-                            transientColor.getBlue());
+                            transientColor.getBlue(),
+                            transientColor.getAlpha());
                     chooser.setTransientColor(null);
                     chooser.setColor(old);
                     fireColorChanged(chooser);
@@ -368,6 +419,7 @@ public abstract class ColorChooserUI extends ComponentUI {
             }
         }
 
+        @Override
         public void focusGained(FocusEvent e) {
             ColorChooser chooser = (ColorChooser) e.getSource();
             if (nextFocusPopupLocation != null && chooser.isEnabled()) {

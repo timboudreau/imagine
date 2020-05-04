@@ -44,6 +44,10 @@ import org.openide.util.lookup.ProxyLookup;
  *   }
  * }
  * </pre>
+ * <p>
+ * (Note that ScalingMouseListener is a better choice, since it accepts decimal
+ * coordinates to allow subpixel positioning at high zoom).
+ * </p>
  * Generally a tool also has a <i>definition</i> which defines things like
  * the icon and localized display name of a tool for use in menus and toolbars.
  * That is accomplished by using the &#064;ToolDef annotation (which may be on
@@ -105,6 +109,7 @@ public final class Tool {
      * @return True if attachment succeeds
      */
     public boolean attach(Lookup.Provider layer, ToolUIContext ctx) {
+        assert ctx != null : "Null ToolUIContext to " + getName();
         ToolImplementation<?> impl = getImplementation(layer);
         ToolImplementation<?> old;
         synchronized (lock) {

@@ -94,7 +94,7 @@ public class ShapesLoadHandler implements LayerLoadHandler<VectorLayer> {
                 break;
         }
         finer(() -> "Vector layer finished reading shapes @ " + end + " having read " + (end - start) + " bytes");
-        VectorLayerFactory vlf = Lookup.getDefault().lookup(VectorLayerFactory.class);
+        VectorLayerFactoryImpl vlf = Lookup.getDefault().lookup(VectorLayerFactoryImpl.class);
         VectorLayer vl = new VectorLayer("-pending", handle, canvasSize, vlf, shapes);
         return vl;
     }

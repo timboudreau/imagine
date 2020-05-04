@@ -58,9 +58,8 @@ public class ColorCustomizer extends ListenableCustomizerSupport<Color>
     @Override
     public JComponent getComponent() {
         JLabel lbl = new JLabel(getName());
-        ColorChooser chooser = new ColorChooser();
         Color color = new Color(red, green, blue, alpha);
-        chooser.setColor(color);
+        ColorChooser chooser = new ColorChooser(color);
         lbl.setLabelFor(chooser);
         JPanel slp = new SharedLayoutPanel();
         slp.add(lbl);
@@ -85,6 +84,7 @@ public class ColorCustomizer extends ListenableCustomizerSupport<Color>
         fire();
     }
 
+    @Override
     public Color get() {
         return new Color(red, green, blue, alpha);
     }

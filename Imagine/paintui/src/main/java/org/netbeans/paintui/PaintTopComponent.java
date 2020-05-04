@@ -22,11 +22,13 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JFileChooser;
@@ -320,45 +322,71 @@ public class PaintTopComponent extends TopComponent implements ChangeListener,
         updateActiveTool();
     }
 
-    public void save() throws IOException {
+    @Override
+    public void save(BiConsumer<Exception, Path> callback) {
         if (this.file != null) {
-            doSave(file);
+            try {
+                doSave(file);
+                callback.accept(null, file.toPath());
+            } catch (IOException ex) {
+                callback.accept(ex, null);
+            }
+
         } else {
-            saveAs();
+            saveAs(callback);
         }
     }
 
-    public void saveAs() throws IOException {
-        JFileChooser ch = FileChooserUtils.getFileChooser("image");
-        if (ch.showSaveDialog(this) == JFileChooser.APPROVE_OPTION
-                && ch.getSelectedFile() != null) {
+    @Override
+    public void saveAs(BiConsumer<Exception, Path> callback) {
+        try {
+            JFileChooser ch = FileChooserUtils.getFileChooser("image");
+            if (ch.showSaveDialog(this) == JFileChooser.APPROVE_OPTION
+                    && ch.getSelectedFile() != null) {
 
-            File f = ch.getSelectedFile();
-            if (!f.getPath().endsWith(".png")) { //NOI18N
-                f = new File(f.getPath() + ".png"); //NOI18N
-            }
-            if (!f.exists()) {
-                if (!f.createNewFile()) {
-                    String failMsg = NbBundle.getMessage(
+                File f = ch.getSelectedFile();
+                if (!f.getPath().endsWith(".png")) { //NOI18N
+                    f = new File(f.getPath() + ".png"); //NOI18N
+                }
+                if (!f.exists()) {
+                    if (!f.createNewFile()) {
+                        String failMsg = NbBundle.getMessage(
+                                PaintTopComponent.class,
+                                "MSG_SaveFailed", new Object[]{f.getPath()} //NOI18N
+                        );
+                        JOptionPane.showMessageDialog(this, failMsg);
+                        callback.accept(null, null);
+                        return;
+                    }
+                } else {
+                    String overwriteMsg = NbBundle.getMessage(
                             PaintTopComponent.class,
-                            "MSG_SaveFailed", new Object[]{f.getPath()} //NOI18N
+                            "MSG_Overwrite", new Object[]{f.getPath()} //NOI18N
                     );
-                    JOptionPane.showMessageDialog(this, failMsg);
-                    return;
+                    if (JOptionPane.showConfirmDialog(this, overwriteMsg)
+                            != JOptionPane.OK_OPTION) {
+                        callback.accept(null, null);
+                        return;
+                    }
                 }
-            } else {
-                String overwriteMsg = NbBundle.getMessage(
-                        PaintTopComponent.class,
-                        "MSG_Overwrite", new Object[]{f.getPath()} //NOI18N
-                );
-                if (JOptionPane.showConfirmDialog(this, overwriteMsg)
-                        != JOptionPane.OK_OPTION) {
-
-                    return;
-                }
+                doSave(f);
+                Path p = f.toPath();
+                canvas.getPicture().getPicture().associateFile(p);
+                setDisplayName(fileName(p));
+                callback.accept(null, p);
             }
-            doSave(f);
+        } catch (Exception ex) {
+            callback.accept(ex, null);
         }
+    }
+
+    private static String fileName(Path p) {
+        String s = p.getFileName().toString();
+        int ix = s.lastIndexOf('.');
+        if (ix > 0) {
+            return s.substring(0, ix);
+        }
+        return s;
     }
 
     private void doSave(File f) throws IOException {
@@ -487,7 +515,9 @@ public class PaintTopComponent extends TopComponent implements ChangeListener,
         undoManager.discardAllEdits();
     }
 
-    public void reload() throws IOException {
+    @Override
+    public void reload(BiConsumer<Exception, Path> callback) {
+        
     }
 
     public boolean canReload() {

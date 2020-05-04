@@ -300,12 +300,12 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
 
     @Override
     public Paint getFill() {
-        return bg == null ? TRANSPARENT : GradientManager.getDefault().findPaint(bg);
+        return bg == null ? TRANSPARENT : bg.toPaint();
     }
 
     @Override
     public Paint getDraw() {
-        return fg == null ? TRANSPARENT : GradientManager.getDefault().findPaint(fg);
+        return fg == null ? TRANSPARENT : fg.toPaint();
     }
 
     private void updateBoundsFromShape(Shape s) {
@@ -512,7 +512,7 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
 
     @Override
     public BasicStroke stroke() {
-        return stroke;
+        return stroke == null ? new BasicStroke(1) : stroke;
     }
 
     @Override
