@@ -35,6 +35,20 @@ public final class LinearPaintKey extends MultiplePaintKey<LinearGradientPaint> 
         return StandardPaintKeyKinds.LINEAR_GRADIENT;
     }
 
+    @Override
+    public PaintKey<LinearGradientPaint> createTransformedCopy(AffineTransform xform) {
+        if (xform.isIdentity()) {
+            return this;
+        }
+        double[] pts = new double[]{centerX(), centerY(), focusX(), focusY()};
+        xform.transform(pts, 0, pts, 0, 2);
+        AffineTransform xf = new AffineTransform(super.transform());
+        xf.preConcatenate(xform);
+
+        return new LinearPaintKey(pts[0], pts[1], pts[2], pts[3],
+                fractions(), colors(), cycleMethod(), colorSpaceType(), xf);
+    }
+
     private static float[] pointsArrayForLinearPaint(LinearGradientPaint p) {
         Point2D start = p.getStartPoint();
         Point2D end = p.getEndPoint();

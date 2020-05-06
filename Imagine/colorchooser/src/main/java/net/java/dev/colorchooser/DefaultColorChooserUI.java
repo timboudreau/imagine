@@ -37,6 +37,7 @@
 package net.java.dev.colorchooser;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
@@ -44,6 +45,8 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,7 +54,9 @@ import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.KeyStroke;
+import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
 
 /**
@@ -82,6 +87,22 @@ final class DefaultColorChooserUI extends ColorChooserUI {
     }
 
     protected void init(ColorChooser c) {
+        Font f = UIManager.getFont("controlFont");
+        if (f == null) {
+            f = UIManager.getFont("Label.font");
+        }
+        if (f == null) {
+            f = new JLabel().getFont();
+        }
+        String uiFontSize = System.getProperty("uiFontSize");
+        if (uiFontSize != null) {
+            try {
+                f = f.deriveFont(Float.parseFloat(uiFontSize));
+            } catch (NumberFormatException nfe) {
+                // do nothing
+            }
+        }
+        c.setFont(f);
         c.setToolTipText(getDefaultTooltip());
         c.setBorder(new CCBorder());
         c.setFocusable(true);
@@ -106,10 +127,32 @@ final class DefaultColorChooserUI extends ColorChooserUI {
         im.put(paste1, "paste");
         im.put(paste2, "paste");
         am.put("paste", new CcPasteAction(c));
+
+        c.addPropertyChangeListener("font", FONT_CHANGE);
     }
 
-    private boolean isMac() {
-        return System.getProperty("os.name", "x")
+    private static final FontChangeListener FONT_CHANGE = new FontChangeListener();
+
+    static final class FontChangeListener implements PropertyChangeListener {
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            if (evt.getSource() instanceof ColorChooser && "font".equals(evt.getPropertyName())) {
+                ColorChooser cc = (ColorChooser) evt.getSource();
+                cc.invalidate();
+                cc.revalidate();
+                cc.repaint();
+            }
+        }
+    }
+
+    private static Boolean MAC;
+
+    static boolean isMac() {
+        if (MAC != null) {
+            return MAC;
+        }
+        return MAC = System.getProperty("os.name", "x")
                 .toLowerCase().contains("darwin")
                 || System.getProperty("mrj.version") != null;
     }
@@ -121,6 +164,7 @@ final class DefaultColorChooserUI extends ColorChooserUI {
         if (getDefaultTooltip().equals(c.getToolTipText())) {
             c.setToolTipText(null);
         }
+        c.removePropertyChangeListener("font", FONT_CHANGE);
     }
 
     private static final class CcCopyAction extends AbstractAction {
@@ -182,11 +226,10 @@ final class DefaultColorChooserUI extends ColorChooserUI {
                 Logger.getLogger(DefaultColorChooserUI.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-
     }
 
     private static String getDefaultTooltip() {
-        return MAC ? ColorChooser.getString("tip.mac")
+        return isMac() ? ColorChooser.getString("tip.mac")
                 : //NOI18N
                 ColorChooser.getString("tip"); //NOI18N
     }
@@ -201,7 +244,7 @@ final class DefaultColorChooserUI extends ColorChooserUI {
             int halfWidth = chooser.getWidth() / 2;
             int halfHeight = chooser.getHeight() / 2;
             Color gray1 = new Color(128, 128, 128);
-            Color gray2 = new Color(164,164,164);
+            Color gray2 = new Color(164, 164, 164);
             g.setColor(gray1);
             g.fillRect(0, 0, halfWidth, halfHeight);
             g.fillRect(halfWidth, halfHeight, halfWidth, halfHeight);

@@ -28,8 +28,9 @@ import javax.swing.ImageIcon;
 import javax.swing.filechooser.FileFilter;
 import net.java.dev.imagine.ui.common.ImageEditorFactory;
 import net.java.dev.imagine.ui.common.RecentFiles;
+import org.imagine.nbutil.filechooser.FileChooserBuilder;
+import org.imagine.nbutil.filechooser.FileKinds;
 import org.openide.awt.StatusDisplayer;
-import org.openide.filesystems.FileChooserBuilder;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
@@ -59,7 +60,7 @@ public class OpenFileAction extends AbstractAction {
     public void actionPerformed(ActionEvent e) {
         File[] f = new FileChooserBuilder(OpenFileAction.class)
                 .setFileFilter(new FF())
-                .setFilesOnly(true)
+                .setFileKinds(FileKinds.FILES_ONLY)
                 .setFileHiding(true)
                 .setTitle(NbBundle.getMessage(OpenFileAction.class,
                         "TTL_OpenDlg"))

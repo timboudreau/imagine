@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.java.dev.imagine.ui.actions;
 
 import java.io.File;
@@ -15,8 +10,9 @@ import javax.swing.filechooser.FileFilter;
 import net.java.dev.imagine.api.image.Picture;
 import net.java.dev.imagine.api.io.SaveSupport;
 import net.java.dev.imagine.ui.common.RecentFiles;
+import org.imagine.nbutil.filechooser.FileChooserBuilder;
+import org.imagine.nbutil.filechooser.FileKinds;
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
-import org.openide.filesystems.FileChooserBuilder;
 import org.openide.util.Exceptions;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
@@ -93,10 +89,14 @@ public class SaveAsNativeAction extends GenericContextSensitiveAction<Picture> {
                     NbBundle.getMessage(SaveAsNativeAction.class, "MSG_CannotSave"));
             return null;
         }
+        Path p = t.associatedFile();
         fcb.setTitle(NbBundle.getMessage(SaveAsNativeAction.class, "TTL_SaveAsNative"));
         fcb.setDefaultWorkingDirectory(new File(System.getProperty("user.home")));
-        fcb.setFilesOnly(true);
+        fcb.setFileKinds(FileKinds.FILES_ONLY);
         fcb.setFileHiding(true);
+        if (p != null) {
+            fcb.setInitialSelection(p);
+        }
         File file = fcb.showSaveDialog();
         return file == null ? null : file.toPath();
     }

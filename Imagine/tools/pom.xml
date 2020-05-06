@@ -29,6 +29,10 @@
         </dependency>        
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>nbutil</artifactId>
+        </dependency>        
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>paintapi</artifactId>
         </dependency>
         <dependency>

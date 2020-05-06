@@ -9,6 +9,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import static java.lang.Float.floatToIntBits;
 import static java.lang.Float.intBitsToFloat;
+import org.imagine.geometry.EnhRectangle2D;
 import org.imagine.io.KeyWriter;
 
 /**
@@ -34,6 +35,29 @@ public final class RadialPaintKey extends MultiplePaintKey<RadialGradientPaint> 
     public RadialPaintKey(int radius, int cx, int cy, int fx, int fy, int[] fracs, int[] colors, byte cycle, byte color, long[] transform) {
         super(cx, cy, fx, fy, fracs, colors, cycle, color, transform);
         this.radius = radius;
+    }
+
+    @Override
+    public PaintKey<RadialGradientPaint> createTransformedCopy(AffineTransform xform) {
+        if (xform.isIdentity()) {
+            return this;
+        }
+        double[] pts = new double[]{centerX(), centerY(), focusX(), focusY(), 0, 0, radius, radius};
+        xform.transform(pts, 0, pts, 0, 3);
+        double radiusXdelta = Math.abs(pts[6] - pts[4]);
+        double radiusYdelta = Math.abs(pts[7] - pts[5]);
+        double newRadius;
+        if (radiusXdelta != radiusYdelta) {
+            EnhRectangle2D enh = new EnhRectangle2D(pts[4], pts[5], radiusXdelta, radiusYdelta);
+            newRadius = enh.diagonalLength();
+        } else {
+            newRadius = radiusXdelta;
+        }
+        AffineTransform xf = new AffineTransform(super.transform());
+        xf.preConcatenate(xform);
+
+        return new RadialPaintKey(newRadius, pts[0], pts[1], pts[2], pts[3],
+                fractions(), colors(), cycleMethod(), colorSpaceType(), xf);
     }
 
     @Override

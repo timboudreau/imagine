@@ -1,6 +1,7 @@
 package org.imagine.awt.key;
 
 import java.awt.Paint;
+import java.awt.geom.AffineTransform;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,6 +38,11 @@ public final class UnknownPaintKey<T extends Paint> extends PaintKey<T> {
     @Override
     public T toPaint() {
         return paint;
+    }
+
+    @Override
+    public PaintKey<T> createTransformedCopy(AffineTransform xform) {
+        return this;
     }
 
     @Override

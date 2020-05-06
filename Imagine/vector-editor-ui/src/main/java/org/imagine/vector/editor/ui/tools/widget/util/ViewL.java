@@ -32,11 +32,20 @@ public final class ViewL extends MouseAdapter implements MouseMotionListener {
 //        return new EqPointDouble (((double) viewLocation.x / zoomFactor) - sceneLoc.x, ((double) viewLocation.y / zoomFactor) - sceneLoc.y);
     }
 
+    public static EqPointDouble lastWidgetPoint2D(Widget widget) {
+        Point widgetLocation = widget.getLocation();
+        EqPointDouble sceneLoc = lastPoint2D(widget);
+        sceneLoc.x -= widgetLocation.x;
+        sceneLoc.y -= widgetLocation.y;
+        return sceneLoc;
+    }
+
     public static EqPointDouble lastPoint2D(Widget widget) {
         Point viewLocation = get(widget)._lastPoint();
         Point sceneLoc = widget.getScene().getLocation();
         double zoomFactor = widget.getScene().getZoomFactor();
-        return new EqPointDouble (((double) viewLocation.x / zoomFactor) - sceneLoc.x, ((double) viewLocation.y / zoomFactor) - sceneLoc.y);
+        EqPointDouble result = new EqPointDouble(((double) viewLocation.x / zoomFactor) - sceneLoc.x, ((double) viewLocation.y / zoomFactor) - sceneLoc.y);
+        return result;
     }
 
     public static int lastEventType(Widget widget) {

@@ -31,10 +31,11 @@ import org.imagine.awt.dnd.PaintKeyDropSupport;
 import org.imagine.awt.io.PaintKeyIO;
 import org.imagine.awt.key.PaintKey;
 import org.imagine.io.KeyWriter;
+import org.imagine.nbutil.filechooser.FileChooserBuilder;
+import org.imagine.nbutil.filechooser.FileKinds;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.awt.Mnemonics;
-import org.openide.filesystems.FileChooserBuilder;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
 import org.openide.util.NbBundle.Messages;
@@ -150,12 +151,12 @@ final class PaintKeyTileFactory extends AbstractTileFactory<PaintKey<?>, Transfe
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            File file = new FileChooserBuilder("saveShapes")
+            File file = new FileChooserBuilder("savePaints")
                     .setDefaultWorkingDirectory(new File(System.getProperty("user.home")))
                     .setTitle(Bundle.SaveFill())
                     .setFileFilter(new FillFileFilter())
                     .setFileHiding(true)
-                    .setFilesOnly(true)
+                    .setFileKinds(FileKinds.FILES_ONLY)
                     .setApproveText(Bundle.loadFillButtonText())
                     .showOpenDialog();
             if (file != null) {
@@ -196,7 +197,7 @@ final class PaintKeyTileFactory extends AbstractTileFactory<PaintKey<?>, Transfe
                     .setFileFilter(new FillFileFilter())
                     .addDefaultFileFilters()
                     .setFileHiding(true)
-                    .setFilesOnly(true)
+                    .setFileKinds(FileKinds.FILES_ONLY)
                     .showSaveDialog();
             if (file != null) {
                 if (!file.getName().endsWith(".fill")) {

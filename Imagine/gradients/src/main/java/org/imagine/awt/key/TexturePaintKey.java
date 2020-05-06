@@ -1,6 +1,9 @@
 package org.imagine.awt.key;
 
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.TexturePaint;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
@@ -65,6 +68,40 @@ public final class TexturePaintKey extends PaintKey<TexturePaint> {
         raster = rasterContents(img);
         hash = hash(raster);
         paintForKey.put(this, paint);
+    }
+
+    @Override
+    public TexturePaintKey createTransformedCopy(AffineTransform xform) {
+        if (xform.isIdentity()) {
+            return this;
+        }
+        double[] points = new double[] {x, y, x + w, y+h, 0, 0, imageW, imageH};
+        xform.transform(points, 0, points, 0, x);
+
+        BufferedImage origImage = getImage();
+        double newImageWidth = points[6] - points[4];
+        double newImageHeight = points[7] - points[5];
+        if (newImageWidth < 0) {
+            points[4] += newImageWidth;
+            newImageWidth = -newImageWidth;
+        }
+        if (newImageHeight < 0) {
+            points[5] += newImageHeight;
+            newImageHeight = -newImageHeight;
+        }
+        Rectangle2D.Double newImageBounds = new Rectangle2D.Double(points[4], points[5],
+                newImageWidth, newImageHeight);
+        Rectangle ibds = newImageBounds.getBounds();
+        BufferedImage nue = new BufferedImage(ibds.width, ibds.height, origImage.getType());
+        Graphics2D g = nue.createGraphics();
+        try {
+            g.translate(-newImageBounds.x, -newImageBounds.y);
+            g.drawRenderedImage(origImage, xform);
+        } finally {
+            g.dispose();
+        }
+        TexturePaint paint = new TexturePaint(nue, newImageBounds);
+        return new TexturePaintKey(paint);
     }
 
     @Override

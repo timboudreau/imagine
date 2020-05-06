@@ -23,7 +23,7 @@ import org.netbeans.api.visual.model.ObjectState;
 public class DesignerProperties {
 
     private static final DesignerProperties INSTANCE = new DesignerProperties();
-    private double controlPointSize = 9;
+    private double controlPointSize = 7;
     private double snapRadius = 5;
     private Color focusStrokeXOR = Color.GRAY;
     private Color selectionStrokeXOR = Color.LIGHT_GRAY;

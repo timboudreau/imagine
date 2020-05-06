@@ -6,6 +6,7 @@
 package org.imagine.awt.key;
 
 import java.awt.TexturePaint;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -44,6 +45,16 @@ public class ManagedTexturePaintKey extends PaintKey<TexturePaint> {
     @Override
     public String toString() {
         return id();
+    }
+
+    @Override
+    public PaintKey<TexturePaint> createTransformedCopy(AffineTransform xform) {
+        if (xform.isIdentity()) {
+            return this;
+        }
+        TexturePaintKey delegate = toTexturePaintKey();
+        TexturePaintKey xformed = delegate.createTransformedCopy(xform);
+        return Accessor.managedKeyFor(xformed);
     }
 
     public static ManagedTexturePaintKey read(KeyReader reader) throws IOException {

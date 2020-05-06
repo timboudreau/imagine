@@ -58,7 +58,7 @@ public interface NumberModel<N extends Number> {
 
     void set(N val);
 
-    void setValue(Number val);
+    N setValue(Number val);
 
     boolean isFloatingPoint();
 
@@ -111,14 +111,23 @@ public interface NumberModel<N extends Number> {
 
     N prevValue();
 
+    N increment(int bySteps);
+
+    N increment(double fractionalSteps);
+
+    default N decrement(int bySteps) {
+        return increment(-bySteps);
+    }
+    default N decrement(double fractionalSteps) {
+        return increment(-fractionalSteps);
+    }
+
     default N increment() {
-        setValue(nextValue());
-        return get();
+        return setValue(nextValue());
     }
 
     default N decrement() {
-        setValue(prevValue());
-        return get();
+        return setValue(prevValue());
     }
 
     default NumberModel<N> withFormat(NumberFormat fmt) {
@@ -143,8 +152,8 @@ public interface NumberModel<N extends Number> {
             }
 
             @Override
-            public void setValue(Number val) {
-                NumberModel.this.setValue(val);
+            public N setValue(Number val) {
+                return NumberModel.this.setValue(val);
             }
 
             @Override
@@ -158,13 +167,31 @@ public interface NumberModel<N extends Number> {
             }
 
             @Override
+            public N increment(double fractionalSteps) {
+                return NumberModel.this.increment(fractionalSteps);
+            }
+
+            @Override
             public N nextValue() {
+                N result = NumberModel.this.nextValue();
+                if (!NumberModel.this.constraints().isValidValue(result)) {
+                    return get();
+                }
                 return NumberModel.this.nextValue();
             }
 
             @Override
             public N prevValue() {
+                N result = NumberModel.this.prevValue();
+                if (!NumberModel.this.constraints().isValidValue(result)) {
+                    return get();
+                }
                 return NumberModel.this.prevValue();
+            }
+
+            @Override
+            public N increment(int bySteps) {
+                return NumberModel.this.increment(bySteps);
             }
         };
     }
@@ -180,8 +207,10 @@ public interface NumberModel<N extends Number> {
         }
 
         @Override
-        public void setValue(Number val) {
-            set(converter.apply(val));
+        public T setValue(Number val) {
+            T result = converter.apply(constraints().constrain(val));
+            set(result);
+            return result;
         }
 
         @Override
@@ -192,6 +221,17 @@ public interface NumberModel<N extends Number> {
         @Override
         public T get() {
             return doGet();
+        }
+
+        @Override
+        public T increment(int bySteps) {
+            T result = setValue(converter.apply(constraints().nextValue(bySteps, get())));
+            return result;
+        }
+
+        @Override
+        public T increment(double fractionalSteps) {
+            return setValue(converter.apply(constraints().nextValue(fractionalSteps, get())));
         }
 
         @Override

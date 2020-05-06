@@ -47,6 +47,12 @@ public class EnhRectangle2D extends Rectangle2D.Double implements EnhancedShape,
                 : new EnhRectangle2D(shape.getX(), shape.getY(), shape.getWidth(), shape.getHeight());
     }
 
+    public EnhRectangle2D setCenter(double x, double y) {
+        this.x = x - (width / 2);
+        this.y = y - (height / 2);
+        return this;
+    }
+
     public void setLocation(Point2D loc) {
         this.x = loc.getX();
         this.y = loc.getY();

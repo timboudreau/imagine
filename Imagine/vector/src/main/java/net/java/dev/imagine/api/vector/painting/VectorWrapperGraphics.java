@@ -542,7 +542,7 @@ public class VectorWrapperGraphics extends Graphics2D {
             }
         }
     }
-
+ 
     @Override
     public void setTransform(AffineTransform tx) {
         AffineTransform old = other.getTransform();

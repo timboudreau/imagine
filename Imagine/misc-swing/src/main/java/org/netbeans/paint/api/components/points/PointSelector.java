@@ -44,6 +44,7 @@ import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import org.imagine.geometry.Circle;
+import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.Triangle2D;
 import org.imagine.geometry.util.PooledTransform;
 import org.netbeans.paint.api.components.RadialSliderUI;
@@ -56,8 +57,8 @@ import org.openide.util.Exceptions;
  */
 public final class PointSelector extends JComponent {
 
-    private final Point2D.Double targetScaled;
-    private final Point2D.Double focusScaled;
+    private final EqPointDouble  targetScaled;
+    private final EqPointDouble  focusScaled;
     private final Rectangle2D.Double targetBounds;
     private final int sizeBase;
     private Color marginColor;
@@ -82,8 +83,8 @@ public final class PointSelector extends JComponent {
     public PointSelector(Rectangle2D.Double bounds, int sizeBase) {
         assert bounds != null : "bounds null";
         this.sizeBase = sizeBase;
-        this.targetScaled = new Point2D.Double(bounds.getCenterX(), bounds.getCenterY());
-        this.focusScaled = new Point2D.Double(bounds.getCenterX()
+        this.targetScaled = new EqPointDouble (bounds.getCenterX(), bounds.getCenterY());
+        this.focusScaled = new EqPointDouble (bounds.getCenterX()
                 + (bounds.getWidth() / 2),
                 bounds.getCenterY() + (bounds.getHeight() / 2));
 
@@ -570,21 +571,29 @@ public final class PointSelector extends JComponent {
     }
 
     private void changeTarget(double dx, double dy) {
-        Point2D.Double old = new Point2D.Double(targetScaled.getX(), targetScaled.getY());
+        EqPointDouble  old = new EqPointDouble (targetScaled.getX(), targetScaled.getY());
         targetScaled.x += dx;
         targetScaled.y += dy;
         constrain(targetScaled);
+        ensureNotIdentical();
         firePropertyChange("targetPoint", old, targetScaled);
         repaint();
     }
 
     private void changeFocus(double dx, double dy) {
-        Point2D.Double old = new Point2D.Double(targetScaled.getX(), targetScaled.getY());
+        EqPointDouble old = new EqPointDouble (focusScaled.getX(), focusScaled.getY());
         focusScaled.x += dx;
         focusScaled.y += dy;
         constrain(focusScaled);
+        ensureNotIdentical();
         firePropertyChange("focusPoint", old, focusScaled);
         repaint();
+    }
+    
+    private void ensureNotIdentical() {
+        if (targetScaled.exactlyEqual(focusScaled)) {
+            focusScaled.x += 0.001;
+        }
     }
 
     private Point2D constrain(Point2D p) {

@@ -1,10 +1,10 @@
 package org.imagine.awt.key;
 
-import com.sun.prism.j2d.paint.RadialGradientPaint;
 import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.LinearGradientPaint;
 import java.awt.Paint;
+import java.awt.RadialGradientPaint;
 import java.awt.TexturePaint;
 import org.openide.util.NbBundle;
 import org.openide.util.NbBundle.Messages;

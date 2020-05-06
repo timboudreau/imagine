@@ -10,6 +10,7 @@ import java.io.File;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Consumer;
+import org.netbeans.paint.api.editing.LayerFactory;
 
 /**
  *
@@ -63,6 +64,8 @@ public abstract class ImageEditorFactory {
     }
 
     public abstract void openNew(Dimension dim, BackgroundStyle bg);
+
+    public abstract void openNew(Dimension dim, BackgroundStyle bg, LayerFactory layerFactory);
 
     // XXX this should be an async callback with the result
     public abstract boolean openExisting(File file);

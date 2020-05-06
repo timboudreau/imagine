@@ -16,8 +16,6 @@ package net.java.dev.imagine.ui.actions;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import net.java.dev.imagine.ui.components.ImageSizePanel;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -26,15 +24,15 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.prefs.Preferences;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.UIManager;
 import net.java.dev.imagine.ui.common.BackgroundStyle;
 import net.java.dev.imagine.ui.common.ImageEditorFactory;
+import net.java.dev.imagine.ui.components.NewPicturePanel;
+import org.netbeans.paint.api.editing.LayerFactory;
 import org.openide.DialogDescriptor;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
@@ -43,7 +41,6 @@ import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
-import org.openide.util.NbPreferences;
 import org.openide.util.Utilities;
 
 public final class NewCanvasAction extends org.openide.util.actions.CallableSystemAction {
@@ -134,23 +131,29 @@ public final class NewCanvasAction extends org.openide.util.actions.CallableSyst
         if (f == null) {
             return;
         }
+        NewPicturePanel.NewPictureParameters params = NewPicturePanel.showDialog();
+        if (params != null) {
+            f.openNew(params.size, params.style, params.layerFactory);
+        }
+    }
+        /*
         Dimension last = loadLastSize();
         final ImageSizePanel pnl = new ImageSizePanel(f.supportsBackgroundStyles(), false, last);
         String ttl = NbBundle.getMessage(ResizeAction.class, "TTL_NewImage");
         //This code really should use DialogDisplayer, but is not due
         //to a bug in the window system
         int result = JOptionPane.showOptionDialog(Frame.getFrames()[0], pnl,
-                ttl, JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
-                null, null, null);
+        ttl, JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
+        null, null, null);
         if (result == JOptionPane.OK_OPTION) {
-            Dimension d = pnl.getDimension();
-            if (d.width == 0 || d.height == 0) {
-                return;
-            }
-            f.openNew(d, pnl.getBackgroundStyle());
-            if (d.width != last.width || d.height != last.height) {
-                saveLastSize(d);
-            }
+        Dimension d = pnl.getDimension();
+        if (d.width == 0 || d.height == 0) {
+        return;
+        }
+        f.openNew(d, pnl.getBackgroundStyle());
+        if (d.width != last.width || d.height != last.height) {
+        saveLastSize(d);
+        }
         }
     }
 
@@ -166,6 +169,7 @@ public final class NewCanvasAction extends org.openide.util.actions.CallableSyst
         prefs.putInt("editor-width", Math.max(8, dim.width));
         prefs.putInt("editor-height", Math.max(8, dim.height));
     }
+         */
 
     public String getName() {
         return NbBundle.getMessage(NewCanvasAction.class, "ACT_NewImage");
@@ -201,6 +205,10 @@ public final class NewCanvasAction extends org.openide.util.actions.CallableSyst
         @Override
         public boolean canOpen(File file) {
             return false;
+        }
+
+        @Override
+        public void openNew(Dimension dim, BackgroundStyle bg, LayerFactory layerFactory) {
         }
     }
 }

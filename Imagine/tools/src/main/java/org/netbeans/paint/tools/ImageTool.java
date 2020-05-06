@@ -6,15 +6,14 @@
  * To change this template, choose Tools | Template Manager
  * and open the template in the editor.
  */
-
 package org.netbeans.paint.tools;
+
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
-import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
@@ -29,21 +28,21 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.filechooser.FileFilter;
 import net.dev.java.imagine.api.tool.aspects.Attachable;
@@ -55,7 +54,9 @@ import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import net.java.dev.imagine.api.image.Surface;
 import org.imagine.geometry.util.PooledTransform;
-import org.netbeans.paint.api.components.FileChooserUtils;
+import org.imagine.nbutil.filechooser.FileChooserBuilder;
+import org.imagine.nbutil.filechooser.FileKinds;
+import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 import org.openide.util.lookup.Lookups;
@@ -64,30 +65,32 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Tim Boudreau
  */
-@Tool(value=Surface.class, toolbarPosition=800)
-@ToolDef(name="Image", iconPath="org/netbeans/paint/tools/resources/image.png")
+@Tool(value = Surface.class, toolbarPosition = 800)
+@ToolDef(name = "Image", iconPath = "org/netbeans/paint/tools/resources/image.png")
 public class ImageTool implements MouseListener, MouseMotionListener, KeyListener, PaintParticipant, CustomizerProvider, Customizer, Attachable {
+
     private BufferedImage image = null;
     private Repainter repainter;
     private final Surface surface;
+
     /*
     public String getInstructions() {
         return NbBundle.getMessage (getClass(), "Position_image_and_double-click_or_press_enter"); //NOI18N
     }
-    */
+     */
 
     public ImageTool(Surface surface) {
         this.surface = surface;
     }
-    
+
     public String getName() {
         return NbBundle.getMessage(ImageTool.class, "Image");
     }
-    
+
     public String toString() {
         return getName();
     }
-    
+
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() == 2) {
             commit();
@@ -109,7 +112,7 @@ public class ImageTool implements MouseListener, MouseMotionListener, KeyListene
     }
 
     public void mouseDragged(MouseEvent e) {
-        mouseMoved (e);
+        mouseMoved(e);
     }
 
     public void mouseMoved(MouseEvent e) {
@@ -122,32 +125,33 @@ public class ImageTool implements MouseListener, MouseMotionListener, KeyListene
 
     private Point imgLocation = new Point();
     boolean resizeMode = true;
+
     public void keyPressed(KeyEvent e) {
         Point p = imgLocation;
         switch (e.getKeyCode()) {
-            case KeyEvent.VK_DOWN :
-                p.y ++;
+            case KeyEvent.VK_DOWN:
+                p.y++;
                 break;
-            case KeyEvent.VK_UP :
+            case KeyEvent.VK_UP:
                 p.y--;
                 break;
-            case KeyEvent.VK_LEFT :
-                p.x --;
+            case KeyEvent.VK_LEFT:
+                p.x--;
                 break;
-            case KeyEvent.VK_RIGHT :
-                p.x ++;
+            case KeyEvent.VK_RIGHT:
+                p.x++;
                 break;
-            case KeyEvent.VK_ENTER :
+            case KeyEvent.VK_ENTER:
                 commit();
                 break;
-            case KeyEvent.VK_SHIFT :
+            case KeyEvent.VK_SHIFT:
                 resizeMode = false;
-                repainter.requestRepaint (null);
+                repainter.requestRepaint(null);
                 break;
         }
     }
 
-    public void paint (Graphics2D g, Rectangle bds, boolean commit) {
+    public void paint(Graphics2D g, Rectangle bds, boolean commit) {
         if (image == null) {
             return;
         }
@@ -201,122 +205,115 @@ public class ImageTool implements MouseListener, MouseMotionListener, KeyListene
     }
 
     BufferedImage lastImage = null;
+
     private void commit() {
         repainter.requestCommit();
     }
 
-    public void attachRepainter (Repainter repainter) {
+    public void attachRepainter(Repainter repainter) {
         this.repainter = repainter;
     }
 
     private BufferedImage loadImage() {
-        JFileChooser jfc = FileChooserUtils.getFileChooser("image"); //NOI18N
-        jfc.setDialogTitle(NbBundle.getMessage (ImageTool.class, "Load_Image")); //NOI18N
-        jfc.setDialogType(JFileChooser.OPEN_DIALOG);
-        jfc.setFileHidingEnabled(false);
-        jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        jfc.setApproveButtonText(NbBundle.getMessage (ImageTool.class, "Open_Image")); //NOI18N
-        jfc.setMultiSelectionEnabled(false);
-        jfc.setAccessory(new ImagePanel(jfc));
-        jfc.setFileFilter(new FF());
-        if (jfc.showOpenDialog(Frame.getFrames()[0]) == JFileChooser.APPROVE_OPTION) {
-            if (jfc.getSelectedFile().isFile()) {
-                try {
-                    image = ImageIO.read(jfc.getSelectedFile());
-                    return image;
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(Frame.getFrames()[0],
-                            e.getMessage());
-                }
+        File newImageFile = new FileChooserBuilder("image")
+                .setTitle(NbBundle.getMessage(ImageTool.class, "Load_Image"))
+                .setFileHiding(true)
+                .setFileKinds(FileKinds.FILES_ONLY)
+                .setFileFilter(new FF())
+                .setApproveText(NbBundle.getMessage(ImageTool.class, "Open_Image"))
+                .setAccessory(ImagePanel::new, (fileNumber, file, panel, of) -> {
+                    panel.setFile(file);
+                }).showOpenDialog();
+        BufferedImage result = null;
+        if (newImageFile != null) {
+            try {
+                result = ImageIO.read(newImageFile);
+            } catch (IOException ex) {
+                Logger.getLogger(ImageTool.class.getName()).log(Level.INFO, "Opening image file", ex);
+                Exceptions.printStackTrace(ex);
             }
         }
-        return null;
+        return result;
     }
 
     private static final class FF extends FileFilter {
+
         private final Set formats;
 
         FF() {
             String[] sfxs = ImageIO.getReaderFileSuffixes();
-            formats = new HashSet (Arrays.asList(sfxs));
+            formats = new HashSet(Arrays.asList(sfxs));
         }
 
         public boolean accept(File f) {
             if (f.isDirectory()) {
                 return true;
             } else {
-                String s = getFileExt (f);
-                return s != null && formats.contains (s);
+                String s = getFileExt(f);
+                return s != null && formats.contains(s);
             }
         }
 
         public String getDescription() {
-            return NbBundle.getMessage (ImageTool.class, "Image_File_Formats"); //NOI18N
+            return NbBundle.getMessage(ImageTool.class, "Image_File_Formats"); //NOI18N
         }
 
-        private String getFileExt (File f) {
+        private String getFileExt(File f) {
             String s = f.getName();
-            int ix = s.lastIndexOf (".");
-            return ix <= 0 && ix < s.length() - 2 ? null : s.substring (ix + 1, s.length()).toLowerCase();
+            int ix = s.lastIndexOf(".");
+            return ix <= 0 && ix < s.length() - 2 ? null : s.substring(ix + 1, s.length()).toLowerCase();
         }
     }
 
-    private static final class ImagePanel extends JComponent implements PropertyChangeListener {
-        private final JFileChooser jfc;
+    private static final class ImagePanel extends JComponent {
+
         private BufferedImage img;
         private final ExecutorService exe;
-        ImagePanel (JFileChooser jfc) {
-           jfc.addPropertyChangeListener(this);
-           this.jfc = jfc;
-           exe = Executors.newSingleThreadExecutor();
-           setBorder (BorderFactory.createCompoundBorder(
-                   BorderFactory.createEmptyBorder(5,5,5,5),
-                   BorderFactory.createLineBorder(Color.BLACK)));
+
+        ImagePanel() {
+            exe = Executors.newSingleThreadExecutor();
+            setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createEmptyBorder(5, 5, 5, 5),
+                    BorderFactory.createLineBorder(Color.BLACK)));
         }
 
-        void setImage (BufferedImage img) {
+        void setImage(BufferedImage img) {
             this.img = img;
             repaint();
         }
 
         private FileSetter setter;
         Future future;
-        private void setFile (File f) {
+
+        void setFile(Path f) {
             synchronized (this) {
                 if (future != null) {
                     future.cancel(true);
                 }
                 if (f != null) {
-                    setter = new FileSetter(f);
+                    setter = new FileSetter(f.toFile());
                     future = exe.submit(setter);
                 }
             }
             if (f == null) {
-                setImage (null);
-            }
-        }
-
-        public void propertyChange(PropertyChangeEvent evt) {
-            if (JFileChooser.SELECTED_FILE_CHANGED_PROPERTY.equals(evt.getPropertyName())) {
-                File f = jfc.getSelectedFile();
-                setFile (f);
+                setImage(null);
             }
         }
 
         @Override
         public Dimension getPreferredSize() {
-            return new Dimension (306, 306);
+            return new Dimension(306, 306);
         }
 
         @Override
-        public void paintComponent (Graphics g) {
+        public void paintComponent(Graphics g) {
             if (img == null) {
                 return;
             }
             Graphics2D gg = (Graphics2D) g;
             Insets ins = getInsets();
-            java.awt.Rectangle bds = new java.awt.Rectangle (ins.left, ins.top, getWidth() -
-                    (ins.left + ins.right), getHeight() - (ins.top + ins.bottom));
+            java.awt.Rectangle bds = new java.awt.Rectangle(ins.left, ins.top, getWidth()
+                    - (ins.left + ins.right), getHeight() - (ins.top + ins.bottom));
 
             double w = bds.width;
             double h = bds.height;
@@ -333,13 +330,16 @@ public class ImageTool implements MouseListener, MouseMotionListener, KeyListene
         }
 
         private class FileSetter implements Runnable {
+
             private final File file;
-            FileSetter (File file) {
+
+            FileSetter(File file) {
                 this.file = file;
                 assert file != null;
             }
 
             private BufferedImage img;
+
             public void run() {
                 synchronized (ImagePanel.this) {
                     setter = null;
@@ -349,15 +349,15 @@ public class ImageTool implements MouseListener, MouseMotionListener, KeyListene
                         return;
                     }
                     try {
-                        img = ImageIO.read (file);
+                        img = ImageIO.read(file);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                     if (img != null) {
-                        EventQueue.invokeLater (this);
+                        EventQueue.invokeLater(this);
                     }
                 } else {
-                    setImage (img);
+                    setImage(img);
                 }
             }
         }
@@ -377,21 +377,21 @@ public class ImageTool implements MouseListener, MouseMotionListener, KeyListene
     }
 
     public Lookup getLookup() {
-        return Lookups.singleton (this);
+        return Lookups.singleton(this);
     }
 
     public void attach(Lookup.Provider layer) {
     }
 
     public JComponent getComponent() {
-        JButton jb = new JButton (NbBundle.getMessage (ImageTool.class, "Load_Image")); //NOI18N
+        JButton jb = new JButton(NbBundle.getMessage(ImageTool.class, "Load_Image")); //NOI18N
         jb.addActionListener(new ActionListener() {
-            public void actionPerformed (ActionEvent e) {
+            public void actionPerformed(ActionEvent e) {
                 loadImage();
             }
         });
-        JPanel jp = new JPanel (new FlowLayout());
-        jp.add (jb);
+        JPanel jp = new JPanel(new FlowLayout());
+        jp.add(jb);
         return jp;
     }
 }

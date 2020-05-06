@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.IntConsumer;
+import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
@@ -45,6 +46,8 @@ import net.java.dev.imagine.api.vector.elements.StringWrapper;
 import net.java.dev.imagine.api.vector.elements.Text;
 import net.java.dev.imagine.api.vector.elements.TriangleWrapper;
 import net.java.dev.imagine.api.vector.graphics.FontWrapper;
+import org.imagine.awt.key.PaintKey;
+import org.imagine.awt.key.TexturedPaintWrapperKey;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.grid.Grid;
 import org.imagine.geometry.Circle;
@@ -150,7 +153,10 @@ public class ShapeActions {
         "opConvertToPathText=Convert to Text Path",
         "actionCenterOnCanvas=Center on Canvas",
         "# {0} - name",
-        "opCenterOnCanvas=Center {0}"
+        "opCenterOnCanvas=Center {0}",
+        "actionTransformFill=Transform Fill",
+        "# {0} - name",
+        "opTransformFill=Transform Fill on {0}"
     })
     public ShapeActions(DesignerControl ctrl) {
         this.ctrl = ctrl;
@@ -405,6 +411,40 @@ public class ShapeActions {
             }).hook(() -> {
                 ctrl.shapeGeometryChanged(el);
             });
+        });
+
+        actions.action(Bundle.actionTransformFill())
+                .sensitiveTo(ShapesCollection.class).sensingPresence()
+                .sensitiveTo(ShapeElement.class).testingEach((el) -> {
+            if (!el.isFill()) {
+                return false;
+            }
+            PaintKey<?> fk = el.getFillKey();
+            if (fk == null || !fk.isTransformable()) {
+                return false;
+            }
+            return true;
+        }).finish((coll, el) -> {
+            Customizer<AffineTransform> c = Customizers.getCustomizer(AffineTransform.class, "transformFill");
+            if (c == null) {
+                throw new IllegalStateException("Affine transform customizer is missing");
+            }
+            JComponent comp = c.getComponent();
+            AffineTransform xform = DialogBuilder.forName("transformFill").okCancel()
+                    .setTitle(Bundle.actionTransformFill())
+                    .forContent(comp).openDialog(cp -> {
+                return c.get();
+            });
+            if (xform != null && !xform.isIdentity()) {
+                coll.edit(Bundle.opTransformFill(el.getName()), el, () -> {
+                    PaintKey<?> fill = el.getFillKey();
+                    if (fill instanceof TexturedPaintWrapperKey<?,?>) {
+                        fill = ((TexturedPaintWrapperKey<?,?>) fill).delegate();
+                    }
+                    fill = fill.createTransformedCopy(xform);
+                    el.setFill(fill.toPaint());
+                });
+            }
         });
 
         actions.action(Bundle.actionFlipVertical())

@@ -3,8 +3,6 @@ package net.java.dev.imagine.toolcustomizers;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.LinearGradientPaint;
 import java.awt.MultipleGradientPaint;
@@ -27,6 +25,9 @@ import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import org.imagine.editor.api.AspectRatio;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.util.PooledTransform;
+import org.netbeans.paint.api.components.SharedLayoutPanel;
+import org.netbeans.paint.api.components.SharedLayoutRootPanel;
+import org.netbeans.paint.api.components.VerticalFlowLayout;
 import org.netbeans.paint.api.components.fractions.FractionsAndColorsEditor;
 import org.netbeans.paint.api.components.points.PointSelector;
 import org.netbeans.paint.api.components.points.PointSelectorBackgroundPainter;
@@ -97,7 +98,7 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
 
     @Override
     public JComponent getComponent() {
-        JPanel panel = new JPanel(new GridBagLayout());
+        JPanel panel = new SharedLayoutRootPanel();
         FractionsAndColorsEditor fAndC = new FractionsAndColorsEditor(params.fractions, params.colors);
         AspectRatio ratio = Utilities.actionsGlobalContext().lookup(AspectRatio.class);
         if (ratio == null) {
@@ -149,6 +150,14 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
 
         Insets compInsets = new Insets(0, 0, 0, 5);
 
+        panel.setLayout(new VerticalFlowLayout());
+        panel.add(new SharedLayoutPanel(cycleLabel, colorSpaceLabel));
+        panel.add(new SharedLayoutPanel(cycleCombo, colorSpaceCombo));
+        panel.add(psLabel);
+        panel.add(ps);
+        panel.add(fcLabel);
+        panel.add(fAndC);
+/*
         GridBagConstraints c = new GridBagConstraints();
         c.gridwidth = 3;
         c.gridheight = 1;
@@ -206,6 +215,7 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
         c.gridx = 0;
         c.fill = GridBagConstraints.BOTH;
         panel.add(fAndC, c);
+*/
 
         ps.setBackgroundPainter(this);
 
@@ -259,11 +269,13 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
         if (revAtLastGet != rev) {
             revAtLastGet = rev;
             return lastResult = PooledTransform.lazyTranslate(0, 0, (xform, ownerConsumer) -> {
+                EqPointDouble target = params.targetPoint.copy();
+                EqPointDouble focus = params.focusPoint.copy();
                 if (params.focusPoint.exactlyEqual(params.targetPoint)) {
-                    params.targetPoint.x += 0.1;
+                    focus.x += 0.1;
                 }
-                LinearGradientPaint paint = new LinearGradientPaint(params.targetPoint,
-                        params.focusPoint, params.fractions, params.colors,
+                LinearGradientPaint paint = new LinearGradientPaint(target,
+                        focus, params.fractions, params.colors,
                         params.cycleMethod, params.colorSpaceType, xform);
                 ownerConsumer.accept(paint);
                 return paint;
@@ -281,13 +293,15 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
     static class PaintParams {
 
         Color[] colors = new Color[]{new Color(255, 128, 128),
-            Color.GREEN,
+            new Color(128, 128, 255),
             Color.BLUE,
-            Color.ORANGE};
-        float[] fractions = new float[]{0, 0.25F, 0.625F, 1};
+            new Color(255, 180, 90),
+            new Color(255, 255, 128)
+        };
+        float[] fractions = new float[]{0, 0.25F, 0.31725F, 0.625F, 1};
         float radius = 100;
         EqPointDouble focusPoint = new EqPointDouble(100, 100);
-        EqPointDouble targetPoint = new EqPointDouble(104, 107);
+        EqPointDouble targetPoint = new EqPointDouble(120, 140);
         MultipleGradientPaint.CycleMethod cycleMethod
                 = MultipleGradientPaint.CycleMethod.REFLECT;
 

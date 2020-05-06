@@ -6,6 +6,7 @@
 package org.netbeans.paint.api.components;
 
 import java.awt.Component;
+import java.awt.Window;
 import javax.swing.SwingUtilities;
 
 /**
@@ -53,13 +54,14 @@ public interface SharedLayoutData {
         SharedLayoutData data = (SharedLayoutData) SwingUtilities.getAncestorOfClass(SharedLayoutData.class, c);
         if (data != null) {
             Component comp = (Component) data;
-            while (comp != null) {
+            while (comp != null && !(comp instanceof Window)) {
                 SharedLayoutData nue = (SharedLayoutData) SwingUtilities.getAncestorOfClass(SharedLayoutData.class, comp);
                 if (nue != null) {
                     data = nue;
-                    comp = (Component) nue;
+                    comp = ((Component) nue).getParent();
                 } else {
-                    comp = null;
+//                    comp = null;
+                    comp = comp.getParent();
                 }
             }
         }

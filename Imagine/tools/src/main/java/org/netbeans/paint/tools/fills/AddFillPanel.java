@@ -6,7 +6,6 @@
 package org.netbeans.paint.tools.fills;
 
 import java.awt.FlowLayout;
-import java.awt.Frame;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Toolkit;
@@ -21,7 +20,6 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -29,7 +27,8 @@ import javax.swing.filechooser.FileFilter;
 import net.dev.java.imagine.api.selection.Selection;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Surface;
-import org.netbeans.paint.api.components.FileChooserUtils;
+import org.imagine.nbutil.filechooser.FileChooserBuilder;
+import org.imagine.nbutil.filechooser.FileKinds;
 import org.openide.DialogDescriptor;
 import org.openide.DialogDisplayer;
 import org.openide.filesystems.FileObject;
@@ -111,9 +110,9 @@ public final class AddFillPanel extends JPanel implements ActionListener, Lookup
                 }
             }
         } else {
-            JFileChooser jfc = FileChooserUtils.getFileChooser("image");
-            jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            jfc.setFileFilter(new FileFilter() {
+            File fillFile = new FileChooserBuilder("image")
+                    .setFileKinds(FileKinds.FILES_ONLY)
+                    .setFileFilter(new FileFilter(){
                 Set<String> names = new HashSet<String>(Arrays.asList(ImageIO.getReaderFormatNames()));
 
                 @Override
@@ -128,17 +127,18 @@ public final class AddFillPanel extends JPanel implements ActionListener, Lookup
 
                 @Override
                 public String getDescription() {
-                    return NbBundle.getMessage (AddFillPanel.class, 
+                    return NbBundle.getMessage (AddFillPanel.class,
                             "DESC_IMAGE_FILES");
                 }
-            });
-            if (jfc.showOpenDialog(Frame.getFrames()[0]) == JFileChooser.APPROVE_OPTION) {
-                try {
-                    File f = jfc.getSelectedFile();
-                    FileObject ob = FileUtil.toFileObject(FileUtil.normalizeFile(f));
-                    PatternFill.add(ob, ob.getName());
-                } catch (IOException ex) {
-                    Exceptions.printStackTrace(ex);
+            }).showOpenDialog();
+            if (fillFile != null) {
+                FileObject ob = FileUtil.toFileObject(FileUtil.normalizeFile(fillFile));
+                if (ob != null) {
+                    try {
+                        PatternFill.add(ob, ob.getName());
+                    } catch (IOException ex) {
+                        Exceptions.printStackTrace(ex);
+                    }
                 }
             }
         }

@@ -6,6 +6,7 @@
 package org.imagine.awt.key;
 
 import java.awt.Color;
+import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import org.imagine.awt.util.IdPathBuilder;
 import org.imagine.io.KeyWriter;
@@ -27,6 +28,11 @@ public class ColorKey extends PaintKey<Color> {
 
     public ColorKey(int val) {
         this.rgb = val;
+    }
+
+    @Override
+    public PaintKey<Color> createTransformedCopy(AffineTransform xform) {
+        return this;
     }
 
     @Override

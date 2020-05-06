@@ -20,10 +20,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import javax.imageio.ImageIO;
+import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.ui.common.BackgroundStyle;
 import net.java.dev.imagine.ui.common.ImageEditorFactory;
 import org.netbeans.api.progress.ProgressHandle;
 import org.imagine.utils.java2d.GraphicsUtils;
+import org.netbeans.paint.api.editing.LayerFactory;
 import org.openide.util.Cancellable;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
@@ -34,7 +36,7 @@ import org.openide.util.lookup.ServiceProvider;
  *
  * @author Tim Boudreau
  */
-@ServiceProvider(service=ImageEditorFactory.class)
+@ServiceProvider(service = ImageEditorFactory.class)
 public class ImageEditorFactoryImpl extends ImageEditorFactory {
 
     private final Set<String> fmts = new HashSet<>();
@@ -46,6 +48,16 @@ public class ImageEditorFactoryImpl extends ImageEditorFactory {
         for (String fmt : ImageIO.getReaderFormatNames()) {
             fmts.add(fmt.toLowerCase());
         }
+    }
+
+    @Override
+    public void openNew(Dimension size, BackgroundStyle bg, LayerFactory layerFactory) {
+        PictureScene ps = new PictureScene(size, bg, false);
+        LayerImplementation layer = layerFactory.createLayer("Layer 1", ps.rh(), size);
+        ps.picture().add(0, layer);
+        PaintTopComponent ptc = new PaintTopComponent(ps);
+        ptc.open();
+        ptc.requestActive();
     }
 
     @Override
@@ -111,7 +123,7 @@ public class ImageEditorFactoryImpl extends ImageEditorFactory {
         Map<File, BufferedImage> images = new LinkedHashMap<>(files.length);
         Set<File> unopened = Collections.synchronizedSet(new HashSet<>());
         String msg = NbBundle.getMessage(ImageEditorFactoryImpl.class, "OPENING_IMAGES", files.length);
-        ProgressHandle h = ProgressHandle.createHandle(msg, new Cancellable(){
+        ProgressHandle h = ProgressHandle.createHandle(msg, new Cancellable() {
             @Override
             public boolean cancel() {
                 // do nothing
@@ -121,6 +133,7 @@ public class ImageEditorFactoryImpl extends ImageEditorFactory {
         h.start(files.length * 2);
         OpenConsumer c = new OpenConsumer() {
             int completed = 0;
+
             @Override
             public void accept(Exception t, BufferedImage u, File origin) {
                 h.progress(++completed);

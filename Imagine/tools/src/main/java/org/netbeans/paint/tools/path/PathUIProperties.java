@@ -12,16 +12,16 @@ import org.netbeans.paint.tools.colors.Hues;
  *
  * @author Tim Boudreau
  */
-final class PathUIProperties {
+public final class PathUIProperties {
 
     private final Supplier<ToolUIContext> ctx;
     private static final int BASE_POINT_RADIUS = 7;
 
-    PathUIProperties(Supplier<ToolUIContext> ctx) {
+    public PathUIProperties(Supplier<ToolUIContext> ctx) {
         this.ctx = ctx;
     }
 
-    Supplier<ToolUIContext> contextSupplier() {
+    public Supplier<ToolUIContext> contextSupplier() {
         return ctx;
     }
 

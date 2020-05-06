@@ -18,6 +18,7 @@
                 <configuration>
                     <publicPackages>
                         <publicPackage>org.imagine.nbutil</publicPackage>
+                        <publicPackage>org.imagine.nbutil.filechooser</publicPackage>
                     </publicPackages>
                 </configuration>
             </plugin>

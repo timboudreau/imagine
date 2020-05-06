@@ -20,6 +20,7 @@ import javax.imageio.ImageIO;
 import net.java.dev.imagine.ui.common.BackgroundStyle;
 import net.java.dev.imagine.ui.common.ImageEditorFactory;
 import org.imagine.utils.java2d.GraphicsUtils;
+import org.netbeans.paint.api.editing.LayerFactory;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
 import org.openide.util.RequestProcessor;
@@ -41,6 +42,11 @@ public class ImageEditorFactoryImpl extends ImageEditorFactory {
         for (String fmt : ImageIO.getReaderFormatNames()) {
             fmts.add(fmt.toLowerCase());
         }
+    }
+
+    @Override
+    public void openNew(Dimension dim, BackgroundStyle bg, LayerFactory layerFactory) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override

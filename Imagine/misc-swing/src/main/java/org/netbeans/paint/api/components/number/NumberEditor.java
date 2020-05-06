@@ -3,6 +3,7 @@ package org.netbeans.paint.api.components.number;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.Font;
 import java.awt.Insets;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -24,6 +25,7 @@ import javax.swing.border.Border;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import org.openide.util.ChangeSupport;
 
@@ -35,8 +37,8 @@ import org.openide.util.ChangeSupport;
  */
 public final class NumberEditor extends JComponent {
 
-    private final JTextField field;
-    private boolean floatingPoint;
+    private final Fld field = new Fld();
+    private final boolean floatingPoint;
     private final L l = new L();
     private final ChangeSupport supp = new ChangeSupport(this);
     private Number lastValue = 0;
@@ -47,10 +49,15 @@ public final class NumberEditor extends JComponent {
     private final Border errorBorder;
 
     public NumberEditor(NumberModel<?> model) {
+        this(model, SwingConstants.TRAILING);
+    }
+
+    public NumberEditor(NumberModel<?> model, int horizontalAlignment) {
         this.model = model;
-        field = new JTextField();
+        floatingPoint = model.isFloatingPoint();
+        setBorder(BorderFactory.createEmptyBorder());
         field.setColumns(model.maxCharacters());
-        field.setHorizontalAlignment(SwingConstants.TRAILING);
+        field.setHorizontalAlignment(horizontalAlignment);
         Border border = field.getBorder();
         if (border == null) {
             border = BorderFactory.createLineBorder(field.getForeground(), 1);
@@ -66,8 +73,64 @@ public final class NumberEditor extends JComponent {
         });
     }
 
-    JTextField field() {
+    public NumberEditor setHorizontalAlignment(int align) {
+        field.setHorizontalAlignment(align);
+        return this;
+    }
+
+    @Override
+    public void invalidate() {
+        super.invalidate();
+        field.invalidate();
+    }
+
+    @Override
+    public void revalidate() {
+        super.revalidate();
+        field.revalidate();
+    }
+
+    @Override
+    public void validate() {
+        super.validate();
+        field.revalidate();
+    }
+
+    @Override
+    public Insets getInsets() {
+        return new Insets(0, 0, 0, 0);
+    }
+
+    @Override
+    public Insets getInsets(Insets insets) {
+        insets.top = insets.left = insets.right = insets.bottom = 0;
+        return insets;
+    }
+
+    public JTextField field() {
         return field;
+    }
+
+    @Override
+    public void setToolTipText(String text) {
+        super.setToolTipText(text);
+        field.setToolTipText(text);
+    }
+
+    @Override
+    public void setFont(Font f) {
+        super.setFont(f);
+        field.setFont(f);
+    }
+
+    public void setBackground(Color bg) {
+        super.setBackground(bg);
+        field.setBackground(bg);
+    }
+
+    public void setForeground(Color fg) {
+        super.setForeground(fg);
+        field.setForeground(fg);
     }
 
     static Color errorColor;
@@ -105,6 +168,12 @@ public final class NumberEditor extends JComponent {
     }
 
     @Override
+    protected boolean requestFocusInWindow(boolean temporary) {
+        // bitwise or intentional- both need to be called
+        return super.requestFocusInWindow(temporary) | field.requestFocusInWindow(temporary);
+    }
+
+    @Override
     public boolean requestFocus(boolean temporary) {
         // Ensure order
         return super.requestFocus(temporary)
@@ -112,8 +181,14 @@ public final class NumberEditor extends JComponent {
     }
 
     @Override
+    public boolean requestDefaultFocus() {
+        // bitwise or intentional- both need to be called
+        return super.requestDefaultFocus() | field.requestDefaultFocus();
+    }
+
+    @Override
     public boolean requestFocusInWindow() {
-        // Ensure order
+        // bitwise or intentional- both need to be called
         return super.requestFocusInWindow()
                 | field.requestFocusInWindow();
     }
@@ -152,67 +227,51 @@ public final class NumberEditor extends JComponent {
 
     @Override
     public int getBaseline(int width, int height) {
-        return field.getBaseline(width, height);
+        if (width <= 0 || height <= 0) {
+            Dimension d = field.getPreferredSize();
+            width = d.width;
+            height = d.height;
+        }
+        try {
+            return field.getBaseline(width, height);
+        } catch (IllegalArgumentException e) {
+            doLayout();
+            try {
+                return field.getBaseline(width, height);
+            } catch (IllegalArgumentException e1) {
+                return field.getFontMetrics(field.getFont()).getAscent()
+                        + field.getInsets().top;
+            }
+        }
     }
 
     boolean checkValidValue() {
         String txt = field.getText();
+        boolean wasValid = isValidValue();
         boolean valid = model.isValid(txt);
         if (valid) {
             field.setBorder(fieldBorder);
         } else {
             field.setBorder(errorBorder);
         }
+        if (wasValid != valid) {
+            firePropertyChange("validity", wasValid, valid);
+        }
         return valid;
     }
 
     public void mouseWheelMoved(MouseWheelEvent e) {
-        if (floatingPoint) {
-            double pre = e.getPreciseWheelRotation();
-            if (pre == 0) {
-                return;
-            }
-            if (pre > 0) {
-                Number orig = model.get();
-                Number num = model.constraints().nextValue(pre, model.get());
-                if (!orig.equals(num)) {
-                    model.setValue(num);
-                    refresh();
-                    fireChange();
-                }
-            } else {
-                Number orig = model.get();
-                Number num = model.constraints().prevValue(-pre, model.get());
-                if (!orig.equals(num)) {
-                    model.setValue(num);
-                    refresh();
-                    fireChange();
-                }
-            }
-        } else {
-            int units = e.getUnitsToScroll();
-            if (units == 0) {
-                return;
-            }
-            if (units > 0) {
-                Number orig = model.get();
-                Number num = model.constraints().nextValue(units, model.get());
-                if (orig.equals(num)) {
-                    model.setValue(num);
-                    refresh();
-                    fireChange();
-                }
-            } else {
-                Number orig = model.get();
-                Number num = model.constraints().prevValue(-units, model.get());
-                if (orig.equals(num)) {
-                    model.setValue(num);
-                    refresh();
-                    fireChange();
-                }
-            }
+        double pre = e.getPreciseWheelRotation();
+        if (pre == 0) {
+            return;
         }
-
+        Number orig = model.get();
+        Number num = model.increment(pre);
+        if (!orig.equals(num)) {
+            refresh();
+            fireChange();
+            e.consume();
+        }
     }
 
     private void keyTyped(KeyEvent e) {
@@ -274,6 +333,14 @@ public final class NumberEditor extends JComponent {
 
     private void keyReleased(KeyEvent e) {
         processKeyPress(e);
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_UP:
+                model.decrement();
+                break;
+            case KeyEvent.VK_DOWN:
+                model.increment();
+                break;
+        }
     }
 
     private void processKeyPress(KeyEvent e) {
@@ -321,6 +388,10 @@ public final class NumberEditor extends JComponent {
         }
     }
 
+    public boolean isValidValue() {
+        return field.getBorder() != errorBorder;
+    }
+
     public void addChangeListener(ChangeListener listener) {
         supp.addChangeListener(listener);
     }
@@ -343,6 +414,22 @@ public final class NumberEditor extends JComponent {
             refresh();
             fireChange();
         }
+    }
+
+    public double doubleValue() {
+        return get().doubleValue();
+    }
+
+    public float floatValue() {
+        return get().floatValue();
+    }
+
+    public long longValue() {
+        return get().longValue();
+    }
+
+    public int intValue() {
+        return get().intValue();
     }
 
     public Number get() {
@@ -471,6 +558,33 @@ public final class NumberEditor extends JComponent {
         @Override
         public void mouseWheelMoved(MouseWheelEvent e) {
             NumberEditor.this.mouseWheelMoved(e);
+        }
+    }
+
+    static class Fld extends JTextField {
+
+        public Fld() {
+        }
+
+        public Fld(String text) {
+            super(text);
+        }
+
+        public Fld(int columns) {
+            super(columns);
+        }
+
+        public Fld(String text, int columns) {
+            super(text, columns);
+        }
+
+        public Fld(Document doc, String text, int columns) {
+            super(doc, text, columns);
+        }
+
+        @Override
+        public boolean requestFocusInWindow(boolean temporary) {
+            return super.requestFocusInWindow(temporary); //To change body of generated methods, choose Tools | Templates.
         }
     }
 }

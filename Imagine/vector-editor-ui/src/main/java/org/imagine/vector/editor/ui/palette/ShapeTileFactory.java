@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.imagine.vector.editor.ui.palette;
 
 import com.mastfrog.abstractions.Wrapper;
@@ -39,12 +34,13 @@ import org.imagine.geometry.util.PooledTransform;
 import org.imagine.io.ByteArrayReadChannel;
 import org.imagine.io.KeyBinaryReader;
 import org.imagine.io.KeyBinaryWriter;
+import org.imagine.nbutil.filechooser.FileChooserBuilder;
+import org.imagine.nbutil.filechooser.FileKinds;
 import org.imagine.vector.editor.ui.ShapeEntry;
 import org.imagine.vector.editor.ui.io.HashInconsistencyBehavior;
 import org.imagine.vector.editor.ui.io.VectorIO;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.openide.awt.Mnemonics;
-import org.openide.filesystems.FileChooserBuilder;
 import org.openide.filesystems.FileUtil;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle.Messages;
@@ -202,7 +198,7 @@ final class ShapeTileFactory<S extends ShapeElement> extends AbstractTileFactory
                     .setDefaultWorkingDirectory(new File(System.getProperty("user.home")))
                     .setTitle(Bundle.SaveFill())
                     .setFileFilter(new ShapeFileFilter())
-                    .setFilesOnly(true)
+                    .setFileKinds(FileKinds.FILES_ONLY)
                     .setFileHiding(true)
                     .setApproveText(Bundle.loadShapeApproveText())
                     .showSaveDialog();
@@ -271,7 +267,7 @@ final class ShapeTileFactory<S extends ShapeElement> extends AbstractTileFactory
             File file = new FileChooserBuilder("saveShapes")
                     .setDefaultWorkingDirectory(new File(System.getProperty("user.home")))
                     .setTitle(Bundle.SaveFill())
-                    .setFilesOnly(true)
+                    .setFileKinds(FileKinds.FILES_ONLY)
                     .setFileFilter(new ShapeFileFilter())
                     .setFileHiding(true)
                     .showSaveDialog();

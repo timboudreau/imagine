@@ -100,10 +100,7 @@ public class GradientPaintCustomizer extends ListenableCustomizerSupport<Gradien
         Mnemonics.setLocalizedText(cyclicBox, NbBundle.getMessage(GradientPaintCustomizer.class, "CYCLIC"));
         cyclicBox.setSelected(value.isCyclic());
 
-        JPanel sub = new SharedLayoutPanel();
-        sub.add(color1Label);
-        sub.add(color1Chooser);
-        pnl.add(sub);
+        pnl.add(new SharedLayoutPanel(color1Label, color1Chooser));
 
         JPanel sub2 = new SharedLayoutPanel();
         sub2.add(color2Label);

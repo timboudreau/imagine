@@ -61,9 +61,7 @@ public class ColorCustomizer extends ListenableCustomizerSupport<Color>
         Color color = new Color(red, green, blue, alpha);
         ColorChooser chooser = new ColorChooser(color);
         lbl.setLabelFor(chooser);
-        JPanel slp = new SharedLayoutPanel();
-        slp.add(lbl);
-        slp.add(chooser);
+        JPanel slp = new SharedLayoutPanel(lbl, chooser);
         chooser.addActionListener(this);
         return slp;
     }

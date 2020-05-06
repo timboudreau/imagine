@@ -42,6 +42,7 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
@@ -50,6 +51,22 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import static java.awt.event.KeyEvent.VK_A;
+import static java.awt.event.KeyEvent.VK_ALT;
+import static java.awt.event.KeyEvent.VK_B;
+import static java.awt.event.KeyEvent.VK_CONTROL;
+import static java.awt.event.KeyEvent.VK_D;
+import static java.awt.event.KeyEvent.VK_DOWN;
+import static java.awt.event.KeyEvent.VK_ENTER;
+import static java.awt.event.KeyEvent.VK_H;
+import static java.awt.event.KeyEvent.VK_LEFT;
+import static java.awt.event.KeyEvent.VK_META;
+import static java.awt.event.KeyEvent.VK_RIGHT;
+import static java.awt.event.KeyEvent.VK_S;
+import static java.awt.event.KeyEvent.VK_SHIFT;
+import static java.awt.event.KeyEvent.VK_SPACE;
+import static java.awt.event.KeyEvent.VK_U;
+import static java.awt.event.KeyEvent.VK_UP;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -200,16 +217,18 @@ public abstract class ColorChooserUI extends ComponentUI {
      * Called when the color chooser is invoked from the keyboard (user pressed
      * space or enter).
      */
-    protected void keyboardInvoke(final ColorChooser colorChooser) {
+    protected boolean keyboardInvoke(final ColorChooser colorChooser) {
         if (!colorChooser.isEnabled()) {
             Toolkit.getDefaultToolkit().beep();
-            return;
+            return false;
         }
         Container top = colorChooser.getTopLevelAncestor();
         Color result = ColorPicker.showDialog(top, colorChooser.getColor());
         if (result != null) {
             colorChooser.setColor(result);
+            return true;
         }
+        return false;
     }
 
     /**
@@ -250,19 +269,22 @@ public abstract class ColorChooserUI extends ComponentUI {
     }
 
     private Dimension computePreferredSize(JComponent c) {
-        Font f = UIManager.getFont("controlFont");
+        Font f = c.getFont();
+        if (f == null) {
+            f = UIManager.getFont("controlFont");
+        }
         if (f == null) {
             f = UIManager.getFont("Label.font");
         }
-        if (f == null) {
-            f = c.getFont();
-        }
         FontMetrics fm = c.getFontMetrics(f);
         if (fm != null) {
-            int height = fm.getMaxAscent() + fm.getMaxDescent();
+//            int height = fm.getMaxAscent() + fm.getMaxDescent();
+            int height = fm.getHeight();
             int width = fm.stringWidth("Z");
-            int size = Math.min(18, Math.max(height, width));
-            return new Dimension(size, size);
+            int size = Math.min(16, Math.max(height, width));
+            Insets ins = c.getInsets();
+            return new Dimension(size + ins.left + ins.right,
+                    size + ins.top + ins.bottom);
         }
         return null;
     }
@@ -345,7 +367,9 @@ public abstract class ColorChooserUI extends ComponentUI {
                 Object o = e.getSource();
                 if (o instanceof ColorChooser) {
                     ColorChooser chooser = (ColorChooser) e.getSource();
-                    keyboardInvoke(chooser);
+                    if (keyboardInvoke(chooser)) {
+                        e.consume();
+                    }
                 }
             }
         }
@@ -364,7 +388,6 @@ public abstract class ColorChooserUI extends ComponentUI {
             SwingUtilities.convertPointToScreen(p, chooser);
             initPaletteIndex(chooser, me);
             int ix = getPaletteIndex();
-            System.out.println("Palette index " + ix + " for " + me.getButton());
             Palette[] palettes = chooser.getPalettes();
             if (ix < palettes.length) {
                 PalettePopup.getDefault().setPalette(chooser.getPalettes()[ix]);
@@ -446,15 +469,75 @@ public abstract class ColorChooserUI extends ComponentUI {
             processKeyEvent(e, false);
         }
 
+        static final float BASE_KEY_ADJUST = 0.01F;
         protected void processKeyEvent(KeyEvent ke, boolean pressed) {
             ColorChooser chooser = (ColorChooser) ke.getSource();
             updatePaletteIndex(chooser, paletteIndexFromKeyCode(ke), pressed);
-            if (ke.getKeyCode() == KeyEvent.VK_ALT || ke.getKeyCode() == KeyEvent.VK_CONTROL
-                    || ke.getKeyCode() == KeyEvent.VK_SHIFT) {
-                ke.consume();
-            } else if ((ke.getKeyCode() == KeyEvent.VK_SPACE || ke.getKeyCode()
-                    == KeyEvent.VK_ENTER) && ke.getID() == KeyEvent.KEY_PRESSED) {
-                keyboardInvoke(chooser);
+            int dir = ke.isShiftDown() ? -1 : 1;
+            boolean ctrl = DefaultColorChooserUI.isMac() ? ke.isMetaDown() : ke.isControlDown();
+            if (ctrl) {
+                dir *= 10;
+            }
+            float amount = dir * BASE_KEY_ADJUST;
+            float alt = 0;
+            boolean altKey = DefaultColorChooserUI.isMac() ? ke.isControlDown() : ke.isAltDown();
+            boolean altAltKey = DefaultColorChooserUI.isMac() ? ke.isAltDown() : ke.isControlDown();
+            if (altKey) {
+                if (altAltKey) {
+                    alt = -amount;
+                } else {
+                    alt = amount;
+                }
+            }
+            switch (ke.getKeyCode()) {
+                case VK_ALT:
+                case VK_CONTROL:
+                case VK_META:
+                case VK_SHIFT:
+                    ke.consume();
+                    break;
+                case VK_SPACE:
+                case VK_ENTER:
+                    if (ke.getID() == KeyEvent.KEY_PRESSED) {
+                        if (keyboardInvoke(chooser)) {
+                            ke.consume();
+                        }
+                    }
+                    break;
+                case VK_UP:
+                case VK_B:
+                    if (pressed && chooser.adjustColor(0, alt, amount)) {
+                        ke.consume();
+                    }
+                    break;
+                case VK_DOWN:
+                case VK_D:
+                    if (pressed && chooser.adjustColor(0, -alt, -amount)) {
+                        ke.consume();
+                    }
+                    break;
+                case VK_LEFT:
+                case VK_S:
+                    if (pressed && chooser.adjustColor(alt, amount, 0)) {
+                        ke.consume();
+                    }
+                    break;
+                case VK_RIGHT:
+                case VK_A:
+                    if (pressed && chooser.adjustColor(-alt, -amount, 0)) {
+                        ke.consume();
+                    }
+                    break;
+                case VK_H:
+                    if (pressed && chooser.adjustColor(amount, 0, alt)) {
+                        ke.consume();
+                    }
+                    break;
+                case VK_U:
+                    if (pressed && chooser.adjustColor(-amount, 0, -alt)) {
+                        ke.consume();
+                    }
+                    break;
             }
         }
     }

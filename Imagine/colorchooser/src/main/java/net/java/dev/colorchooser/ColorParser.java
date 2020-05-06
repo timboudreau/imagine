@@ -10,6 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Parses colors from text, using several patterns, for clipboard use.
  *
  * @author Tim Boudreau
  */

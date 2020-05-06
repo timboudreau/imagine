@@ -79,10 +79,11 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
 
     @Override
     public final void detach() {
+        Repainter rep = this.repainter;
         reset();
+        pendingCursor = null;
         currentHandler = Responder.NO_OP;
         active = false;
-        Repainter rep = this.repainter;
         repainter = null;
         ctx = null;
         onDetach();
@@ -219,9 +220,12 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
         }
     }
 
+    private Cursor pendingCursor;
     protected final void setCursor(Cursor cursor) {
         if (repainter != null) {
             repainter.setCursor(cursor);
+        } else {
+            pendingCursor = cursor;
         }
     }
 
@@ -264,6 +268,9 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
         @Override
         public void attachRepainter(Repainter repainter) {
             ResponderTool.this.repainter = repainter;
+            if (pendingCursor != null) {
+                repainter.setCursor(pendingCursor);
+            }
             onAttachRepainter(repainter);
         }
 
@@ -284,6 +291,10 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
             currentHandler._resign(updateScratch);
             currentHandler = nue;
             nue._activate(updateScratch);
+            if (pendingCursor != null) {
+                setCursor(pendingCursor);
+                pendingCursor = null;
+            }
             if (!updateScratch.isEmpty()) {
                 repaint(updateScratch);
             }

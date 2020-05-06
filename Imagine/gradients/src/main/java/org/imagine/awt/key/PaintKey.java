@@ -80,6 +80,12 @@ public abstract class PaintKey<T extends Paint> implements Serializable {
 
     public abstract PaintKeyKind kind();
 
+    public abstract PaintKey<T> createTransformedCopy(AffineTransform xform);
+
+    public boolean isTransformable() {
+        return !(this instanceof ColorKey);
+    }
+
     protected static StringBuilder rgb(Color c, StringBuilder sb) {
         sb.append(c.getRed()).append(',').append(c.getGreen())
                 .append(',').append(c.getBlue());

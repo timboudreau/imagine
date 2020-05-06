@@ -215,6 +215,25 @@ public final class FractionsModel implements Iterable<Fraction> {
         for (int i = 0; i < result.length; i++) {
             result[i] = fractions.get(i).getValue();
         }
+        float last = result[0];
+        for (int i = 1; i < result.length; i++) {
+            // Ensure that we can never have the same number appear twice, by
+            // offsetting it fractionally if that happens, since this is used
+            // for MultipleGradientPaint customizers where the fractions are ascending
+            // from 0 to 1 and must not contain duplicates
+            if (last == result[i]) {
+                if (i < result.length - 1) {
+                    result[i] += Math.min(0.001F, (result[i + 1] - result[i]) / 2F);
+                } else {
+                    if (result[i] == 1F) {
+                        result[i - 1] -= 0.001;
+                    } else {
+                        result[i] = Math.min(result[i] + 0.001F, 1);
+                    }
+                }
+            }
+            last = result[i];
+        }
         return checkAndNormalize(result);
     }
 

@@ -31,7 +31,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.UIManager;
@@ -52,9 +51,11 @@ import net.java.dev.imagine.ui.actions.spi.Selectable;
 import net.java.dev.imagine.ui.common.BackgroundStyle;
 import net.java.dev.imagine.ui.common.UIContextLookupProvider;
 import net.java.dev.imagine.ui.common.UndoMgr;
+import org.imagine.nbutil.filechooser.FileChooserBuilder;
+import org.imagine.nbutil.filechooser.FileChooserBuilder.SelectionApprover;
+import org.imagine.nbutil.filechooser.FileKinds;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
-import org.netbeans.paint.api.components.FileChooserUtils;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.StatusDisplayer;
@@ -340,41 +341,47 @@ public class PaintTopComponent extends TopComponent implements ChangeListener,
     @Override
     public void saveAs(BiConsumer<Exception, Path> callback) {
         try {
-            JFileChooser ch = FileChooserUtils.getFileChooser("image");
-            if (ch.showSaveDialog(this) == JFileChooser.APPROVE_OPTION
-                    && ch.getSelectedFile() != null) {
+            File f = new FileChooserBuilder("image")
+                    .setFileKinds(FileKinds.FILES_ONLY)
+                    .setFileHiding(true)
+                    .setSelectionApprover(new SelectionApprover() {
+                        @Override
+                        public boolean approve(File[] files) {
+                            System.out.println("APPROVE " + Arrays.toString(files));
+                            return true;
+                        }
+                    })
+                    .showSaveDialog();
 
-                File f = ch.getSelectedFile();
-                if (!f.getPath().endsWith(".png")) { //NOI18N
-                    f = new File(f.getPath() + ".png"); //NOI18N
-                }
-                if (!f.exists()) {
-                    if (!f.createNewFile()) {
-                        String failMsg = NbBundle.getMessage(
-                                PaintTopComponent.class,
-                                "MSG_SaveFailed", new Object[]{f.getPath()} //NOI18N
-                        );
-                        JOptionPane.showMessageDialog(this, failMsg);
-                        callback.accept(null, null);
-                        return;
-                    }
-                } else {
-                    String overwriteMsg = NbBundle.getMessage(
-                            PaintTopComponent.class,
-                            "MSG_Overwrite", new Object[]{f.getPath()} //NOI18N
-                    );
-                    if (JOptionPane.showConfirmDialog(this, overwriteMsg)
-                            != JOptionPane.OK_OPTION) {
-                        callback.accept(null, null);
-                        return;
-                    }
-                }
-                doSave(f);
-                Path p = f.toPath();
-                canvas.getPicture().getPicture().associateFile(p);
-                setDisplayName(fileName(p));
-                callback.accept(null, p);
+            if (!f.getPath().endsWith(".png")) { //NOI18N
+                f = new File(f.getPath() + ".png"); //NOI18N
             }
+            if (!f.exists()) {
+                if (!f.createNewFile()) {
+                    String failMsg = NbBundle.getMessage(
+                            PaintTopComponent.class,
+                            "MSG_SaveFailed", new Object[]{f.getPath()} //NOI18N
+                    );
+                    JOptionPane.showMessageDialog(this, failMsg);
+                    callback.accept(null, null);
+                    return;
+                }
+            } else {
+                String overwriteMsg = NbBundle.getMessage(
+                        PaintTopComponent.class,
+                        "MSG_Overwrite", new Object[]{f.getPath()} //NOI18N
+                );
+                if (JOptionPane.showConfirmDialog(this, overwriteMsg)
+                        != JOptionPane.OK_OPTION) {
+                    callback.accept(null, null);
+                    return;
+                }
+            }
+            doSave(f);
+            Path p = f.toPath();
+            canvas.getPicture().getPicture().associateFile(p);
+            setDisplayName(fileName(p));
+            callback.accept(null, p);
         } catch (Exception ex) {
             callback.accept(ex, null);
         }
@@ -517,7 +524,7 @@ public class PaintTopComponent extends TopComponent implements ChangeListener,
 
     @Override
     public void reload(BiConsumer<Exception, Path> callback) {
-        
+
     }
 
     public boolean canReload() {

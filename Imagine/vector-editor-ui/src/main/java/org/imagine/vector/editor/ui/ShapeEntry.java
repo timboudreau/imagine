@@ -36,6 +36,7 @@ import net.java.dev.imagine.api.vector.util.Size;
 import org.imagine.awt.GradientManager;
 import org.imagine.awt.io.PaintKeyIO;
 import org.imagine.awt.key.PaintKey;
+import org.imagine.awt.key.TexturedPaintWrapperKey;
 import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.snap.SnapPointsBuilder;
@@ -660,8 +661,17 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
         if (vect.is(ImageWrapper.class)) {
             vect.as(ImageWrapper.class).paint(g);
         } else if (vect.is(PathText.class)) {
-            g.setPaint(goal.isProduction() ? bg.toPaint()
-                    : GradientManager.getDefault().findPaint(bg, w, h));
+            if (bg != null) {
+                if (goal.isProduction()) {
+                    PaintKey<?> bgLocal = bg;
+                    if (bgLocal instanceof TexturedPaintWrapperKey<?, ?>) {
+                        bgLocal = ((TexturedPaintWrapperKey<?, ?>) bgLocal).delegate();
+                    }
+                    g.setPaint(bgLocal.toPaint());
+                } else {
+                    g.setPaint(GradientManager.getDefault().findPaint(bg, w, h));
+                }
+            }
             if (stroke != null) {
                 g.setStroke(stroke);
             }
@@ -681,17 +691,33 @@ public final class ShapeEntry implements Hibernator, ShapeElement, ControlPointC
 //                g.setStroke(GraphicsUtils.createTransformedStroke(stroke, xform));
             }
             if (bg != null) {
-                g.setPaint(goal.isProduction()
-                        ? bg.toPaint()
-                        : GradientManager.getDefault().findPaint(bg, w, h));
+                if (goal.isProduction()) {
+                    PaintKey<?> bgLocal = bg;
+                    if (bgLocal instanceof TexturedPaintWrapperKey<?, ?>) {
+                        bgLocal = ((TexturedPaintWrapperKey<?, ?>) bgLocal).delegate();
+                    }
+                    g.setPaint(bgLocal.toPaint());
+                } else {
+                    g.setPaint(goal.isProduction()
+                            ? bg.toPaint()
+                            : GradientManager.getDefault().findPaint(bg, w, h));
+                }
             }
             if (isFill()) {
                 g.fill(sh);
             }
             if (fg != null) {
-                g.setPaint(goal.isProduction()
-                        ? fg.toPaint()
-                        : GradientManager.getDefault().findPaint(fg, w, h));
+                if (goal.isProduction()) {
+                    PaintKey<?> fgLocal = fg;
+                    if (fgLocal instanceof TexturedPaintWrapperKey<?, ?>) {
+                        fgLocal = ((TexturedPaintWrapperKey<?, ?>) fgLocal).delegate();
+                    }
+                    g.setPaint(fgLocal.toPaint());
+                } else {
+                    g.setPaint(goal.isProduction()
+                            ? fg.toPaint()
+                            : GradientManager.getDefault().findPaint(fg, w, h));
+                }
             }
             if (isDraw()) {
                 g.draw(sh);

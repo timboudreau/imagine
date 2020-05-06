@@ -311,18 +311,20 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
     static class PaintParams {
 
         Color[] colors = new Color[]{new Color(255, 128, 128),
-            Color.GREEN,
+            new Color(255, 220, 180),
             Color.BLUE,
+            new Color(180, 180, 255),
+            new Color(200, 150, 20),
             Color.ORANGE};
-        float[] fractions = new float[]{0, 0.25F, 0.625F, 1};
-        float radius = 100;
+        float[] fractions = new float[]{0, 0.1825F, 0.25F, 0.625F, 0.875F, 1};
+        float radius = 120;
         Point2D.Double focusPoint = new Point2D.Double(100, 100);
-        Point2D.Double targetPoint = new Point2D.Double(104, 107);
+        Point2D.Double targetPoint = new Point2D.Double(120, 125);
         MultipleGradientPaint.CycleMethod cycleMethod
                 = MultipleGradientPaint.CycleMethod.REFLECT;
 
         MultipleGradientPaint.ColorSpaceType colorSpaceType
-                = MultipleGradientPaint.ColorSpaceType.SRGB;
+                = MultipleGradientPaint.ColorSpaceType.LINEAR_RGB;
 
         void load(String pfx, Preferences prefs) {
             int ct = prefs.getInt(pfx + "_count", -1);

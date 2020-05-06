@@ -4,6 +4,7 @@ import com.mastfrog.abstractions.Wrapper;
 import java.awt.Dimension;
 import java.awt.MultipleGradientPaint;
 import java.awt.TexturePaint;
+import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import org.imagine.awt.impl.Accessor;
 import org.imagine.awt.util.Hasher;
@@ -12,11 +13,11 @@ import org.imagine.io.KeyWriter;
 import org.imagine.io.KeyReader;
 
 /**
- * For performance reasons, the GradientManager will wrap some linear
- * and radial paints in a TexturedPaint to avoid hangs while painting
- * and poor performance.  This key allows us to keep wrap a key for the
- * original in a key that points to a texture paint that wrappers it, without
- * recreating huge rasters on every paint.
+ * For performance reasons, the GradientManager will wrap some linear and radial
+ * paints in a TexturedPaint to avoid hangs while painting and poor performance.
+ * This key allows us to keep wrap a key for the original in a key that points
+ * to a texture paint that wrappers it, without recreating huge rasters on every
+ * paint.
  *
  * @author Tim Boudreau
  */
@@ -40,6 +41,21 @@ public final class TexturedPaintWrapperKey<P extends MultiplePaintKey<T>, T exte
     @Override
     public PaintKeyKind kind() {
         return delegate.kind();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public PaintKey<TexturePaint> createTransformedCopy(AffineTransform xform) {
+        if (xform.isIdentity()) {
+            return this;
+        }
+        double[] pts = new double[]{0, 0, width, height};
+        xform.transform(pts, 0, pts, 0, 2);
+        double newWidth = Math.abs(pts[2] - pts[0]);
+        double newHeight = Math.abs(pts[3] - pts[1]);
+        PaintKey<T> nue = delegate.createTransformedCopy(xform);
+        return new TexturedPaintWrapperKey<>((P) nue,
+                (int) Math.ceil(newWidth), (int) Math.ceil(newHeight));
     }
 
     public static <P extends MultiplePaintKey<T>, T extends MultipleGradientPaint> TexturedPaintWrapperKey<P, T> create(P delegate, int width, int height) {

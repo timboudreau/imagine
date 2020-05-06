@@ -45,6 +45,7 @@ import org.imagine.vector.editor.ui.tools.widget.painting.DecorationController;
 import org.imagine.vector.editor.ui.tools.widget.painting.DesignerProperties;
 import org.imagine.vector.editor.ui.tools.widget.util.UIState;
 import org.imagine.vector.editor.ui.tools.widget.util.UIState.UIStateListener;
+import org.imagine.vector.editor.ui.tools.widget.util.ViewL;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Scene;
@@ -164,13 +165,21 @@ public class ManyControlPointsWidget extends Widget {
     }
 
     private double controlPointSize() {
+        return Math.ceil(rawControlPointSize());
+    }
+
+    private double rawControlPointSize() {
         double factor = 1D / getScene().getZoomFactor();
-        return Math.ceil(renderingProperties.controlPointSize() * factor);
+        return renderingProperties.controlPointSize() * factor;
     }
 
     private double focusControlPointSize() {
+        return Math.ceil(rawFocusControlPointSize());
+    }
+
+    private double rawFocusControlPointSize() {
         double factor = 1D / getScene().getZoomFactor();
-        return Math.ceil(renderingProperties.focusedControlPointSize() * factor);
+        return renderingProperties.focusedControlPointSize() * factor;
     }
 
     public void sync() {
@@ -876,12 +885,33 @@ public class ManyControlPointsWidget extends Widget {
         }
     };
 
+    private Point2D maybeReplacePoint(Point p) {
+        // There may be programmatic calls to isHitAt with a java.awt.Point
+        // which we don't want to substitute the current mouse position,
+        // so we test if the last mouse event's point is close enough
+        // to the passed on eto be believably from the same event the
+        // point we're called with is
+        EqPointDouble scenePoint = ViewL.lastPoint2D(this);
+        if (scenePoint.distance(p) < 2) {
+            return scenePoint;
+        }
+        return p;
+    }
+
     @Override
     public boolean isHitAt(Point localLocation) {
         if (dragging) {
             return true;
         }
-        return hit(localLocation.x, localLocation.y, false);
+        Point2D rep = maybeReplacePoint(localLocation);
+        return isHitAt(rep);
+    }
+
+    public boolean isHitAt(Point2D localLocation) {
+        if (dragging) {
+            return true;
+        }
+        return hit(localLocation.getX(), localLocation.getY(), false);
     }
 
     private boolean hit(Point2D p, boolean forClick) {
@@ -892,9 +922,9 @@ public class ManyControlPointsWidget extends Widget {
 //        if (cells.wasInLastBounds(x, y) && !cells.wasOccupied(x, y)) {
 //            return false;
 //        }
-        double sz = controlPointSize();
+        double sz = rawControlPointSize();
         if (forClick) {
-//            sz += 2;
+//            sz += 2D * (1D / getScene().getZoomFactor());
         }
         double minX = x - sz;
         double maxX = x + sz;
@@ -984,7 +1014,11 @@ public class ManyControlPointsWidget extends Widget {
 
     @Override
     protected Cursor getCursorAt(Point localLocation) {
-        if (isHitAt(localLocation)) {
+        Point2D viewLoc = ViewL.lastPoint2D(this);
+        System.out.println("LOC / VIEWLOC " + localLocation + " -> " 
+                + viewLoc + " viewl says " + ViewL.lastPoint(this)
+        + " myLoc " + getLocation() + " myBounds " + getBounds());
+        if (isHitAt(viewLoc)) {
             return CP_CURSOR;
         } else {
             return DEF_CURSOR;

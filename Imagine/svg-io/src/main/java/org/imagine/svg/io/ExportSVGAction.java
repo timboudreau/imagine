@@ -18,19 +18,19 @@ import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
-import javax.swing.filechooser.FileFilter;
 import net.java.dev.imagine.api.image.Picture;
 import net.java.dev.imagine.api.image.RenderingGoal;
 import org.apache.batik.anim.dom.SVGDOMImplementation;
 import org.apache.batik.svggen.SVGGeneratorContext;
 import org.imagine.editor.api.Zoom;
+import org.imagine.nbutil.filechooser.FileChooserBuilder;
+import org.imagine.nbutil.filechooser.FileKinds;
 import org.netbeans.paint.api.components.VerticalFlowLayout;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionRegistration;
 import org.openide.awt.Mnemonics;
 import org.openide.awt.StatusDisplayer;
-import org.openide.filesystems.FileChooserBuilder;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle.Messages;
 import org.openide.windows.WindowManager;
@@ -85,7 +85,7 @@ public final class ExportSVGAction implements ActionListener {
         JFileChooser chooser = new FileChooserBuilder(ExportSVGAction.class)
                 .setFileFilter(new SvgFileFilter())
                 .setFileHiding(true)
-                .setFilesOnly(true)
+                .setFileKinds(FileKinds.FILES_ONLY)
                 .setApproveText(Bundle.EXPORT())
                 .setTitle(Bundle.EXPORT_SVG())
                 .createFileChooser();
@@ -125,28 +125,4 @@ public final class ExportSVGAction implements ActionListener {
         }
     }
 
-    static final class SvgFileFilter extends FileFilter {
-
-        @Override
-        public boolean accept(File f) {
-            if (f.isHidden()) {
-                return false;
-            }
-            if (f.isDirectory()) {
-                return true;
-            }
-            if (!f.canWrite()) {
-                return false;
-            }
-            if (f.getName().toLowerCase().endsWith(".svg")) {
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        public String getDescription() {
-            return Bundle.SVG_FILES();
-        }
-    }
 }

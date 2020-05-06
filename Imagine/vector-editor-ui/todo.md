@@ -1,8 +1,5 @@
-
-Features:
- * SVG Import
-
 IO Bugs:
+
  * Should pad some file sections for future proofing
  * Failing tests of VectorIO with Shapes instance equality
  * Picture should save current zoom level
@@ -23,11 +20,28 @@ Misc:
  * Turn off fine level logging in SaveSupport and friends
 
 SVG Import Bugs:
+
  * Should be able to split groups into separate layers
  * Colors lose their alpha on import - referred to as stop-opacity in the svg
  * Need an AlphaComposite wrapper, or detect when an entire layer is being painted with the same opacity
 
+Test:
+ * Linear gradient customzier grow bug
+ * File chooser
+ * Palette order
+ * Recent files
+ * Auto Scaling
+ * Zoom to Fit
+ * Menu Order
+
+
 Vector Bugs:
+ * Waffle Tool
+ * Transform fill option
+    * Plus auto-transformed fills so 0,0 is the location
+ * Rectangular, etc. selection needs fixing or a rethink
+ * Circle control point dragging is broken
+ * Crosshair cursor hit regions from ManyControlPointsWidget not scaled well
  * A transform set on the graphics context in VectorWrapperGraphics is not applied - should apply it with applyTransform() to items as they arrive
  * GradientPaintWrapper and LinearPaintWrapper should implement Transformable
  * On draw, outline-only shapes are getting filled with the outline color and tracked as Fill instead
@@ -65,10 +79,12 @@ Vector Bugs:
  * Ability to zero texture position on shape (translate the paint, and paint a retranslated shape)
  
  Palettes:
+
  * Impl should use same file extension as save action from palette
  * Drag palette item out of designer leaves draggable image widget as a turd 
 
 UI Buglets:
+
  * Should be possible to use a commplex fill for a stroke, not just a fill
  * PaintParticipant drawing needs to be scaled to zoom
  * File name not associated with TC and name set when native loading
@@ -80,5 +96,5 @@ UI Buglets:
  * Annotation is registering garbage breaking TC positioning for tools settings & layers 
 
 Questionable ideas:
- * Need a group type - use aggregate?
+ * Need a group type - use aggregate?  Or just let groups be layers?
 

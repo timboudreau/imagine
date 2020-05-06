@@ -1,13 +1,16 @@
 package org.netbeans.paint.api.components;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.Insets;
 import java.awt.LayoutManager;
 import java.util.LinkedList;
 import java.util.Objects;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JSlider;
 import net.java.dev.colorchooser.ColorChooser;
 
@@ -20,8 +23,7 @@ import net.java.dev.colorchooser.ColorChooser;
  */
 public final class LDPLayout implements LayoutManager {
 
-    private static final int MIN_ROW_HEIGHT = 24;
-    private static final int DEFAULT_GAP = 5;
+    private static final int DEFAULT_GAP = -1;
     private final int gap;
     private final LinkedList<Reentry> reentry = new LinkedList<>();
 
@@ -33,19 +35,34 @@ public final class LDPLayout implements LayoutManager {
         this(DEFAULT_GAP);
     }
 
+    private int gap(Container parent) {
+        if (gap < 0) {
+            return (int) Math.ceil(parent.getFontMetrics(parent.getFont()).stringWidth("A") * 2);
+        }
+        return gap;
+    }
+
+    private int minRowHeight(Container parent) {
+        FontMetrics fm = parent.getFontMetrics(parent.getFont());
+        int height = fm.getMaxAscent() + fm.getMaxDescent();
+        return (int) Math.ceil(height * 1.5);
+    }
+
     public int getColumnPosition(Container parent, int index) {
         Reentry r = new Reentry(parent, index);
         for (Reentry rr : reentry) {
             if (rr.equals(r)) {
-                return r.x;
+                System.out.println("Use reentry value " + rr.x + " for " + parent);
+                return rr.x;
             }
         }
         try {
             reentry.push(r);
             Insets ins = parent.getInsets();
             Component[] comps = parent.getComponents();
-            int x = ins.left + ins.right;
+            int x = ins.left;
             r.x = x;
+            int gap = gap(parent);
             for (int i = 0; i < comps.length; i++) {
                 if (i == index) {
                     break;
@@ -123,7 +140,8 @@ public final class LDPLayout implements LayoutManager {
         int x = ins.left + ins.right;
         int y = ins.top + ins.bottom;
         SharedLayoutData data = SharedLayoutData.find(parent);
-        int h = MIN_ROW_HEIGHT;
+        int h = minRowHeight(parent);
+        int gap = gap(parent);
         if (data == null) {
             for (Component c : comps) {
                 Dimension d = isMin ? c.getMinimumSize() : c.getPreferredSize();
@@ -148,9 +166,10 @@ public final class LDPLayout implements LayoutManager {
         int x = ins.left;
         int y = ins.top;
         SharedLayoutData data = SharedLayoutData.find(parent);
-        int h = MIN_ROW_HEIGHT;
+        int h = minRowHeight(parent);
         int maxBaseline = 0;
         int workingWidth = parent.getWidth() - (ins.left + ins.right);
+        int gap = gap(parent);
         for (Component c : comps) {
             Dimension d = c.getPreferredSize();
             int baseline = c.getBaseline(d.width, d.height);
@@ -176,14 +195,42 @@ public final class LDPLayout implements LayoutManager {
         } else {
             for (int i = 0; i < comps.length; i++) {
                 Component c = comps[i];
+                if (DEBUG) {
+                    ((JComponent) c).setOpaque(true);
+                    switch (i) {
+                        case 0:
+                            c.setBackground(new Color(180, 180, 255));
+                            break;
+                        case 1:
+                            c.setBackground(new Color(255, 180, 180));
+                            break;
+                        case 2:
+                            c.setBackground(new Color(180, 255, 180));
+                            break;
+                        case 3:
+                            c.setBackground(new Color(255, 255, 180));
+                            break;
+                        case 4:
+                            c.setBackground(new Color(255, 180, 255));
+                            break;
+
+                    }
+                }
                 int colpos = data.xPosForColumn(i);
                 Dimension d = comps[i].getPreferredSize();
                 int baseline = c.getBaseline(d.width, d.height);
-                if (i == comps.length -1 && isFillComponent(c)) {
+                boolean fill = isFillComponent(c);
+                if (i == comps.length - 1 && fill) {
                     d.width = workingWidth - colpos;
+                } else if (fill) {
+                    int next = data.xPosForColumn(i + 1);
+                    if (next > colpos && next > colpos + d.width) {
+                        d.width = (next - colpos) - gap;
+                    }
                 }
+
                 if (colpos + d.width > workingWidth - ins.left) {
-                    d.width = (ins.left + workingWidth) - colpos;
+                    d.width = (ins.left + workingWidth) - (colpos + gap);
                 }
                 if (baseline < 0) {
                     c.setBounds(colpos, y, d.width, h);
@@ -198,6 +245,8 @@ public final class LDPLayout implements LayoutManager {
         }
     }
 
+    static boolean DEBUG = true;
+
     private boolean isFillComponent(Component comp) {
         if (comp instanceof JSlider) {
             JSlider sl = (JSlider) comp;
@@ -205,6 +254,12 @@ public final class LDPLayout implements LayoutManager {
         }
         if (comp instanceof JComboBox || comp instanceof ColorChooser) {
             return false;
+        }
+        if (comp instanceof JComponent) {
+            Object o = ((JComponent) comp).getClientProperty("noStretch");
+            if (o instanceof Boolean) {
+                return !(Boolean) o;
+            }
         }
         return true;
     }

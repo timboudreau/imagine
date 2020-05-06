@@ -12,7 +12,6 @@
 */
 package com.bric.swing;
 
-import com.sun.glass.events.KeyEvent;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
@@ -22,6 +21,7 @@ import java.awt.Dialog;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import static javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW;

@@ -40,7 +40,6 @@ import java.util.function.BiConsumer;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
@@ -60,7 +59,6 @@ import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import net.java.dev.imagine.ui.actions.spi.Resizable;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
-import org.netbeans.paint.api.components.FileChooserUtils;
 import org.netbeans.paintui.PictureScene.PI;
 import net.java.dev.imagine.ui.actions.spi.Selectable;
 import net.java.dev.imagine.ui.common.ImageEditorFactory;
@@ -69,6 +67,9 @@ import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.ContextLog;
 import org.imagine.editor.api.ImageEditor;
 import org.imagine.editor.api.Zoom;
+import org.imagine.nbutil.filechooser.FileChooserBuilder;
+import org.imagine.nbutil.filechooser.FileChooserBuilder.SelectionApprover;
+import org.imagine.nbutil.filechooser.FileKinds;
 import org.netbeans.api.visual.widget.Scene.SceneListener;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
@@ -143,8 +144,9 @@ import org.openide.windows.TopComponent;
     "OPENING_IMAGES=Opening {0} images",
     "# {0} - fileExtension",
     "UNKNOWN_FILE_EXTENSION=Not a known image file extension: {0}",
-    "TTL_UNKNOWN_FILE_EXTENSION=Could Not Save"
-})
+    "TTL_UNKNOWN_FILE_EXTENSION=Could Not Save",
+    "DLG_SaveAs=Save As",
+    "DLG_BTN_SaveAs=Save As",})
 @TopComponent.Description(preferredID = "PaintTopComponent",
         //iconBase="SET/PATH/TO/ICON/HERE",
         persistenceType = TopComponent.PERSISTENCE_NEVER)
@@ -523,61 +525,71 @@ public final class PaintTopComponent extends TopComponent implements
 
     @Override
     public void saveAs(BiConsumer<Exception, Path> c) {
-        JFileChooser ch = FileChooserUtils.getFileChooser("image");
-        if (ch.showSaveDialog(this) == JFileChooser.APPROVE_OPTION
-                && ch.getSelectedFile() != null) {
-            File f = ch.getSelectedFile();
-            if (!f.exists()) {
-                try {
-                    if (!f.createNewFile()) {
-                        String failMsg = NbBundle.getMessage(
-                                PaintTopComponent.class,
-                                "MSG_SaveFailed", new Object[]{f.getPath()} //NOI18N
-                        );
-                        EventQueue.invokeLater(() -> {
-                            JOptionPane.showMessageDialog(this, failMsg);
-                            c.accept(null, null);
-                        });
-                        return;
+        File f = new FileChooserBuilder("image")
+                .setFileKinds(FileKinds.FILES_ONLY)
+                .setFileHiding(true)
+                .setTitle(Bundle.DLG_SaveAs())
+                .setApproveText(Bundle.DLG_BTN_SaveAs())
+                .setAccessibleDescription(Bundle.DLG_SaveAs())
+                .setSelectionApprover(new SelectionApprover() {
+                    @Override
+                    public boolean approve(File[] files) {
+                        System.out.println("APPROVE " + Arrays.toString(files));
+                        return true;
                     }
-                } catch (IOException ex) {
-                    c.accept(ex, null);
-                }
-            } else {
-                String overwriteMsg = NbBundle.getMessage(
-                        PaintTopComponent.class,
-                        "MSG_Overwrite", new Object[]{f.getPath()} //NOI18N
-                );
-                if (JOptionPane.showConfirmDialog(this, overwriteMsg)
-                        != JOptionPane.OK_OPTION) {
-                    c.accept(null, null);
-                    return;
-                }
-            }
-            File ff = f;
-            IO_POOL.submit(() -> {
-                File realFile;
-                try {
-                    realFile = doSave(ff);
-                } catch (IOException ex) {
+                })
+                .showSaveDialog();
+
+        if (!f.exists()) {
+            try {
+                if (!f.createNewFile()) {
+                    String failMsg = NbBundle.getMessage(
+                            PaintTopComponent.class,
+                            "MSG_SaveFailed", new Object[]{f.getPath()} //NOI18N
+                    );
                     EventQueue.invokeLater(() -> {
-                        c.accept(ex, null);
+                        JOptionPane.showMessageDialog(this, failMsg);
+                        c.accept(null, null);
                     });
                     return;
                 }
-                EventQueue.invokeLater(() -> {
-                    if (realFile == null) {
-                        c.accept(null, null);
-                    } else {
-                        Path p = realFile.toPath();
-                        canvas.picture().getPicture().associateFile(p);
-                        setDisplayName(fileName(p));
-                        RecentFiles.getDefault().add(RecentFiles.Category.IMAGE, p);
-                        c.accept(null, p);
-                    }
-                });
-            });
+            } catch (IOException ex) {
+                c.accept(ex, null);
+            }
+        } else {
+            String overwriteMsg = NbBundle.getMessage(
+                    PaintTopComponent.class,
+                    "MSG_Overwrite", new Object[]{f.getPath()} //NOI18N
+            );
+            if (JOptionPane.showConfirmDialog(this, overwriteMsg)
+                    != JOptionPane.OK_OPTION) {
+                c.accept(null, null);
+                return;
+            }
         }
+        File ff = f;
+        IO_POOL.submit(() -> {
+            File realFile;
+            try {
+                realFile = doSave(ff);
+            } catch (IOException ex) {
+                EventQueue.invokeLater(() -> {
+                    c.accept(ex, null);
+                });
+                return;
+            }
+            EventQueue.invokeLater(() -> {
+                if (realFile == null) {
+                    c.accept(null, null);
+                } else {
+                    Path p = realFile.toPath();
+                    canvas.picture().getPicture().associateFile(p);
+                    setDisplayName(fileName(p));
+                    RecentFiles.getDefault().add(RecentFiles.Category.IMAGE, p);
+                    c.accept(null, p);
+                }
+            });
+        });
     }
 
     private static String fileName(Path p) {

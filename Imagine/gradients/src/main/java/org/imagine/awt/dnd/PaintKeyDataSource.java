@@ -65,5 +65,4 @@ final class PaintKeyDataSource implements DataSource {
         }
         return type.getSimpleName();
     }
-
 }

@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,36 +68,39 @@ import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
+import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
-/** A color chooser which can pop up a pluggable set of palettes.  The palette
- * displayed is controlled by combinations of the alt and shift and
- * ctrl (command on macintosh) keys.
- * Will fire an action event when a color is selected.  For accessibility, it will
- * show a standard Swing color chooser if focused and either space or enter are
- * pressed.
+/**
+ * A color chooser which can pop up a pluggable set of palettes. The palette
+ * displayed is controlled by combinations of the alt and shift and ctrl
+ * (command on macintosh) keys. Will fire an action event when a color is
+ * selected. For accessibility, it will show a standard Swing color chooser if
+ * focused and either space or enter are pressed.
  * <p>
- * By default, supports two sets of palettes - a set of 4 continuous palettes and
- * a set of 4 tiled, fixed palettes (the SVG/X palette, Swing/AWT palettes and
- * a history of recently selected colors).  Whether the tiled or continuous
+ * By default, supports two sets of palettes - a set of 4 continuous palettes
+ * and a set of 4 tiled, fixed palettes (the SVG/X palette, Swing/AWT palettes
+ * and a history of recently selected colors). Whether the tiled or continuous
  * palettes are given precedence depends on the property <code>
  * continuousPalettePreferred</code>.
  * <p>
- * Palettes are pluggable, so it is possible to provide your own implementation(s)
- * of Palette to be displayed when the component is clicked.
+ * Palettes are pluggable, so it is possible to provide your own
+ * implementation(s) of Palette to be displayed when the component is clicked.
  * <p>
  * Typical usage: Attach an ActionListener; it will be notified when the user
  * selects a color.
  * <p>
  * To catch colors as the user selects, listen for PROP_TRANSIENT_COLOR. The
  * component will fire changes in PROP_COLOR along with actin events, when the
- * user selects a color.  PROP_COLOR changes are fired both in response to
- * use actions and programmatic changes to the color property.
+ * user selects a color. PROP_COLOR changes are fired both in response to use
+ * actions and programmatic changes to the color property.
  * <P>
  * @author Tim Boudreau
  */
 public final class ColorChooser extends JComponent {
-    /** UI Class ID under which the UI delegate class is stored in
-     * UIManager (see UIManager.getUI()). The string value is
+
+    /**
+     * UI Class ID under which the UI delegate class is stored in UIManager (see
+     * UIManager.getUI()). The string value is
      * <code>&quot;nbColorChooserUI&quot;</code>
      */
     public static final String UI_CLASS_ID = "nbColorChooserUI"; //NOI18N
@@ -111,8 +115,8 @@ public final class ColorChooser extends JComponent {
      */
     public static final String PROP_COLOR = "color"; //NOI18N
     /**
-     * Property name for property fired when the transient color property
-     * (the color while the user is selecting) changes.
+     * Property name for property fired when the transient color property (the
+     * color while the user is selecting) changes.
      */
     public static final String PROP_TRANSIENT_COLOR = "transientColor"; //NOI18N
     /**
@@ -121,24 +125,26 @@ public final class ColorChooser extends JComponent {
     public static final String PROP_CONTINUOUS_PALETTE = "continuousPalette"; //NOI18N
 
     /**
-     * Property indicating the visibility of the popup palette.  Code that
-     * tracks PROP_TRANSIENT_COLOR can listen for this property with a value
-     * of false to do a final update using the value from getColor() to
-     * ensure the set color is in sync with the actual value of the color
-     * picker - in the case that the mouse was released off the palette,
-     * the color may be restored to its previous value.
+     * Property indicating the visibility of the popup palette. Code that tracks
+     * PROP_TRANSIENT_COLOR can listen for this property with a value of false
+     * to do a final update using the value from getColor() to ensure the set
+     * color is in sync with the actual value of the color picker - in the case
+     * that the mouse was released off the palette, the color may be restored to
+     * its previous value.
      */
     public static final String PROP_PICKER_VISIBLE = "pickerVisible";
     private boolean continuousPalette = true;
 
-    /** Create a color chooser */
+    /**
+     * Create a color chooser
+     */
     public ColorChooser() {
         this((java.awt.Color) null);
     }
 
     /**
-     * Create a color chooser initialized to the passed color, defaulted to
-     * show a continuous palette on initial click.
+     * Create a color chooser initialized to the passed color, defaulted to show
+     * a continuous palette on initial click.
      */
     public ColorChooser(Color initialColor) {
         this(null, initialColor);
@@ -163,7 +169,9 @@ public final class ColorChooser extends JComponent {
         this(palettes, null);
     }
 
-    /** Overridden to return <code>UI_CLASS_ID</code> */
+    /**
+     * Overridden to return <code>UI_CLASS_ID</code>
+     */
     public String getUIClassId() {
         return UI_CLASS_ID;
     }
@@ -178,10 +186,10 @@ public final class ColorChooser extends JComponent {
     }
 
     /**
-     * Get the color currently represented by this component.  If the user is
-     * in the process of selecting (the palette or color chooser is open),
-     * this will be the last known value, until such time as the user selects
-     * a color and an action event is fired.
+     * Get the color currently represented by this component. If the user is in
+     * the process of selecting (the palette or color chooser is open), this
+     * will be the last known value, until such time as the user selects a color
+     * and an action event is fired.
      */
     public Color getColor() {
         return color;
@@ -196,8 +204,6 @@ public final class ColorChooser extends JComponent {
         return super.getBaseline(width, height); //To change body of generated methods, choose Tools | Templates.
     }
 
-
-
     public boolean setAsText(String s) {
         Color c = ColorParser.parse(s);
         if (c != null) {
@@ -209,18 +215,40 @@ public final class ColorChooser extends JComponent {
 
     /**
      * Set the color this color chooser currently represents. Note this will
-     * fire a change in <code>PROP_COLOR</code> but will not trigger an
-     * action event to be fired.
+     * fire a change in <code>PROP_COLOR</code> but will not trigger an action
+     * event to be fired.
      */
     public void setColor(Color c) {
         if (c.getClass() != Color.class) {
-            c = new Color(c.getRed(), c.getGreen(), c.getBlue());
+            c = new Color(c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha());
         }
-        if ((color != null && !color.equals(c)) || (color == null && c != null)) {
+        if (!Objects.equals(color, c)) {
             Color old = color;
             color = c;
+            if (color != null) {
+                // Since via the keyboard, you can adjust a color down to black,
+                // adjusting it back upward will get you gray - what we want is to
+                // instead substitute in the hue and saturation from the last known
+                // non-gray color
+                updatePreservedHueAndSaturation(color);
+            }
             repaint();
             firePropertyChange(PROP_COLOR, old, c); //NOI18N
+        }
+    }
+
+    private float preservedHue;
+    private float preservedSaturation;
+    private final float[] componentsScratch = new float[3];
+
+    private void updatePreservedHueAndSaturation(Color c) {
+        int red = c.getRed();
+        int green = c.getGreen();
+        int blue = c.getBlue();
+        if (Math.abs(red - green) > 2 || Math.abs(red - blue) > 2) {
+            Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), componentsScratch);
+            preservedHue = componentsScratch[0];
+            preservedSaturation = componentsScratch[1];
         }
     }
 
@@ -240,14 +268,15 @@ public final class ColorChooser extends JComponent {
      * Returns the currently displayed color which may not be the same as the
      * value of <code>getColor()</code> but is the color currently displayed as
      * the user moves the mouse to select the color.
+     *
      * @see #PROP_TRANSIENT_COLOR
      * @see #setTransientColor
      * @return the color currently being displayed (not necessarily the one
      * returned by <code>getColor()</code>).
      */
     public Color getTransientColor() {
-        return transientColor == null ? null :
-                new Color (transientColor.getRed(), transientColor.getGreen(),
+        return transientColor == null ? null
+                : new Color(transientColor.getRed(), transientColor.getGreen(),
                         transientColor.getBlue());
     }
 
@@ -276,9 +305,9 @@ public final class ColorChooser extends JComponent {
     }
 
     /**
-     * Returns the SVG or Swing constant name for the passed color,
-     * if the color exactly matches a color in the Swing UIManager
-     * constants or the SVG/X-Windows constants.
+     * Returns the SVG or Swing constant name for the passed color, if the color
+     * exactly matches a color in the Swing UIManager constants or the
+     * SVG/X-Windows constants.
      */
     public static String getColorName(Color color) {
         return PredefinedPalette.getColorName(color);
@@ -288,6 +317,7 @@ public final class ColorChooser extends JComponent {
      * Set whether the initial palette shown when clicked with no keys pressed
      * is one showing a continuous (rainbow) palette or a set of tiles with
      * different colors.
+     *
      * @param val The value, true to show a continuous palette by default
      */
     public void setContinuousPalettePreferred(boolean val) {
@@ -299,23 +329,24 @@ public final class ColorChooser extends JComponent {
     }
 
     /**
-     * Determine whether the initial palette shown when clicked with no keys pressed
-     * is one showing a continuous (rainbow) palette or a set of tiles with
-     * different colors.  The default is <code>TRUE</code>.
+     * Determine whether the initial palette shown when clicked with no keys
+     * pressed is one showing a continuous (rainbow) palette or a set of tiles
+     * with different colors. The default is <code>TRUE</code>.
+     *
      * @return whether or not to default to a continuous palette
      */
     public boolean isContinuousPalettePreferred() {
         return continuousPalette;
     }
 
-    /** Set the Palette objects this color chooser will display.
-     * Can be null to reset to defaults.  The passed array length must less
-     * than or equal to 8.
+    /**
+     * Set the Palette objects this color chooser will display. Can be null to
+     * reset to defaults. The passed array length must less than or equal to 8.
      * <p>
-     * Which palette is shown to the user depends on what if any control
-     * keys are being held when the user initially clicks or presses while
-     * dragging the mouse to select.  The mapping between key combinations and
-     * palette entries is:
+     * Which palette is shown to the user depends on what if any control keys
+     * are being held when the user initially clicks or presses while dragging
+     * the mouse to select. The mapping between key combinations and palette
+     * entries is:
      * <ul>
      * <li>No keys held: 0</li>
      * <li>Shift: 1</li>
@@ -335,7 +366,7 @@ public final class ColorChooser extends JComponent {
         if (palettes == null) {
             palettes = Palette.getDefaultPalettes(continuousPalette);
             palettes = Arrays.copyOf(palettes, palettes.length + 1);
-            palettes[palettes.length-1] = new AlphaPalette(this);
+            palettes[palettes.length - 1] = new AlphaPalette(this);
         }
         this.palettes = palettes;
         firePropertyChange("palettes", old, palettes.clone()); //NOI18N
@@ -361,12 +392,12 @@ public final class ColorChooser extends JComponent {
         }
     }
 
-//****************** Action listener support **************************    
+    //****************** Action listener support **************************
     /**
-     * Registers ActionListener to receive events.  Action events are fired
-     * when the user selects a color, either by click-drag-releasing the mouse
-     * over the popup palette, or by pressing space or enter and selecting a
-     * color from the popup <code>JColorChooser</code>.
+     * Registers ActionListener to receive events. Action events are fired when
+     * the user selects a color, either by click-drag-releasing the mouse over
+     * the popup palette, or by pressing space or enter and selecting a color
+     * from the popup <code>JColorChooser</code>.
      *
      * @param listener The listener to register.
      */
@@ -378,10 +409,11 @@ public final class ColorChooser extends JComponent {
     }
 
     /**
-     * Removes ActionListener from the list of listeners.  Action events are fired
-     * when the user selects a color, either by click-drag-releasing the mouse
-     * over the popup palette, or by pressing space or enter and selecting a
-     * color from the popup <code>JColorChooser</code> (note they are <i>not</i>
+     * Removes ActionListener from the list of listeners. Action events are
+     * fired when the user selects a color, either by click-drag-releasing the
+     * mouse over the popup palette, or by pressing space or enter and selecting
+     * a color from the popup <code>JColorChooser</code> (note they are
+     * <i>not</i>
      * fired if you call <code>setColor()</code>).
      *
      * @param listener The listener to remove.
@@ -438,7 +470,6 @@ public final class ColorChooser extends JComponent {
         @Override
         public void dragEnter(DropTargetDragEvent dtde) {
             for (DataFlavor flavor : dtde.getCurrentDataFlavors()) {
-                System.out.println("  flav " + flavor);
                 if (flavor == DataFlavor.stringFlavor) {
                     try {
                         String data = (String) dtde.getTransferable()
@@ -489,9 +520,69 @@ public final class ColorChooser extends JComponent {
         }
     }
 
+    /**
+     * Adjust the color in HSB color space by the passed delta values,
+     * constraining saturation and brightness values to the range 0.0 to 1.0,
+     * and cycling the hue continuously through the range 0-1 such that &gt; 1 =
+     * value - 1.
+     *
+     * @param hueBy
+     * @param saturationBy
+     * @param brightnessBy
+     * @return
+     */
+    public boolean adjustColor(float hueBy, float saturationBy, float brightnessBy) {
+        Color color = getColor();
+        if (color == null) {
+            // have to start somewhere...
+            color = new Color(128, 128, 180);
+        }
+
+        float[] components = new float[3];
+        Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), components);
+        if (isNoSaturation(color)) {
+            components[0] = preservedHue;
+            components[1] = preservedSaturation;
+        }
+
+        float hue = clamp(rotate(components[0] + hueBy));
+        float saturation = clamp(components[1] + saturationBy);
+        float brightness = clamp(components[2] + brightnessBy);
+        Color nue = new Color(Color.HSBtoRGB(hue, saturation, brightness));
+        if (color.getAlpha() != 255) {
+            nue = new Color(nue.getRed(), nue.getGreen(), nue.getBlue(), color.getAlpha());
+        }
+        boolean changed = !color.equals(nue);
+        if (changed) {
+            setColor(nue);
+        }
+        return changed;
+    }
+
+    private static boolean isNoSaturation(Color color) {
+        int red = color.getRed();
+        int green = color.getGreen();
+        int blue = color.getBlue();
+        return red == green && red == blue;
+    }
+
+    private static float rotate(float value) {
+        // XXX won't work for values < or > 2
+        if (value < 0) {
+            return 1F - value;
+        } else if (value > 1) {
+            return value - 1F;
+        }
+        return value;
+    }
+
+    private static float clamp(float value) {
+        return Math.max(0F, Math.min(1, value));
+    }
+
     public static void main(String[] args) {
         try {
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel"); //NOI18N
+            UIManager.setLookAndFeel(new NimbusLookAndFeel()); //NOI18N
         } catch (Exception e) {
 
         }
@@ -502,7 +593,7 @@ public final class ColorChooser extends JComponent {
         JButton jb = new JButton("GC");
         final ColorChooser cc = new ColorChooser();
 
-        cc.setPreferredSize(new Dimension(32,32));
+        cc.setPreferredSize(new Dimension(32, 32));
         JTextArea area = new JTextArea(ColorParser.toMinimalString(cc.getColor()));
         cc.addActionListener((ActionEvent ae) -> {
             jb1.setForeground(cc.getColor());
@@ -516,7 +607,7 @@ public final class ColorChooser extends JComponent {
 
         cc.setDragDropEnabled(true);
         cc2.setDragDropEnabled(true);
-        cc2.setPreferredSize(new Dimension(32,32));
+        cc2.setPreferredSize(new Dimension(32, 32));
 
         area.setDragEnabled(true);
 

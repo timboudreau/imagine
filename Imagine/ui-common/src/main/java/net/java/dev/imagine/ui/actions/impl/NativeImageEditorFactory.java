@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import net.java.dev.imagine.api.io.LoadSupport;
 import net.java.dev.imagine.ui.common.BackgroundStyle;
 import net.java.dev.imagine.ui.common.ImageEditorFactory;
+import org.netbeans.paint.api.editing.LayerFactory;
 import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
@@ -30,10 +31,22 @@ public class NativeImageEditorFactory extends ImageEditorFactory {
     }
 
     @Override
+    public void openNew(Dimension size, BackgroundStyle bg, LayerFactory layerFactory) {
+        for (ImageEditorFactory f : Lookup.getDefault().lookupAll(ImageEditorFactory.class)) {
+            if (!(f instanceof NativeImageEditorFactory)) {
+                f.openNew(size, bg, layerFactory);
+                return;
+            }
+        }
+        throw new IllegalStateException("No image editor factories installed");
+    }
+
+    @Override
     public void openNew(Dimension dim, BackgroundStyle bg) {
         for (ImageEditorFactory f : Lookup.getDefault().lookupAll(ImageEditorFactory.class)) {
             if (!(f instanceof NativeImageEditorFactory)) {
                 f.openNew(dim, bg);
+                return;
             }
         }
         throw new IllegalStateException("No image editor factories installed");

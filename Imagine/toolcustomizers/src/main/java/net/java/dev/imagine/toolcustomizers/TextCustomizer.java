@@ -17,6 +17,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.AbstractCustomizer;
+import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.openide.awt.Mnemonics;
 import org.openide.util.Exceptions;
 import org.openide.util.NbBundle;
@@ -81,9 +82,10 @@ public final class TextCustomizer extends AbstractCustomizer<String>
         f.setColumns(20);
         JLabel lbl = new JLabel();
         Mnemonics.setLocalizedText(lbl, NbBundle.getMessage(TextCustomizer.class, "TEXT")); //NOI18N
-
+        lbl.setLabelFor(f);
         f.getDocument().addDocumentListener(this);
-        return new JComponent[]{lbl, f};
+//        return new JComponent[]{lbl, f};
+        return new JComponent[]{new SharedLayoutPanel(lbl, f)};
     }
 
     private String loadValue() {

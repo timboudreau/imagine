@@ -5,8 +5,8 @@
  */
 package org.imagine.vector.editor.ui.tools.widget.actions;
 
-import java.awt.Point;
 import java.awt.geom.Point2D;
+import org.imagine.geometry.EqPointDouble;
 import org.imagine.vector.editor.ui.tools.widget.util.ViewL;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.widget.Widget;
@@ -26,16 +26,7 @@ public class MoveInSceneCoordinateSpaceAction extends WidgetAction.LockedAdapter
     private DragState state;
 
     public static Point2D scenePoint(Widget widget) {
-        Point2D.Double scenePoint = ViewL.lastPoint(widget);
-        // Maybe scene bounds x/y would do it?
-        Point sceneLoc = widget.getScene().getLocation();
-        double zoom = widget.getScene().getZoomFactor();
-        double inv = 1D / zoom;
-        scenePoint.x -= sceneLoc.x;
-        scenePoint.y -= sceneLoc.y;
-
-        scenePoint.x *= inv;
-        scenePoint.y *= inv;
+        EqPointDouble scenePoint = ViewL.lastPoint2D(widget);
         return scenePoint;
     }
 

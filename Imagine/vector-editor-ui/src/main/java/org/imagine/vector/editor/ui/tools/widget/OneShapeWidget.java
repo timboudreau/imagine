@@ -16,8 +16,11 @@ import org.imagine.geometry.Polygon2D;
 import org.imagine.geometry.RotationDirection;
 import org.imagine.geometry.util.GeometryStrings;
 import com.mastfrog.function.state.Int;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import org.imagine.editor.api.AspectRatio;
 import org.imagine.geometry.CornerAngle;
+import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.LineVector;
 import org.imagine.geometry.analysis.VectorVisitor;
 import org.imagine.geometry.util.PooledTransform;
@@ -28,6 +31,7 @@ import org.imagine.vector.editor.ui.spi.ShapesCollection;
 import org.imagine.vector.editor.ui.tools.widget.actions.AdjustmentKeyActionHandler;
 import org.imagine.vector.editor.ui.tools.widget.actions.DragHandler;
 import org.imagine.vector.editor.ui.tools.widget.util.UIState;
+import org.imagine.vector.editor.ui.tools.widget.util.ViewL;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
@@ -131,6 +135,27 @@ public class OneShapeWidget extends Widget {
     public boolean isHitAt(Point localLocation) {
         if (isDragInProgress()) {
             return true;
+        }
+        return element().shape().contains(localLocation);
+    }
+
+    private final Rectangle2D.Double scr = new Rectangle2D.Double();
+    public boolean isHitAt(Point2D localLocation) {
+        // We need floating point coordinates, or at very high zoom
+        // with very small shapes, there is no hit surface at all
+        EqPointDouble viewPoint = ViewL.lastWidgetPoint2D(this);
+        if (viewPoint.distance(localLocation) < 2) {
+            Point2D myLoc = getLocation();
+            viewPoint.translate(myLoc.getX(), myLoc.getY());
+            localLocation = viewPoint;
+        } else {
+            System.out.println("wrong dist " + viewPoint.distance(localLocation) + ", " + viewPoint);
+        }
+        scr.width = scr.height = 0;
+        element().addToBounds(scr);
+        // Much cheaper than testing the shape
+        if (!scr.contains(localLocation)) {
+            return false;
         }
         return element().shape().contains(localLocation);
     }

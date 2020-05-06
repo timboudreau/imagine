@@ -3,6 +3,7 @@ package org.imagine.awt.key;
 import org.imagine.awt.util.IdPathBuilder;
 import java.awt.Color;
 import java.awt.GradientPaint;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.io.IOException;
 import static java.lang.Float.floatToIntBits;
@@ -62,6 +63,14 @@ public final class GradientPaintKey extends PaintKey<GradientPaint> implements C
         x2 = floatToIntBits(roundOff(points[1].getX()));
         y2 = floatToIntBits(roundOff(points[1].getY()));
         cyclic = paint.isCyclic();
+    }
+
+    @Override
+    public PaintKey<GradientPaint> createTransformedCopy(AffineTransform xform) {
+        double[] coordinates = new double[] {x1(), y1(), x2(), y2()};
+        xform.transform(coordinates, 0, coordinates, 0, 2);
+        return new GradientPaintKey(coordinates[0], coordinates[1], coordinates[2], coordinates[3],
+                color1, color2, cyclic);
     }
 
     @Override

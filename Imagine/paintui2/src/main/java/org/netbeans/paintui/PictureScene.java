@@ -149,7 +149,7 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
         return picture.getSelection().getLookup();
     }
 
-    private static String getDefaultLayerName(int ix) {
+    public static String getDefaultLayerName(int ix) {
         return NbBundle.getMessage(PI.class, "LAYER_NAME", "" + ix);
     }
 

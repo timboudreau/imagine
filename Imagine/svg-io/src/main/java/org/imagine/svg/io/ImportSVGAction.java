@@ -14,20 +14,19 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import javax.swing.filechooser.FileFilter;
 import net.java.dev.imagine.api.image.Picture;
 import net.java.dev.imagine.api.io.LoadSupport;
 import net.java.dev.imagine.spi.image.LayerImplementation;
+import org.imagine.nbutil.filechooser.FileChooserBuilder;
+import org.imagine.nbutil.filechooser.FileKinds;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.spi.VectorLayerFactory;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionRegistration;
-import org.openide.filesystems.FileChooserBuilder;
 import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
-import org.openide.util.RequestProcessor;
 
 @ActionID(
         category = "File",
@@ -43,27 +42,29 @@ import org.openide.util.RequestProcessor;
 })
 public final class ImportSVGAction implements ActionListener {
 
-    private static final RequestProcessor PROC = new RequestProcessor("ImportSVG", 3);
-
     @Override
     public void actionPerformed(ActionEvent e) {
         File[] files = new FileChooserBuilder(ExportSVGAction.class)
-                .setFileFilter(new SVGFilter())
+                .setFileFilter(new SvgFileFilter())
                 .setApproveText(Bundle.IMPORT()).setTitle(Bundle.CTL_ImportSVGAction())
-                .setFilesOnly(true).setFileHiding(true)
+                .setFileKinds(FileKinds.FILES_ONLY).setFileHiding(true)
                 .showMultiOpenDialog();
-        VectorLayerFactory vlf = Lookup.getDefault().lookup(VectorLayerFactory.class);
-        LoadSupport<?, ?, ?> loader = Lookup.getDefault().lookup(LoadSupport.class);
-        if (vlf == null) {
-            System.out.println("\n\nno vector layer factory found\n\n");
-            return;
-        }
-        if (loader == null) {
-            System.out.println("no LoadSupport found");
-            return;
-        }
         System.out.println("\n\n\nBEGIN SVG LOAD");
         if (files != null && files.length > 0) {
+            VectorLayerFactory vlf = Lookup.getDefault().lookup(VectorLayerFactory.class);
+            LoadSupport<?, ?, ?> loader = Lookup.getDefault().lookup(LoadSupport.class);
+            if (vlf == null) {
+                System.out.println("\n\nno vector layer factory found\n\n");
+                return;
+            }
+            if (loader == null) {
+                System.out.println("no LoadSupport found");
+                return;
+            }
+            // XXX this currently needs to be in the event thread, because
+            // paintui2's Picture implementation will construct a PictureScene, and
+            // visual library prohibits manipulating it from anything but the event
+            // thread.  Those two things need to get detangled.
 //            PROC.submit(() -> {
             for (File f : files) {
                 System.out.println("one file: " + f);
@@ -100,26 +101,5 @@ public final class ImportSVGAction implements ActionListener {
             return s.substring(0, ix);
         }
         return s;
-    }
-
-    private static final class SVGFilter extends FileFilter {
-
-        @Override
-        public boolean accept(File f) {
-            if (f.isHidden()) {
-                return false;
-            }
-            if (f.isDirectory()) {
-                return true;
-            }
-            return f.getName().toLowerCase().endsWith(".svg");
-        }
-
-        @Messages("svgFiles=SVG Files")
-        @Override
-        public String getDescription() {
-            return Bundle.svgFiles();
-        }
-
     }
 }
