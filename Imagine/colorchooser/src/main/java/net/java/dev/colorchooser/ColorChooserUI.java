@@ -278,10 +278,9 @@ public abstract class ColorChooserUI extends ComponentUI {
         }
         FontMetrics fm = c.getFontMetrics(f);
         if (fm != null) {
-//            int height = fm.getMaxAscent() + fm.getMaxDescent();
             int height = fm.getHeight();
             int width = fm.stringWidth("Z");
-            int size = Math.min(16, Math.max(height, width));
+            int size = Math.max(16, Math.max(height, width));
             Insets ins = c.getInsets();
             return new Dimension(size + ins.left + ins.right,
                     size + ins.top + ins.bottom);
@@ -289,22 +288,16 @@ public abstract class ColorChooserUI extends ComponentUI {
         return null;
     }
 
-    static boolean MAC = false;
-
-    static {
-        try {
-            /**
-             * Running on macintosh?
-             */
-            MAC = System.getProperty("mrj.version") != null; //NOI18N
-        } catch (SecurityException e) {
-            //do nothing - running in sandbox
-        }
-    }
+    static boolean MAC = DefaultColorChooserUI.isMac();
 
     @Override
     public int getBaseline(JComponent c, int width, int height) {
-        return (height / 2) + (height / 4);
+//        FontMetrics fm = c.getFontMetrics(c.getFont());
+//        Insets ins = c.getInsets();
+//        return Math.min(height - ins.bottom, fm.getHeight() + ins.top);
+//        System.out.println("basel " + height + " returning " + (height / 2));
+//        return height / 2;
+        return -1;
     }
 
     private class L extends MouseAdapter implements FocusListener, KeyListener {
@@ -470,6 +463,7 @@ public abstract class ColorChooserUI extends ComponentUI {
         }
 
         static final float BASE_KEY_ADJUST = 0.01F;
+
         protected void processKeyEvent(KeyEvent ke, boolean pressed) {
             ColorChooser chooser = (ColorChooser) ke.getSource();
             updatePaletteIndex(chooser, paletteIndexFromKeyCode(ke), pressed);

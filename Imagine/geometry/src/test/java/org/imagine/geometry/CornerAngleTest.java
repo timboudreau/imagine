@@ -718,7 +718,7 @@ public class CornerAngleTest {
                     RAD + TOP + 60);
 
 //            for (Shape s : shapes) {
-//                Rectangle r = s.getBounds();
+//                Rectangle r = s.addToBounds();
 //                result.width += r.width + GAP;
 //                result.height = Math.max(r.y + r.height + TOP, result.height);
 //            }

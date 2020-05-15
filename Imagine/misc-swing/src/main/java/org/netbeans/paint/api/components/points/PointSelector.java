@@ -47,6 +47,7 @@ import org.imagine.geometry.Circle;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.Triangle2D;
 import org.imagine.geometry.util.PooledTransform;
+import org.netbeans.paint.api.components.Cursors;
 import org.netbeans.paint.api.components.RadialSliderUI;
 import static org.netbeans.paint.api.components.points.PointSelectorMode.POINT_AND_LINE;
 import org.openide.util.Exceptions;
@@ -57,8 +58,8 @@ import org.openide.util.Exceptions;
  */
 public final class PointSelector extends JComponent {
 
-    private final EqPointDouble  targetScaled;
-    private final EqPointDouble  focusScaled;
+    private final EqPointDouble targetScaled;
+    private final EqPointDouble focusScaled;
     private final Rectangle2D.Double targetBounds;
     private final int sizeBase;
     private Color marginColor;
@@ -83,8 +84,8 @@ public final class PointSelector extends JComponent {
     public PointSelector(Rectangle2D.Double bounds, int sizeBase) {
         assert bounds != null : "bounds null";
         this.sizeBase = sizeBase;
-        this.targetScaled = new EqPointDouble (bounds.getCenterX(), bounds.getCenterY());
-        this.focusScaled = new EqPointDouble (bounds.getCenterX()
+        this.targetScaled = new EqPointDouble(bounds.getCenterX(), bounds.getCenterY());
+        this.focusScaled = new EqPointDouble(bounds.getCenterX()
                 + (bounds.getWidth() / 2),
                 bounds.getCenterY() + (bounds.getHeight() / 2));
 
@@ -121,6 +122,16 @@ public final class PointSelector extends JComponent {
         }
         setFont(font);
         setFocusable(true);
+        setCursor(Cursors.forComponent(this).barbell());
+    }
+
+    public void setTargetBounds(Rectangle2D shape) {
+        if (!shape.isEmpty() && !shape.equals(targetBounds)) {
+            targetBounds.setFrame(shape);
+            invalidate();
+            revalidate();
+            repaint();
+        }
     }
 
     public void setMode(PointSelectorMode mode) {
@@ -511,6 +522,7 @@ public final class PointSelector extends JComponent {
     }
 
     AffineTransform local = PooledTransform.get(this);
+
     private AffineTransform toLocal() {
         double w = getWidth();
         double h = getHeight();
@@ -571,7 +583,7 @@ public final class PointSelector extends JComponent {
     }
 
     private void changeTarget(double dx, double dy) {
-        EqPointDouble  old = new EqPointDouble (targetScaled.getX(), targetScaled.getY());
+        EqPointDouble old = new EqPointDouble(targetScaled.getX(), targetScaled.getY());
         targetScaled.x += dx;
         targetScaled.y += dy;
         constrain(targetScaled);
@@ -581,7 +593,7 @@ public final class PointSelector extends JComponent {
     }
 
     private void changeFocus(double dx, double dy) {
-        EqPointDouble old = new EqPointDouble (focusScaled.getX(), focusScaled.getY());
+        EqPointDouble old = new EqPointDouble(focusScaled.getX(), focusScaled.getY());
         focusScaled.x += dx;
         focusScaled.y += dy;
         constrain(focusScaled);
@@ -589,7 +601,7 @@ public final class PointSelector extends JComponent {
         firePropertyChange("focusPoint", old, focusScaled);
         repaint();
     }
-    
+
     private void ensureNotIdentical() {
         if (targetScaled.exactlyEqual(focusScaled)) {
             focusScaled.x += 0.001;

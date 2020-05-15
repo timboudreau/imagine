@@ -14,6 +14,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.spi.tool.ToolElement;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import org.netbeans.paint.tools.fills.FillCustomizer;
 import org.netbeans.paint.tools.spi.BrushTip;
@@ -23,6 +24,7 @@ import org.openide.util.NbBundle;
  *
  * @author Tim Boudreau
  */
+@ToolElement(folder = "brushtips", position=300, icon = "org/netbeans/paint/tools/resources/roundbrushtip.png", name = "Multi-Point Tip")
 public class MultiPointTip implements BrushTip, Customizer, Customizable {
     private TipDesigner designer;
     private JPanel pnl;

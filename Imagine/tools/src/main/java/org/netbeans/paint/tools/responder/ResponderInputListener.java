@@ -32,87 +32,113 @@ final class ResponderInputListener implements ScalingMouseListener, KeyListener,
         return false;
     }
 
-//    MouseEvent lastMe = null;
-//    Exception lm = null;
-
     @Override
     public void mouseClicked(double x, double y, MouseEvent e) {
-//        if (isSameMouseEvent(lastMe, e)) {
-//            throw new IllegalStateException("Same click event sent twice: " + x + ", " + y, lm);
-//        }
-//        lm = new Exception("MClick " + x + ", " + y);
-//        lastMe = e;
-        if (tool.updateHandler(tool.currentHandler().onClick(x, y, e))) {
+        Responder h = tool.currentHandler();
+        h.onBeforeHandleInputEvent(e);
+        if (tool.updateHandler(h.onClick(x, y, e))) {
             e.consume();
         }
+        // Note we update the hover point AFTER processing the event,
+        // so drag handlers have the old point to compare with when they
+        // process the event; and it gets called on the handler that was
+        // passed the event, WHETHER OR NOT the handler was replaced as
+        // a result of the call
+        h.onAnyMouseEvent(x, y, e);
     }
 
     @Override
     public void mousePressed(double x, double y, MouseEvent e) {
-        if (tool.updateHandler(tool.currentHandler().onPress(x, y, e))) {
+        Responder h = tool.currentHandler();
+        h.onBeforeHandleInputEvent(e);
+        if (tool.updateHandler(h.onPress(x, y, e))) {
             e.consume();
         }
+        h.onAnyMouseEvent(x, y, e);
     }
 
     @Override
     public void mouseReleased(double x, double y, MouseEvent e) {
-        if (tool.updateHandler(tool.currentHandler().onRelease(x, y, e))) {
+        Responder h = tool.currentHandler();
+        h.onBeforeHandleInputEvent(e);
+        if (tool.updateHandler(h.onRelease(x, y, e))) {
             e.consume();
         }
+        h.onAnyMouseEvent(x, y, e);
     }
 
     @Override
     public void mouseDragged(double x, double y, MouseEvent e) {
-        if (tool.updateHandler(tool.currentHandler().onDrag(x, y, e))) {
+        Responder h = tool.currentHandler();
+        h.onBeforeHandleInputEvent(e);
+        if (tool.updateHandler(h.onDrag(x, y, e))) {
             e.consume();
         }
+        h.onAnyMouseEvent(x, y, e);
     }
 
     @Override
     public void mouseMoved(double x, double y, MouseEvent e) {
-        if (tool.updateHandler(tool.currentHandler().onMove(x, y, e))) {
+        Responder h = tool.currentHandler();
+        h.onBeforeHandleInputEvent(e);
+        if (tool.updateHandler(h.onMove(x, y, e))) {
             e.consume();
         }
+        h.onAnyMouseEvent(x, y, e);
     }
 
     @Override
     public void mouseEntered(double x, double y, MouseEvent e) {
-        if (tool.updateHandler(tool.currentHandler().onEnter(x, y, e))) {
+        Responder h = tool.currentHandler();
+        h.onBeforeHandleInputEvent(e);
+        if (tool.updateHandler(h.onEnter(x, y, e))) {
             e.consume();
         }
+        h.onAnyMouseEvent(x, y, e);
     }
 
     @Override
     public void mouseExited(double x, double y, MouseEvent e) {
-        if (tool.updateHandler(tool.currentHandler().onExit(x, y, e))) {
+        Responder h = tool.currentHandler();
+        h.onBeforeHandleInputEvent(e);
+        if (tool.updateHandler(h.onExit(x, y, e))) {
             e.consume();
         }
+        h.onAnyMouseEvent(x, y, e);
     }
 
     @Override
     public void keyTyped(KeyEvent e) {
-        if (tool.updateHandler(tool.currentHandler().onTyped(e))) {
+        Responder h = tool.currentHandler();
+        h.onBeforeHandleInputEvent(e);
+        if (tool.updateHandler(h.onTyped(e))) {
             e.consume();
         }
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if (tool.updateHandler(tool.currentHandler().onKeyPress(e))) {
+        Responder h = tool.currentHandler();
+        h.onBeforeHandleInputEvent(e);
+        if (tool.updateHandler(h.onKeyPress(e))) {
             e.consume();
         }
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-        if (tool.updateHandler(tool.currentHandler().onKeyRelease(e))) {
+        Responder h = tool.currentHandler();
+        h.onBeforeHandleInputEvent(e);
+        if (tool.updateHandler(h.onKeyRelease(e))) {
             e.consume();
         }
     }
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
-        if (tool.updateHandler(tool.currentHandler().onWheel(e))) {
+        Responder h = tool.currentHandler();
+        h.onBeforeHandleInputEvent(e);
+        if (tool.updateHandler(h.onWheel(e))) {
             e.consume();
         }
     }

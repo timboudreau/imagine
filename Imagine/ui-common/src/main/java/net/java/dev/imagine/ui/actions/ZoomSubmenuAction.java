@@ -5,7 +5,6 @@
  */
 package net.java.dev.imagine.ui.actions;
 
-import java.text.DecimalFormat;
 import javax.swing.Action;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -13,7 +12,6 @@ import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
 import org.openide.awt.Mnemonics;
 import org.openide.util.Lookup;
-import org.openide.util.NbBundle;
 import org.openide.util.actions.Presenter;
 
 /**
@@ -36,10 +34,13 @@ public final class ZoomSubmenuAction extends GenericContextSensitiveAction<Zoom>
     public JMenuItem getMenuPresenter() {
         JMenu menu = new JMenu();
         Mnemonics.setLocalizedText(menu, (String) getValue(NAME));
-        float[] fracs = ZoomInAction.FRACTIONS;
-        for (float frac : fracs) {
-            menu.add(new ZoomOneAction(frac, lookup));
-        }
+        Zoom.visitDefaultFixedZooms(zoom -> {
+
+        });
+//        float[] fracs = ZoomInAction.FRACTIONS;
+//        for (float frac : fracs) {
+//            menu.add(new ZoomOneAction(frac, lookup));
+//        }
         return menu;
     }
 
@@ -53,24 +54,22 @@ public final class ZoomSubmenuAction extends GenericContextSensitiveAction<Zoom>
 //
     private static final class ZoomOneAction extends GenericContextSensitiveAction<Zoom> {
 
-        private final float zoom;
+        private final double zoom;
 
-        ZoomOneAction(float zoom, Lookup lookup) {
+        ZoomOneAction(double zoom, Lookup lookup) {
             super(lookup, Zoom.class);
             this.zoom = zoom;
             init();
         }
 
-        ZoomOneAction(float zoom) {
+        ZoomOneAction(double zoom) {
             super(Zoom.class);
             this.zoom = zoom;
             init();
         }
 
         private void init() {
-            int intValue = (int) (zoom * 10);
-            DecimalFormat fmt = new DecimalFormat(NbBundle.getMessage(ZoomOneAction.class, "FMT_Zoom"));
-            putValue(NAME, fmt.format(intValue));
+            putValue(NAME, Zoom.stringValue(zoom));
         }
 
         @Override
@@ -80,7 +79,9 @@ public final class ZoomSubmenuAction extends GenericContextSensitiveAction<Zoom>
 
         @Override
         protected void performAction(Zoom t) {
-            t.setZoom(zoom);
+            if (t != null) {
+                t.setZoom(zoom);
+            }
         }
     }
 }

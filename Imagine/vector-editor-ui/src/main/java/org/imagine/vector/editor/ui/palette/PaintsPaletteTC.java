@@ -16,7 +16,9 @@ import org.openide.windows.WindowManager;
 //        dtd = "-//org.imagine.vector.editor.ui//PaintsPaletteTC//EN",
 //        autostore = false
 //)
-@Messages("PAINTS_PALETTE=Fills")
+@Messages({"PAINTS_PALETTE=Fills",
+//        "CTL_OpenShapesPaletteAction=Shapes Palette"
+})
 public final class PaintsPaletteTC extends AbstractPaletteTC {
 
     static final String PREFERRED_ID = "paintsPalette";
@@ -27,7 +29,8 @@ public final class PaintsPaletteTC extends AbstractPaletteTC {
         setHtmlDisplayName(Bundle.PAINTS_PALETTE());
         setDisplayName(Bundle.PAINTS_PALETTE());
         setName(preferredID());
-        setIcon(ImageUtilities.loadImage("org/imagine/inspectors/gradientfill.png", false)); //XXX
+        setIcon(ImageUtilities.loadImage("org/imagine/inspectors/fills.svg", false));
+
     }
 
     @Override

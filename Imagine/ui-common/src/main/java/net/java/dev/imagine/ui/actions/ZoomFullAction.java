@@ -40,7 +40,9 @@ public class ZoomFullAction extends GenericContextSensitiveAction<Zoom> {
         putValue(NAME, NbBundle.getMessage(ZoomInAction.class, "ACT_ZoomFull")); //NOI18N
     }
 
-    protected void performAction(Zoom t) {
-        t.setZoom(1);
+    protected void performAction(Zoom zoom) {
+        if (zoom != null) {
+            zoom.zoomOneToOne();
+        }
     }
 }

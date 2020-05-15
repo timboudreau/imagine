@@ -10,6 +10,7 @@ import com.mastfrog.function.DoubleQuadConsumer;
 import com.mastfrog.function.DoubleSextaConsumer;
 import java.awt.BasicStroke;
 import java.awt.Shape;
+import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RectangularShape;
@@ -40,6 +41,10 @@ public class EnhRectangle2D extends Rectangle2D.Double implements EnhancedShape,
 
     public EnhRectangle2D copy() {
         return new EnhRectangle2D(this);
+    }
+
+    public void clear() {
+        x = y = width = height = 0;
     }
 
     public static EnhRectangle2D of(RectangularShape shape) {
@@ -109,6 +114,10 @@ public class EnhRectangle2D extends Rectangle2D.Double implements EnhancedShape,
     @Override
     public boolean normalize() {
         return false;
+    }
+
+    public EqPointDouble center() {
+        return new EqPointDouble(getCenterX(), getCenterY());
     }
 
     @Override
@@ -198,10 +207,64 @@ public class EnhRectangle2D extends Rectangle2D.Double implements EnhancedShape,
         return add(shapeForBounds, stroke == null ? 0 : stroke.getLineWidth());
     }
 
+    public EnhRectangle2D grow(double by) {
+        double half = by / 2;
+        x -= half;
+        y -= half;
+        width += by;
+        height += by;
+        return this;
+    }
+
     public EnhRectangle2D add(Shape shapeForBounds, double stroke) {
         Rectangle2D bds = shapeForBounds.getBounds2D();
-        bds.setFrame(bds.getX() - stroke, bds.getY() - stroke, bds.getX() + bds.getWidth() + stroke, bds.getY() + bds.getHeight() + stroke);
-        add(bds);
+        if (shapeForBounds instanceof Line2D) {
+            if (bds.getWidth() <= 0 && bds.getHeight() != 0) {
+                bds.setFrame(bds.getX() - stroke, bds.getY(), stroke * 2, bds.getHeight());
+            } else if (bds.getHeight() == 0 && bds.getWidth() != 0) {
+                bds.setFrame(bds.getX(), bds.getY() - stroke, bds.getWidth(), stroke * 2);
+            }
+        }
+        if (bds.isEmpty()) {
+            return this;
+        }
+        if (stroke <= 0) {
+            add(bds);
+        } else {
+            if (isEmpty()) {
+                setFrameFromDiagonal(bds.getMinX() - stroke, bds.getMinY() - stroke,
+                        bds.getMaxX() + stroke, bds.getMaxY() + stroke);
+            } else {
+                add(bds.getMinX() - stroke, bds.getMinY() - stroke);
+                add(bds.getMaxX() + stroke, bds.getMaxY() + stroke);
+            }
+        }
         return this;
+    }
+
+    public void add(double newX, double newY, double radius) {
+        add(newX - radius, newY - radius);
+        add(newX + radius, newY + radius);
+    }
+
+    public void add(double newX, double newY) {
+        if (isEmpty()) {
+            setFrame(newX - 0.5, newY - 0.5, 1, 1);
+        } else {
+            double x1 = Math.min(getMinX(), newX);
+            double x2 = Math.max(getMaxX(), newX);
+            double y1 = Math.min(getMinY(), newY);
+            double y2 = Math.max(getMaxY(), newY);
+            setRect(x1, y1, x2 - x1, y2 - y1);
+        }
+    }
+
+    @Override
+    public void add(Rectangle2D r) {
+        if (isEmpty()) {
+            setFrame(r);
+        } else {
+            super.add(r);
+        }
     }
 }

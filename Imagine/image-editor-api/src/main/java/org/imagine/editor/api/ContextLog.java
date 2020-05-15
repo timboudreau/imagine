@@ -98,6 +98,11 @@ public abstract class ContextLog {
         public void log(String msg) {
             // do nothing
         }
+
+        @Override
+        public void stack(Supplier<String> msg) {
+            // do nothing
+        }
     }
 
     private static final class ConsoleLog extends ContextLog {
@@ -108,10 +113,12 @@ public abstract class ContextLog {
             this.name = name;
         }
 
+        @Override
         public void log(Supplier<String> msg) {
             log(msg.get());
         }
 
+        @Override
         public void log(String msg) {
             Duration dur = Duration.ofMillis(System.currentTimeMillis() - INIT_TIME.toInstant().toEpochMilli());
             log(dur, msg);
@@ -121,6 +128,16 @@ public abstract class ContextLog {
             String fmt = format(dur, true);
             String output = fmt + " " + name + ": " + msg;
             System.out.println("CL:" + output);
+        }
+
+        @Override
+        public void stack(Supplier<String> msg) {
+            final StackTraceElement[] el = new Exception().getStackTrace();
+            log(() -> {
+                StringBuilder sb = new StringBuilder(msg.get());
+                stringify(el, sb);
+                return sb.toString();
+            });
         }
     }
 
@@ -176,7 +193,37 @@ public abstract class ContextLog {
                 Exceptions.printStackTrace(ex);
             }
         }
+
+        @Override
+        public void stack(Supplier<String> msg) {
+            final StackTraceElement[] el = new Exception().getStackTrace();
+            log(() -> {
+                StringBuilder sb = new StringBuilder(msg.get());
+                stringify(el, sb);
+                return sb.toString();
+            });
+        }
     }
+
+    private static String stringify(StackTraceElement[] els, StringBuilder sb) {
+        String nm = ContextLog.class.getName();
+        for (int i = 0; i < els.length; i++) {
+            String cn = els[i].getClassName();
+            if (nm.equals(cn) || (cn != null && (cn.startsWith(nm) || cn.startsWith("java.")))) {
+                continue;
+            }
+            if (cn.contains("ContextLog")) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append('\n');
+            }
+            sb.append("\t" + els[i]);
+        }
+        return sb.toString();
+    }
+
+    public abstract void stack(Supplier<String> msg);
 
     public abstract void log(Supplier<String> msg);
 

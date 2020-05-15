@@ -6,6 +6,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.tool.Tool;
 import org.imagine.editor.api.AspectRatio;
+import org.imagine.editor.api.ContextLog;
 import org.imagine.vector.editor.ui.spi.LayerRenderingWidget;
 import org.imagine.vector.editor.ui.spi.WidgetSupplier;
 import org.netbeans.api.visual.widget.LayerWidget;
@@ -29,6 +30,7 @@ final class ToolWidgetLayer implements WidgetFactory, ChangeListener {
     private final WidgetController controller;
     private final DelegatingLookupConsumer lookupConsumer
             = new DelegatingLookupConsumer();
+    private static final ContextLog CLOG = ContextLog.get("toolactions");
 
     public ToolWidgetLayer(Widget container, VectorLayer layer,
             WidgetController controller) {
@@ -42,9 +44,15 @@ final class ToolWidgetLayer implements WidgetFactory, ChangeListener {
     }
 
     void toolChanged(Tool old, Tool nue) {
-        if (lastWidget != null) {
+        CLOG.log(() -> "toolchanged " + (old == null ? "<null>" : old.getDisplayName())
+            + " -> " + (nue == null ? "<null>" : nue.getDisplayName()));
+        if (lastWidget != null && lastWidget.getParentWidget() != null) {
+            CLOG.log(() -> "  have last widget " + lastWidget + " with parent, remove");
             layerWidget.removeChild(lastWidget);
-            container.getScene().validate();
+            if (container.getScene().getView() != null && container.getScene().getView().isDisplayable()) {
+                CLOG.log(() -> "  revalidate the scene");
+                container.getScene().validate();
+            }
             lastWidget = null;
         }
         if (nue != null) {
@@ -52,7 +60,9 @@ final class ToolWidgetLayer implements WidgetFactory, ChangeListener {
             if (widgeter != null) {
                 lastWidget = widgeter.apply(container.getScene(), controller,
                         controller.snapPoints());
+                CLOG.log(() -> "  have new WidgetSupplier " + widgeter + " with " + lastWidget);
                 if (lastWidget instanceof LayerRenderingWidget) {
+                    CLOG.log(() -> "   is a LayerRenderingWidget");
                     LayerRenderingWidget lrw = (LayerRenderingWidget) lastWidget;
                     lrw.setZoom(controller.getZoom());
                     lrw.setOpacity(layer.getOpacity());
@@ -74,6 +84,7 @@ final class ToolWidgetLayer implements WidgetFactory, ChangeListener {
 
     @Override
     public void attach(Consumer<Lookup[]> addtlLookupConsumer) {
+        CLOG.log("ToolWidgetLayer.attach");
         lookupConsumer.setDelegate(addtlLookupConsumer);
         Zoom zoom = controller.getZoom();
         zoom.addChangeListener(this);
@@ -92,6 +103,7 @@ final class ToolWidgetLayer implements WidgetFactory, ChangeListener {
 
     @Override
     public void detach() {
+        CLOG.log("ToolWidgetLayer.detach");
         Zoom zoom = controller.getZoom();
         zoom.removeChangeListener(this);
         layerWidget.removeFromParent();

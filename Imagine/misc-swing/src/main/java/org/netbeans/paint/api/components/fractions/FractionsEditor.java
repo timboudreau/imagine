@@ -103,6 +103,7 @@ public final class FractionsEditor extends JComponent {
         setForeground(fg);
         setOpaque(true);
         setFocusable(true);
+        setCursor(Cursors.forComponent(this).hin());
     }
 
     public static void main(String[] args) {
@@ -781,13 +782,14 @@ public final class FractionsEditor extends JComponent {
             hoveredFraction = frac;
             if (hoveredFraction != null && !hoveredFraction.isEnd()) {
                 Cursors cursors = Cursors.forComponent(FractionsEditor.this);
-                setCursor(cursors.horizontal());
+                setCursor(cursors.hin());
                 e.consume();
             } else {
                 hoveredFraction = null;
                 float val = valueAtPoint(e.getPoint());
                 if (draggingFraction == null && fractions.canAdd(val)) {
-                    setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+                    Cursors cursors = Cursors.forComponent(FractionsEditor.this);
+                    setCursor(cursors.triangleDown());
                     e.consume();
                 } else {
                     setCursor(Cursor.getDefaultCursor());

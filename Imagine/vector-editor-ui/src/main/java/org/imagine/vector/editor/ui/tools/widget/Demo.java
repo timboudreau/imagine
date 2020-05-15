@@ -410,16 +410,16 @@ public class Demo {
 
         class Z implements Zoom {
 
-            private float zm = 1;
+            private double zm = 1;
             private final ChangeSupport supp = new ChangeSupport(this);
 
             @Override
-            public float getZoom() {
+            public double getZoom() {
                 return zm;
             }
 
             @Override
-            public void setZoom(float val) {
+            public void setZoom(double val) {
                 zm = val;
                 scene.setZoomFactor(zm);
                 supp.fireChange();

@@ -9,6 +9,7 @@ import java.awt.LinearGradientPaint;
 import java.awt.Paint;
 import javax.swing.JComponent;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.spi.tool.ToolElement;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import org.netbeans.paint.tools.spi.Fill;
@@ -17,6 +18,7 @@ import org.netbeans.paint.tools.spi.Fill;
  *
  * @author Tim Boudreau
  */
+@ToolElement(folder = "fills", name="Linear Gradient", position=300, icon="org/netbeans/paint/tools/resources/lineargradientfill.png")
 public class LinearGradientFill implements Fill, Customizable {
 
     private final Customizer<LinearGradientPaint> cust;

@@ -42,7 +42,7 @@ import org.openide.util.NbBundle;
 public class OpenFileAction extends AbstractAction {
 
     private static final String ICON_BASE
-            = "net/java/dev/imagine/ui/actions/openFile24.png"; //NOI18N
+            = "net/java/dev/imagine/ui/actions/load.svg"; //NOI18N
 
     public OpenFileAction() {
         putValue(Action.NAME, NbBundle.getMessage(OpenFileAction.class,

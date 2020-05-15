@@ -12,25 +12,33 @@
  * Microsystems, Inc. All Rights Reserved.
  */
 package org.netbeans.paint.api.components;
+
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import static java.awt.RenderingHints.KEY_ANTIALIASING;
 import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
 import static java.awt.RenderingHints.VALUE_ANTIALIAS_ON;
 import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB;
 import java.awt.Toolkit;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JSlider;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -44,13 +52,60 @@ import javax.swing.plaf.SliderUI;
  */
 public class SimpleSliderUI extends SliderUI implements ChangeListener {
 
+    private static final SimpleSliderUI INSTANCE = new SimpleSliderUI();
+
+    private JSlider popupOwner;
+    private Point triggerPoint;
+
+    public SimpleSliderUI() {
+
+    }
+
+    private int valueOffsetAtDragStart;
+
+    public SimpleSliderUI(JSlider popupOwner, Point triggerPoint) {
+        this.popupOwner = popupOwner;
+        this.triggerPoint = new Point(triggerPoint);
+        valueOffsetAtDragStart = popupOwner.getValue() - popupOwner.getMinimum();
+    }
+
     public static ComponentUI createUI(JComponent b) {
         return new SimpleSliderUI();
     }
 
+    private int getPreferredUISpan(boolean vertical, JSlider c) {
+        if (popupOwner != null && !c.isDisplayable() && popupOwner.isDisplayable()) {
+            c = popupOwner;
+        }
+        GraphicsConfiguration config = c.getGraphicsConfiguration();
+        if (config == null) {
+            config = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+        }
+        FontMetrics fm = c.getFontMetrics(c.getFont());
+        if (popupOwner != null) {
+            Rectangle screen = config.getBounds();
+            int full = vertical ? screen.height : screen.width;
+            int half = full / 2;
+            int quarter = full / 4;
+            int span = c.getMaximum() - c.getMinimum();
+            if (span < 100) {
+                quarter /= 2;
+            }
+            // A half-line height presents a good mouse target for dragging
+            int idealHeight = span * (fm.getHeight() / 2);
+            if (idealHeight > quarter) {
+                idealHeight = half;
+            }
+            return idealHeight;
+        } else {
+            return fm.stringWidth("A") * 40;
+        }
+    }
+
     @Override
     public Dimension getPreferredSize(JComponent c) {
-        JSlider js = (JSlider)c;
+        JSlider js = (JSlider) c;
+        int edgeGap = edgeGap(js);
         int or = js.getOrientation();
         if (charWidth == -1) {
             computeCharWidth(null, c.getFont());
@@ -62,19 +117,22 @@ public class SimpleSliderUI extends SliderUI implements ChangeListener {
         } else {
             maxChars = Math.max((js.getMinimum() + "").length(), (js.getMaximum() + "").toString().length());
         }
-        maxChars+=3;
-        
+        maxChars += 3;
+
+        int pxSpan = getPreferredUISpan(or == JSlider.VERTICAL, js);
+
         Dimension result = new Dimension(or == JSlider.VERTICAL ? maxChars * charWidth
-                                                    : 120,
-                             or == JSlider.VERTICAL ? 120
-                                                    : charWidth); //XXX should be height
+                : pxSpan,
+                or == JSlider.VERTICAL ? pxSpan
+                        : 2 * charWidth); //XXX should be height
+
         Insets ins = c.getInsets();
         result.width += ins.left + ins.right;
         result.height += ins.top + ins.bottom;
         if (or == JSlider.VERTICAL) {
-            result.width += EDGE_GAP * 2;
+            result.width += edgeGap * 2;
         } else {
-            result.height += EDGE_GAP * 2;
+            result.height += edgeGap * 2;
         }
         return result;
     }
@@ -95,15 +153,14 @@ public class SimpleSliderUI extends SliderUI implements ChangeListener {
         gr.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
         gr.setRenderingHint(KEY_TEXT_ANTIALIASING, VALUE_TEXT_ANTIALIAS_LCD_HRGB);
 
-        JSlider sl = (JSlider)c;
+        JSlider sl = (JSlider) c;
         if (sl.getOrientation() == JSlider.VERTICAL) {
             g.translate(-8, 0);
             paintTrack(g, sl);
             paintThumb(g, sl);
             paintCaption(g, sl);
             g.translate(8, 0);
-        }
-        else {
+        } else {
             g.translate(0, -7);
             paintTrackH(g, sl);
             paintThumbH(g, sl);
@@ -115,21 +172,87 @@ public class SimpleSliderUI extends SliderUI implements ChangeListener {
     @Override
     public void installUI(JComponent c) {
         c.setBorder(BorderFactory.createRaisedBevelBorder());
-        Font f = UIManager.getFont("controlFont");
-
-        if (f != null) {
-            c.setFont(f.deriveFont(f.getSize2D() - 2));
+        if (popupOwner != null) {
+            c.setBackground(popupOwner.getBackground());
+            c.setForeground(popupOwner.getForeground());
+            c.setFont(popupOwner.getFont());
+        } else {
+            Font f = UIManager.getFont("controlFont");
+            if (f != null) {
+                c.setFont(f.deriveFont(AffineTransform.getScaleInstance(0.9875, 0.9875)));
+            }
+            c.setBackground(UIManager.getColor("text"));
+            c.setForeground(UIManager.getColor("textText"));
         }
-        ((JSlider)c).addChangeListener(this);
-        c.setBackground(UIManager.getColor("text"));
-//        c.setFocusable(false);
-        
+        ((JSlider) c).addChangeListener(this);
+        if (popupOwner != null) {
+            c.setFocusable(false);
+        } else {
+            if (ml == null) {
+                ml = new ML();
+            }
+            c.addMouseListener(ml);
+            c.addMouseMotionListener(ml);
+        }
+    }
+
+    private static ML ml;
+
+    static class ML extends MouseAdapter {
+
+        private MouseEvent armEvent;
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            armEvent = e;
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            armEvent = null;
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            if (armEvent != null) {
+                if (armEvent.getSource() == e.getSource() && e.getWhen() - armEvent.getWhen() < 300) {
+                    mouseDragged(e);
+                }
+                armEvent = null;
+            }
+        }
+
+        @Override
+        public void mouseDragged(MouseEvent e) {
+            armEvent = null;
+            JSlider slider = (JSlider) e.getSource();
+            if (slider.getUI() instanceof SimpleSliderUI) {
+                SimpleSliderUI ui = (SimpleSliderUI) slider.getUI();
+                boolean horiz = slider.getOrientation() == JSlider.HORIZONTAL;
+                ui.dragTo(horiz ? e.getX() : e.getY(), slider);
+            }
+        }
+
+    }
+
+    @Override
+    public int getBaseline(JComponent c, int width, int height) {
+        JSlider sl = (JSlider) c;
+        boolean horiz = sl.getOrientation() == JSlider.HORIZONTAL;
+        if (horiz) {
+            return height - c.getInsets().top;
+        }
+        return 0;
     }
 
     @Override
     public void uninstallUI(JComponent c) {
+        if (ml != null) {
+            c.removeMouseListener(ml);
+            c.removeMouseMotionListener(ml);
+        }
         c.setBorder(null);
-        ((JSlider)c).removeChangeListener(this);
+        ((JSlider) c).removeChangeListener(this);
     }
 
     private void computeCharWidth(Graphics g, Font f) {
@@ -143,188 +266,198 @@ public class SimpleSliderUI extends SliderUI implements ChangeListener {
         }
         FontMetrics fm = g.getFontMetrics(f);
         charWidth = fm.charWidth('0');
-        if (created) g.dispose();
+        if (created) {
+            g.dispose();
+        }
+    }
+
+    private int edgeGap(JSlider slider) {
+        return slider.getFontMetrics(slider.getFont()).stringWidth("O");
+    }
+
+    private int thumbSize(JSlider slider) {
+        return slider.getFontMetrics(slider.getFont()).stringWidth("O");
     }
 
     private void paintTrackH(Graphics g, JSlider sl) {
+        int edgeGap = edgeGap(sl);
         Insets ins = sl.getInsets();
-        int center = (sl.getHeight() - (ins.top + ins.bottom))/2;
-        int end = sl.getWidth() - (EDGE_GAP + ins.left + ins.right);
+        int center = (sl.getHeight() - (ins.top + ins.bottom)) / 2;
+        int end = sl.getWidth() - (edgeGap + ins.left + ins.right);
 
         g.setColor(UIManager.getColor("textText"));
-        g.drawLine(EDGE_GAP + ins.left, center, end, center);
-        g.drawLine(EDGE_GAP + ins.left, center + EDGE_GAP, EDGE_GAP + ins.left,
-                   center);
-        g.drawLine(end, center + EDGE_GAP, end, center);
+        g.drawLine(edgeGap + ins.left, center, end, center);
+        g.drawLine(edgeGap + ins.left, center + edgeGap, edgeGap + ins.left,
+                center);
+        g.drawLine(end, center + edgeGap, end, center);
     }
-    private static final int THUMB_SIZE = 7;
-    private static final int EDGE_GAP = (THUMB_SIZE/2) + 3;
 
     private void paintThumbH(Graphics g, JSlider sl) {
+        int thumbSize = thumbSize(sl);
         int pos = getThumbPositionH(sl);
-        int center = (sl.getHeight()/2) - 2;
-        int[] yp = new int[] {center + 1, 
-                center + 1 + THUMB_SIZE,
-                center + 1 + THUMB_SIZE};
-        int[] xp = new int[] {pos, pos - THUMB_SIZE, pos + THUMB_SIZE};
+        int center = (sl.getHeight() / 2) - 2;
+        int[] yp = new int[]{center + 1,
+            center + 1 + thumbSize,
+            center + 1 + thumbSize};
+        int[] xp = new int[]{pos, pos - thumbSize, pos + thumbSize};
 
         g.fillPolygon(xp, yp, 3);
     }
 
     private int getThumbPositionH(JSlider sl) {
+        int edgeGap = edgeGap(sl);
         int val = sl.getValue();
         Insets ins = sl.getInsets();
-        float range = sl.getWidth() -
-                      ((EDGE_GAP*2) + ((ins.left + ins.right + ins.left)));
+        float range = sl.getWidth()
+                - ((edgeGap * 2) + ((ins.left + ins.right + ins.left)));
         float scale = sl.getMaximum() - sl.getMinimum();
-        float factor = range/scale;
+        float factor = range / scale;
         float normVal = val - sl.getMinimum();
 
-        return (int)(EDGE_GAP + (normVal*factor)) + ins.left;
+        return (int) (edgeGap + (normVal * factor)) + ins.left;
     }
 
     private void paintCaptionH(Graphics g, JSlider sl) {
         Font f = sl.getFont();
+        int thumbSize = thumbSize(sl);
 
-        g.setFont(f);
-        int center = sl.getHeight()/2;
-        String s = valueToString (sl);
+        g.setFont(f.deriveFont(AffineTransform.getScaleInstance(0.975, 0.975)));
+        int center = sl.getHeight() / 2;
+        String s = valueToString(sl);
         FontMetrics fm = g.getFontMetrics();
         int w = fm.stringWidth(s);
         int h = fm.getMaxAscent();
-        int y = (center + THUMB_SIZE + (h/2)) - 3;
-        int x = getThumbPositionH(sl) - (w/2);
-
-        g.setXORMode(UIManager.getColor("text"));
+        int y = (center + thumbSize + (h / 2)) - 2;
+        int x = getThumbPositionH(sl) - (w / 2);
+        g.setColor(sl.getForeground());
         g.drawString(s, x, y);
-        g.setPaintMode();
     }
-    
-    public void setStringConverter (StringConverter converter) {
+
+    public void setStringConverter(StringConverter converter) {
         this.converter = converter;
     }
-    
+
     private StringConverter converter = null;
-    String valueToString (JSlider sl) {
-        return converter == null ? Integer.toString (sl.getValue()) : converter.valueToString(sl);
+
+    String valueToString(JSlider sl) {
+        return converter == null ? Integer.toString(sl.getValue()) : converter.valueToString(sl);
     }
-    
 
     private void paintTrack(Graphics g, JSlider sl) {
+        int edgeGap = edgeGap(sl);
         Insets ins = sl.getInsets();
-        int center = (sl.getWidth() - (ins.left + ins.right))/2;
-        int end = sl.getHeight() - (EDGE_GAP + ins.top + ins.bottom);
+        int center = (sl.getWidth() - (ins.left + ins.right)) / 2;
+        int end = sl.getHeight() - (edgeGap + ins.top + ins.bottom);
 
-        g.setColor(UIManager.getColor("textText"));
-        g.drawLine(center, EDGE_GAP + ins.top, center, end);
-        g.drawLine(center, EDGE_GAP + ins.top, center + EDGE_GAP,
-                   EDGE_GAP + ins.top);
-        g.drawLine(center, end, center + EDGE_GAP, end);
+        g.setColor(sl.getForeground());
+        g.drawLine(center, edgeGap + ins.top, center, end);
+        g.drawLine(center, edgeGap + ins.top, center + edgeGap,
+                edgeGap + ins.top);
+        g.drawLine(center, end, center + edgeGap, end);
     }
 
     private void paintThumb(Graphics g, JSlider sl) {
+        int thumbSize = thumbSize(sl);
         int pos = getThumbPosition(sl);
-        int center = sl.getWidth()/2;
-        int[] xp = new int[] {center + 1, center + 1 + THUMB_SIZE,
-                center + 1 + THUMB_SIZE};
-        int[] yp = new int[] {pos, pos - THUMB_SIZE, pos + THUMB_SIZE};
+        int center = sl.getWidth() / 2;
+        int[] xp = new int[]{center + 1, center + 1 + thumbSize,
+            center + 1 + thumbSize};
+        int[] yp = new int[]{pos, pos - thumbSize, pos + thumbSize};
 
         g.fillPolygon(xp, yp, 3);
     }
 
     private int getThumbPosition(JSlider sl) {
+        int edgeGap = edgeGap(sl);
         int val = sl.getValue();
         Insets ins = sl.getInsets();
-        float range = sl.getHeight() -
-                      ((EDGE_GAP*2) + ((ins.top + ins.bottom + ins.top)));
+        float range = sl.getHeight()
+                - ((edgeGap * 2) + ((ins.top + ins.bottom + ins.top)));
         float scale = sl.getMaximum() - sl.getMinimum();
-        float factor = range/scale;
+        float factor = range / scale;
         float normVal = val - sl.getMinimum();
 
-        return (int)(EDGE_GAP + (normVal*factor)) + ins.top;
+        return (int) (edgeGap + (normVal * factor)) + ins.top;
     }
 
     int charWidth = -1;
+
     private void paintCaption(Graphics g, JSlider sl) {
+        int thumbSize = thumbSize(sl);
         String s = valueToString(sl);
         Font f = sl.getFont();
         g.setFont(f);
         if (charWidth == -1) {
-            computeCharWidth (g, f);
+            computeCharWidth(g, f);
         }
 //        g.setXORMode(Color.WHITE);
-        g.setColor (UIManager.getColor("textText"));
-        int x = (sl.getWidth()/2) + THUMB_SIZE + 3;
+        g.setColor(UIManager.getColor("textText"));
+        int x = (sl.getWidth() / 2) + thumbSize + 3;
         FontMetrics fm = g.getFontMetrics();
         int w = fm.stringWidth(s);
         int h = fm.getMaxAscent();
         // int y = (sl.getHeight() / 2) - h / 2;
-        int y = getThumbPosition(sl) + (h/2);
+        int y = getThumbPosition(sl) + (h / 2);
 
         g.drawString(s, x, y);
         g.setPaintMode();
     }
-    private int detent = -1;
 
     void clearDetent() {
-        detent = -1;
-        baseValue = -1;
+        valueOffsetAtDragStart = -1;
     }
-    int baseValue = -1;
 
-    void dragTo(int x, JSlider sl) {
-        if (detent == -1) {
-            detent = x;
-            baseValue = sl.getValue();
-            return;
-        }
+    void dragTo(int coord, JSlider sl) {
         boolean horiz = sl.getOrientation() == JSlider.HORIZONTAL;
         Insets ins = sl.getInsets();
-        float range = horiz ? (sl.getWidth() - (ins.left + ins.right))
-                            : sl.getHeight() - (ins.top + ins.bottom);
-        float scale = sl.getMaximum() - sl.getMinimum();
-        float factor = scale/range;
-        
-        int normVal = baseValue +
-                      (int)(factor*
-                            ((x + (horiz ? ins.left
-                                         : ins.top) - detent)));
+        float pixelBounds = horiz ? sl.getWidth() - (ins.left + ins.right)
+                : sl.getHeight() - (ins.top + ins.bottom);
+        float valueRange = sl.getMaximum() - sl.getMinimum();
 
-        int val = sl.getMinimum() + normVal;
+        float pxOffsetToClickLocation = 0;
+        if (triggerPoint != null) {
+            Point nue = new Point(triggerPoint);
+            SwingUtilities.convertPointFromScreen(nue, sl);
+            pxOffsetToClickLocation = horiz ? nue.x : nue.y;
+        }
+        coord -= (horiz ? ins.left : ins.top);
+        float fx = coord - pxOffsetToClickLocation;
+        float pct = fx / pixelBounds;
 
-        if (val < sl.getMinimum()) {
-//            detent -= ((float)sl.getMinimum() - (normVal + baseValue))*factor;
-            detent = -1;
-            if (sl.getValue() > sl.getMinimum()) {
-                sl.setValue(sl.getMinimum());
+        float val = sl.getMinimum() + (valueRange * pct) + valueOffsetAtDragStart;
+        if (val >= sl.getMaximum()) {
+            int maxCoord = horiz ? sl.getWidth() - ins.right : sl.getHeight() - ins.bottom;
+            if (coord > maxCoord && valueOffsetAtDragStart != 0) {
+                if (triggerPoint != null) {
+                    Point p = new Point(0, 0);
+                    SwingUtilities.convertPointToScreen(p, sl);
+                    triggerPoint.setLocation(p);
+                }
+                valueOffsetAtDragStart = 0;
+            } else {
+                // Ensures that once you go past the far edge of the slider, you don't
+                // have to move the mouse all the way back to within its bounds to go
+                // backwards
+                int nue = (int) (sl.getMaximum() - val);
+                valueOffsetAtDragStart = Math.max(1, valueOffsetAtDragStart + nue);
             }
-            baseValue = sl.getValue();
-        }
-        else if (val > sl.getMaximum()) {
-            if (sl.getValue() < sl.getMaximum()) {
-                // We moved the mouse fast enough that we never got an event for
-                // the last mouse position, so the slider says e.g. max-2 but our mouse
-                // position is past the end so it's not increasing
-                sl.setValue(sl.getMaximum());
-            }
-            detent = -1;
-        }
-        else {
-            sl.setValue(val);
-            sl.repaint();
+        } else {
+            int newValue = Math.max(sl.getMinimum(), Math.min(sl.getMaximum(), Math.round(val)));
+            sl.setValue(newValue);
         }
     }
 
     public void stateChanged(ChangeEvent e) {
-        ((JSlider)e.getSource()).repaint();
+        ((JSlider) e.getSource()).repaint();
     }
 
     private static Map hintsMap = null;
+
     static final Map getHints() {
         //XXX We REALLY need to put this in a graphics utils lib
         if (hintsMap == null) {
             //Thanks to Phil Race for making this possible
-            hintsMap = (Map)(Toolkit.getDefaultToolkit().getDesktopProperty("awt.font.desktophints")); //NOI18N
+            hintsMap = (Map) (Toolkit.getDefaultToolkit().getDesktopProperty("awt.font.desktophints")); //NOI18N
             if (hintsMap == null) {
                 hintsMap = new HashMap();
                 hintsMap.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -332,5 +465,5 @@ public class SimpleSliderUI extends SliderUI implements ChangeListener {
         }
         return hintsMap;
     }
-    
+
 }

@@ -195,7 +195,12 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
         }
     }
 
+    Tool activeTool() {
+        return activeTool;
+    }
+
     public void setActiveTool(Tool tool) {
+        CLOG.log(() -> "PS.setActiveTool " + tool);
         LayerImplementation activeLayer = picture.getActiveLayer();
         if (this.activeTool == tool) {
             if (tool != null) {
@@ -217,7 +222,7 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
             CLOG.log(() -> "Active tool for " + activeTool.getName() + " in " + this + " now " + tool.getName());
         } else {
             this.activeTool = null;
-            CLOG.log(() -> "Failed to activate " + tool.getName() + " for " + this);
+            CLOG.log(() -> "Failed to activate tool " + (tool == null ? "<null>" : tool.getName()) + " for " + this);
         }
     }
 
@@ -231,6 +236,7 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
             }
         }
         if (activeTool != null) {
+            ALOG.log(() -> "Really detach " + activeTool.getName());
             activeTool.detach();
             activeTool = null;
         }
@@ -239,6 +245,7 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
 
     private boolean detachTool(Tool tool) {
         if (tool != null) {
+            CLOG.log(() -> "Detach tool " + tool.getName());
             tool.detach();
             return true;
         }
@@ -459,10 +466,28 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
 
         private final int id = DEBUG_IDS++;
 
-        private AspectRatio ratio = AspectRatio.create(this::getSize, () -> {
-            return !hasResolutionDependentLayers;
-        });
+        private AspectRatio ratio = new AR();
         private BackgroundStyle backgroundStyle;
+
+        class AR implements AspectRatio {
+
+            @Override
+            public double width() {
+                double w = getSize().width;
+                return getZoomFactor() * w;
+            }
+
+            @Override
+            public double height() {
+                double h = getSize().height;
+                return getZoomFactor() * h;
+            }
+
+            @Override
+            public boolean isFlexible() {
+                return !hasResolutionDependentLayers;
+            }
+        }
 
         public PI(RepaintHandle handle, Dimension size, BackgroundStyle backgroundStyle) {
             this(handle, size, backgroundStyle, true);

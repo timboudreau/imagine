@@ -212,6 +212,7 @@ public class RectangleTool implements PaintParticipant, ScalingMouseListener, Ke
         Point2D p = new EqPointDouble(x, y);
 //        boolean inBounds = c.contains(p);
 //        if (rect != null && inBounds) {
+        int modifiers = e.getModifiersEx();
         if (rect != null) {
             int nearestCorner = rect.nearestCorner(p);
 
@@ -221,7 +222,7 @@ public class RectangleTool implements PaintParticipant, ScalingMouseListener, Ke
                 rect.setLocation(p);
             } else {
                 setDraggingCorner(nearestCorner);
-                if ((e.getModifiersEx() & KeyEvent.SHIFT_DOWN_MASK) != 0) {
+                if ((modifiers & KeyEvent.SHIFT_DOWN_MASK) != 0) {
                     rect.makeSquare(nearestCorner);
                 }
                 p = snapPoint(p, e);

@@ -52,21 +52,37 @@ public final class OneComponentLayout implements LayoutManager2 {
             return;
         }
         Insets ins = parent.getInsets();
-        Component single = parent.getComponent(count - 1);
-        single.setBounds(ins.left, ins.top, parent.getWidth(), parent.getHeight());
-        for (int i = count - 2; i >= 0; i--) {
-            Component other = parent.getComponent(i);
-            other.setBounds(-1, -1, 0, 0);
+        boolean handled = false;
+        for (int i = count - 1; i >= 0; i--) {
+            Component c = parent.getComponent(i);
+            if (!handled && c.isVisible()) {
+                handled = true;
+                c.setBounds(ins.left, ins.top,
+                        parent.getWidth() - (ins.left + ins.right),
+                        parent.getHeight() - (ins.top + ins.bottom));
+            } else {
+                c.setBounds(-1, -1, 0, 0);
+            }
         }
+    }
+
+    private Component findVisibleComponent(Container parent) {
+        int count = parent.getComponentCount();
+        if (count == 0) {
+            return null;
+        }
+        for (int i = count - 1; i >= 0; i--) {
+            Component c = parent.getComponent(i);
+            if (c.isVisible()) {
+                return c;
+            }
+        }
+        return null;
     }
 
     @Override
     public float getLayoutAlignmentX(Container parent) {
-        int count = parent.getComponentCount();
-        if (count == 0) {
-            return 0;
-        }
-        Component single = parent.getComponent(count - 1);
+        Component single = findVisibleComponent(parent);
         if (single instanceof Container) {
             LayoutManager layout = ((Container) single).getLayout();
             if (layout instanceof LayoutManager2) {
@@ -79,11 +95,7 @@ public final class OneComponentLayout implements LayoutManager2 {
 
     @Override
     public float getLayoutAlignmentY(Container parent) {
-        int count = parent.getComponentCount();
-        if (count == 0) {
-            return 0;
-        }
-        Component single = parent.getComponent(count - 1);
+        Component single = findVisibleComponent(parent);
         if (single instanceof Container) {
             LayoutManager layout = ((Container) single).getLayout();
             if (layout instanceof LayoutManager2) {

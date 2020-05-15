@@ -28,7 +28,7 @@ public final class ShapesPaletteTC extends AbstractPaletteTC {
         setHtmlDisplayName(Bundle.SHAPES_PALETTE());
         setDisplayName(Bundle.SHAPES_PALETTE());
         setName(preferredID());
-        setIcon(ImageUtilities.loadImage("org/imagine/inspectors/gradientfill.png", false)); //XXX
+        setIcon(ImageUtilities.loadImage("org/imagine/inspectors/shapes.svg", false)); //XXX
     }
 
     @Override

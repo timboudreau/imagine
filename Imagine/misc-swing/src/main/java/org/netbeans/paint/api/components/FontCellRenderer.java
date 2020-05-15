@@ -224,8 +224,6 @@ public final class FontCellRenderer implements ListCellRenderer {
                     if (xform != null) {
                         PooledTransform.returnToPool(xform);
                     }
-                } else {
-                    System.err.println("No image for font: " + f.getName());
                 }
             }
         }

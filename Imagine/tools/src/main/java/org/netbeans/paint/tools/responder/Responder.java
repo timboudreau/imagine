@@ -6,6 +6,7 @@
 package org.netbeans.paint.tools.responder;
 
 import java.awt.Rectangle;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -55,6 +56,14 @@ public abstract class Responder {
      */
     protected void resign(Rectangle addTo) {
         // do nothing
+    }
+
+    protected void onAnyMouseEvent(double x, double y, MouseEvent e) {
+        // do nothing
+    }
+
+    protected void onBeforeHandleInputEvent(InputEvent evt) {
+        
     }
 
     /**

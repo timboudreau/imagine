@@ -994,7 +994,7 @@ public class ManyControlPointsWidget extends Widget {
             r.setFrameFromDiagonal(minX, minY, maxX, maxY);
             CoordinateMap.debug(() -> {
                 Set<ShapeControlPoint> near = points.nearestValueTo(r.getCenterX(), r.getCenterY(), r.width);
-//                System.out.println("  Nearest " + near + " for " + r.getBounds());
+//                System.out.println("  Nearest " + near + " for " + r.addToBounds());
             });
 //        } else {
 //            System.out.println("Have result " + result);

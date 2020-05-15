@@ -6,6 +6,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
@@ -22,6 +23,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
@@ -35,7 +39,6 @@ import java.util.Set;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -76,7 +79,10 @@ import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
 /**
- * Top component which displays something.
+ * Top component which displays layer controls; thumbnails are updated on a
+ * timer - we don't want to add overhead when rendering the editor by using
+ * RepaintHandle to pick up every pixel-by-pixel change and render a thumbnail
+ * for that.
  */
 @TopComponent.Description(preferredID = "LayersTopComponent",
         //iconBase="SET/PATH/TO/ICON/HERE",
@@ -111,73 +117,80 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         innerPanel.setLayout(new LM());
         // innerPanel.setLayout (new BoxLayout (innerPanel, BoxLayout.Y_AXIS));
         add(scrollPane, BorderLayout.CENTER);
-        Dimension bdim = new Dimension(25, 25);
+        Dimension bdim = new Dimension(37, 37);
         newButton = new JButton();
 
-        newButton.setPreferredSize(bdim);
+        newButton.setMinimumSize(bdim);
+        newButton.setContentAreaFilled(false);
         newButton.setToolTipText(NbBundle.getMessage(LayersTopComponent.class,
                 "LBL_New"));
-        newButton.setIcon(new ImageIcon(ImageUtilities.loadImage("org/netbeans/paint/layersui/resources/newlayer.png")));
+        newButton.setIcon(ImageUtilities.loadImageIcon("org/netbeans/paint/layersui/resources/new-layer.svg", true));
         newButton.setName(NAME_NEW);
         newButton.addActionListener(this);
         newButton.setEnabled(false);
+        newButton.setMinimumSize(bdim);
         bar.add(newButton);
         JButton delButton = new JButton();
 
         delButton.setToolTipText(NbBundle.getMessage(LayersTopComponent.class,
                 "LBL_Delete"));
-        delButton.setIcon(new ImageIcon(ImageUtilities.loadImage("org/netbeans/paint/layersui/resources/delete.png")));
+        delButton.setContentAreaFilled(false);
+        delButton.setIcon(ImageUtilities.loadImageIcon("org/netbeans/paint/layersui/resources/delete-layer.png", true));
         delButton.setName(NAME_DELETE);
         delButton.addActionListener(this);
         delButton.setEnabled(false);
-        delButton.setPreferredSize(bdim);
+        delButton.setMinimumSize(bdim);
         bar.add(delButton);
         JButton upButton = new JButton();
 
-        upButton.setPreferredSize(bdim);
+        upButton.setMinimumSize(bdim);
         upButton.setToolTipText(NbBundle.getMessage(LayersTopComponent.class,
                 "LBL_Up"));
-        upButton.setIcon(new ImageIcon(ImageUtilities.loadImage("org/netbeans/paint/layersui/resources/up.png")));
+        upButton.setContentAreaFilled(false);
+        upButton.setIcon(ImageUtilities.loadImageIcon("org/netbeans/paint/layersui/resources/layer-up.svg", true));
         upButton.setName(NAME_UP);
         upButton.setEnabled(false);
         upButton.addActionListener(this);
         bar.add(upButton);
         JButton downButton = new JButton();
 
-        downButton.setPreferredSize(bdim);
+        downButton.setMinimumSize(bdim);
         downButton.setToolTipText(NbBundle.getMessage(LayersTopComponent.class,
                 "LBL_Down"));
-        downButton.setIcon(new ImageIcon(ImageUtilities.loadImage("org/netbeans/paint/layersui/resources/down.png")));
+        downButton.setContentAreaFilled(false);
+        downButton.setIcon(ImageUtilities.loadImageIcon("org/netbeans/paint/layersui/resources/layer-down.svg", true));
         downButton.setName(NAME_DOWN);
         downButton.setEnabled(false);
         downButton.addActionListener(this);
         bar.add(downButton);
         JButton dupButton = new JButton();
 
-        dupButton.setPreferredSize(bdim);
+//        dupButton.setMinimumSize(bdim);
         dupButton.setToolTipText(NbBundle.getMessage(LayersTopComponent.class,
                 "LBL_Duplicate"));
-        dupButton.setIcon(new ImageIcon(ImageUtilities.loadImage("org/netbeans/paint/layersui/resources/clone.png")));
+        dupButton.setIcon(ImageUtilities.loadImageIcon("org/netbeans/paint/layersui/resources/layer-clone.svg", true));
         dupButton.setName(NAME_DUP);
         dupButton.setEnabled(false);
         dupButton.addActionListener(this);
+        dupButton.setContentAreaFilled(false);
         bar.add(dupButton);
         JButton flattenButton = new JButton();
 
-        flattenButton.setPreferredSize(bdim);
+        flattenButton.setMinimumSize(bdim);
         flattenButton.setToolTipText(NbBundle.getMessage(LayersTopComponent.class,
                 "LBL_Flatten"));
-        flattenButton.setIcon(new ImageIcon(ImageUtilities.loadImage("org/netbeans/paint/layersui/resources/flatten.png")));
+        flattenButton.setIcon(ImageUtilities.loadImageIcon("org/netbeans/paint/layersui/resources/flatten-layers.svg", true));
         flattenButton.setName(NAME_FLATTEN);
         flattenButton.setEnabled(false);
         flattenButton.addActionListener(this);
+        flattenButton.setContentAreaFilled(false);
         bar.add(flattenButton);
         add(bar, BorderLayout.SOUTH);
         associateLookup(lkp);
         // Show the empty label
         updateContents();
-
     }
+
     private static final String NAME_NEW = "new";
     private static final String NAME_DELETE = "delete";
     private static final String NAME_UP = "up";
@@ -223,8 +236,16 @@ public final class LayersTopComponent extends TopComponent implements LookupList
 
     Result pictureLookupResult = null;
 
+    private boolean open;
+    private boolean showing;
+    private boolean windowActive;
+    private Frame window;
+
     @Override
     public void componentOpened() {
+        window = WindowManager.getDefault().getMainWindow();
+        window.addWindowListener(wl);
+        updateVisibilityState(true, showing, window.isActive());
         pictureLookupResult = Utilities.actionsGlobalContext().lookupResult(Picture.class);
         pictureLookupResult.addLookupListener(this);
         pictureLookupResult.allInstances(); //initialize
@@ -235,12 +256,14 @@ public final class LayersTopComponent extends TopComponent implements LookupList
     private void updatePicture() {
         Picture curr
                 = Utilities.actionsGlobalContext().lookup(Picture.class);
-
         setPicture(curr);
     }
 
     @Override
     public void componentClosed() {
+        updateVisibilityState(false, showing, windowActive);
+        window.removeWindowListener(wl);
+        window = null;
         setPicture(null);
         if (pictureLookupResult != null) {
             pictureLookupResult.removeLookupListener(this);
@@ -248,17 +271,57 @@ public final class LayersTopComponent extends TopComponent implements LookupList
         }
         stopTimer();
     }
+
+    @Override
+    protected void componentShowing() {
+        updateVisibilityState(open, true, windowActive);
+    }
+
+    @Override
+    protected void componentHidden() {
+        updateVisibilityState(open, false, windowActive);
+    }
+
+    void updateVisibilityState(boolean opened, boolean showing, boolean windowActive) {
+        this.open = opened;
+        this.showing = showing;
+        this.windowActive = windowActive;
+        if (opened && showing && windowActive) {
+            startTimer();
+        } else {
+            stopTimer();
+        }
+    }
+
     private Picture picture = null;
 
-    private final Timer timer = new Timer(5000, this);
+    private final Timer timer = new Timer(10000, this);
+
+    final WindowListener wl = new WindowAdapter() {
+        @Override
+        public void windowDeactivated(WindowEvent e) {
+            updateVisibilityState(open, showing, false);
+        }
+
+        @Override
+        public void windowActivated(WindowEvent e) {
+            updateVisibilityState(open, showing, true);
+        }
+
+    };
 
     private void startTimer() {
-        timer.setRepeats(true);
-        timer.start();
+        if (!timer.isRunning()) {
+            timer.setRepeats(true);
+            timer.setCoalesce(true);
+            timer.start();
+        }
     }
 
     private void stopTimer() {
-        timer.stop();
+        if (timer.isRunning()) {
+            timer.stop();
+        }
     }
 
     private void setPicture(Picture layers) {

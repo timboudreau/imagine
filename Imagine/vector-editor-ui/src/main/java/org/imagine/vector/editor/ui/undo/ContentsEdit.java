@@ -1,6 +1,7 @@
 package org.imagine.vector.editor.ui.undo;
 
 import java.awt.geom.Rectangle2D;
+import java.util.function.Consumer;
 import javax.swing.event.UndoableEditEvent;
 import net.java.dev.imagine.ui.common.UndoMgr;
 import org.imagine.utils.painting.RepaintHandle;
@@ -37,6 +38,22 @@ public final class ContentsEdit extends AbstractShapeEdit {
             performer.run();
             mgr.undoableEditHappened(new UndoableEditEvent(performer, edit));
             return edit;
+        }
+    }
+
+    public static AbstractShapeEdit addEdit(String name, ShapesCollection coll, RepaintHandle handle, Consumer<Abortable> abortablePerformer) {
+        UndoMgr mgr = Utilities.actionsGlobalContext().lookup(UndoMgr.class);
+        if (mgr == null) {
+            AbortableImpl.SHARED_INSTANCE.borrow(abortablePerformer);
+            return AbstractShapeEdit.DUMMY_EDIT;
+        } else {
+            ContentsEdit edit = new ContentsEdit(coll, coll.contentsSnapshot(), name, handle);
+            boolean aborted = AbortableImpl.SHARED_INSTANCE.borrow(abortablePerformer);
+            if (!aborted) {
+                mgr.undoableEditHappened(new UndoableEditEvent(coll, edit));
+                return edit;
+            }
+            return AbstractShapeEdit.DUMMY_EDIT;
         }
     }
 

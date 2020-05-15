@@ -1,7 +1,5 @@
 package org.netbeans.paint.toolconfigurationui;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.MissingResourceException;
@@ -9,21 +7,20 @@ import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
-import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import net.dev.java.imagine.api.tool.Tool;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import org.imagine.editor.api.ContextLog;
-import org.netbeans.paint.api.components.DefaultSharedLayoutData;
-import org.netbeans.paint.api.components.FontManagingPanelUI;
-import org.netbeans.paint.api.components.LayoutDataProvider;
-import org.netbeans.paint.api.components.SharedLayoutData;
+import org.netbeans.paint.api.components.FlexEmptyBorder;
+import org.netbeans.paint.api.components.OneComponentLayout;
+import org.netbeans.paint.api.components.SharedLayoutRootPanel;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.util.Lookup;
 import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
+import org.openide.util.Mutex;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
 import org.openide.windows.Mode;
@@ -37,34 +34,43 @@ import org.openide.windows.WindowManager;
 @TopComponent.Description(preferredID = "customizers",
         //iconBase="SET/PATH/TO/ICON/HERE",
         persistenceType = TopComponent.PERSISTENCE_ALWAYS)
-//@TopComponent.Registration(mode = "customizers", openAtStartup = true)
 @ActionID(category = "Window", id = "org.netbeans.paint.toolconfigurationui.CustomizationTopComponent")
 @ActionReference(path = "Menu/Window", position = 10)
 @TopComponent.OpenActionRegistration(displayName = "#CTL_CustomizationAction",
         preferredID = "customizers")
-public final class CustomizationTopComponent extends TopComponent implements LookupListener, SharedLayoutData {
+public final class CustomizationTopComponent extends TopComponent implements LookupListener {
 
     private static CustomizationTopComponent instance;
-    private final JScrollPane jScrollPane1 = new JScrollPane();
+    private final SharedLayoutRootPanel customizerContainer = new SharedLayoutRootPanel(0.875);
+    private final JScrollPane customizerPane = new JScrollPane(customizerContainer);
+    private final JLabel noCustomizer
+            = new JLabel(NbBundle.getMessage(
+                    CustomizationTopComponent.class, "LBL_No_Customizer")); //NOI18N
+    private final JLabel empty
+            = new JLabel(NbBundle.getMessage(
+                    CustomizationTopComponent.class, "LBL_Empty")); //NOI18N
 
     private CustomizationTopComponent() {
-        setLayout(new BorderLayout());
-        JPanel fontAdjustingParent = new JPanel(new BorderLayout());
-        fontAdjustingParent.setUI(new FontManagingPanelUI());
-        add(fontAdjustingParent, BorderLayout.CENTER);
-        fontAdjustingParent.add(jScrollPane1, BorderLayout.CENTER);
+        setLayout(new OneComponentLayout());
+        add(customizerPane);
+        customizerContainer.setBorder(new FlexEmptyBorder(0.5F, 0.25F));
+        noCustomizer.setEnabled(false);
+        noCustomizer.setHorizontalTextPosition(SwingConstants.CENTER);
+        empty.setEnabled(false);
+        empty.setHorizontalTextPosition(SwingConstants.CENTER);
 
         setName(NbBundle.getMessage(CustomizationTopComponent.class,
                 "CTL_CustomizationTopComponent"));
+        setDisplayName(getName());
         setToolTipText(NbBundle.getMessage(CustomizationTopComponent.class,
                 "HINT_CustomizationTopComponent"));
 
-        jScrollPane1.setPreferredSize(new Dimension(20, 20));
-        jScrollPane1.setBorder(BorderFactory.createEmptyBorder());
-        jScrollPane1.setViewportBorder(BorderFactory.createEmptyBorder());
+//        customizerPane.setPreferredSize(new Dimension(20, 20));
+        customizerPane.setBorder(BorderFactory.createEmptyBorder());
+        customizerPane.setViewportBorder(BorderFactory.createEmptyBorder());
         setInnerComponent(null, true);
-        int val = Utilities.getOperatingSystem() == Utilities.OS_MAC ? 12 : 5;
-        setBorder(BorderFactory.createEmptyBorder(val, val, val, val));
+//        int val = Utilities.getOperatingSystem() == Utilities.OS_MAC ? 12 : 5;
+//        setBorder(BorderFactory.createEmptyBorder(val, val, val, val));
     }
 
     private Lookup.Result<Tool> res = null;
@@ -86,7 +92,7 @@ public final class CustomizationTopComponent extends TopComponent implements Loo
 
     @Override
     public void open() {
-        Mode mode = WindowManager.getDefault().findMode("customizers");
+        Mode mode = WindowManager.getDefault().findMode("customizers"); //NOI18N
         if (mode != null) {
             mode.dockInto(this);
         }
@@ -135,20 +141,22 @@ public final class CustomizationTopComponent extends TopComponent implements Loo
 
     @Override
     public void resultChanged(LookupEvent e) {
-        if (e == null && !isDisplayable()) {
-            clog.log("CustComp set tool null for init");
-            setTool(null);
-        } else {
-            Collection<? extends Tool> c = res.allInstances();
-            if (!c.isEmpty()) {
-                Tool t = c.iterator().next();
-                clog.log("CustComp set tool " + t);
-                setTool(t);
-            } else {
-                clog.log("CustComp set tool null for empty lkp res");
+        Mutex.EVENT.readAccess(() -> {
+            if (e == null && !isDisplayable()) {
+                clog.log("CustComp set tool null for init"); //NOI18N
                 setTool(null);
+            } else {
+                Collection<? extends Tool> c = res.allInstances();
+                if (!c.isEmpty()) {
+                    Tool t = c.iterator().next();
+                    clog.log("CustComp set tool " + t); //NOI18N
+                    setTool(t);
+                } else {
+                    clog.log("CustComp set tool null for empty lkp res"); //NOI18N
+                    setTool(null);
+                }
             }
-        }
+        });
     }
 
     final ContextLog clog = ContextLog.get("selection");
@@ -161,12 +169,12 @@ public final class CustomizationTopComponent extends TopComponent implements Loo
             toolLookupResult = null;
         }
         if (tool != null) {
-            clog.log("CTC attach to lookup of " + tool.getName());
+            clog.log("CTC attach to lookup of " + tool.getName()); //NOI18N
             toolLookupResult = tool.getLookup().lookupResult(CustomizerProvider.class);
             toolLookupResult.addLookupListener(cpListener);
             cpListener.resultChanged(new LookupEvent(toolLookupResult));
         } else {
-            clog.log("CTC no tool lookup to attach to");
+            clog.log("CTC no tool lookup to attach to"); //NOI18N
             cpListener.resultChanged(null);
         }
     }
@@ -176,31 +184,29 @@ public final class CustomizationTopComponent extends TopComponent implements Loo
     final class CPListener implements LookupListener {
 
         @Override
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings("unchecked") //NOI18N
         public void resultChanged(LookupEvent le) {
-            if (le == null) {
-                setCustomizerProvider(null, true);
-            } else {
-                Lookup.Result<CustomizerProvider> cpRes
-                        = (Lookup.Result<CustomizerProvider>) le.getSource();
-                Collection<? extends CustomizerProvider> coll = cpRes.allInstances();
-                if (!coll.isEmpty()) {
-                    setCustomizerProvider(coll.iterator().next(), false);
+            Mutex.EVENT.readAccess(() -> {
+                if (le == null) {
+                    setCustomizerProvider(null, true);
+                } else {
+                    Lookup.Result<CustomizerProvider> cpRes
+                            = (Lookup.Result<CustomizerProvider>) le.getSource();
+                    Collection<? extends CustomizerProvider> coll = cpRes.allInstances();
+                    if (!coll.isEmpty()) {
+                        setCustomizerProvider(coll.iterator().next(), false);
+                    }
                 }
-            }
+            });
         }
-
     }
 
     private void setTool(Tool tool) {
         attachToToolsLookup(tool);
-//        CustomizerProvider provider = tool == null ? null
-//                : tool.getLookup().lookup(CustomizerProvider.class);
-//        setCustomizerProvider(provider, tool == null);
         setDisplayName(tool == null ? NbBundle.getMessage(CustomizationTopComponent.class,
-                "CTL_CustomizationTopComponent")
+                "CTL_CustomizationTopComponent") //NOI18N
                 : NbBundle.getMessage(CustomizationTopComponent.class,
-                        "FMT_CustomizationTopComponent", tool.getName()));
+                        "FMT_CustomizationTopComponent", tool.getName())); //NOI18N
     }
 
     private void setCustomizerProvider(CustomizerProvider provider, boolean noTool) throws MissingResourceException {
@@ -214,25 +220,19 @@ public final class CustomizationTopComponent extends TopComponent implements Loo
         setInnerComponent(comp, noTool);
     }
 
-    private final JLabel noCustomizer
-            = new JLabel(NbBundle.getMessage(
-                    CustomizationTopComponent.class, "LBL_No_Customizer"));
-    private final JLabel empty
-            = new JLabel(NbBundle.getMessage(
-                    CustomizationTopComponent.class, "LBL_Empty"));
-
-    {
-        noCustomizer.setEnabled(false);
-        noCustomizer.setHorizontalTextPosition(SwingConstants.CENTER);
-        empty.setEnabled(false);
-        empty.setHorizontalTextPosition(SwingConstants.CENTER);
-    }
-
     private void setInnerComponent(JComponent comp, boolean noTool) {
         if (comp == null) {
             comp = noTool ? empty : noCustomizer;
         }
-        jScrollPane1.setViewportView(comp);
+        if (customizerContainer.getComponentCount() > 0 && customizerContainer.getComponent(0) == comp) {
+            return;
+        }
+        customizerPane.invalidate();
+        customizerContainer.removeAll();
+        customizerContainer.add(comp);
+        customizerContainer.invalidate();
+        customizerContainer.revalidate();
+        customizerContainer.repaint();
     }
 
     final static class ResolvableHelper implements Serializable {
@@ -242,27 +242,5 @@ public final class CustomizationTopComponent extends TopComponent implements Loo
         public Object readResolve() {
             return CustomizationTopComponent.getDefault();
         }
-    }
-
-    private final SharedLayoutData data = new DefaultSharedLayoutData();
-
-    @Override
-    public int xPosForColumn(int column) {
-        return data.xPosForColumn(column);
-    }
-
-    @Override
-    public void register(LayoutDataProvider p) {
-        data.register(p);
-    }
-
-    @Override
-    public void unregister(LayoutDataProvider p) {
-        data.unregister(p);
-    }
-
-    @Override
-    public void expanded(LayoutDataProvider p, boolean state) {
-        data.expanded(p, state);
     }
 }

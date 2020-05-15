@@ -22,11 +22,13 @@ class UIStateImpl implements UIState {
 
     public UIStateImpl() {
         props = EnumSet.allOf(Props.class);
+        props.remove(Props.USE_PRODUCTION_PAINTS);
     }
 
     public UIStateImpl(boolean controlPointsDraggable, boolean connectorLinesVisible,
             boolean controlPointsVisible, boolean shapesDraggable,
-            boolean focusDecorationsPainted, boolean selectedShapeControlPointsVisible) {
+            boolean focusDecorationsPainted, boolean selectedShapeControlPointsVisible,
+            boolean productionPainting) {
 
         props = EnumSet.noneOf(Props.class);
         change(Props.CONTROL_POINTS_VISIBLE, controlPointsVisible);
@@ -35,6 +37,7 @@ class UIStateImpl implements UIState {
         change(Props.SHAPES_DRAGGABLE, shapesDraggable);
         change(Props.FOCUS_DECORATIONS_PAINTED, focusDecorationsPainted);
         change(Props.SELECTED_SHAPE_CONTROL_POINTS_VISIBLE, selectedShapeControlPointsVisible);
+        change(Props.USE_PRODUCTION_PAINTS, productionPainting);
     }
 
     private UIStateImpl(Set<Props> props) {
@@ -53,7 +56,8 @@ class UIStateImpl implements UIState {
                 .setControlPointsVisible(other.controlPointsVisible())
                 .setShapesDraggable(other.shapesDraggable())
                 .setFocusDecorationsPainted(other.focusDecorationsPainted())
-                .setSelectedControlPointsVisible(other.selectedShapeControlPointsVisible());
+                .setSelectedControlPointsVisible(other.selectedShapeControlPointsVisible())
+                .setUseProductionPaints(other.useProductionPaints());
         return this;
     }
 
@@ -114,6 +118,17 @@ class UIStateImpl implements UIState {
     @Override
     public UIStateImpl setShapesDraggable(boolean vis) {
         doChange(Props.SHAPES_DRAGGABLE, vis);
+        return this;
+    }
+
+    @Override
+    public boolean useProductionPaints() {
+        return is(Props.USE_PRODUCTION_PAINTS);
+    }
+
+    @Override
+    public UIState setUseProductionPaints(boolean productionPainting) {
+        doChange(Props.USE_PRODUCTION_PAINTS, productionPainting);
         return this;
     }
 

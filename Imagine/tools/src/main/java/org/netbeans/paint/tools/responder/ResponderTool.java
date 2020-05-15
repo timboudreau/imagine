@@ -1,13 +1,15 @@
 package org.netbeans.paint.tools.responder;
 
 import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Shape;
+import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Set;
+import java.util.function.Supplier;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
@@ -17,12 +19,16 @@ import net.dev.java.imagine.spi.tool.ToolUIContext;
 import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import static net.java.dev.imagine.api.toolcustomizers.Constants.FILL;
-import static net.java.dev.imagine.api.toolcustomizers.Constants.FOREGROUND;
 import static net.java.dev.imagine.api.toolcustomizers.Constants.STROKE;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
+import static org.imagine.editor.api.CheckerboardBackground.LIGHT;
+import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.tools.fills.FillCustomizer;
 import org.imagine.editor.api.PaintingStyle;
+import org.imagine.geometry.Circle;
+import org.imagine.geometry.EqPointDouble;
+import org.netbeans.paint.api.components.Cursors;
 import org.openide.util.Lookup;
 import org.openide.util.Utilities;
 
@@ -32,20 +38,26 @@ import org.openide.util.Utilities;
  *
  * @author Tim Boudreau
  */
-public abstract class ResponderTool extends ToolImplementation<Surface> implements CustomizerProvider {
+public abstract class ResponderTool extends ToolImplementation<Surface> implements CustomizerProvider,
+        Supplier<PathUIProperties> {
 
     protected static final FillCustomizer paintC = FillCustomizer.getDefault();
-    protected static final Customizer<Color> outlineC = Customizers.getCustomizer(Color.class, FOREGROUND);
-    protected static final Customizer<PaintingStyle> fillC = Customizers.getCustomizer(PaintingStyle.class, FILL);
-    protected static final Customizer<BasicStroke> strokeC = Customizers.getCustomizer(BasicStroke.class, STROKE, null);
+    protected static final FillCustomizer outlineC = FillCustomizer.getOutline();
+
+    protected static final Customizer<PaintingStyle> fillC
+            = Customizers.getCustomizer(PaintingStyle.class, FILL);
+    protected static final Customizer<BasicStroke> strokeC
+            = Customizers.getCustomizer(BasicStroke.class, STROKE, null);
 
     private final ResponderRepainter part = new ResponderRepainter();
     private Responder currentHandler = Responder.NO_OP;
     private boolean active;
     private Repainter repainter;
     private ToolUIContext ctx;
+    private Lookup.Provider attachedTo;
     private final Rectangle lastRepaintBounds = new Rectangle();
     private final ResponderInputListener inputListener = new ResponderInputListener(this);
+    private PathUIProperties colors;
 
     protected ResponderTool(Surface obj) {
         super(obj);
@@ -53,6 +65,13 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
 
     protected ToolUIContext ctx() {
         return ctx == null ? ToolUIContext.DUMMY_INSTANCE : ctx;
+    }
+
+    public PathUIProperties get() {
+        if (colors == null) {
+            return new PathUIProperties(this::ctx);
+        }
+        return colors;
     }
 
     @Override
@@ -68,10 +87,24 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
     }
 
     @Override
+    public final void attach(Lookup.Provider layer) {
+        // do nothing, obsolete method that won't be called
+    }
+
+    protected Lookup currentLookup() {
+        if (attachedTo != null) {
+            return attachedTo.getLookup();
+        }
+        return Lookup.EMPTY;
+    }
+
+    @Override
     public final void attach(Lookup.Provider on, ToolUIContext ctx) {
         assert ctx != null : "Null ToolUIContext";
+        attachedTo = on;
         this.ctx = ctx;
         lastRepaintBounds.setFrame(0, 0, 0, 0);
+        colors = new PathUIProperties(this::ctx);
         onAttach();
         active = true;
         currentHandler = firstResponder();
@@ -81,6 +114,7 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
     public final void detach() {
         Repainter rep = this.repainter;
         reset();
+        colors = null;
         pendingCursor = null;
         currentHandler = Responder.NO_OP;
         active = false;
@@ -145,10 +179,11 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
     protected abstract Rectangle paintLive(Graphics2D g, Rectangle layerBounds);
 
     private Rectangle paint(Graphics2D g, Rectangle layerBounds, boolean isCommit) {
+        Rectangle result = null;
         if (isCommit) {
-            return paintCommit(g);
+            result = paintCommit(g);
         } else {
-            Rectangle result = paintLive(g, layerBounds);
+            result = paintLive(g, layerBounds);
             if (currentHandler instanceof PaintingResponder) {
                 Rectangle r = ((PaintingResponder) currentHandler).paint(g, layerBounds);
                 if (result != null) {
@@ -157,14 +192,13 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
                 }
                 result = r;
             }
-            if (result != null) {
-                lastRepaintBounds.setFrame(result);
-            } else {
-                lastRepaintBounds.width = 0;
-                lastRepaintBounds.height = 0;
-            }
-            return result;
         }
+        if (result != null) {
+            lastRepaintBounds.setFrame(result);
+        } else {
+            lastRepaintBounds.width = lastRepaintBounds.height = 0;
+        }
+        return result;
     }
 
     /**
@@ -199,7 +233,9 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
      * modified and any cleared areas that were painted in the preceding paint.
      */
     protected final void repaint() {
-        repaint(null);
+        if (repainter != null) {
+            repainter.requestRepaint();
+        }
     }
 
     protected final void repaint(Shape shape) {
@@ -220,7 +256,65 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
         }
     }
 
+    private static final Circle scratchCirc = new Circle();
+
+    protected final void repaintLine(Line2D line) {
+        if (repainter != null) {
+            PathUIProperties props = get();
+            float strokeWidth = props.lineStroke().getLineWidth();
+            repaintLine(line, strokeWidth);
+        }
+    }
+
+    protected final void repaintLine(Line2D line, float strokeWidth) {
+        if (repainter != null) {
+            Rectangle2D r = line.getBounds2D();
+            repainter.requestRepaint(r.getBounds());
+            double w2 = strokeWidth * 2;
+            r.setFrame(r.getX() - strokeWidth, r.getY() - strokeWidth,
+                    r.getWidth() - w2, r.getHeight() + w2);
+        }
+    }
+
+    protected final void repaintPoint(double radius, Point2D point, float strokeWidth) {
+        if (repainter != null && point != null) {
+            scratchCirc.setRadius(radius);
+            scratchCirc.setCenter(point);
+            Rectangle2D r = scratchCirc.getBounds2D();
+            double w2 = strokeWidth * 2;
+            r.setFrame(r.getX() - strokeWidth, r.getY() - strokeWidth,
+                    r.getWidth() - w2, r.getHeight() + w2);
+            repainter.requestRepaint(r.getBounds());
+        }
+    }
+
+    protected final void repaintPoint(Point2D point, double radius) {
+        if (repainter != null && point != null) {
+            PathUIProperties props = get();
+            float strokeWidth = props.lineStroke().getLineWidth();
+            repaintPoint(radius, point, strokeWidth);
+        }
+    }
+
+    protected final void repaintPoint(Point2D point) {
+        if (repainter != null && point != null) {
+            repaintPoint(point, get().pointRadius() + 2);
+        }
+    }
+
+    protected final void repaintPoint(double x, double y) {
+        if (repainter != null) {
+            repaintPoint(new EqPointDouble(x, y), get().pointRadius() + 2);
+        }
+    }
+
+    protected final Cursors cursors() {
+        return ImageEditorBackground.getDefault().style() == LIGHT
+                ? Cursors.forBrightBackgrounds() : Cursors.forDarkBackgrounds();
+    }
+
     private Cursor pendingCursor;
+
     protected final void setCursor(Cursor cursor) {
         if (repainter != null) {
             repainter.setCursor(cursor);
@@ -250,6 +344,7 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
                 if (!lastRepaintBounds.equals(obj)) {
                     repainter.requestRepaint(lastRepaintBounds);
                 }
+                lastRepaintBounds.setBounds(bounds);
             }
         }
     }
@@ -278,7 +373,7 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
         public void paint(Graphics2D g2d, Rectangle layerBounds, boolean commit) {
             if (active) {
                 Rectangle r = ResponderTool.this.paint(g2d, layerBounds, commit);
-                repaint(r);
+//                repaint(r);
             }
         }
     }

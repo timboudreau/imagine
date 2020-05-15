@@ -210,8 +210,11 @@ public final class Customizers {
             map.put(type, m);
             created = true;
         }
-//        Customizer<T> result = m.get(name);
-        Customizer<T> result = null; //stealing componnents from other customizers
+        Customizer<T> result = (Customizer<T>) m.get(name);
+        if (result != null && result.isInUse()) {
+            result = null;
+        }
+//        Customizer<T> result = null; //stealing componnents from other customizers
         if (result == null) {
             result = createCustomizer(type, name, existingValue);
             created = true;

@@ -43,13 +43,18 @@ final class NumberCustomizer2<T extends Number> extends ListenableCustomizerSupp
     private final JSlider slider = new JSlider();
     private final JLabel lbl = new JLabel();
     private final NumberConverter<T> conv;
-
+    private final JPanel panel = new SharedLayoutPanel();
     NumberCustomizer2(Class<T> type, String name, T start, T end, T defaultValue, Function<T, String> stringConvert) {
         this(type, name, start, end, defaultValue, converter(type, start, end, stringConvert));
     }
 
     NumberCustomizer2(Class<T> type, String name, T start, T end, T defaultValue) {
         this(type, name, start, end, defaultValue, converter(type, start, end, null));
+    }
+
+    @Override
+    public boolean isInUse() {
+        return panel.isDisplayable();
     }
 
     private NumberCustomizer2(Class<T> type, String name, T start, T end, T defaultValue, NumberConverter<T> conv) {
@@ -104,10 +109,9 @@ final class NumberCustomizer2<T extends Number> extends ListenableCustomizerSupp
         if (pnl != null) {
             return pnl;
         }
-        JPanel result = new SharedLayoutPanel();
-        result.add(lbl);
-        result.add(slider);
-        return pnl = result;
+        panel.add(lbl);
+        panel.add(slider);
+        return pnl = panel;
     }
 
     @Override

@@ -14,11 +14,11 @@
         <!--<maven.test.skip>true</maven.test.skip>-->
     </properties>
     <dependencies>
-        <!-- 
-                XXX move the effects action and processor out of here to its
-                own - effects ui - module, and these next three deps can
-                be removed
-                        -->
+        <!--
+XXX move the effects action and processor out of here to its
+own - effects ui - module, and these next three deps can
+be removed
+        -->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>toolcustomizers</artifactId>
@@ -65,8 +65,18 @@
             <artifactId>org-openide-awt</artifactId>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

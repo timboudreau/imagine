@@ -21,8 +21,8 @@ class ZoomImpl implements Zoom {
         this.scene = scene;
     }
 
-    public float getZoom() {
-        return (float) scene.getZoomFactor();
+    public double getZoom() {
+        return scene.getZoomFactor();
     }
 
     @Override
@@ -40,7 +40,7 @@ class ZoomImpl implements Zoom {
         return inverse;
     }
 
-    public void setZoom(float val) {
+    public void setZoom(double val) {
         if (val != getZoom()) {
             scene.setZoomFactor(val);
             supp.fireChange();

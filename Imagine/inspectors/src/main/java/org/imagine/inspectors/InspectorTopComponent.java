@@ -4,6 +4,7 @@ import com.mastfrog.function.TriConsumer;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Image;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -23,6 +24,7 @@ import org.netbeans.paint.api.components.SharedLayoutData;
 import org.netbeans.paint.api.components.VerticalFlowLayout;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
+import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.windows.TopComponent;
 import org.openide.util.NbBundle.Messages;
@@ -39,7 +41,7 @@ import org.openide.windows.WindowManager;
 )
 @TopComponent.Description(
         preferredID = "inspectors",
-        iconBase = "org/imagine/inspectors/gradientfill.png",
+        iconBase = "org/imagine/inspectors/i.svg",
         persistenceType = TopComponent.PERSISTENCE_ALWAYS
 )
 @TopComponent.Registration(mode = "inspectors", openAtStartup = false)
@@ -83,6 +85,10 @@ public final class InspectorTopComponent extends TopComponent implements TriCons
         scroll.setBorder(EMPTY_BORDER);
         int insets = Utilities.isMac() ? 12 : 5;
         fontManagingPanel.setBorder(BorderFactory.createEmptyBorder(insets, insets, insets, insets));
+        Image img = ImageUtilities.loadImage("org/imagine/inspectors/i.svg");
+        if (img != null && img.getWidth(null) > 1) {
+            setIcon(img);
+        }
     }
 
     @Override
@@ -121,7 +127,6 @@ public final class InspectorTopComponent extends TopComponent implements TriCons
         apply(Lookup.EMPTY, Collections.emptyList(), Collections.emptyList());
         fontManagingPanel.removeAll();
     }
-
 
     @Override
     public void apply(Lookup lkp, List<? extends InspectorFactory<?>> removed, List<? extends InspectorFactory<?>> added) {
@@ -198,8 +203,8 @@ public final class InspectorTopComponent extends TopComponent implements TriCons
         String version = p.getProperty("version");
     }
 
-    public int xPosForColumn(int column) {
-        return data.xPosForColumn(column);
+    public int xPosForColumn(int column, Container requester) {
+        return data.xPosForColumn(column, requester);
     }
 
     public void register(LayoutDataProvider p) {
@@ -213,4 +218,10 @@ public final class InspectorTopComponent extends TopComponent implements TriCons
     public void expanded(LayoutDataProvider p, boolean state) {
         data.expanded(p, state);
     }
+
+    @Override
+    public int indentFor(Container requester) {
+        return data.indentFor(requester);
+    }
+
 }

@@ -31,6 +31,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
+import org.netbeans.paint.api.components.FlexEmptyBorder;
 import org.openide.util.Exceptions;
 import org.openide.util.NbPreferences;
 import org.openide.util.Parameters;
@@ -451,7 +452,7 @@ public abstract class DialogBuilder {
         InputLinePanel(int columns, String initialText, DialogBuilder bldr, Predicate<String> tester, Consumer<String> consumer, JTextComponent comp) {
             setLayout(new BorderLayout());
             this.tester = tester;
-            setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+            setBorder(new FlexEmptyBorder());
             comp.setText(initialText);
             JLabel lbl = new JLabel(bldr.title);
             field = comp;

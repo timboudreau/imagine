@@ -3,11 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package org.imagine.vector.editor.ui.tools.inspectors;
 
 import java.awt.Component;
 import java.awt.Font;
+import java.util.Objects;
 import javax.swing.BorderFactory;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -28,6 +28,7 @@ import org.netbeans.paint.api.components.number.NumericConstraint;
 import org.netbeans.paint.api.components.number.StandardNumericConstraints;
 import org.openide.awt.Mnemonics;
 import org.openide.util.Lookup;
+import org.openide.util.NbBundle.Messages;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -41,6 +42,12 @@ public class PathTextInspector extends InspectorFactory<PathText> {
         super(PathText.class);
     }
 
+    @Messages({
+        "# {0} - shapeName",
+        "opSetFont=Set Font on {0}",
+        "# {0} - shapeName",
+        "opChangeFontSize=Change Font Size on {0}"
+    })
     @Override
     public Component get(PathText obj, Lookup lookup, int item, int of) {
         JPanel pnl = new JPanel(new VerticalFlowLayout());
@@ -75,8 +82,12 @@ public class PathTextInspector extends InspectorFactory<PathText> {
             Font font = (Font) fonts.getSelectedItem();
             String family = font.getFamily();
             if (!family.equals(obj.getFontName())) {
-                coll.edit("Set Font", shape, () -> {
-                    obj.setFontName(family);
+                coll.edit(Bundle.opSetFont(shape.getName()), shape, (abortable) -> {
+                    if (!Objects.equals(obj.getFontName(), family)) {
+                        obj.setFontName(family);
+                    } else {
+                        abortable.abort();
+                    }
                 });
             }
         });
@@ -87,9 +98,14 @@ public class PathTextInspector extends InspectorFactory<PathText> {
         Mnemonics.setLocalizedText(fontSizeLabel, Bundle.fontSize());
         NumericConstraint fontConstraints = StandardNumericConstraints.FLOAT_NON_NEGATIVE
                 .withMaximum(300F).withStep(0.5F).withMinimum(4F);
+
         NumberModel num = NumberModel.ofFloat(fontConstraints, obj::fontSize, (float val) -> {
-            coll.edit("Change Font Size", shape, () -> {
-                obj.setFontSize(val);
+            coll.edit(Bundle.opChangeFontSize(shape.getName()), shape, (abortable) -> {
+                if (val != obj.fontSize()) {
+                    obj.setFontSize(val);
+                } else {
+                    abortable.abort();
+                }
             });
         });
         JSlider slider = new JSlider(num.toBoundedRangeModel());
@@ -98,9 +114,9 @@ public class PathTextInspector extends InspectorFactory<PathText> {
         sub.add(fontSizeLabel);
         sub.add(slider);
         pnl.add(sub);
-        pnl.add(new JLabel(""));
+//        pnl.add(new JLabel(""));
 
         return pnl;
-        
+
     }
 }

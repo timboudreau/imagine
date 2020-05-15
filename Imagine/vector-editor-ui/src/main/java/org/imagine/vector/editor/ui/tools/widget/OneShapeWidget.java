@@ -18,6 +18,7 @@ import org.imagine.geometry.util.GeometryStrings;
 import com.mastfrog.function.state.Int;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import net.java.dev.imagine.api.vector.Textual;
 import org.imagine.editor.api.AspectRatio;
 import org.imagine.geometry.CornerAngle;
 import org.imagine.geometry.EqPointDouble;
@@ -28,13 +29,16 @@ import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
+import org.imagine.vector.editor.ui.spi.ZSync;
 import org.imagine.vector.editor.ui.tools.widget.actions.AdjustmentKeyActionHandler;
 import org.imagine.vector.editor.ui.tools.widget.actions.DragHandler;
 import org.imagine.vector.editor.ui.tools.widget.util.UIState;
 import org.imagine.vector.editor.ui.tools.widget.util.ViewL;
+import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
+import org.netbeans.paint.api.components.dialog.DialogBuilder;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.lookup.AbstractLookup;
@@ -59,7 +63,7 @@ public class OneShapeWidget extends Widget {
     public OneShapeWidget(Scene scene, ShapeElement el, ShapesCollection coll,
             DecorationController decorationPainting, DragHandler shapeDrag,
             UIState uiState, AdjustmentKeyActionHandler keyActionHandler,
-            AspectRatio ratio) {
+            AspectRatio ratio, ZSync zorderSynchronizer) {
         super(scene);
         this.uiState = uiState;
         this.shapes = coll;
@@ -71,7 +75,47 @@ public class OneShapeWidget extends Widget {
         content.add(coll);
         content.add(shapeDrag);
         content.add(keyActionHandler);
+        content.add(zorderSynchronizer);
         content.add("shape", new CVT());
+        getActions().addAction(WidgetTextAction.INSTANCE);
+    }
+
+    @Messages({
+        "# {0} - shapeName",
+        "setText=Set Text - {0}",
+        "# {0} - shapeName",
+        "opUpdateText=Update text of {0}"
+    })
+    static final class WidgetTextAction extends WidgetAction.Adapter {
+
+        static final WidgetTextAction INSTANCE = new WidgetTextAction();
+
+        @Override
+        public State mouseClicked(Widget widget, WidgetMouseEvent event) {
+            if (!event.isPopupTrigger() && event.getClickCount() == 2) {
+                ShapeElement el = widget.getLookup().lookup(ShapeElement.class);
+                ShapesCollection coll = widget.getLookup().lookup(ShapesCollection.class);
+                if (el != null && coll != null) {
+                    Textual text = el.item().as(Textual.class);
+                    if (text != null) {
+                        DialogBuilder.forName("textual").modal()
+                                .setTitle(Bundle.setText(el.getName()))
+                                .showMultiLineTextLineDialog(text.getText(), 1, 1024, txt -> {
+                                    if (!txt.equals(text.getText())) {
+                                        coll.edit(Bundle.opUpdateText(el.getName()), el, () -> {
+                                            text.setText(txt);
+                                            widget.revalidate();
+                                            widget.getScene().validate();
+                                            widget.getScene().repaint();
+                                        });
+                                    }
+                                });
+                        return State.CONSUMED;
+                    }
+                }
+            }
+            return super.mouseClicked(widget, event);
+        }
     }
 
     public ShapeElement realShape() {
@@ -140,6 +184,7 @@ public class OneShapeWidget extends Widget {
     }
 
     private final Rectangle2D.Double scr = new Rectangle2D.Double();
+
     public boolean isHitAt(Point2D localLocation) {
         // We need floating point coordinates, or at very high zoom
         // with very small shapes, there is no hit surface at all

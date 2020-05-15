@@ -18,6 +18,7 @@ import java.awt.Rectangle;
 import java.awt.geom.Ellipse2D;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import net.dev.java.imagine.spi.tool.ToolElement;
 import org.imagine.editor.api.PaintingStyle;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import org.netbeans.paint.tools.spi.BrushTip;
@@ -26,6 +27,7 @@ import org.netbeans.paint.tools.spi.BrushTip;
  *
  * @author Timothy Boudreau
  */
+@ToolElement(folder = "brushtips", position=100, icon = "org/netbeans/paint/tools/resources/roundbrushtip.png", name = "Round Brush Tip")
 public class RoundBrushTip implements BrushTip, Customizable {
 
     public Rectangle draw(Graphics2D g, Point p, int size) {

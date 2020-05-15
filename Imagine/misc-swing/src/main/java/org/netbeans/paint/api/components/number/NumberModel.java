@@ -41,6 +41,9 @@ public interface NumberModel<N extends Number> {
             result = fmt.getMaximumIntegerDigits() + signChars; // sign
             result = Math.max(result, 5);
         }
+        if (result == 2147483637) {
+            result = Integer.toString(Integer.MAX_VALUE).length();
+        }
         return result;
     }
 

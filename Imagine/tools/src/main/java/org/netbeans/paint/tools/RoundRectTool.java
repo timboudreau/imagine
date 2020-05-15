@@ -69,7 +69,7 @@ public class RoundRectTool extends RectangleTool {
     @Override
     public Customizer getCustomizer() {
         Customizer c = super.getCustomizer();
-        AggregateCustomizer nue = new AggregateCustomizer("foo", c, arcWc, arcHc);
+        AggregateCustomizer nue = new AggregateCustomizer("foo", arcWc, arcHc, c);
         return nue;
     }
 

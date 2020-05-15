@@ -16,6 +16,7 @@ package org.netbeans.paint.api.components;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -35,6 +36,9 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -48,6 +52,7 @@ import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JSlider;
 import javax.swing.Popup;
 import javax.swing.PopupFactory;
@@ -71,6 +76,7 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         MouseListener,
         KeyListener,
         FocusListener,
+        MouseWheelListener,
         MouseMotionListener {
 
     private Icon downArrow;
@@ -109,26 +115,36 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         JSlider js = (JSlider) c;
 
         c.addMouseListener(this);
+        c.addMouseWheelListener(this);
         c.addKeyListener(this);
         js.addChangeListener(this);
         js.setOrientation(JSlider.VERTICAL);
         c.setFocusable(true);
         c.addPropertyChangeListener("model", this);
-        c.setFont(UIManager.getFont("controlFont"));
+        c.setCursor(Cursors.forComponent(c).triangleLeft());
+        Font f = UIManager.getFont("controlFont");
+        if (f == null) {
+            f = UIManager.getFont("Label.font");
+        }
+        if (f == null) {
+            f = new JLabel().getFont();
+        }
+        c.setFont(f.deriveFont(AffineTransform.getScaleInstance(0.875, 0.875)));
         c.addFocusListener(this);
         initBorder(c);
+        js.setForeground(UIManager.getColor("controlText"));
     }
 
     private void initBorder(JComponent c) {
-        Insets ins = raised.getBorderInsets(c);
-
-        c.setBorder(BorderFactory.createEmptyBorder(ins.top, ins.left,
-                ins.bottom, ins.right));
+//        Insets ins = raised.getBorderInsets(c);
+//        c.setBorder(BorderFactory.createEmptyBorder(ins.top, ins.left,
+//                ins.bottom, ins.right));
     }
 
     @Override
     public void uninstallUI(JComponent c) {
         c.removeMouseListener(this);
+        c.removeMouseWheelListener(this);
         c.removeKeyListener(this);
         ((JSlider) c).removeChangeListener(this);
         c.setBorder(null);
@@ -180,11 +196,13 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
         int h = fm.getHeight();
         int w = fm.stringWidth(val);
         int txtY = fm.getMaxAscent() + ins.top;
-        int txtX = c.getWidth()
-                - (w + ins.right + FOCUS_GAP + downArrow.getIconWidth() - 2);
+//        int txtX = c.getWidth()
+//                - (w + ins.right + FOCUS_GAP + downArrow.getIconWidth() - 2);
+        int txtX = ins.left + FOCUS_GAP + 1;
 
         g.setColor(js.isEnabled() ? js.getForeground()
                 : UIManager.getColor("controlDkShadow"));
+
         g.drawString(val, txtX, txtY);
         if (c.hasFocus() && c.getBorder() != raised) {
             Color col = UIManager.getColor("controlShadow");
@@ -251,31 +269,24 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
     JComponent popupOwner = null;
     JSlider sliderInPopup = null;
 
-    public static Popup showPopup(JComponent owner, BoundedRangeModel model, Point pointOnScreen, StringConverter conv) {
-        if (instance == null) {
-            instance = new PopupSliderUI();
-        }
-        Rectangle screenBounds = owner.getGraphicsConfiguration().getDevice().getDefaultConfiguration().getBounds();
-        return instance.showPopup(owner, model, screenBounds, JSlider.VERTICAL, conv, pointOnScreen);
-    }
-
     private Popup showPopup(JSlider js, Point p) {
         StringConverter conv = (StringConverter) js.getClientProperty(StringConverter.CLIENT_PROP_CONVERTER);
         int orientation = js.getOrientation();
         SwingUtilities.convertPointToScreen(p, js);
         Rectangle screenBounds = js.getGraphicsConfiguration().getDevice().getDefaultConfiguration().getBounds();
         BoundedRangeModel model = js.getModel();
+        Point eventPoint = new Point(p);
         p.y += js.getHeight() / 2;
-        return showPopup(js, model, screenBounds, orientation, conv, p);
+        return showPopup(p, js, model, screenBounds, orientation, conv, eventPoint);
     }
 
-    private Popup showPopup(JComponent owner, BoundedRangeModel model, Rectangle screenBounds, int orientation, StringConverter conv, Point p) {
+    private Popup showPopup(Point p, JComponent owner, BoundedRangeModel model, Rectangle screenBounds, int orientation, StringConverter conv, Point eventPoint) {
         if (currPopup != null) {
             hidePopup();
         }
         popupOwner = owner;
         sliderInPopup = new JSlider();
-        SimpleSliderUI ui = (SimpleSliderUI) SimpleSliderUI.createUI(sliderInPopup);
+        SimpleSliderUI ui = new SimpleSliderUI((JSlider) owner, eventPoint);
         if (conv != null) {
             ui.setStringConverter(conv);
         }
@@ -454,7 +465,7 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
 
     @Override
     public void mousePressed(MouseEvent e) {
-        Component js = (Component) e.getSource();
+        JSlider js = (JSlider) e.getSource();
 
         js.requestFocus();
         if (!e.isPopupTrigger() && e.getClickCount() == 1) {
@@ -466,8 +477,10 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
     public void mouseDragged(MouseEvent e) {
         if (popupOwner != null && sliderInPopup.isShowing()) {
             boolean horiz = sliderInPopup.getOrientation() == JSlider.HORIZONTAL;
-            uiOf(sliderInPopup).dragTo(horiz ? e.getX()
-                    : e.getY(), sliderInPopup);
+            Point p = e.getPoint();
+            p = SwingUtilities.convertPoint(popupOwner, p, sliderInPopup);
+            uiOf(sliderInPopup).dragTo(horiz ? p.x
+                    : p.y, sliderInPopup);
         }
     }
 
@@ -483,5 +496,21 @@ public final class PopupSliderUI extends SliderUI implements PropertyChangeListe
     @Override
     public void mouseMoved(MouseEvent e) {
         // do nothing
+    }
+
+    @Override
+    public void mouseWheelMoved(MouseWheelEvent e) {
+        double amt = -e.getPreciseWheelRotation();
+        if (e.isShiftDown()) {
+            amt *= 2;
+        }
+        if (e.isControlDown()) {
+            amt *= 10;
+        }
+        JSlider slider = (JSlider) e.getSource();
+        int newValue = Math.min(slider.getMaximum() - 1, Math.max(slider.getMinimum(), (int) (slider.getValue() + Math.round(amt))));
+        if (newValue >= slider.getMinimum() && newValue < slider.getMaximum()) {
+            slider.setValue(newValue);
+        }
     }
 }

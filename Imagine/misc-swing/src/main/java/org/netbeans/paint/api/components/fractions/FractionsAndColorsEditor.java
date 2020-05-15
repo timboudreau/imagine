@@ -382,6 +382,18 @@ public final class FractionsAndColorsEditor extends JComponent {
         return this.editor.getFractions();
     }
 
+    public void setColors(Color[] colors) {
+        int sz = editor.getModel().size();
+        for (int i = 0; i < Math.min(sz, colors.length); i++) {
+            Fraction f = editor.getModel().get(i);
+            ColorChooser chooser = this.chooserForFraction.get(f);
+            if (chooser != null) {
+                chooser.setColor(colors[i]);
+            }
+        }
+        repaint();
+    }
+
     public Color[] getColors() {
         int sz = editor.getModel().size();
         Color[] result = new Color[sz];

@@ -5,16 +5,30 @@ import com.mastfrog.function.state.Int;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Insets;
 import java.awt.LayoutManager;
+import java.util.concurrent.ThreadLocalRandom;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
+import javax.swing.JTree;
 import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
+import javax.swing.border.Border;
 import net.java.dev.colorchooser.ColorChooser;
 import org.netbeans.paint.api.components.number.NumberEditor;
 import org.netbeans.paint.api.components.number.StandardNumericConstraints;
@@ -43,32 +57,59 @@ import org.openide.awt.Mnemonics;
 public class SharedLayoutPanel extends JPanel implements LayoutDataProvider {
 
     private boolean initialized;
+    private SharedLayoutData data;
 
     public SharedLayoutPanel() {
         super(new LDPLayout());
+        super.setBorder(new SharedLayoutIndentBorder());
         initialized = true;
+        if (TitledPanel2.isDebugLayout()) {
+            setBackground(new Color(Color.HSBtoRGB(
+                    ThreadLocalRandom.current().nextFloat(), 0.32F, 0.93F)));
+        }
     }
 
     public SharedLayoutPanel(Component c) {
         this();
         add(c);
+        if (c instanceof JLabel) {
+            setName(((JLabel) c).getText());
+        }
     }
 
     public SharedLayoutPanel(Component c1, Component c2) {
         this();
+        if (c1 instanceof JLabel) {
+            setName(((JLabel) c1).getText());
+        }
         add(c1);
         add(c2);
     }
 
     public SharedLayoutPanel(Component c1, Component c2, Component c3) {
         this();
+        if (c1 instanceof JLabel) {
+            setName(((JLabel) c1).getText());
+        }
         add(c1);
         add(c2);
         add(c3);
     }
 
+    public SharedLayoutPanel(Component c1, Component... more) {
+        this();
+        if (c1 instanceof JLabel) {
+            setName(((JLabel) c1).getText());
+        }
+        add(c1);
+        for (Component m : more) {
+            add(m);
+        }
+    }
+
     public SharedLayoutPanel(String caption, Component c) {
         this();
+        setName(caption);
         JLabel lbl = new JLabel();
         Mnemonics.setLocalizedText(lbl, caption);
         setName(caption);
@@ -79,6 +120,7 @@ public class SharedLayoutPanel extends JPanel implements LayoutDataProvider {
 
     public SharedLayoutPanel(String caption, Component c1, Component c2) {
         this();
+        setName(caption);
         JLabel lbl = new JLabel();
         Mnemonics.setLocalizedText(lbl, caption);
         setName(caption);
@@ -90,6 +132,7 @@ public class SharedLayoutPanel extends JPanel implements LayoutDataProvider {
 
     public SharedLayoutPanel(String caption, Component c1, Component c2, Component c3) {
         this();
+        setName(caption);
         JLabel lbl = new JLabel();
         Mnemonics.setLocalizedText(lbl, caption);
         setName(caption);
@@ -100,9 +143,54 @@ public class SharedLayoutPanel extends JPanel implements LayoutDataProvider {
         add(c3);
     }
 
+    public SharedLayoutPanel(String caption, Component... comps) {
+        this();
+        setName(caption);
+        JLabel lbl = new JLabel();
+        Mnemonics.setLocalizedText(lbl, caption);
+        add(lbl);
+        if (comps.length > 0) {
+            lbl.setLabelFor(comps[0]);
+        }
+        for (Component comp : comps) {
+            add(comp);
+        }
+    }
 
     /**
-     * Overridden to throw an exception if called at runtime.
+     * Overridden to prevent abuse.
+     *
+     * @return The layout manager
+     */
+    @Override
+    public final Component add(Component comp) {
+        return super.add(comp);
+    }
+
+    /**
+     * Overridden to prevent abuse.
+     *
+     * @return The layout manager
+     */
+    @Override
+    public final void setName(String name) {
+        super.setName(name);
+    }
+
+    SharedLayoutData dataUnsafe() {
+        // optimized accessor for SharedLayoutData.find
+        return data;
+    }
+
+    @Override
+    public void setBorder(Border border) {
+        // do nothing, the indent border manages this
+        super.setBorder(border);
+    }
+
+    /**
+     * Overridden to throw an exception if called by anything but this class'
+     * constructor.
      *
      * @param mgr The layout manager
      */
@@ -114,22 +202,40 @@ public class SharedLayoutPanel extends JPanel implements LayoutDataProvider {
         super.setLayout(mgr);
     }
 
+    protected SharedLayoutData data() {
+        if (data == null) {
+            // do have an ancestor, don't have a peer
+            return SharedLayoutData.find(this);
+        }
+        return data;
+    }
+
     @Override
     public void addNotify() {
         super.addNotify();
-        SharedLayoutData p = SharedLayoutData.find(this);
-        if (p != null) {
-            p.register(this);
+        data = SharedLayoutData.find(this);
+        if (data != null) {
+            data.register(this);
         }
     }
 
     @Override
     public void removeNotify() {
-        SharedLayoutData p = SharedLayoutData.find(this);
-        if (p != null) {
-            p.unregister(this);
+        if (data != null) {
+            data.unregister(this);
+            data = null;
         }
         super.removeNotify();
+    }
+
+    /**
+     * Overridden to prevent abuse.
+     *
+     * @return The layout manager
+     */
+    @Override
+    public final LayoutManager getLayout() {
+        return super.getLayout();
     }
 
     /**
@@ -157,7 +263,7 @@ public class SharedLayoutPanel extends JPanel implements LayoutDataProvider {
      * Does nothing by default; override to handle the case that you actually
      * want to change the set of child components when expanded. You are
      * responsible for providing a control that actually sets the expanded
-     * state.
+     * state, and notifying the shared layout data.
      *
      * @param val To expand or not
      */
@@ -165,17 +271,124 @@ public class SharedLayoutPanel extends JPanel implements LayoutDataProvider {
         //do nothing by default
     }
 
-    public static void main(String[] args) {
+    @Override
+    protected final void addImpl(Component comp, Object constraints, int index) {
+        if (TitledPanel2.isDebugLayout()) {
+            comp.setBackground(new Color(Color.HSBtoRGB(
+                    ThreadLocalRandom.current().nextFloat(), 0.32F, 0.93F)));
+        }
+        super.addImpl(comp, constraints, index);
+    }
 
-        JPanel jp = new SharedLayoutRootPanel(3);
+    @Override
+    public String toString() {
+        return "SharedLayoutPanel(" + getName() + " with " + getComponentCount() + " children "
+                + " over " + data + " id " + Integer.toString(System.identityHashCode(this), 36)
+                + " in " + getParent() + " with insets " + insetsString() + ")";
+    }
+
+    String insetsString() {
+        Insets ins = getInsets();
+        if (ins.left == 0 && ins.right == 0 && ins.top == 0 && ins.bottom == 0) {
+            return "<0>";
+        }
+        return "<" + ins.top + "," + ins.left + " " + ins.right + " " + ins.bottom
+                + " " + getBorder().getClass().getSimpleName() + ">";
+    }
+
+    public static Border createIndentBorder() {
+        return new SharedLayoutIndentBorder();
+    }
+
+    public static void main(String[] args) throws UnsupportedLookAndFeelException {
+
+        Font f = new Font("Source Sans Pro", Font.PLAIN, 20);
+        UIManager.put("controlFont", f);
+        UIManager.put("Label.font", f);
+        UIManager.put("Panel.font", f);
+        UIManager.put("Slider.font", f);
+        UIManager.put("ComboBox.font", f);
+        UIManager.put("Tree.font", f);
+        UIManager.put("Button.font", f);
+        UIManager.put("TextField.font", f);
+        UIManager.put("List.font", f);
+        UIManager.put("ComboBox.font", f);
+
+//        TitledPanel2.debugLayout(true);
+        JFrame jf = new JFrame();
+        JPanel jp = new SharedLayoutRootPanel();
+//        jp.setBackground(new Color(255, 190, 0, 128));
 
         JComboBox box = new JComboBox(new String[]{"Hey", "there", "Whatever"});
+        box.setFont(f.deriveFont(12F));
+
+        box.setRenderer(new DefaultListCellRenderer());
         JLabel one = new JLabel("Box One");
+        one.setName("oneLabel");
         SharedLayoutPanel p = new SharedLayoutPanel(one);
-        p.add(box);
+        SharedLayoutPanel pppp = p;
         jp.add(p);
-        p.add(new JLabel("Hey"));
-        p.add(new JTextField("You"));
+        p.add(box);
+        JLabel pubu = new JLabel("Pubu hoodge");
+        JTextField you = new JTextField("You");
+        pubu.setName("pubu");
+        you.setName("you");
+        box.setName("box");
+        p.add(pubu);
+        p.add(you);
+
+//        jp.add(new DemoTitledPanel());
+        JTree realTree = new JTree();
+        realTree.setName("realTree");
+        JScrollPane treePane = new JScrollPane(realTree);
+        treePane.setName("treePane");
+
+        JComponent tree = new SharedLayoutPanel("Inner", treePane);
+        tree.setName("TreeShared");
+
+        tree.setBorder(BorderFactory.createLineBorder(Color.BLACK, 3));
+        JPanel inner = new JPanel();
+        inner.setName("inner");
+        inner.add(tree);
+        inner.setBackground(Color.ORANGE);
+
+        JSlider sli = new JSlider(10, 120, 15);
+        PopupSliderUI.attach(sli);
+        sli.setName("huer");
+
+        TitledPanel2 tp2 = new TitledPanel2("Foogle", false, (exp) -> {
+            return exp ? tree : sli;
+        }, () -> {
+            JOptionPane.showMessageDialog(jp, "Customize!");
+        });
+
+        tp2.add(new JLabel("And this is a label that should be at the bottom."));
+        tp2.add(new JLabel("And this is another one."));
+
+        jp.add(tp2);
+
+        JComboBox<String> combo = new JComboBox<>();
+        DefaultComboBoxModel<String> mdl = new DefaultComboBoxModel<>();
+        mdl.addElement("Hello");
+        mdl.addElement("You");
+        mdl.addElement("me");
+        combo.setModel(mdl);
+        combo.setFont(f.deriveFont(12F));
+
+        TitledPanel2 tp3 = new TitledPanel2("Woogle", false, (exp) -> {
+            return exp ? new JComboBox() : combo;
+        });
+        jp.add(tp3);
+
+        TitledPanel2 nested = new TitledPanel2("Nesty!", false, exp -> {
+            return exp ? new JCheckBox("Well hello there") : null;
+        });
+
+        TitledPanel2 nester = new TitledPanel2("Nester", false, exp -> {
+            return exp ? nested : new JLabel("try me!");
+        });
+
+        jp.add(nester);
 
         Dbl dbl = Dbl.create();
         NumberEditor ne = new NumberEditor(
@@ -185,16 +398,23 @@ public class SharedLayoutPanel extends JPanel implements LayoutDataProvider {
         jp.add(new SharedLayoutPanel(new JLabel("Numbers"), ne));
         Int in = Int.create();
         NumberEditor ne2 = new NumberEditor(StandardNumericConstraints.INTEGER_DEGREES.intModel(in, in));
-        jp.add(new SharedLayoutPanel(new JLabel("PDegrees"), ne2));
 
-        JSlider slid1 = new JSlider(10, 20, 15);
+        JButton repack = new JButton("Repack");
+        repack.addActionListener(ae -> {
+            jf.pack();
+        });
+
+        jp.add(new SharedLayoutPanel("PDegrees", ne2, repack));
+
+        JSlider slid1 = new JSlider(10, 120, 15);
         PopupSliderUI.attach(slid1);
-        jp.add(new SharedLayoutPanel(new JLabel("Wookies"), slid1));
+//        slid1.setUI(new SimpleSliderUI());
+//        slid1.setOrientation(JSlider.HORIZONTAL);
+        jp.add(new SharedLayoutPanel("Wookies", slid1));
 
         JButton but = new JButton("A button");
         JLabel three = new JLabel("Buttons align?");
-        p = new SharedLayoutPanel(three);
-        p.add(but);
+        p = new SharedLayoutPanel(three, but);
         jp.add(p);
 
         JComboBox box2 = new JComboBox(new String[]{"Hey", "there", "Whatever"});
@@ -234,13 +454,13 @@ public class SharedLayoutPanel extends JPanel implements LayoutDataProvider {
         p.add(slid);
         jp.add(p);
 
-//        JComboBox fonts = new JComboBox(new FontComboBoxModel());
-//        fonts.setRenderer(FontCellRenderer.instance());
-//        two = new JLabel("The Fonts");
-//        p = new SharedLayoutPanel(two);
-//        p.add(fonts);
-//        jp.add(p);
-        JFrame jf = new JFrame();
+        JComboBox fonts = new JComboBox(new FontComboBoxModel());
+        fonts.setRenderer(FontCellRenderer.instance());
+        two = new JLabel("The Fonts");
+        p = new SharedLayoutPanel(two);
+        p.add(fonts);
+        jp.add(p);
+
         jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         jf.setContentPane(jp);
         jf.pack();

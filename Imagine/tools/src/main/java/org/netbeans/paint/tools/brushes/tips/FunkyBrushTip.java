@@ -18,6 +18,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Ellipse2D;
 import javax.swing.JComponent;
+import net.dev.java.imagine.spi.tool.ToolElement;
 import org.imagine.editor.api.PaintingStyle;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import org.netbeans.paint.tools.spi.BrushTip;
@@ -26,6 +27,8 @@ import org.netbeans.paint.tools.spi.BrushTip;
  *
  * @author Timothy Boudreau
  */
+@ToolElement(folder = "brushtips", position=500, icon = "org/netbeans/paint/tools/resources/funkybrushtip.png",
+        name = "Funky Circles Tip")
 public class FunkyBrushTip implements BrushTip, Customizable {
     
     public Rectangle draw (Graphics2D g, Point p, int size) {

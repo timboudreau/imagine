@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
 import net.java.dev.imagine.api.image.Picture;
@@ -29,7 +31,7 @@ public class SaveAsNativeAction extends GenericContextSensitiveAction<Picture> {
         super("ACT_SaveAsNative", Picture.class);
         setIcon(
                 ImageUtilities.loadImage(
-                        "net/java/dev/imagine/ui/actions/save24.png")); //NOI18N
+                        "net/java/dev/imagine/ui/actions/save-as.svg")); //NOI18N
     }
 
     @Override
@@ -48,8 +50,8 @@ public class SaveAsNativeAction extends GenericContextSensitiveAction<Picture> {
     @Override
     protected void performAction(Picture t) {
         Path path = showFileChooser(t);
-        boolean preexisting = Files.exists(path);
         if (path != null) {
+            boolean preexisting = Files.exists(path);
             try {
                 // XXX make a backup first, and restore on failure?
                 performSave(t, path);
@@ -73,32 +75,52 @@ public class SaveAsNativeAction extends GenericContextSensitiveAction<Picture> {
         return SaveSupport.save(t, path);
     }
 
+    private static File stripExtension(File f) {
+        int ix = f.getName().lastIndexOf('.');
+        if (ix > 0) {
+            return new File(f.getParentFile(), f.getName().substring(0, ix));
+        }
+        return f;
+    }
+
     static Path showFileChooser(Picture t) {
         Collection<? extends SaveSupport> all = Lookup.getDefault().lookupAll(SaveSupport.class);
 
+        Path existing = t.associatedFile();
+
         FileChooserBuilder fcb = new FileChooserBuilder("imagineNative")
-                .addDefaultFileFilters();
+                .addDefaultFileFilters().confirmOverwrites()
+                .setFileKinds(FileKinds.FILES_ONLY)
+                .setDefaultWorkingDirectory(new File(System.getProperty("user.home")))
+                .setTitle(NbBundle.getMessage(SaveAsNativeAction.class, "TTL_SaveAsNative"))
+                .setFileHiding(true);
 
         boolean anyFound = false;
+        Set<String> exts = new HashSet<>(3);
         for (SaveSupport save : all) {
+            String ex = save.fileExtension();
+            if (ex != null) {
+                exts.add(ex);
+            }
             fcb.addFileFilter(new SaveSupportFilter(save));
             anyFound = true;
+        }
+        if (exts.size() == 1) {
+            fcb.forceExtension(exts.iterator().next());
+            if (existing != null) {
+                fcb.setInitialSelection(stripExtension(existing.toFile()));
+            }
+        } else {
+            if (existing != null) {
+                fcb.setInitialSelection(stripExtension(existing.toFile()));
+            }
         }
         if (!anyFound) {
             JOptionPane.showMessageDialog(WindowManager.getDefault().getMainWindow(),
                     NbBundle.getMessage(SaveAsNativeAction.class, "MSG_CannotSave"));
             return null;
         }
-        Path p = t.associatedFile();
-        fcb.setTitle(NbBundle.getMessage(SaveAsNativeAction.class, "TTL_SaveAsNative"));
-        fcb.setDefaultWorkingDirectory(new File(System.getProperty("user.home")));
-        fcb.setFileKinds(FileKinds.FILES_ONLY);
-        fcb.setFileHiding(true);
-        if (p != null) {
-            fcb.setInitialSelection(p);
-        }
-        File file = fcb.showSaveDialog();
-        return file == null ? null : file.toPath();
+        return fcb.showSaveDialogNio();
     }
 
     private static class SaveSupportFilter extends FileFilter {

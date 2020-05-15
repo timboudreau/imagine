@@ -12,8 +12,8 @@ import org.netbeans.api.visual.widget.Scene.SceneListener;
 import org.netbeans.api.visual.widget.Widget;
 
 /**
- * XXX copied from vector layers since we need it for floating point
- * mouse events for tools.  Need to move this somewhere it can be shared.
+ * XXX copied from vector layers since we need it for floating point mouse
+ * events for tools. Need to move this somewhere it can be shared.
  *
  * @author Tim Boudreau
  */
@@ -24,14 +24,30 @@ final class ViewL extends MouseAdapter implements MouseMotionListener {
 
     public static Point2D.Double lastPoint(Widget widget) {
         Point viewLocation = get(widget)._lastPoint();
-        
+
         Point sceneLoc = widget.getScene().getLocation();
-        
+
         double zoomFactor = widget.getScene().getZoomFactor();
-        
-        return new EqPointDouble (((double) viewLocation.x / zoomFactor) - sceneLoc.x, ((double) viewLocation.y / zoomFactor) - sceneLoc.y);
+
+        return new EqPointDouble(((double) viewLocation.x / zoomFactor) - sceneLoc.x, ((double) viewLocation.y / zoomFactor) - sceneLoc.y);
 //        widget.getScene().convertViewToScene(viewLocation);
 //        return new Point2D.Double(viewLocation.x, viewLocation.y);
+    }
+
+    public static EqPointDouble lastWidgetPoint2D(Widget widget) {
+        Point widgetLocation = widget.getLocation();
+        EqPointDouble sceneLoc = lastPoint2D(widget);
+        sceneLoc.x -= widgetLocation.x;
+        sceneLoc.y -= widgetLocation.y;
+        return sceneLoc;
+    }
+
+    public static EqPointDouble lastPoint2D(Widget widget) {
+        Point viewLocation = get(widget)._lastPoint();
+        Point sceneLoc = widget.getScene().getLocation();
+        double zoomFactor = widget.getScene().getZoomFactor();
+        EqPointDouble result = new EqPointDouble(((double) viewLocation.x / zoomFactor) - sceneLoc.x, ((double) viewLocation.y / zoomFactor) - sceneLoc.y);
+        return result;
     }
 
     public static int lastEventType(Widget widget) {

@@ -1,5 +1,6 @@
 package org.netbeans.paint.tools.path;
 
+import org.netbeans.paint.tools.responder.PathUIProperties;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;

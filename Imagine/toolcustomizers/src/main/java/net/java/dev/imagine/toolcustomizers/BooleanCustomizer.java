@@ -14,6 +14,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.AbstractCustomizer;
+import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.openide.util.NbPreferences;
 
 /**
@@ -46,6 +47,7 @@ public class BooleanCustomizer extends AbstractCustomizer<Boolean> implements Ac
         JCheckBox cbox = new JCheckBox(getName());
         cbox.setSelected(NbPreferences.forModule(getClass()).getBoolean(getName() + "-bool", true));
         cbox.addActionListener(this);
+        cbox.setBorder(SharedLayoutPanel.createIndentBorder());
         return new JComponent[]{cbox};
     }
 

@@ -3,11 +3,7 @@
 <filesystem>
     <folder name="Windows2Local">
         <folder name="Modes">
-            <file name="layerCustomizerMode.wsmode" url="layerCustomizerMode.wsmode"/>
             <file name="layersMode.wsmode" url="layersMode.wsmode"/>
-            <folder name="layerCustomizerMode">
-                <file name="LayerCustomizerTopComponent.wstcref" url="LayerCustomizerTopComponent.wstcref"/>
-            </folder>
             <folder name="layersMode">
                 <file name="LayersTopComponent.wstcref" url="LayersTopComponent.wstcref"/>
             </folder>

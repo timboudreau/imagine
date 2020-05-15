@@ -57,6 +57,18 @@ public final class EqLine extends Line2D.Double implements Intersectable {
         this(pd.getX(), pd.getY(), pd1.getX(), pd1.getY());
     }
 
+    public EqLine copy() {
+        return new EqLine(this);
+    }
+
+    public EqPointDouble startPoint() {
+        return getP1();
+    }
+
+    public EqPointDouble endPoint() {
+        return getP2();
+    }
+
     public static EqLine forAngleAndLength(double x, double y, double angle, double length) {
         EqLine ln = new EqLine(x, y, 1, 1);
         ln.setAngleAndLength(angle, length);

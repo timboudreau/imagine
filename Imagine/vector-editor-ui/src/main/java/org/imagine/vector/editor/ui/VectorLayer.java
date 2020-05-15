@@ -10,6 +10,7 @@ import org.imagine.utils.painting.RepaintHandle;
 import net.java.dev.imagine.spi.image.support.AbstractLayerImplementation;
 import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.Zoom;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.PooledTransform;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
@@ -139,7 +140,8 @@ final class VectorLayer extends AbstractLayerImplementation {
     @Override
     protected boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds,
             boolean showSelection, Zoom zoom, AspectRatio ratio) {
-        if (bounds != null) {
+        if (bounds != null && goal == RenderingGoal.THUMBNAIL) {
+            System.out.println("vl tn bounds " + GeometryStrings.toString(bounds));
             if (bounds.isEmpty()) {
                 return false;
             }
@@ -151,7 +153,7 @@ final class VectorLayer extends AbstractLayerImplementation {
             g.scale(bounds.getWidth() / r.getWidth(), bounds.getHeight() / r.getHeight());
         }
         boolean result = false;
-        if (!surface.toolIsPaintingScene()) {
+        if (!surface.toolIsPaintingScene() || goal == RenderingGoal.THUMBNAIL || goal == RenderingGoal.PRODUCTION) {
             result = shapes.paint(goal, g, bounds, zoom, ratio);
         }
         if (goal.isEditing()) {

@@ -51,12 +51,12 @@ class SnapDecorationsLayer extends LayerWidget implements RepaintHandle {
     class Z implements Zoom {
 
         @Override
-        public float getZoom() {
+        public double getZoom() {
             return (float) getScene().getZoomFactor();
         }
 
         @Override
-        public void setZoom(float val) {
+        public void setZoom(double val) {
         }
 
         @Override

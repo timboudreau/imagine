@@ -203,7 +203,7 @@ public class Demo {
 
             for (int i = 0; i < circles.length; i++) {
                 Circle c = circles[i];
-                c.getBounds(adj);
+                c.addToBounds(adj);
                 if (adj.x < 0 || adj.y < 0 || adj.x + adj.width > bds.width || adj.y + adj.height > bds.height) {
                     angles[i] = newAngle(c, angles[i]);
                 }

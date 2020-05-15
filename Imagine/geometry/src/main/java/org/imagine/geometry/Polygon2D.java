@@ -820,7 +820,7 @@ public final class Polygon2D extends AbstractShape implements EnhancedShape, Int
 //            System.out.println("ANGLE SUM " + asum[0]);
 //            bds.x += margin;
 //            bds.y += margin;
-//            bds = shape.getBounds();
+//            bds = shape.addToBounds();
 //            System.out.println("iter bounds " + bds);
             for (int x = 0; x < bds.width; x++) {
                 for (int y = 0; y < bds.height; y++) {

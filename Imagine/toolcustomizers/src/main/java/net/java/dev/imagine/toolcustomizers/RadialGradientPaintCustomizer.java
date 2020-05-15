@@ -3,9 +3,6 @@ package net.java.dev.imagine.toolcustomizers;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.MultipleGradientPaint;
 import java.awt.MultipleGradientPaint.ColorSpaceType;
 import java.awt.MultipleGradientPaint.CycleMethod;
@@ -15,19 +12,25 @@ import java.awt.geom.Rectangle2D;
 import java.util.prefs.Preferences;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.WindowConstants;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
+import static net.java.dev.imagine.toolcustomizers.LinearGradientPaintCustomizer.listenForAspectRatio;
 import org.imagine.editor.api.AspectRatio;
 import org.imagine.geometry.util.PooledTransform;
 import org.netbeans.paint.api.components.PopupSliderUI;
+import org.netbeans.paint.api.components.SharedLayoutPanel;
+import org.netbeans.paint.api.components.SharedLayoutRootPanel;
+import org.netbeans.paint.api.components.TitledPanel2;
+import org.netbeans.paint.api.components.dialog.ButtonMeaning;
+import org.netbeans.paint.api.components.dialog.DialogBuilder;
 import org.netbeans.paint.api.components.fractions.FractionsAndColorsEditor;
 import org.netbeans.paint.api.components.points.PointSelector;
 import org.netbeans.paint.api.components.points.PointSelectorBackgroundPainter;
@@ -94,23 +97,20 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
 
     @Override
     public JComponent getComponent() {
-        JPanel panel = new JPanel(new GridBagLayout());
+        NestingPanel panel = new NestingPanel();
         FractionsAndColorsEditor fAndC = new FractionsAndColorsEditor(params.fractions, params.colors);
         AspectRatio ratio = Utilities.actionsGlobalContext().lookup(AspectRatio.class);
         if (ratio == null) {
             ratio = AspectRatio.create(() -> new Dimension(400, 300));
         }
 
-        Insets titleInsets = new Insets(12, 0, 5, 0);
-        Insets emptyInsets = new Insets(0, 0, 0, 0);
-
-        JLabel psLabel = new JLabel();
-        Mnemonics.setLocalizedText(psLabel, NbBundle.getMessage(
+        JLabel psLabel = panel.addHeadingLabel(NbBundle.getMessage(
                 RadialGradientPaintCustomizer.class, "TARGET_AND_FOCUS"));
 
         Rectangle2D.Double dbl = new Rectangle2D.Double(0, 0,
                 ratio.width(), ratio.height());
         PointSelector ps = new PointSelector(dbl);
+        listenForAspectRatio(ps);
         ps.setMode(PointSelectorMode.POINT_AND_LINE);
 
         ps.setTargetPoint(params.targetPoint);
@@ -143,7 +143,6 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
         colorSpaceCombo.setRenderer(ren);
         colorSpaceLabel.setLabelFor(colorSpaceCombo);
 
-        System.out.println("1, DIAG " + ratio.diagonal() + " RAD " + params.radius);
         int max = Math.max(2, (int) ratio.diagonal());
         int val = Math.max(1, Math.min((int) params.radius, 1));
         JSlider radius = new JSlider(1, max,
@@ -151,75 +150,28 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
         radius.setUI(PopupSliderUI.createUI(radius));
         radiusLabel.setLabelFor(radius);
 
-        JLabel fcLabel = new JLabel();
-        Mnemonics.setLocalizedText(fcLabel,
-                NbBundle.getMessage(RadialGradientPaintCustomizer.class, "COLORS_AND_FRACTIONS"));
+        JLabel fcLabel = panel.addHeadingLabel(NbBundle.getMessage(RadialGradientPaintCustomizer.class, "COLORS_AND_FRACTIONS"));
 
         fcLabel.setLabelFor(fAndC);
-
-        Insets compInsets = new Insets(0, 0, 0, 5);
-
-        GridBagConstraints c = new GridBagConstraints();
-        c.gridwidth = 3;
-        c.gridheight = 1;
-        c.gridx = 0;
-        c.gridy = 0;
-        c.weightx = 0;
-        c.weighty = 0;
-
-        c.anchor = GridBagConstraints.LAST_LINE_START;
-        c.insets = titleInsets;
-        c.gridwidth = 1;
-        c.gridy++;
-
-        c.fill = GridBagConstraints.NONE;
-        panel.add(cycleLabel, c);
-        c.gridx++;
-        panel.add(colorSpaceLabel, c);
-        c.gridx++;
-        panel.add(radiusLabel, c);
-
-        c.insets = compInsets;
-        c.gridx = 0;
-        c.gridy++;
-        c.anchor = GridBagConstraints.FIRST_LINE_START;
-        panel.add(cycleCombo, c);
-        c.gridx++;
-        panel.add(colorSpaceCombo, c);
-        c.gridx++;
-        panel.add(radius, c);
-
-        c.gridx = 0;
-        c.gridy++;
-        c.insets = titleInsets;
-        c.anchor = GridBagConstraints.LAST_LINE_START;
-        panel.add(psLabel, c);
-
-        c.weighty = 0.75;
-        c.gridwidth = 3;
-        c.gridy++;
-        c.insets = emptyInsets;
-        c.anchor = GridBagConstraints.CENTER;
-        c.fill = GridBagConstraints.BOTH;
-        panel.add(ps, c);
-
-        c.weightx = 0;
-        c.weighty = 0;
-        c.insets = titleInsets;
-        c.anchor = GridBagConstraints.LAST_LINE_START;
-        c.gridwidth = 3;
-        c.gridx = 0;
-        c.gridy++;
-        c.fill = GridBagConstraints.NONE;
-        panel.add(fcLabel, c);
-
-        c.weightx = 1;
-        c.weighty = 0.25;
-        c.anchor = GridBagConstraints.FIRST_LINE_START;
-        c.gridy++;
-        c.gridx = 0;
-        c.fill = GridBagConstraints.BOTH;
-        panel.add(fAndC, c);
+        ps.setBorder(SharedLayoutPanel.createIndentBorder());
+        JButton adjustButton = new JButton();
+        Mnemonics.setLocalizedText(adjustButton, Bundle.adjustColors());
+        adjustButton.addActionListener(ae -> {
+            DialogBuilder.forName("adjustColors")
+                    .forComponent(() -> {return new AdjustColorsPanel(fAndC.getColors());}, (AdjustColorsPanel pnl, ButtonMeaning update) -> {
+                        if (update.isAffirmitive()) {
+                            fAndC.setColors(pnl.colors());
+                        }
+                        return true;
+                    }).openDialog();
+        });
+        panel.add(new SharedLayoutPanel(radiusLabel, radius, adjustButton));
+        panel.add(new SharedLayoutPanel(colorSpaceLabel, colorSpaceCombo, cycleLabel, cycleCombo));
+        panel.add(psLabel);
+        panel.add(ps);
+        panel.add(fcLabel);
+        panel.add(fAndC);
+        fAndC.setBorder(SharedLayoutPanel.createIndentBorder());
 
         ps.setBackgroundPainter(this);
 
@@ -270,7 +222,7 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
             });
         });
 
-        panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        panel.setBorder(BorderFactory.createEmptyBorder());
         return panel;
     }
 
@@ -395,14 +347,19 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
     }
 
     public static void main(String[] args) {
-
         RadialGradientPaintCustomizer c = new RadialGradientPaintCustomizer("Wookie");
-
         JComponent comp = c.getComponent();
-
         JFrame jf = new JFrame(c.getName());
+
+        TitledPanel2 tp2 = new TitledPanel2("Whoopie", false, expanded -> {
+            return expanded ? comp : new JComboBox();
+        });
+
+        SharedLayoutRootPanel root = new SharedLayoutRootPanel(1, tp2);
+//        JPanel root = new JPanel();
+//        root.add(tp2);
         jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        jf.setContentPane(comp);
+        jf.setContentPane(root);
         jf.pack();
         jf.setVisible(true);
     }

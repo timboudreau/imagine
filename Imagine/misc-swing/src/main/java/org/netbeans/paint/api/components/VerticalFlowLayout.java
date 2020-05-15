@@ -4,9 +4,13 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
+import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.LayoutManager;
 import java.util.function.Function;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.border.Border;
 
 /**
  * A simple layout that lays components out vertically from top to bottom.
@@ -16,21 +20,55 @@ import java.util.function.Function;
 public final class VerticalFlowLayout implements LayoutManager {
 
     private final int gap;
+    private final boolean useMinimumSizeWhenTooSmall;
 
     public VerticalFlowLayout() {
         this(-1);
     }
 
-    public VerticalFlowLayout(int gap) {
+    public VerticalFlowLayout(int gap, boolean useMinimumSizeWhenTooSmall) {
         this.gap = gap;
+        this.useMinimumSizeWhenTooSmall = useMinimumSizeWhenTooSmall;
+    }
+
+    public VerticalFlowLayout(int gap) {
+        this(gap, false);
     }
 
     private int gap(Container c) {
         if (gap < 0) {
-            FontMetrics fm = c.getFontMetrics(c.getFont());
-            return fm.getHeight();
+            return defaultGap(c);
         }
         return gap;
+    }
+
+    public static int defaultGap(Component c) {
+        FontMetrics fm = c.getFontMetrics(c.getFont());
+        return (fm.getHeight() / 4) * 3;
+    }
+
+    public static Border topGapBorder() {
+        return TopGapBorder.INSTANCE;
+    }
+
+    private static final class TopGapBorder implements Border {
+
+        static final TopGapBorder INSTANCE = new TopGapBorder();
+
+        @Override
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            // do nothing
+        }
+
+        @Override
+        public Insets getBorderInsets(Component c) {
+            return new Insets(defaultGap(c), 0, 0, 0);
+        }
+
+        @Override
+        public boolean isBorderOpaque() {
+            return false;
+        }
     }
 
     private int expectedLineHeight(Container c) {
@@ -57,7 +95,7 @@ public final class VerticalFlowLayout implements LayoutManager {
             }
         }
         result.width += ins.left + ins.right;
-        result.height += ins.top + ins.bottom;
+        result.height += ins.top + ins.bottom + gap;
         return result;
     }
 
@@ -79,7 +117,7 @@ public final class VerticalFlowLayout implements LayoutManager {
         // If everything won't fit at preferred size,
         // use minimum size for everything and pray
         boolean useMinimum = false;
-        if (sz.height < pref.height) {
+        if (useMinimumSizeWhenTooSmall && sz.height < pref.height) {
             useMinimum = true;
         }
         Insets ins = parent.getInsets();
@@ -95,10 +133,11 @@ public final class VerticalFlowLayout implements LayoutManager {
             }
             Dimension ps = useMinimum ? c.getMinimumSize() : c.getPreferredSize();
             if (x + ps.width < sz.width - ins.right) {
-                ps.width = (sz.width - ins.right) - x;
+                ps.width = (sz.width - (ins.right)) - x;
             }
             // Give any extra space to the last component
-            if (i == comps.length - 1 && y + ps.height < bottom) {
+            if (i == comps.length - 1 && y + ps.height < bottom 
+                    && isStretchableBottomComponent(comps[i])) {
                 c.setBounds(x, y, ps.width, bottom - y);
                 break;
             }
@@ -110,6 +149,16 @@ public final class VerticalFlowLayout implements LayoutManager {
             c.setBounds(x, y, ps.width, ps.height);
             y += ps.height + workingGap;
         }
+    }
+
+    private boolean isStretchableBottomComponent(Component c) {
+        if (c instanceof JComboBox) {
+            return false;
+        }
+        if (c instanceof JComponent) {
+            return Boolean.TRUE.equals(((JComponent) c).getClientProperty("noVStretch"));
+        }
+        return true;
     }
 
     @Override

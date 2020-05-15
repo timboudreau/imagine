@@ -53,6 +53,23 @@ public final class GeometryEdit extends AbstractShapeEdit {
         return edit;
     }
 
+    public static AbstractShapeEdit performAbortableEdit(String name, ShapesCollection coll, RepaintHandle handle, Consumer<Abortable> editAdderConsumer) {
+        UndoMgr mgr = Utilities.actionsGlobalContext().lookup(UndoMgr.class);
+        if (mgr == null) {
+            editAdderConsumer.accept(() -> {
+            });
+            return AbstractShapeEdit.DUMMY_EDIT;
+        }
+        GeometryEdit edit = new GeometryEdit(name, coll, handle);
+        boolean aborted = AbortableImpl.SHARED_INSTANCE.borrow(editAdderConsumer);
+        if (!aborted) {
+            mgr.undoableEditHappened(new UndoableEditEvent(coll, edit));
+        } else {
+            return AbstractShapeEdit.DUMMY_EDIT;
+        }
+        return edit;
+    }
+
     @Override
     protected void undoImpl() throws CannotUndoException {
         shapes.getBounds(repaintBounds);

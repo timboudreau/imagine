@@ -10,14 +10,14 @@ import org.imagine.geometry.EqPointDouble;
  * adjusted by changing the location of any corner (and if the transformation by
  * adjusting a corner changes the logical corner being dragged, it will say so).
  */
-final class MutableRectangle2D extends EnhRectangle2D {
+public final class MutableRectangle2D extends EnhRectangle2D {
 
-    static final int NONE = -2;
-    static final int ANY = 0;
-    static final int NE = 1;
-    static final int SE = 2;
-    static final int NW = 3;
-    static final int SW = 4;
+    public static final int NONE = -2;
+    public static final int ANY = 0;
+    public static final int NE = 1;
+    public static final int SE = 2;
+    public static final int NW = 3;
+    public static final int SW = 4;
 
     public MutableRectangle2D(double x1, double y1, double x2, double y2) {
         super(genRectangle(new Point2D.Double(x1, y1), new Point2D.Double(x2, y2)));
@@ -155,6 +155,10 @@ final class MutableRectangle2D extends EnhRectangle2D {
                 throw new IllegalArgumentException();
         }
         return result;
+    }
+
+    public int nearestCorner(double x, double y) {
+        return nearestCorner(new EqPointDouble(x, y));
     }
 
     /**

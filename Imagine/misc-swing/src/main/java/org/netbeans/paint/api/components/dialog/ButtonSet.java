@@ -5,6 +5,7 @@
  */
 package org.netbeans.paint.api.components.dialog;
 
+import java.util.Arrays;
 import java.util.function.Consumer;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -32,6 +33,23 @@ public enum ButtonSet {
             curr.putClientProperty(ButtonType.class.getName(), types[i]);
             curr.putClientProperty(ButtonMeaning.class.getName(), meaning);
             result[i] = curr;
+        }
+        boolean mac = Utilities.isMac();
+        if (mac) {
+            Arrays.sort(result, (a, b) -> {
+                ButtonMeaning aMeaning = buttonMeaning(a);
+                ButtonMeaning bMeaning = buttonMeaning(b);
+                if (aMeaning.isAffirmitive()) {
+                    return 1;
+                } else if (bMeaning.isAffirmitive()) {
+                    return -1;
+                } else if (aMeaning.isDenial()) {
+                    return 1;
+                } else if (bMeaning.isDenial()) {
+                    return -1;
+                }
+                return 0;
+            });
         }
         return result;
     }
@@ -66,7 +84,7 @@ public enum ButtonSet {
             case OK_CANCEL:
             case YES_NO:
             case YES_NO_CANCEL:
-            case CLOSE :
+            case CLOSE:
                 return ButtonMeaning.AFFIRM;
             default:
                 throw new AssertionError(this);

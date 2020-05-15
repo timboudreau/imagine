@@ -167,9 +167,9 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
         }
         return result;
     }
-    private float zoom = 1.0f;
+    private double zoom = 1.0f;
 
-    public void setZoom(float zoom) {
+    public void setZoom(double zoom) {
         if (this.zoom != zoom) {
             Dimension old = getPreferredSize();
             this.zoom = zoom;
@@ -181,7 +181,7 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
         }
     }
 
-    public float getZoom() {
+    public double getZoom() {
         return zoom;
     }
     private Rectangle imageBounds = new Rectangle();
@@ -382,7 +382,7 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
         if ((e.getModifiersEx() & MouseWheelEvent.SHIFT_DOWN_MASK) != 0) {
             //Use Shift-MouseWheel to zoom
             float ct = -e.getWheelRotation();
-            float zoomFactor = getZoom();
+            double zoomFactor = getZoom();
             zoomFactor += ct / 10;
             zoomFactor = Math.max(0.1f, zoomFactor);
             zoomImpl.setZoom(zoomFactor);
@@ -606,11 +606,11 @@ class PaintCanvas extends JComponent implements RepaintHandle, ChangeListener, P
 
         private ChangeSupport supp = new ChangeSupport(this);
 
-        public float getZoom() {
+        public double getZoom() {
             return PaintCanvas.this.getZoom();
         }
 
-        public void setZoom(float val) {
+        public void setZoom(double val) {
             if (val != getZoom()) {
                 PaintCanvas.this.setZoom(val);
                 supp.fireChange();

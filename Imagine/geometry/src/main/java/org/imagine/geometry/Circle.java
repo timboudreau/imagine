@@ -393,6 +393,10 @@ public final strictfp class Circle implements Shape, Sector {
         return centerY;
     }
 
+    public EqPointDouble center() {
+        return new EqPointDouble(centerX, centerY);
+    }
+
     public double radius() {
         return radius;
     }
@@ -679,12 +683,28 @@ public final strictfp class Circle implements Shape, Sector {
         return () -> positions(count);
     }
 
-    public void getBounds(Rectangle into) {
-        int x = toInt(centerX - radius, false);
-        int y = toInt(centerY - radius, false);
-        int x2 = toInt(centerX + radius, true);
-        int y2 = toInt(centerY + radius, true);
-        into.setBounds(x, y, x2 - x, y2 - y);
+    public <T extends Rectangle2D> T addToBounds(T into) {
+        if (into instanceof Rectangle) {
+            int x = toInt(centerX - radius, false);
+            int y = toInt(centerY - radius, false);
+            int x2 = toInt(centerX + radius, true);
+            int y2 = toInt(centerY + radius, true);
+            if (into.isEmpty()) {
+                into.setFrame(x, y, x2 - x, y2 - y);
+            } else {
+                into.add(x, y);
+                into.add(x2, y2);
+            }
+        } else {
+            if (into.isEmpty()) {
+                into.setFrameFromDiagonal(centerX - radius, centerY - radius,
+                        centerX + radius, centerY + radius);
+            } else {
+                into.add(centerX - radius, centerY - radius);
+                into.add(centerX + radius, centerY + radius);
+            }
+        }
+        return into;
     }
 
     @Override

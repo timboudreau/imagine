@@ -14,7 +14,10 @@ package org.imagine.editor.api;
 
 import java.awt.BasicStroke;
 import java.awt.geom.AffineTransform;
+import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
 import javax.swing.event.ChangeListener;
+import org.imagine.geometry.util.PooledTransform;
 
 /**
  *
@@ -22,20 +25,60 @@ import javax.swing.event.ChangeListener;
  */
 public interface Zoom {
 
-    float getZoom();
+    double getZoom();
 
-    void setZoom(float val);
+    default float getZoomAsFloat() {
+        return (float) getZoom();
+    }
+
+    void setZoom(double val);
 
     void addChangeListener(ChangeListener cl);
 
     void removeChangeListener(ChangeListener cl);
+
+    default String stringValue() {
+        return ZoomPrivate.zoomToString(getZoom());
+    }
+
+    static String stringValue(double zoom) {
+        return ZoomPrivate.zoomToString(zoom);
+    }
+
+    default void zoomIn() {
+        setZoom((float) ZoomPrivate.nextZoom(getZoom()));
+    }
+
+    default void zoomOut() {
+        setZoom((float) ZoomPrivate.prevZoom(getZoom()));
+    }
+
+    default void zoomOneToOne() {
+        setZoom(1);
+    }
+
+    default boolean canZoomIn() {
+        return ZoomPrivate.hasNextZoom(getZoom());
+    }
+
+    default boolean canZoomOut() {
+        return ZoomPrivate.hasPreviousZoom(getZoom());
+    }
+
+    default double nearestFixedZoomTo(double val) {
+        return ZoomPrivate.nearestZoom(val);
+    }
+
+    static void visitDefaultFixedZooms(DoubleConsumer dc) {
+        ZoomPrivate.fixedZoomLevels(dc);
+    }
 
     default double scale(double val) {
         return val * getZoom();
     }
 
     default float scale(float val) {
-        return val * getZoom();
+        return (float) (val * getZoom());
     }
 
     default double inverseScale(double val) {
@@ -43,11 +86,11 @@ public interface Zoom {
     }
 
     default float inverseScale(float val) {
-        return val * (1F / getZoom());
+        return (float) (val * (1D / getZoom()));
     }
 
     default AffineTransform getZoomTransform() {
-        float zoom = getZoom();
+        double zoom = getZoom();
         return AffineTransform.getScaleInstance(zoom, zoom);
     }
 
@@ -60,8 +103,18 @@ public interface Zoom {
         return new BasicStroke((float) inverseScale(val));
     }
 
+    default void withZoomTransform(Consumer<AffineTransform> c) {
+        double zoom = getZoom();
+        PooledTransform.withScaleInstance(zoom, zoom, c);
+    }
+
+    default void withInverseTransform(Consumer<AffineTransform> c) {
+        double z = 1D / getZoom();
+        PooledTransform.withScaleInstance(z, z, c);
+    }
+
     default BasicStroke getStroke() {
-        float zoom = getZoom();
+        double zoom = getZoom();
         if (zoom == 1) {
             return new BasicStroke(1);
         }
@@ -69,32 +122,18 @@ public interface Zoom {
     }
 
     default boolean isOneToOne() {
-        return getZoom() == 1F;
+        return getZoom() == 1D;
     }
 
     default BasicStroke inverseScaleStroke(BasicStroke stroke) {
-        double z = getZoom();
-        if (z == 1) {
-            return stroke;
-        }
-        float w = inverseScale(stroke.getLineWidth());
-        float m = Math.max(1, inverseScale(stroke.getMiterLimit()));
-        float p = inverseScale(stroke.getDashPhase());
-        float[] dashes = stroke.getDashArray();
-        if (dashes != null) {
-            for (int i = 0; i < dashes.length; i++) {
-                dashes[i] = inverseScale(dashes[i]);
-            }
-        }
-        return new BasicStroke(w, stroke.getEndCap(), stroke.getLineJoin(),
-                m, dashes, p);
+        return ZoomPrivate.inverseScaledStroke(this, stroke);
     }
 
     public static Zoom ONE_TO_ONE = new Zoom() {
         private final AffineTransform xform = new AffineTransform();
 
         @Override
-        public float getZoom() {
+        public double getZoom() {
             return 1;
         }
 
@@ -111,7 +150,7 @@ public interface Zoom {
         }
 
         @Override
-        public void setZoom(float val) {
+        public void setZoom(double val) {
             // do nothing
         }
 

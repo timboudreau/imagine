@@ -18,10 +18,6 @@ class PaintStorage extends PaletteStorage<PaintKey<?>> {
 
     private static final Logger LOG = Logger.getLogger(PaintStorage.class.getName());
 
-    static {
-        LOG.setLevel(Level.ALL);
-    }
-
     public PaintStorage() {
         super(PaintKey.class);
     }

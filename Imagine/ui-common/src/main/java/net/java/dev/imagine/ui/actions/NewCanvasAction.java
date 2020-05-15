@@ -32,6 +32,7 @@ import javax.swing.UIManager;
 import net.java.dev.imagine.ui.common.BackgroundStyle;
 import net.java.dev.imagine.ui.common.ImageEditorFactory;
 import net.java.dev.imagine.ui.components.NewPicturePanel;
+import org.netbeans.paint.api.components.FlexEmptyBorder;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.openide.DialogDescriptor;
 import org.openide.DialogDisplayer;
@@ -41,12 +42,11 @@ import org.openide.util.HelpCtx;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
-import org.openide.util.Utilities;
 
 public final class NewCanvasAction extends org.openide.util.actions.CallableSystemAction {
 
     public NewCanvasAction() {
-        setIcon(ImageUtilities.loadImageIcon("net/java/dev/imagine/ui/actions/newFile.png", true));//NOI18N
+        setIcon(ImageUtilities.loadImageIcon("net/java/dev/imagine/ui/actions/new.svg", true));//NOI18N
     }
 
     private ImageEditorFactory findFactory() {
@@ -66,8 +66,7 @@ public final class NewCanvasAction extends org.openide.util.actions.CallableSyst
             return all.iterator().next();
         } else {
             JPanel pnl = new JPanel(new GridBagLayout());
-            int ins = Utilities.isMac() ? 12 : 5;
-            pnl.setBorder(BorderFactory.createEmptyBorder(ins, ins, ins, ins));
+            pnl.setBorder(new FlexEmptyBorder());
             JLabel lbl = new JLabel();
             Mnemonics.setLocalizedText(lbl,
                     NbBundle.getMessage(NewCanvasAction.class,
@@ -109,8 +108,9 @@ public final class NewCanvasAction extends org.openide.util.actions.CallableSyst
                     al.actionPerformed(evt);
                 });
             }
-            DialogDescriptor desc = new DialogDescriptor(pnl, "EDITOR_CHOICE", true, NotifyDescriptor.OK_CANCEL_OPTION, NotifyDescriptor.CANCEL_OPTION, evt -> {
-            });
+            DialogDescriptor desc = new DialogDescriptor(pnl, "EDITOR_CHOICE",
+                    true, NotifyDescriptor.OK_CANCEL_OPTION, NotifyDescriptor.CANCEL_OPTION, evt -> {
+                    });
             dlg[0] = desc;
             desc.setValid(false);
             if (NotifyDescriptor.OK_OPTION.equals(DialogDisplayer.getDefault().notify(desc)) && result[0] != null) {
@@ -136,7 +136,8 @@ public final class NewCanvasAction extends org.openide.util.actions.CallableSyst
             f.openNew(params.size, params.style, params.layerFactory);
         }
     }
-        /*
+
+    /*
         Dimension last = loadLastSize();
         final ImageSizePanel pnl = new ImageSizePanel(f.supportsBackgroundStyles(), false, last);
         String ttl = NbBundle.getMessage(ResizeAction.class, "TTL_NewImage");
@@ -169,7 +170,7 @@ public final class NewCanvasAction extends org.openide.util.actions.CallableSyst
         prefs.putInt("editor-width", Math.max(8, dim.width));
         prefs.putInt("editor-height", Math.max(8, dim.height));
     }
-         */
+     */
 
     public String getName() {
         return NbBundle.getMessage(NewCanvasAction.class, "ACT_NewImage");

@@ -20,17 +20,26 @@
             <artifactId>org-openide-awt</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-modules</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>image-editor-api</artifactId>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>utils</artifactId>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nbutil</artifactId>
-        </dependency>        
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>mastfrog-utils</artifactId>
+        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>paintapi</artifactId>

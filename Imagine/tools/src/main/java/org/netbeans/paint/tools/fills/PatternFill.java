@@ -53,6 +53,7 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Tim Boudreau
  */
+//@ToolElement(folder = "fills", name="Radial Gradient", position=400, icon="org/netbeans/paint/tools/resources/radialgradientfill.png")
 public class PatternFill implements Fill, Customizable, Serializable {
 
     private final String path;

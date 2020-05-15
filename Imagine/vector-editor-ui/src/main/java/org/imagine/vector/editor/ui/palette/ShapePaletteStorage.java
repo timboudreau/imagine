@@ -22,10 +22,6 @@ class ShapePaletteStorage extends PaletteStorage<ShapeElement> {
 
     private static final Logger LOG = Logger.getLogger(ShapePaletteStorage.class.getName());
 
-    static {
-        LOG.setLevel(Level.ALL);
-    }
-
     public ShapePaletteStorage() {
         super(ShapeElement.class);
     }

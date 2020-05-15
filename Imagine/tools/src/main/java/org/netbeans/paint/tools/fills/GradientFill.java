@@ -12,6 +12,7 @@ import java.awt.GradientPaint;
 import java.awt.Paint;
 import javax.swing.JComponent;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.spi.tool.ToolElement;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import org.netbeans.paint.tools.spi.Fill;
@@ -20,6 +21,7 @@ import org.netbeans.paint.tools.spi.Fill;
  *
  * @author Timothy Boudreau
  */
+@ToolElement(folder = "fills", name="Gradient", position=200, icon="org/netbeans/paint/tools/resources/gradientfill.png")
 public class GradientFill implements Fill, Customizable {
 
     private final Customizer<GradientPaint> paintCustomizer;

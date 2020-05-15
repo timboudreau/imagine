@@ -115,7 +115,7 @@ class TextPainter {
         double offset = set.captionLineOffset(zoom);
         line.shiftPerpendicular(direction ? offset * 2 : -(offset * 2));
         String txt = text();
-        PooledTransform.withScaleInstance(1D / zoom.getZoom(), 1D / zoom.getZoom(), xf -> {
+        zoom.withInverseTransform(xf -> {
             g.setFont(FONT.deriveFont(xf));
         });
 //        g.setFont(FONT.deriveFont(zoom.getInverseTransform()));

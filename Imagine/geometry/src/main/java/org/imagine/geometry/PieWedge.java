@@ -406,7 +406,7 @@ public class PieWedge extends AbstractShape implements Sector {
                         Double.toString(ang.angle)
                         + " / e" + Double.toString(ang.extent), 50, 50);
 
-//                Rectangle r = ang.getBounds();
+//                Rectangle r = ang.addToBounds();
 //                Color dk = new Color(0, 0, 0, 200);
 //                Color bt = new Color(255, 255, 255, 200);
 //                for (int x = r.x; x < r.x + r.width; x++) {

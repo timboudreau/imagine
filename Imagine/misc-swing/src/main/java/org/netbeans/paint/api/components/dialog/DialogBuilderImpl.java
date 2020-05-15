@@ -38,6 +38,8 @@ import javax.swing.JRootPane;
 import javax.swing.JWindow;
 import javax.swing.KeyStroke;
 import static javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE;
+import org.netbeans.paint.api.components.FlexEmptyBorder;
+import org.netbeans.paint.api.components.FlexEmptyBorder.Side;
 import org.openide.util.Utilities;
 
 /**
@@ -304,11 +306,14 @@ final class DialogBuilderImpl extends DialogBuilder {
             int dist = Utilities.isMac() ? 12 : 5;
             // public FlowLayout(int align, int hgap, int vgap)
             JPanel dialogControlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, dist, 0));
+            dialogControlPanel.setBorder(new FlexEmptyBorder(FlexEmptyBorder.Side.BOTTOM));
+//            dialogControlPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, dist, 0));
             ButtonType[] types = buttons.buttons();
 
             controlButtons = buttons.buttons(this::onButtonAction);
             assert types.length == controlButtons.length;
             for (JButton jb : controlButtons) {
+                jb.setBorder(BorderFactory.createCompoundBorder(new FlexEmptyBorder(1, 1, Side.LEFT), jb.getBorder()));
                 dialogControlPanel.add(jb);
             }
             if (helpAction != null) {
@@ -320,7 +325,7 @@ final class DialogBuilderImpl extends DialogBuilder {
                 includingHelp.add(dialogControlPanel, BorderLayout.EAST);
                 dialogControlPanel = includingHelp;
             }
-            dialogControlPanel.setBorder(BorderFactory.createEmptyBorder(dist, dist, dist, dist));
+//            dialogControlPanel.setBorder(BorderFactory.createEmptyBorder(dist, dist, dist, dist));
 
             JPanel contentPane = new JPanel(new BorderLayout());
             contentPane.add(dialogControlPanel, BorderLayout.SOUTH);

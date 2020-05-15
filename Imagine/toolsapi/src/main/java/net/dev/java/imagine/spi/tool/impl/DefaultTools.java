@@ -5,6 +5,7 @@ import java.beans.BeanInfo;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,6 +51,16 @@ public final class DefaultTools extends Tools {
         } catch (ClassNotFoundException ex) {
             Exceptions.printStackTrace(ex);
         }
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        List<String> all = new ArrayList<>(byName.keySet());
+        all.sort(Comparator.naturalOrder());
+        for (String key : all) {
+            sb.append(key).append(": ").append(byName.get(key)).append(" / ");
+        }
+        return sb.toString();
     }
 
     @Override

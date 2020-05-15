@@ -1,5 +1,6 @@
 package org.imagine.vector.editor.ui.undo;
 
+import com.mastfrog.function.state.Bool;
 import java.awt.Rectangle;
 import java.util.function.Consumer;
 import javax.swing.event.UndoableEditEvent;
@@ -53,6 +54,32 @@ public final class SingleShapeEdit extends AbstractShapeEdit {
             };
             editAdderConsumer.accept(editAdder);
             return se;
+        } else {
+            editAdderConsumer.accept(() -> {
+            });
+            return AbstractShapeEdit.DUMMY_EDIT;
+        }
+    }
+
+    public static AbstractShapeEdit maybeAddAbortableEdit(String name, ShapeElement el, ShapesCollection coll, RepaintHandle handle, Consumer<Abortable> editAdderConsumer) {
+        UndoMgr mgr = Utilities.actionsGlobalContext().lookup(UndoMgr.class);
+        if (mgr != null) {
+            SingleShapeEdit se = new SingleShapeEdit(name, el.restorableSnapshot(), el, coll, handle);
+            CURR_EDIT.set(se);
+
+            Bool hasEdits = Bool.create();
+            Consumer<Consumer<Abortable>> runner = c -> {
+                boolean aborted = AbortableImpl.SHARED_INSTANCE.borrow(c);
+                if (!aborted) {
+                    hasEdits.set();
+                }
+            };
+            runner.accept(editAdderConsumer);
+            hasEdits.ifTrue(() -> {
+                mgr.undoableEditHappened(new UndoableEditEvent(el, se));
+            });
+
+            return hasEdits.getAsBoolean() ? se : AbstractShapeEdit.DUMMY_EDIT;
         } else {
             editAdderConsumer.accept(() -> {
             });

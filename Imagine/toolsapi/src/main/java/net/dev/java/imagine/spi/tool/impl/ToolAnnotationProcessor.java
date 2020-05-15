@@ -1,9 +1,5 @@
 package net.dev.java.imagine.spi.tool.impl;
 
-import java.awt.event.KeyListener;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseWheelListener;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,6 +15,7 @@ import java.util.Properties;
 import java.util.Set;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
@@ -32,6 +29,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
@@ -40,6 +38,8 @@ import net.dev.java.imagine.api.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
 import net.dev.java.imagine.spi.tool.ToolDriver;
 import net.dev.java.imagine.spi.tool.ToolImplementation;
+import static net.dev.java.imagine.spi.tool.impl.ToolAnnotationProcessor.TOOL_ANNOTATION_TYPE;
+import static net.dev.java.imagine.spi.tool.impl.ToolAnnotationProcessor.TOOL_DEF_ANNOTATION_TYPE;
 import org.openide.filesystems.annotations.LayerBuilder;
 import org.openide.filesystems.annotations.LayerGeneratingProcessor;
 import org.openide.filesystems.annotations.LayerGenerationException;
@@ -54,17 +54,26 @@ import org.openide.util.lookup.ServiceProvider;
  */
 @ServiceProvider(service = Processor.class)
 //@SupportedAnnotationTypes("org.demo.action.annotation.Action")
-@SupportedSourceVersion(SourceVersion.RELEASE_5)
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
+@SupportedAnnotationTypes({
+    TOOL_ANNOTATION_TYPE,
+    TOOL_DEF_ANNOTATION_TYPE
+})
 public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
 
-    @Override
-    public Set<String> getSupportedAnnotationTypes() {
-        Set<String> hash = new HashSet<String>();
-        hash.add(Tool.class.getCanonicalName());
-        hash.add(ToolDef.class.getCanonicalName());
-        return hash;
-    }
+    public static final String TOOL_ANNOTATION_TYPE = "net.dev.java.imagine.api.tool.Tool";
+    public static final String TOOL_DEF_ANNOTATION_TYPE = "net.dev.java.imagine.spi.tool.ToolDef";
+    public static final String SCALING_MOUSE_LISTENER_TYPE = "net.dev.java.imagine.api.tool.aspects.ScalingMouseListener";
+    public static final String MOUSE_LISTENER_TYPE = "java.awt.event.MouseListener";
+    public static final String MOUSE_MOTION_LISTENER_TYPE = "java.awt.event.MouseMotionListener";
+    public static final String MOUSE_WHEEL_LISTENER_TYPE = "java.awt.event.MouseWheelListener";
+    public static final String KEY_LISTENER_TYPE = "java.awt.event.KeyListener";
+    public static final String TOOL_IMPLEMENTATION_TYPE = "net.dev.java.imagine.spi.tool.ToolImplementation";
+    public static final String WIDGET_ACTION_TYPE = "org.netbeans.api.visual.action.WidgetAction";
 
+    // XXX all of these annotation processors could be written with MUCH less
+    // code using com.mastfrog:annotation-utils, which is an evolved and generalized
+    // version of code originally written here
     /**
      * Allows us to fetch type arguments for a subclass of ToolImplementation
      */
@@ -82,20 +91,22 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
      */
     class ImplementedTypes {
 
-        private List<TypeMirror> allTypes = new ArrayList<TypeMirror>();
-        private List<TypeMirror> types = new ArrayList<TypeMirror>();
+        private List<TypeMirror> allTypes = new ArrayList<>();
+        private List<TypeMirror> types = new ArrayList<>();
         private final TypeElement type;
 
         ImplementedTypes(TypeElement el) {
             this.type = el;
-            final TypeElement mouseListener = processingEnv.getElementUtils().getTypeElement(MouseListener.class.getCanonicalName());
-            final TypeElement mouseMotionListener = processingEnv.getElementUtils().getTypeElement(MouseMotionListener.class.getCanonicalName());
-            final TypeElement mouseWheelListener = processingEnv.getElementUtils().getTypeElement(MouseWheelListener.class.getCanonicalName());
-            final TypeElement keyListener = processingEnv.getElementUtils().getTypeElement(KeyListener.class.getCanonicalName());
-            final TypeElement toolImplementation = processingEnv.getElementUtils().getTypeElement(KeyListener.class.getCanonicalName());
+            Elements els = processingEnv.getElementUtils();
+            final TypeElement scalingMouseListener = els.getTypeElement(SCALING_MOUSE_LISTENER_TYPE);
+            final TypeElement mouseListener = els.getTypeElement(MOUSE_LISTENER_TYPE);
+            final TypeElement mouseMotionListener = els.getTypeElement(MOUSE_MOTION_LISTENER_TYPE);
+            final TypeElement mouseWheelListener = els.getTypeElement(MOUSE_WHEEL_LISTENER_TYPE);
+            final TypeElement keyListener = els.getTypeElement(KEY_LISTENER_TYPE);
+            final TypeElement toolImplementation = els.getTypeElement(TOOL_IMPLEMENTATION_TYPE);
             //this last will be null if visual library not on the classpath
-            final TypeElement widgetAction = processingEnv.getElementUtils().getTypeElement("org.netbeans.api.visual.action.WidgetAction");
-            for (TypeElement te : new TypeElement[]{mouseListener, mouseMotionListener, mouseWheelListener, keyListener, toolImplementation, widgetAction}) {
+            final TypeElement widgetAction = els.getTypeElement(WIDGET_ACTION_TYPE);
+            for (TypeElement te : new TypeElement[]{mouseListener, scalingMouseListener, mouseMotionListener, mouseWheelListener, keyListener, toolImplementation, widgetAction}) {
                 if (te != null) {
                     TypeMirror tm = te.asType();
                     allTypes.add(tm);
@@ -147,216 +158,226 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
     @Override
     protected boolean handleProcess(Set<? extends TypeElement> set, RoundEnvironment env) throws LayerGenerationException {
         boolean result = true;
-        //All of the tool definitions
-        Map<String, ToolDefinitionEntry> definitions = new HashMap<String, ToolDefinitionEntry>();
-        //All of the ToolImplementations, mapped by name
-        Map<String, List<ToolImplEntry>> tools = new HashMap<String, List<ToolImplEntry>>();
+        try {
+            //All of the tool definitions
+            Map<String, ToolDefinitionEntry> definitions = new HashMap<String, ToolDefinitionEntry>();
+            //All of the ToolImplementations, mapped by name
+            Map<String, List<ToolImplEntry>> tools = new HashMap<String, List<ToolImplEntry>>();
 
-        //Find all the ToolDefs which define tools, their icons, display names, etc.
-        for (Element e : env.getElementsAnnotatedWith(ToolDef.class)) {
-            TypeElement clazz = (TypeElement) e;
-            ToolDef def = e.getAnnotation(ToolDef.class);
-            //Don't allow duplicates, and give sane warnings
-            if (definitions.containsKey(def.name())) {
-                result = false;
-                ToolDefinitionEntry other = definitions.get(def.name());
-                processingEnv.getMessager().printMessage(Kind.ERROR, "A tool named " + def.name() + " is also defined on " + other.appearsOn().asType().toString(), e);
-                processingEnv.getMessager().printMessage(Kind.ERROR, "A tool named " + def.name() + " is also defined on " + e.asType().toString(), other.appearsOn());
+            //Find all the ToolDefs which define tools, their icons, display names, etc.
+            for (Element e : env.getElementsAnnotatedWith(ToolDef.class)) {
+                TypeElement clazz = (TypeElement) e;
+                ToolDef def = e.getAnnotation(ToolDef.class);
+                //Don't allow duplicates, and give sane warnings
+                if (definitions.containsKey(def.name())) {
+                    result = false;
+                    ToolDefinitionEntry other = definitions.get(def.name());
+                    processingEnv.getMessager().printMessage(Kind.ERROR, "A tool named " + def.name() + " is also defined on " + other.appearsOn().asType().toString(), e);
+                    processingEnv.getMessager().printMessage(Kind.ERROR, "A tool named " + def.name() + " is also defined on " + e.asType().toString(), other.appearsOn());
+                }
+                //Record the entry
+                ToolDefinitionEntry td = new AnnotationToolDefinitionEntry(def, clazz);
+                definitions.put(td.name(), td);
             }
-            //Record the entry
-            ToolDefinitionEntry td = new AnnotationToolDefinitionEntry(def, clazz);
-            definitions.put(td.name(), td);
-        }
-        //Now find all the tool *implementations* - there can be multiple implementations
-        //of the same tool that work against different layer lookup contents
-        for (Element e : env.getElementsAnnotatedWith(net.dev.java.imagine.spi.tool.Tool.class)) {
-            TypeElement clazz = (TypeElement) e;
-            ToolImplEntry tl = new ToolImplEntry(e.getAnnotation(net.dev.java.imagine.spi.tool.Tool.class), clazz);
-            List<ToolImplEntry> tls = tools.get(tl.name());
-            if (tls == null) {
-                tls = new LinkedList<ToolImplEntry>();
-                tools.put(tl.name(), tls);
+            //Now find all the tool *implementations* - there can be multiple implementations
+            //of the same tool that work against different layer lookup contents
+            for (Element e : env.getElementsAnnotatedWith(net.dev.java.imagine.spi.tool.Tool.class)) {
+                TypeElement clazz = (TypeElement) e;
+                ToolImplEntry tl = new ToolImplEntry(e.getAnnotation(net.dev.java.imagine.spi.tool.Tool.class), clazz);
+                List<ToolImplEntry> tls = tools.get(tl.name());
+                if (tls == null) {
+                    tls = new LinkedList<ToolImplEntry>();
+                    tools.put(tl.name(), tls);
+                }
+                tls.add(tl);
             }
-            tls.add(tl);
-        }
-        //See if we have any orphan @Tool annotated classes which have no
-        //corresponding definition.  For ease of development, we will generate
-        //a dummy definition to make it easy to test them
-        for (Map.Entry<String, List<ToolImplEntry>> e : tools.entrySet()) {
-            if (!definitions.containsKey(e.getKey())) {
-                //We have a @Tool annotation, but no ToolDef for it.  Invent one
-                //with an ugly default icon, for development purposes
-                SyntheticToolDefinitionEntry synth = new SyntheticToolDefinitionEntry(e.getValue().iterator().next());
-                definitions.put(e.getKey(), synth);
+            //See if we have any orphan @Tool annotated classes which have no
+            //corresponding definition.  For ease of development, we will generate
+            //a dummy definition to make it easy to test them
+            for (Map.Entry<String, List<ToolImplEntry>> e : tools.entrySet()) {
+                if (!definitions.containsKey(e.getKey())) {
+                    //We have a @Tool annotation, but no ToolDef for it.  Invent one
+                    //with an ugly default icon, for development purposes
+                    SyntheticToolDefinitionEntry synth = new SyntheticToolDefinitionEntry(e.getValue().iterator().next());
+                    definitions.put(e.getKey(), synth);
+                }
             }
-        }
-        Set<Element> allElements = new HashSet<Element>();
-        //Force full validation of all the tool definitions, generating warnings
-        //and source annotations
-        for (ToolDefinitionEntry td : definitions.values()) {
-            allElements.add(td.appearsOn());
-            result &= td.validate();
-        }
-        //Validate and check for duplication among all tool implementations
-        for (List<ToolImplEntry> tllist : tools.values()) {
-            for (ToolImplEntry tl : tllist) {
-                allElements.add(tl.appearsOn());
-                result &= tl.validate();
-                for (List<ToolImplEntry> tllist1 : tools.values()) {
-                    for (ToolImplEntry tl1 : tllist1) {
-                        if (tl1 != tl) {
-                            if (tl1.name().equals(tl.name())) {
-                                TypeMirror a = tl.sensitiveToType();
-                                TypeMirror b = tl1.sensitiveToType();
-                                if (a.equals(b)) {
-                                    processingEnv.getMessager().printMessage(Kind.ERROR,
-                                            tl.className() + " and " + tl1.className()
-                                            + " represent the tool " + tl.name() + ". Both"
-                                            + " are sensitive to " + a + ". Which one would be "
-                                            + "used is ambiguous.", tl.appearsOn());
-                                    result = false;
+            Set<Element> allElements = new HashSet<Element>();
+            //Force full validation of all the tool definitions, generating warnings
+            //and source annotations
+            for (ToolDefinitionEntry td : definitions.values()) {
+                allElements.add(td.appearsOn());
+                result &= td.validate();
+            }
+            //Validate and check for duplication among all tool implementations
+            for (List<ToolImplEntry> tllist : tools.values()) {
+                for (ToolImplEntry tl : tllist) {
+                    allElements.add(tl.appearsOn());
+                    result &= tl.validate();
+                    for (List<ToolImplEntry> tllist1 : tools.values()) {
+                        for (ToolImplEntry tl1 : tllist1) {
+                            if (tl1 != tl) {
+                                if (tl1.name().equals(tl.name())) {
+                                    TypeMirror a = tl.sensitiveToType();
+                                    TypeMirror b = tl1.sensitiveToType();
+                                    if (a.equals(b)) {
+                                        processingEnv.getMessager().printMessage(Kind.ERROR,
+                                                tl.className() + " and " + tl1.className()
+                                                + " represent the tool " + tl.name() + ". Both"
+                                                + " are sensitive to " + a + ". Which one would be "
+                                                + "used is ambiguous.", tl.appearsOn());
+                                        result = false;
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
-
-        //Now we're ready to build the layer contents
-        if (result) {
-            String defaultBundle = Category.class.getPackage().getName()/*.replace('.', '/')  + "/Bundle" */ + ".Bundle";
-
-            LayerBuilder b = layer(allElements.toArray(new Element[allElements.size()]));
-            LayerBuilder.File actionsFolder = b.folder("Actions");
-            b = actionsFolder.write(); //make sure it exists
-            //A folder for all image actions
-            LayerBuilder.File imageActions = b.folder(actionsFolder.getPath() + "/ToolActions");
-            imageActions.bundlevalue("displayName", defaultBundle, "ToolActions");
-            b = imageActions.write();
-
-            LayerBuilder.File menuFolder = b.folder("Menu");
-            b = menuFolder.write(); //make sure it exists
-
-            //A folder for shadow files pointing to actions in a menu
-            LayerBuilder.File toolsMenu = b.folder(menuFolder.getPath() + "/ToolActions");
-            toolsMenu.bundlevalue("displayName", defaultBundle, "ToolActions");
-            toolsMenu.intvalue("position", 450);
-            b = toolsMenu.write();
-
-            LayerBuilder.File toolbarsFolder = b.folder("Toolbars");
-            b = toolbarsFolder.write(); //make sure it exists
-
-            //A folder for shadow files pointing to actions in a toolbar
-            LayerBuilder.File toolsToolbar = b.folder(toolbarsFolder.getPath() + "/ToolActions");
-            toolsToolbar.bundlevalue("displayName", defaultBundle, "ToolActions");
-            toolsToolbar.intvalue("position", 10000);
-            b = toolsToolbar.write();
-
-            //Now build entries for all tool definitions and impls
-            for (ToolDefinitionEntry td : definitions.values()) {
-                //First, put a Tool definition in tools/ - this will be an instance
-                //file that generates a ToolDriver, which reads some attributes from
-                //the FileObject to find the actual implementation class
-                String toolFolderPath = Tool.TOOLS_PATH + td.name();
-                //Each tool is a folder containing multiple .instance files for
-                //tool implementations
-                LayerBuilder.File oneToolFolder = b.folder(toolFolderPath);
-                //If we have a localized display name, use it
-                String bundle = td.displayNameBundle();
-                if (bundle != null) {
-                    if (bundle.indexOf('/') >= 0) {
-                        bundle = bundle.replace('/', '.');
-                    }
-                    if (bundle != null) {
-                        oneToolFolder.bundlevalue("displayName", bundle, td.name());
-                    }
-                } else {
-                    oneToolFolder.stringvalue("displayName", td.name()); // XXX ???
-                }
-                //There will always be an icon value, it just may be our dummy icon
-                oneToolFolder.urlvalue("SystemFileSystem.icon", "nbresloc:/" + td.iconPath());
-                oneToolFolder.stringvalue("category", td.category());
-
-                //PENDING: Need to consistently handle position attributes
-                if (td.position() != -1) {
-                    oneToolFolder.intvalue("position", td.position());
-                }
-                if (!ToolDef.DEFAULT_HELP_CTX.equals(td.getHelpCtx())) {
-                    oneToolFolder.stringvalue("helpID", td.getHelpCtx());
-                }
-                List<ToolImplEntry> impls = tools.get(td.name());
-                //If no implementations, warn the user.  They could exist in some
-                //other module, so it is not fatal
-                if (impls == null || impls.isEmpty()) {
-                    processingEnv.getMessager().printMessage(Kind.MANDATORY_WARNING, td.name() + " defined, but no @Tool implementations found using this name.", td.appearsOn());
-                    continue;
-                }
-                b = oneToolFolder.write();
-
-                int menuPosition = Integer.MAX_VALUE;
-                int toolbarPosition = Integer.MAX_VALUE;
-
-                //Write out .instance files for every implementation
-                for (ToolImplEntry tl : impls) {
-                    if (menuPosition == Integer.MAX_VALUE) {
-                        menuPosition = tl.menuPosition();
-                    }
-                    if (toolbarPosition == Integer.MAX_VALUE) {
-                        toolbarPosition = tl.toolbarPosition();
-                    }
-                    String implFileName = toolFolderPath + '/' + tl.layerFileName();
-                    LayerBuilder.File implFile = b.file(implFileName);
-                    //standard netbeans boilerplate
-                    implFile.stringvalue("instanceClass", ToolDriver.class.getName());
-                    implFile.methodvalue("instanceCreate", ToolDriver.class.getName(), "create");
-                    for (TypeMirror tm : tl.types.getTypes()) {
-                        implFile.stringvalue("instanceOf", tm.toString());
-                    }
-                    implFile.stringvalue(ToolDriver.TYPE_ATTRIBUTE, tl.className());
-                    implFile.stringvalue(ToolDriver.SENSITIVE_TO_ATTRIBUTE, tl.sensitiveToTypeName());
-                    b = implFile.write();
-                }
-                boolean isDefaultCategory = ToolDef.DEFAULT_CATEGORY.equals(td.category());
-
-                //Make an action file in the global actions pool folder
-                LayerBuilder.File actionFile = b.file(imageActions.getPath() + "/" + td.name() + ".instance");
-                actionFile.stringvalue("instanceClass", ToolAction.class.getName());
-                StringBuilder types = new StringBuilder();
-                for (Iterator<Class<?>> it = toolActionTypes().iterator(); it.hasNext();) {
-                    types.append(it.next().getName());
-                    if (it.hasNext()) {
-                        types.append(',');
-                    }
-                }
-                actionFile.stringvalue("instanceOf", types.toString());
-                actionFile.methodvalue("instanceCreate", ToolAction.class.getName(), "create");
-//                actionFile.boolvalue("noIconInMenu", true);
-                actionFile.stringvalue("SystemFileSystem.icon", "nbresloc:/" + td.iconPath());
-                actionFile.stringvalue(ToolAction.TOOL_NAME_ATTRIBUTE, td.name());
-
-                if (bundle != null) {
-                    actionFile.bundlevalue("displayName", bundle, td.name());
-                }
-                b = actionFile.write();
-                //create links in toolbar and menu folders
-                LayerBuilder.File menuShadow
-                        = b.shadowFile(actionFile.getPath(), toolsMenu.getPath(), td.name());
-                menuShadow.intvalue("position", menuPosition);
-                b = menuShadow.write();
-
-                LayerBuilder.File toolbarShadow
-                        = b.shadowFile(actionFile.getPath(), toolsToolbar.getPath(), td.name());
-                toolbarShadow.intvalue("position", toolbarPosition);
-                b = toolbarShadow.write();
+            if (definitions.isEmpty()) {
+                return result;
             }
-        }
 
+            //Now we're ready to build the layer contents
+            if (result) {
+                String defaultBundle = Category.class.getPackage().getName()/*.replace('.', '/')  + "/Bundle" */ + ".Bundle";
+
+                LayerBuilder b = layer(allElements.toArray(new Element[allElements.size()]));
+                LayerBuilder.File actionsFolder = b.folder("Actions");
+                b = actionsFolder.write(); //make sure it exists
+                //A folder for all image actions
+                LayerBuilder.File imageActions = b.folder(actionsFolder.getPath() + "/ToolActions");
+                imageActions.bundlevalue("displayName", defaultBundle, "ToolActions");
+                b = imageActions.write();
+
+                LayerBuilder.File menuFolder = b.folder("Menu");
+                b = menuFolder.write(); //make sure it exists
+
+                //A folder for shadow files pointing to actions in a menu
+                LayerBuilder.File toolsMenu = b.folder(menuFolder.getPath() + "/ToolActions");
+                toolsMenu.bundlevalue("displayName", defaultBundle, "ToolActions");
+                toolsMenu.intvalue("position", 450);
+                b = toolsMenu.write();
+
+                LayerBuilder.File toolbarsFolder = b.folder("Toolbars");
+                b = toolbarsFolder.write(); //make sure it exists
+
+                //A folder for shadow files pointing to actions in a toolbar
+                LayerBuilder.File toolsToolbar = b.folder(toolbarsFolder.getPath() + "/ToolActions");
+                toolsToolbar.bundlevalue("displayName", defaultBundle, "ToolActions");
+                toolsToolbar.intvalue("position", 10000);
+                b = toolsToolbar.write();
+
+                //Now build entries for all tool definitions and impls
+                for (ToolDefinitionEntry td : definitions.values()) {
+                    //First, put a Tool definition in tools/ - this will be an instance
+                    //file that generates a ToolDriver, which reads some attributes from
+                    //the FileObject to find the actual implementation class
+                    String toolFolderPath = Tool.TOOLS_PATH + td.name();
+                    //Each tool is a folder containing multiple .instance files for
+                    //tool implementations
+                    LayerBuilder.File oneToolFolder = b.folder(toolFolderPath);
+                    //If we have a localized display name, use it
+                    String bundle = td.displayNameBundle();
+                    if (bundle != null) {
+                        if (bundle.indexOf('/') >= 0) {
+                            bundle = bundle.replace('/', '.');
+                        }
+                        if (bundle != null) {
+                            oneToolFolder.bundlevalue("displayName", bundle, td.name());
+                        }
+                    } else {
+                        oneToolFolder.stringvalue("displayName", td.name()); // XXX ???
+                    }
+                    //There will always be an icon value, it just may be our dummy icon
+                    oneToolFolder.urlvalue("SystemFileSystem.icon", "nbresloc:/" + td.iconPath());
+                    oneToolFolder.stringvalue("category", td.category());
+
+                    //PENDING: Need to consistently handle position attributes
+                    if (td.position() != -1) {
+                        oneToolFolder.intvalue("position", td.position());
+                    }
+                    if (!ToolDef.DEFAULT_HELP_CTX.equals(td.getHelpCtx())) {
+                        oneToolFolder.stringvalue("helpID", td.getHelpCtx());
+                    }
+                    List<ToolImplEntry> impls = tools.get(td.name());
+                    //If no implementations, warn the user.  They could exist in some
+                    //other module, so it is not fatal
+                    if (impls == null || impls.isEmpty()) {
+                        processingEnv.getMessager().printMessage(Kind.MANDATORY_WARNING, td.name() + " defined, but no @Tool implementations found using this name.", td.appearsOn());
+                        continue;
+                    }
+                    b = oneToolFolder.write();
+
+                    int menuPosition = Integer.MAX_VALUE;
+                    int toolbarPosition = Integer.MAX_VALUE;
+
+                    //Write out .instance files for every implementation
+                    for (ToolImplEntry tl : impls) {
+                        if (menuPosition == Integer.MAX_VALUE) {
+                            menuPosition = tl.menuPosition();
+                        }
+                        if (toolbarPosition == Integer.MAX_VALUE) {
+                            toolbarPosition = tl.toolbarPosition();
+                        }
+                        String implFileName = toolFolderPath + '/' + tl.layerFileName();
+                        LayerBuilder.File implFile = b.file(implFileName);
+                        //standard netbeans boilerplate
+                        implFile.stringvalue("instanceClass", ToolDriver.class.getName());
+                        implFile.methodvalue("instanceCreate", ToolDriver.class.getName(), "create");
+                        for (TypeMirror tm : tl.types.getTypes()) {
+                            implFile.stringvalue("instanceOf", tm.toString());
+                        }
+                        implFile.stringvalue(ToolDriver.TYPE_ATTRIBUTE, tl.className());
+                        implFile.stringvalue(ToolDriver.SENSITIVE_TO_ATTRIBUTE, tl.sensitiveToTypeName());
+                        b = implFile.write();
+                    }
+                    boolean isDefaultCategory = ToolDef.DEFAULT_CATEGORY.equals(td.category());
+
+                    //Make an action file in the global actions pool folder
+                    LayerBuilder.File actionFile = b.file(imageActions.getPath() + "/" + td.name() + ".instance");
+                    actionFile.stringvalue("instanceClass", ToolAction.class.getName());
+                    StringBuilder types = new StringBuilder();
+                    for (Iterator<Class<?>> it = toolActionTypes().iterator(); it.hasNext();) {
+                        types.append(it.next().getName());
+                        if (it.hasNext()) {
+                            types.append(',');
+                        }
+                    }
+                    actionFile.stringvalue("instanceOf", types.toString());
+                    actionFile.methodvalue("instanceCreate", ToolAction.class.getName(), "create");
+//                actionFile.boolvalue("noIconInMenu", true);
+                    actionFile.stringvalue("SystemFileSystem.icon", "nbresloc:/" + td.iconPath());
+                    actionFile.stringvalue(ToolAction.TOOL_NAME_ATTRIBUTE, td.name());
+
+                    if (bundle != null) {
+                        actionFile.bundlevalue("displayName", bundle, td.name());
+                    }
+                    b = actionFile.write();
+                    //create links in toolbar and menu folders
+                    LayerBuilder.File menuShadow
+                            = b.shadowFile(actionFile.getPath(), toolsMenu.getPath(), td.name());
+                    menuShadow.intvalue("position", menuPosition);
+                    b = menuShadow.write();
+
+                    LayerBuilder.File toolbarShadow
+                            = b.shadowFile(actionFile.getPath(), toolsToolbar.getPath(), td.name());
+                    toolbarShadow.intvalue("position", toolbarPosition);
+                    b = toolbarShadow.write();
+                }
+            }
+        } catch (Exception | Error ex) {
+            IllegalArgumentException ise = new IllegalArgumentException("Exception thrown " + ex
+                    + " processing over? " + env.processingOver()
+                    + " error raised? " + env.errorRaised());
+            ise.printStackTrace(System.err);
+            throw ise;
+        }
         return result;
     }
 
     private static Set<Class<?>> toolActionTypes() {
-        Set<Class<?>> result = new HashSet<Class<?>>(Arrays.asList(ToolAction.class.getInterfaces()));
+        Set<Class<?>> result = new HashSet<>(Arrays.asList(ToolAction.class.getInterfaces()));
         Class<?> c = ToolAction.class;
         while (c != Object.class) {
             result.add(c);
@@ -624,6 +645,10 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
             this.name = name;
         }
 
+        public String toString() {
+            return "SyntheticToolDefinitionEntry(" + name + ")";
+        }
+
         public int position() {
             return -1;
         }
@@ -651,10 +676,6 @@ public class ToolAnnotationProcessor extends LayerGeneratingProcessor {
         @Override
         public String name() {
             return name.name();
-        }
-
-        public String toString() {
-            return "Synthetic tool " + name();
         }
 
         public boolean validate() {

@@ -1,7 +1,9 @@
 package org.imagine.geometry.util;
 
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.text.DecimalFormat;
 
@@ -111,6 +113,20 @@ public class GeometryStrings {
         return toString(sb, DEFAULT_COORD_DELIMITER, dbls);
     }
 
+    public static String toString(Point pt) {
+        if (pt == null) {
+            return "<null>";
+        }
+        return pt.x + DEFAULT_COORD_DELIMITER + pt.y;
+    }
+
+    public static String toString(Point2D pt) {
+        if (pt == null) {
+            return "<null>";
+        }
+        return toString(pt.getX(), pt.getY());
+    }
+
     public static StringBuilder toString(StringBuilder sb, String delim, double... dbls) {
         for (int i = 0; i < dbls.length; i++) {
             sb.append(FMT.format(dbls[i]));
@@ -203,7 +219,7 @@ public class GeometryStrings {
         return sb.append(')').toString();
     }
 
-    private  static StringBuilder doubleArrayToString(double[] dbls, StringBuilder into) {
+    private static StringBuilder doubleArrayToString(double[] dbls, StringBuilder into) {
         for (int i = 0; i < dbls.length; i++) {
             into.append(toString(dbls[i]));
             if (i != dbls.length) {

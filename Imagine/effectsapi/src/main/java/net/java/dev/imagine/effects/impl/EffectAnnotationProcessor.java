@@ -2,7 +2,6 @@ package net.java.dev.imagine.effects.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -40,12 +39,6 @@ import org.openide.util.lookup.ServiceProvider;
 @SupportedSourceVersion(SourceVersion.RELEASE_5)
 @Messages("effects=Effects")
 public class EffectAnnotationProcessor extends LayerGeneratingProcessor {
-
-    @Override
-    public Set<String> getSupportedAnnotationTypes() {
-        Set<String> result = Collections.singleton(Effect.class.getCanonicalName());
-        return result;
-    }
 
     public List<? extends TypeMirror> getTypeParameters(TypeElement type) {
         //Get the non-generics type name of ToolImplementation

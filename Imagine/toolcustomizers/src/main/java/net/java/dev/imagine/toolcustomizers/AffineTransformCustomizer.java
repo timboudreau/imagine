@@ -5,21 +5,24 @@
  */
 package net.java.dev.imagine.toolcustomizers;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.text.DecimalFormat;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -30,22 +33,27 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSlider;
-import javax.swing.JSpinner;
-import javax.swing.SpinnerModel;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
-import javax.swing.border.BevelBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
+import net.dev.java.imagine.api.tool.aspects.ShapePreview;
 import org.imagine.utils.java2d.GraphicsUtils;
+import org.netbeans.paint.api.components.FlexEmptyBorder;
+import org.netbeans.paint.api.components.FlexEmptyBorder.Side;
+import org.netbeans.paint.api.components.PopupSliderUI;
 import org.netbeans.paint.api.components.RadialSliderUI;
+import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.netbeans.paint.api.components.StringConverter;
+import org.netbeans.paint.api.components.VerticalFlowLayout;
 import org.openide.awt.Mnemonics;
-import org.openide.util.ChangeSupport;
 import org.openide.util.NbBundle;
+import org.openide.util.NbBundle.Messages;
 import org.openide.util.WeakSet;
 
 /**
@@ -53,10 +61,11 @@ import org.openide.util.WeakSet;
  * @author Tim Boudreau
  */
 public class AffineTransformCustomizer implements Customizer<AffineTransform>,
-        ListenableCustomizer<AffineTransform> {
+        ListenableCustomizer<AffineTransform>, ShapePreview {
 
     private final AffineTransform value;
     private final String name;
+    private Shape shape;
 
     public AffineTransformCustomizer(String name, AffineTransform initial) {
         this.name = name;
@@ -73,34 +82,50 @@ public class AffineTransformCustomizer implements Customizer<AffineTransform>,
     }
 
     @Override
+    public void setShape(Shape shape) {
+        this.shape = shape;
+    }
+
+    @Override
     public AffineTransform get() {
         return new AffineTransform(value);
     }
 
+    @Messages({
+        "flip=Flip",
+        "generalRotation=General Rotation",
+        "generalScale=General Scale",
+        "generalTransform=General Transform",
+        "identity=Identity",
+        "quadrantRotation=Quadrant Rotation",
+        "translation=Translation",
+        "uniformScale=Uniform Scale",
+        "scale=Scale",
+        "unknown=Unknown",})
     private String typeString(int type) {
         switch (type) {
             case AffineTransform.TYPE_FLIP:
-                return "Flip";
+                return Bundle.flip();
             case AffineTransform.TYPE_GENERAL_ROTATION:
-                return "General Rotation";
+                return Bundle.generalRotation();
             case AffineTransform.TYPE_GENERAL_SCALE:
-                return "General Scale";
+                return Bundle.generalScale();
             case AffineTransform.TYPE_GENERAL_TRANSFORM:
-                return "General Transform";
+                return Bundle.generalTransform();
             case AffineTransform.TYPE_IDENTITY:
-                return "Identity";
+                return Bundle.identity();
             case AffineTransform.TYPE_QUADRANT_ROTATION:
-                return "Quadrant Rotation";
+                return Bundle.quadrantRotation();
             case AffineTransform.TYPE_TRANSLATION:
-                return "Translation";
+                return Bundle.translation();
             case AffineTransform.TYPE_UNIFORM_SCALE:
-                return "Uniform Scale";
+                return Bundle.uniformScale();
             case AffineTransform.TYPE_MASK_ROTATION:
-                return "Rotation";
+                return Bundle.rotation();
             case AffineTransform.TYPE_MASK_SCALE:
-                return "Scale";
+                return Bundle.scale();
             default:
-                return "Unknown";
+                return Bundle.unknown();
         }
     }
 
@@ -142,20 +167,35 @@ public class AffineTransformCustomizer implements Customizer<AffineTransform>,
         };
     }
 
+    @Override
+    public boolean isInUse() {
+        return panel != null && panel.isDisplayable();
+    }
+
     private JPanel panel;
 
+    @Messages({"matrix=Transform Matrix", "rotation=Rotation"})
     @Override
     public JComponent getComponent() {
-        if (panel != null) {
+        if (panel != null && !panel.isDisplayable()) {
             return panel;
         }
+//        setShape(new Triangle2D(100, 100, 0, 200, 200, 200));
         JPanel pnl = new JPanel(new BorderLayout());
+        pnl.setBorder(SharedLayoutPanel.createIndentBorder());
 
         JLabel type = new JLabel(typeString());
-        pnl.add(type, BorderLayout.NORTH);
+        type.setHorizontalTextPosition(SwingConstants.CENTER);
+        type.setFont(type.getFont().deriveFont(Font.ITALIC));
+        type.setMinimumSize(new Dimension(24, 24));
+//        pnl.add(type, BorderLayout.SOUTH);
 
         MatrixPreview pre = new MatrixPreview();
-        pnl.add(pre, BorderLayout.CENTER);
+        JPanel margin = new JPanel(new BorderLayout());
+        margin.setBorder(new FlexEmptyBorder());
+        margin.add(new JScrollPane(pre), BorderLayout.CENTER);
+        margin.add(type, BorderLayout.SOUTH);
+        pnl.add(margin, BorderLayout.CENTER);
         JSlider slider = new JSlider(0, 360, 0);
 
         boolean[] updating = new boolean[1];
@@ -168,21 +208,21 @@ public class AffineTransformCustomizer implements Customizer<AffineTransform>,
             updating[0] = false;
             change();
         };
-        MatrixComponent mx = new MatrixComponent(() -> {
+        MxComponent mx = new MxComponent(() -> {
             double[] d = new double[6];
             value.getMatrix(d);
             return d;
         }, updater, () -> {
             value.setToIdentity();
             change();
-        });
-        JPanel inner = new JPanel(new GridBagLayout());
-        pnl.add(inner, BorderLayout.EAST);
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = (new Insets(5, 5, 5, 5));
-        c.gridy = 0;
-        inner.add(mx, c);
-        c.gridy++;
+        }, -10, 10);
+        JPanel inner = new JPanel(new VerticalFlowLayout());
+        inner.setBorder(new FlexEmptyBorder(1f, 1f, Side.TOP, Side.RIGHT, Side.BOTTOM));
+        pnl.add(inner, BorderLayout.NORTH);
+        JLabel mxLabel = new JLabel(Bundle.matrix());
+        mxLabel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("controlDkShadow")));
+        inner.add(mxLabel);
+        inner.add(mx);
 
         RadialSliderUI.attach(slider);
         RadialSliderUI.setStringConverter(slider, new StringConverter() {
@@ -221,16 +261,17 @@ public class AffineTransformCustomizer implements Customizer<AffineTransform>,
             type.setText(typeString());
             change();
         };
+        JLabel rotLabel = new JLabel(Bundle.rotation());
+        rotLabel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("controlDkShadow")));
+        inner.add(rotLabel);
         slider.addChangeListener(ch);
-        inner.add(slider, c);
+        inner.add(slider);
         JButton reset = new JButton();
         Mnemonics.setLocalizedText(reset,
                 NbBundle.getMessage(AffineTransformCustomizer.class, "RESET"));
 
-        c.gridy++;
-        inner.add(reset, c);
+        inner.add(reset);
         reset.addActionListener(ae -> {
-            System.out.println("reset ");
             double[] d = new double[6];
             AffineTransform.getTranslateInstance(0, 0).getMatrix(d);
             updater.accept(d);
@@ -250,20 +291,15 @@ public class AffineTransformCustomizer implements Customizer<AffineTransform>,
         return props[ix];
     }
 
-    private static SpinnerModel model(double val) {
-        return new SpinnerDoubles(val);
-    }
-
-    private static JSpinner spinner(double val) {
-        return new JSpinner(model(val));
-    }
-
     @Override
     public String getName() {
         return name;
     }
 
     private final Shape shape() {
+        if (this.shape != null) {
+            return this.shape;
+        }
         Shape[] result = new Shape[1];
         GraphicsUtils.newBufferedImage(1, 1, g -> {
             Font font = new Font("Times New Roman", Font.BOLD, 12);
@@ -306,8 +342,8 @@ public class AffineTransformCustomizer implements Customizer<AffineTransform>,
             Shape xf = value.createTransformedShape(orig);
             Rectangle bds = xf.getBounds();
             Dimension result = bds.getSize();
-            result.width = Math.max(180, result.width + bds.x);
-            result.height = Math.max(180, result.height + bds.y);
+            result.width = Math.min(680, Math.max(360, result.width + bds.x));
+            result.height = Math.min(680, Math.max(360, result.height + bds.y));
             return result;
         }
 
@@ -317,156 +353,139 @@ public class AffineTransformCustomizer implements Customizer<AffineTransform>,
 
         private void paintC(Graphics2D g) {
             GraphicsUtils.setHighQualityRenderingHints(g);
-            g.setColor(UIManager.getColor("text"));
             Shape shape = value.createTransformedShape(orig);
             Rectangle bds = shape.getBounds();
             shape = AffineTransform.getTranslateInstance(-bds.x, -bds.y).createTransformedShape(shape);
-            g.draw(shape);
-            g.setColor(UIManager.getColor("controlShadow"));
+            g.setColor(new Color(128, 128, 255));
             g.fill(shape);
+            g.setStroke(new BasicStroke(2));
+            g.setColor(Color.BLACK);
+            g.draw(shape);
+            g.setColor(UIManager.getColor("controlDkShadow"));
+            g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
         }
     }
 
-    private static final class MatrixComponent extends JComponent implements ChangeListener {
+    static final class SimpleUI extends JPanel implements ChangeListener {
 
+        SimpleUI() {
+            super(new GridBagLayout());
+            AffineTransform xform = new AffineTransform();
+            xform.setToShear(WIDTH, WIDTH);
+        }
+
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+    }
+
+    static final class MxComponent extends JPanel implements ChangeListener, StringConverter {
+
+        private final double[] matrix = new double[6];
+        private final double rangeStart;
+        private final double rangeEnd;
         private final Supplier<double[]> doubles;
-        private final JSpinner[] lbls;
-        private final DecimalFormat fmt = new DecimalFormat("####00.000###");
         private final Consumer<double[]> consumer;
         private final Runnable onHide;
+        private static final int MULTIPLIER = 1000;
+        private final int min;
+        private final int max;
 
-        public MatrixComponent(Supplier<double[]> doubles, Consumer<double[]> consumer, Runnable onHide) {
+        MxComponent(Supplier<double[]> doubles, Consumer<double[]> consumer, Runnable onHide, double rangeStart, double rangeEnd) {
+            setLayout(new GridLayout(3, 2));
+            this.rangeStart = rangeStart;
+            this.rangeEnd = rangeEnd;
             this.doubles = doubles;
             this.consumer = consumer;
             this.onHide = onHide;
-//            setLayout(new GridLayout(3, 2));
-            setLayout(new GridBagLayout());
-            double[] vals = doubles.get();
-            lbls = new JSpinner[vals.length];
-            setBackground(UIManager.getColor("controlShadow"));
-            setForeground(UIManager.getColor("text"));
-            GridBagConstraints c = new GridBagConstraints();
-            c.fill = GridBagConstraints.HORIZONTAL;
-            c.anchor = GridBagConstraints.CENTER;
-            c.gridx = 0;
-            c.gridy = 0;
-            c.weightx = 1;
-            c.weighty = 1;
-            setMinimumSize(new Dimension(200, 200));
-            for (int i = 0; i < vals.length; i++) {
-                JSpinner l = spinner(vals[i]);
-                l.setMinimumSize(new Dimension(60, 12));
-                l.addChangeListener(this);
-                l.setToolTipText(name(i));
-                l.setOpaque(true);
-                l.setBackground(UIManager.getColor("control"));
-                l.setForeground(UIManager.getColor("text"));
-                l.setBorder(BorderFactory.createMatteBorder(5, 5, 5, 5, UIManager.getColor("controlShadow")));
-                add(l, c);
-                lbls[i] = l;
-                if (i % 2 == 1) {
-                    c.gridy++;
-                    c.gridx = 0;
-                } else {
-                    c.gridx++;
+            min = (int) Math.floor(rangeStart * MULTIPLIER);
+            max = (int) Math.floor(rangeEnd * MULTIPLIER);
+            System.arraycopy(doubles.get(), 0, matrix, 0, 6);
+            for (int i = 0; i < 4; i++) {
+                // Don't need the translate parameters
+                JSlider slider = createNumberModel(i);
+                add(slider);
+            }
+        }
+
+        private boolean refreshing;
+
+        void refresh() {
+            refreshing = true;
+            System.arraycopy(doubles.get(), 0, matrix, 0, 6);
+            for (Component c : getComponents()) {
+                if (c instanceof JSlider) {
+                    JSlider slider = (JSlider) c;
+                    Integer index = (Integer) slider.getClientProperty("ix");
+                    updateSlider(index, slider);
                 }
             }
-            setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+            refreshing = false;
+        }
+
+        private void updateSlider(int index, JSlider slider) {
+            int val = valueForSlider(index);
+            slider.setValue(val);
+        }
+
+        private double valueFromSlider(int sliderValue) {
+            double factor = (sliderValue - min) / (double) (max - min);
+            double scaled = (rangeEnd - rangeStart) * factor;
+            return Math.max(rangeStart, Math.min(rangeEnd, rangeStart + scaled));
+        }
+
+        private int valueForSlider(int index) {
+            double val = matrix[index];
+            double scaled = (val - rangeStart) * MULTIPLIER;
+            int result = (int) Math.round(scaled) + min;
+            return Math.max(min, Math.min(max, result));
+        }
+
+        private JSlider createNumberModel(int index) {
+            JSlider slider = new JSlider(min, max, valueForSlider(index));
+            PopupSliderUI.attach(slider);
+            RadialSliderUI.setStringConverter(slider, this);
+            slider.putClientProperty("ix", index);
+            slider.addChangeListener(this);
+            return slider;
+        }
+
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            if (refreshing) {
+                return;
+            }
+            JSlider slider = (JSlider) e.getSource();
+            double val = valueFromSlider(slider.getValue());
+            Integer index = (Integer) slider.getClientProperty("ix");
+            matrix[index] = val;
+            consumer.accept(Arrays.copyOf(matrix, matrix.length));
+        }
+
+        private final DecimalFormat FMT = new DecimalFormat("##0.0###");
+
+        @Override
+        public String valueToString(JSlider sl) {
+            double real = valueFromSlider(sl.getValue());
+            return FMT.format(real);
+        }
+
+        @Override
+        public int maxChars() {
+            return 8;
+        }
+
+        @Override
+        public String valueToString(int val) {
+            return FMT.format(valueFromSlider(val));
         }
 
         @Override
         public void removeNotify() {
             super.removeNotify();
             EventQueue.invokeLater(onHide);
-        }
-
-        private boolean refreshing;
-
-        public void update() {
-            if (refreshing) {
-                return;
-            }
-            double[] nue = new double[lbls.length];
-            for (int i = 0; i < lbls.length; i++) {
-                nue[i] = (double) lbls[i].getValue();
-            }
-            consumer.accept(nue);
-        }
-
-        public void refresh() {
-            refreshing = true;
-            try {
-                double[] vals = doubles.get();
-                for (int i = 0; i < vals.length; i++) {
-                    try {
-                        lbls[i].setValue(vals[i]);
-                    } catch (IllegalArgumentException ex) {
-                        new IllegalArgumentException("Illegal " + vals[i]
-                                + " min " + lbls[i].getModel(),
-                                ex).printStackTrace();
-                    }
-                }
-            } finally {
-                refreshing = false;
-            }
-        }
-
-        @Override
-        public void stateChanged(ChangeEvent e) {
-            update();
-        }
-    }
-
-    static class SpinnerDoubles implements SpinnerModel {
-
-        private double value;
-        private final ChangeSupport supp = new ChangeSupport(this);
-
-        private SpinnerDoubles(double val) {
-            value = val;
-        }
-
-        @Override
-        public Object getValue() {
-            return value;
-        }
-
-        @Override
-        public void setValue(Object val) {
-            double newValue;
-            if (val == null) {
-                newValue = 0;
-            } else if (val instanceof Number) {
-                newValue = ((Number) val).doubleValue();
-            } else if (val instanceof String) {
-                newValue = Double.parseDouble(val.toString().trim());
-            } else {
-                throw new IllegalArgumentException("Wrong type " + val.getClass());
-            }
-            if (this.value != newValue) {
-                this.value = newValue;
-                supp.fireChange();
-            }
-        }
-
-        @Override
-        public Object getNextValue() {
-            return value + 0.1;
-        }
-
-        @Override
-        public Object getPreviousValue() {
-            return value - 0.1;
-        }
-
-        @Override
-        public void addChangeListener(ChangeListener l) {
-            supp.addChangeListener(l);
-        }
-
-        @Override
-        public void removeChangeListener(ChangeListener l) {
-            supp.removeChangeListener(l);
         }
     }
 }

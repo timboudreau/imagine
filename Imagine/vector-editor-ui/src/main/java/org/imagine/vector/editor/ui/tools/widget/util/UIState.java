@@ -18,6 +18,8 @@ public interface UIState {
 
     boolean focusDecorationsPainted();
 
+    boolean useProductionPaints();
+
     @FunctionalInterface
     interface UIStateListener {
 
@@ -30,7 +32,8 @@ public interface UIState {
         SHAPES_DRAGGABLE,
         CONTROL_POINTS_DRAGGABLE,
         FOCUS_DECORATIONS_PAINTED,
-        SELECTED_SHAPE_CONTROL_POINTS_VISIBLE
+        SELECTED_SHAPE_CONTROL_POINTS_VISIBLE,
+        USE_PRODUCTION_PAINTS
     }
 
     UIState listen(UIStateListener listener);
@@ -48,6 +51,8 @@ public interface UIState {
     UIState setControlPointsDraggable(boolean vis);
 
     UIState setShapesDraggable(boolean vis);
+
+    UIState setUseProductionPaints(boolean productionPainting);
 
     UIState copy();
 

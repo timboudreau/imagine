@@ -4,6 +4,7 @@ import com.mastfrog.util.strings.Escaper;
 import com.mastfrog.util.strings.Strings;
 import java.awt.geom.Rectangle2D;
 import java.text.DecimalFormat;
+import javafx.scene.shape.Polyline;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.elements.Arc;
 import net.java.dev.imagine.api.vector.elements.CircleWrapper;
@@ -12,8 +13,12 @@ import net.java.dev.imagine.api.vector.elements.ImageWrapper;
 import net.java.dev.imagine.api.vector.elements.Line;
 import net.java.dev.imagine.api.vector.elements.Oval;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
+import net.java.dev.imagine.api.vector.elements.PathText;
+import net.java.dev.imagine.api.vector.elements.PolygonWrapper;
+import net.java.dev.imagine.api.vector.elements.RhombusWrapper;
 import net.java.dev.imagine.api.vector.elements.RoundRect;
 import net.java.dev.imagine.api.vector.elements.Text;
+import net.java.dev.imagine.api.vector.elements.TriangleWrapper;
 import org.imagine.geometry.Triangle2D;
 import org.openide.util.NbBundle.Messages;
 
@@ -36,6 +41,8 @@ import org.openide.util.NbBundle.Messages;
     "arc=Arc",
     "triangle=Triangle",
     "path=Path",
+    "pathText=Path Text",
+    "rhombus=Rhombus",
     "unknown=Unknown",
     "nil=Null",
     "# {0} - x",
@@ -61,8 +68,18 @@ import org.openide.util.NbBundle.Messages;
     "# {4} - length",
     "lineInfo={0},{1} - {2},{3}: {4}",
     "# {0} - pointCount",
-    "pathInfo={0} points"
-
+    "pathInfo={0} points",
+    "# {0} - text",
+    "# {1} - shape",
+    "pathTextInfo=\"{0}\" for {1}",
+    "# {0} - pointCount",
+    "polygonInfo=Polygon with {0} points",
+    "# {0} - radX",
+    "# {1} - radY",
+    "# {2} - rot",
+    "# {3} - x",
+    "# {4} - y",
+    "rhombusInfo={0} x {1} rot {2}\u00B0 @ {3}, {4}"
 })
 public class ShapeNames {
 
@@ -93,6 +110,12 @@ public class ShapeNames {
                     FMT.format(r.width()), FMT.format(r.height()));
         } else if (primitive instanceof Text) {
             return Bundle.text();
+        } else if (primitive instanceof PathText) {
+            PathText pt = (PathText) primitive;
+            return Bundle.pathTextInfo(pt.getText(), infoString(pt.shape()));
+        } else if (primitive instanceof PolygonWrapper) {
+            PolygonWrapper poly = (PolygonWrapper) primitive;
+            return Bundle.polygonInfo(poly.getControlPointCount());
         } else if (primitive instanceof RoundRect) {
             RoundRect r = (RoundRect) primitive;
             return Bundle.rectangularInfo(FMT.format(r.x()), FMT.format(r.y()),
@@ -114,6 +137,10 @@ public class ShapeNames {
         } else if (primitive instanceof Clear) {
             Clear r = (Clear) primitive;
             return Bundle.rectangularInfo(r.x, r.y, r.width, r.height);
+        } else if (primitive instanceof RhombusWrapper) {
+            RhombusWrapper w = (RhombusWrapper) primitive;
+            return Bundle.rhombusInfo(w.radiusX(), w.radiusY(), w.rotation(),
+                    w.centerX(), w.centerY());
         }
         return "";
     }
@@ -133,7 +160,7 @@ public class ShapeNames {
             return Bundle.text();
         } else if (primitive instanceof RoundRect) {
             return Bundle.roundRect();
-        } else if (primitive instanceof Triangle2D) {
+        } else if (primitive instanceof Triangle2D || primitive instanceof TriangleWrapper) {
             return Bundle.triangle();
         } else if (primitive instanceof PathIteratorWrapper) {
             return Bundle.path();
@@ -143,9 +170,21 @@ public class ShapeNames {
             return Bundle.oval();
         } else if (primitive instanceof Clear) {
             return Bundle.clear();
+        } else if (primitive instanceof PathText) {
+            return Bundle.pathText();
+        } else if (primitive instanceof PolygonWrapper || primitive instanceof net.java.dev.imagine.api.vector.elements.Polygon) {
+            return Bundle.polygon();
+        } else if (primitive instanceof RhombusWrapper) {
+            return Bundle.rhombus();
+        } else if (primitive instanceof Polyline) {
+            return Bundle.polyline();
         }
-        return Strings.escape(primitive.getClass().getSimpleName(),
+        String result = Strings.escape(primitive.getClass().getSimpleName(),
                 ESC).trim();
+        if (result.endsWith(" Wrapper")) {
+            result = result.substring(0, result.length() - " Wrapper".length());
+        }
+        return result;
     }
 
     static Esc ESC = new Esc();

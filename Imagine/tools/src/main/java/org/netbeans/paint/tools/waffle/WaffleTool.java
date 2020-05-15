@@ -1,5 +1,6 @@
 package org.netbeans.paint.tools.waffle;
 
+import org.netbeans.paint.tools.spi.PathCreator;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -9,11 +10,11 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.geom.Path2D;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
+import javax.swing.JComponent;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.spi.tool.Tool;
@@ -23,15 +24,22 @@ import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import org.imagine.editor.api.CheckerboardBackground;
 import org.imagine.editor.api.ImageEditorBackground;
+import org.imagine.editor.api.PaintingStyle;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.EnhRectangle2D;
 import org.imagine.geometry.EqLine;
 import org.imagine.geometry.EqPointDouble;
 import org.netbeans.paint.api.components.Cursors;
-import org.netbeans.paint.tools.path.PathUIProperties;
+import org.netbeans.paint.api.components.explorer.FolderPanel;
+import static org.netbeans.paint.api.components.explorer.FolderPanel.PROP_SELECTION;
+import org.netbeans.paint.tools.minidesigner.GenericPathCreator;
+import org.netbeans.paint.tools.responder.PathUIProperties;
 import org.netbeans.paint.tools.responder.PaintingResponder;
 import org.netbeans.paint.tools.responder.Responder;
 import org.netbeans.paint.tools.responder.ResponderTool;
+import static org.netbeans.paint.tools.spi.PathCreator.REGISTRATION_PATH;
+import org.openide.util.Lookup;
+import org.openide.util.NbBundle.Messages;
 
 /**
  *
@@ -40,29 +48,100 @@ import org.netbeans.paint.tools.responder.ResponderTool;
 @ToolDef(name = "Waffle", iconPath = "org/netbeans/paint/tools/resources/waffle2.svg",
         category = "vector")
 @Tool(value = Surface.class, toolbarPosition = 2200)
+@Messages("waffle=Waffle")
 public class WaffleTool extends ResponderTool implements Supplier<PathUIProperties> {
 
     private List<EqPointDouble> points = new ArrayList<>(20);
     private PathUIProperties colors;
-    private Path2D.Double lastShape;
+    private Shape lastShape;
     private int hashAtLastShape;
     private static final Customizer<Boolean> close = Customizers.getCustomizer(
             Boolean.class, "Close", true);
-    private static final Customizer<Double> frequency = Customizers
-            .getCustomizer(Double.class, "Frequency", 1D, 500D, 30D);
-    private static final Customizer<Double> offsetX = Customizers
-            .getCustomizer(Double.class, "OffsetX", 2D, 250D, 10D);
-    private static final Customizer<Double> offsetY = Customizers
-            .getCustomizer(Double.class, "OffsetY", 1D, 250D, 20D);
+    private FolderPanel<PathCreator> folderPanel;
+
+    private PathCreator creator;
 
     public WaffleTool(Surface obj) {
         super(obj);
     }
 
+    static List<PathCreator> creators() {
+        List<PathCreator> all = new ArrayList<>();
+        all.add(new WaffleCreator());
+        all.add(new GenericPathCreator());
+        all.addAll(Lookup.getDefault().lookupAll(PathCreator.class));
+        return all;
+    }
+
+    private FolderPanel<PathCreator> createFolderPanel() {
+        FolderPanel<PathCreator> result = FolderPanel.create(REGISTRATION_PATH, PathCreator.class);
+        creator = result.getSelection();
+        if (creator == null) {
+            setCreator(new WaffleCreator());
+        }
+        result.addPropertyChangeListener(PROP_SELECTION, listener);
+        return result;
+    }
+
+    private void setCreator(PathCreator creator) {
+        if (creator != this.creator) {
+            this.creator = creator;
+            creator.init(super.obj);
+        }
+    }
+
+    private final PropertyChangeListener listener = evt -> {
+        setCreator((PathCreator) evt.getNewValue());
+    };
+
+    private FolderPanel<PathCreator> folderPanel() {
+        return folderPanel == null ? folderPanel = createFolderPanel()
+                : folderPanel;
+    }
+
+    private PathCreator creator() {
+        if (creator != null) {
+            return creator;
+        }
+        PathCreator result = creator = folderPanel().getSelection();
+        if (result == null) {
+            result = creator = new WaffleCreator();
+        }
+        return result;
+    }
+
     @Override
     public Customizer<?> getCustomizer() {
-        return new AggregateCustomizer<>("Waffle",
-                frequency, offsetX, offsetY, fillC, strokeC);
+        FolderPanel<PathCreator> panel = folderPanel(); // initializes creator
+        CU cu = new CU(panel);
+        return new AggregateCustomizer(Bundle.waffle(),
+                cu, close, fillC, paintC, outlineC, strokeC);
+    }
+
+    class CU implements Customizer<PathCreator> {
+
+        private final FolderPanel<PathCreator> fp;
+
+        public CU(FolderPanel<PathCreator> fp) {
+            this.fp = fp;
+        }
+
+        @Override
+        public JComponent getComponent() {
+            return fp;
+        }
+
+        @Messages("designer=Path Segments")
+        @Override
+        public String getName() {
+            return Bundle.designer();
+        }
+
+        @Override
+        public PathCreator get() {
+            return fp.getSelection();
+        }
+
     }
 
     public PathUIProperties get() {
@@ -98,7 +177,7 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
     @Override
     protected void onAttachRepainter(PaintParticipant.Repainter repainter) {
         boolean dark = ImageEditorBackground.getDefault().style() == CheckerboardBackground.DARK;
-        Cursors cursors = dark ? Cursors.dark() : Cursors.light();
+        Cursors cursors = dark ? Cursors.forDarkBackgrounds() : Cursors.forBrightBackgrounds();
         repainter.setCursor(cursors.star());
     }
 
@@ -106,21 +185,37 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
     protected Rectangle paintCommit(Graphics2D g) {
         boolean finish = close.get();
         if (finish) {
-            finish();
+            creator().finish(points);
         }
-        Path2D shape = currentShape(finish);
+        Shape shape = currentShape(finish, true);
+        if (shape == null) {
+            return null;
+        }
+        PaintingStyle ps = fillC.get();
+        if (ps.isFill()) {
+            g.setPaint(paintC.get().getPaint());
+            g.fill(shape);
+        }
         BasicStroke stroke = ResponderTool.strokeC.get();
-        g.setStroke(stroke);
-        g.setPaint(ResponderTool.paintC.get().getPaint());
-        g.draw(shape);
+        if (ps.isOutline()) {
+            g.setStroke(stroke);
+            g.setPaint(ResponderTool.outlineC.get().getPaint());
+            g.draw(shape);
+        }
+
         EnhRectangle2D rect = new EnhRectangle2D();
-        rect.add(shape, stroke);
+        if (ps.isOutline()) {
+            rect.add(shape, stroke);
+        } else {
+            rect.add(shape);
+        }
+        points.clear();
         return rect.getBounds();
     }
 
     @Override
     protected Rectangle paintLive(Graphics2D g, Rectangle layerBounds) {
-        Path2D shape = currentShape(false);
+        Shape shape = currentShape(false, false);
         if (shape == null) {
             return new Rectangle();
         }
@@ -153,18 +248,27 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
 
     private final Circle circ = new Circle();
 
+    private boolean addPoint(EqPointDouble pt) {
+        EqPointDouble realAdd = creator().acceptPoint(pt, points);
+        if (realAdd != null) {
+            points.add(pt);
+            return true;
+        }
+        return false;
+    }
+
     private class FirstResponder extends Responder {
 
         @Override
         protected Responder onClick(double x, double y, MouseEvent e) {
-            points.add(new EqPointDouble(x, y));
+            addPoint(new EqPointDouble(x, y));
             return new AddPointsResponder();
         }
 
         @Override
         protected void activate(Rectangle addTo) {
             boolean dark = ImageEditorBackground.getDefault().style() == CheckerboardBackground.DARK;
-            Cursors cursors = dark ? Cursors.dark() : Cursors.light();
+            Cursors cursors = dark ? Cursors.forDarkBackgrounds() : Cursors.forBrightBackgrounds();
             setCursor(cursors.star());
         }
 
@@ -179,7 +283,7 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
     }
 
     private EnhRectangle2D shapeBounds(boolean includePointRadii) {
-        Shape shape = currentShape(false);
+        Shape shape = currentShape(false, false);
         EnhRectangle2D result;
         if (shape == null) {
             result = new EnhRectangle2D();
@@ -216,11 +320,6 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
 
     private void repaintPoint(EqPointDouble pt) {
         repaintPoint(pt.x, pt.y);
-    }
-
-    private void repaintPoint(double x, double y) {
-        configureCircle(x, y);
-        repaint(circ, get().lineStroke());
     }
 
     private void addAllPoints(EnhRectangle2D to) {
@@ -269,7 +368,6 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
         }
 
         protected abstract EqPointDouble hoverPoint();
-
     }
 
     private class AddPointsResponder extends AbstractWaffleToolResponder implements PaintingResponder {
@@ -338,7 +436,7 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
             if (target != null) {
                 if (hoverSet) {
                     repaintPoint(hoverPoint);
-                    Path2D proposal = proposedAddition(hoverPoint);
+                    Shape proposal = proposedAddition(hoverPoint);
                     if (proposal != null) {
                         repaint(proposal, get().proposedLineStroke());
                     }
@@ -399,8 +497,8 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
                 return new FirstResponder();
             }
             hoverSet = true;
+            addPoint(pt);
             doRepaint(pt);
-            points.add(pt);
             return this;
         }
 
@@ -411,7 +509,7 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
         private void doRepaint(double currX, double currY) {
             if (hoverSet) {
                 repaintPoint(hoverPoint);
-                Path2D.Double proposal = proposedAddition(hoverPoint);
+                Shape proposal = proposedAddition(hoverPoint);
                 if (proposal != null) {
                     repaint(proposal, get().lineStroke());
                 }
@@ -419,13 +517,6 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
                 repaintPoint(currX, currY);
             }
             hoverPoint.setLocation(currX, currY);
-        }
-
-        private Path2D.Double proposedAddition(EqPointDouble last) {
-            Path2D.Double p2d = new Path2D.Double(Path2D.WIND_EVEN_ODD);
-            p2d.moveTo(last.x, last.y);
-            applyPoints(points.size() % 2 == 0 ? 0 : 1, last, hoverPoint, p2d);
-            return p2d;
         }
 
         @Override
@@ -445,7 +536,7 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
                         EqPointDouble first = points.get(0);
 
                         EqPointDouble last = points.get(points.size() - 1);
-                        Path2D.Double p2d = proposedAddition(last);
+                        Shape p2d = proposedAddition(hoverPoint);
                         BasicStroke stroke = get().proposedLineStroke();
                         g.setStroke(stroke);
                         g.setColor(get().proposedLineDraw());
@@ -479,10 +570,14 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
             }
             return new Rectangle();
         }
-
     }
 
-    private Path2D.Double currentShape(boolean close) {
+    private Shape proposedAddition(EqPointDouble hoverPoint) {
+        return creator().proposedAddition(points, hoverPoint);
+    }
+
+    private Shape currentShape(boolean close, boolean commit) {
+
         if (points.size() < 2) {
             return null;
         }
@@ -495,94 +590,9 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
                 return lastShape;
             }
         }
-        Path2D.Double p = new Path2D.Double(Path2D.WIND_EVEN_ODD);
-        Iterator<EqPointDouble> iter = points.iterator();
-        EqPointDouble prev = iter.next();
-        p.moveTo(prev.x, prev.y);
-        int ix = 0;
-        while (iter.hasNext()) {
-            EqPointDouble curr = iter.next();
-            applyPoints(ix++, prev, curr, p);
-            prev = curr;
-        }
-        if (close) {
-            p.closePath();
-        }
-        hashAtLastShape = hash;
-        return lastShape = p;
-    }
+        Shape result = creator().create(close, true, points, null);
+        hashAtLastShape = result == null ? -1 : hash;
 
-    private void finish() {
-        if (!points.isEmpty() && points.size() > 1 && !points.get(0).equals(points.get(points.size() - 1))) {
-            points.add(points.get(0));
-        }
-    }
-
-    private void xapplyPoints(int index, EqPointDouble prev, EqPointDouble curr, Path2D into) {
-        EqLine line = new EqLine(prev, curr);
-        EqPointDouble cp1 = controlPoint1(index, line);
-        EqPointDouble cp2 = controlPoint2(index, line);
-        into.curveTo(cp1.getX(), cp1.getY(), cp2.getX(), cp2.getY(), curr.getX(), curr.getY());
-    }
-
-    private void applyPoints(int index, EqPointDouble prev, EqPointDouble curr, Path2D into) {
-        EqLine line = new EqLine(prev, curr);
-        double ang = line.angle();
-        double len = line.length();
-        double freq = frequency.get();
-        double count = len / freq;
-        int loops;
-        if (count < 1) {
-            count = loops = 1;
-        } else if (len % freq != 0) {
-            loops = (int) Math.floor(count);
-            double lastPos = freq * Math.floor(count);
-            if (lastPos == 0) {
-                lastPos = freq;
-                count = loops = 1;
-            } else if (lastPos - (freq * loops) > freq % 2) {
-                count = ++loops;
-            }
-        } else {
-            loops = (int) Math.floor(count);
-        }
-        double distancePer = len / count;
-        EqPointDouble lastPoint = prev.copy();
-        for (int i = 0; i < loops; i++) {
-            EqLine seg = EqLine.forAngleAndLength(lastPoint.x, lastPoint.y, ang, distancePer);
-            lastPoint = applyPoints(index, i, seg, into);
-        }
-    }
-
-    private EqPointDouble applyPoints(int index, int subIndex, EqLine seg, Path2D into) {
-        int item = index + subIndex;
-
-        EqPointDouble cp1 = controlPoint1(item, seg);
-        EqPointDouble cp2 = controlPoint1(item, seg);
-        into.curveTo(cp1.x, cp1.y, cp2.x, cp2.y, seg.x2, seg.y2);
-        return seg.getP2();
-    }
-
-    private EqPointDouble controlPoint1(int lineIndex, EqLine line) {
-        double offset = offsetX.get();
-        if (lineIndex % 2 == 0) {
-            offset *= -1;
-        }
-        line.shiftPerpendicular(offset);
-        EqPointDouble result = line.midPoint();
-        line.shiftPerpendicular(-offset);
-        return result;
-
-    }
-
-    private EqPointDouble controlPoint2(int lineIndex, EqLine line) {
-        double offset = offsetY.get();
-        if (lineIndex % 2 != 0) {
-            offset *= -1;
-        }
-        line.shiftPerpendicular(offset);
-        EqPointDouble result = line.midPoint();
-        line.shiftPerpendicular(-offset);
-        return result;
+        return lastShape = result;
     }
 }

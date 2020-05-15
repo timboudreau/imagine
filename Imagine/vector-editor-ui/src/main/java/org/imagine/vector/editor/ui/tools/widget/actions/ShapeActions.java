@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.IntConsumer;
 import javax.swing.JComponent;
@@ -58,6 +59,7 @@ import org.imagine.vector.editor.ui.palette.PaintPalettes;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
+import org.imagine.vector.editor.ui.spi.ZSync;
 import org.imagine.vector.editor.ui.tools.CSGOperation;
 import org.imagine.vector.editor.ui.tools.widget.DesignerControl;
 import org.imagine.vector.editor.ui.tools.widget.actions.generic.ActionsBuilder;
@@ -67,9 +69,11 @@ import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.widget.Widget;
 import org.netbeans.paint.api.components.dialog.DialogBuilder;
 import org.openide.util.Exceptions;
+import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.Utilities;
 import org.openide.util.lookup.ProxyLookup;
+import org.openide.windows.WindowManager;
 
 /**
  *
@@ -156,8 +160,17 @@ public class ShapeActions {
         "opCenterOnCanvas=Center {0}",
         "actionTransformFill=Transform Fill",
         "# {0} - name",
-        "opTransformFill=Transform Fill on {0}"
-    })
+        "opTransformFill=Transform Fill on {0}",
+        "actionMoveUp=Move Up",
+        "# {0} - name",
+        "opMoveUp=Move {0} Up",
+        "actionMoveDown=Move Down",
+        "# {0} - name",
+        "opMoveDown=Move {0} Down",
+        "actionArbitraryScale=Arbt&rary Scale",
+        "opArbitraryScale=Change Scale on {0}",
+        "opArbitraryScaleMultiple=Change Scale on Multiple Shapes",
+        "dlgAdjustScale=Scale & Transform",})
     public ShapeActions(DesignerControl ctrl) {
         this.ctrl = ctrl;
         actions = new ActionsBuilder();
@@ -168,7 +181,7 @@ public class ShapeActions {
                 .sensitiveTo(ShapeElement.class).sensingPresence()
                 .sensitiveTo(ShapesCollection.class).sensingPresence()
                 .testingBothWith((shape, shapes) -> {
-                    return shapes.indexOf(shape) != shapes.size() - 1;
+                    return shapes.canMoveToFront(shape);
                 })
                 .sensitiveTo(Widget.class).sensingPresence()
                 .sensitiveTo(ShapeControlPoint.class).sensingAbsence()
@@ -186,11 +199,10 @@ public class ShapeActions {
 
         actions.action(Bundle.actionToBack())
                 .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_B, 0))
-                .separatorAfter()
                 .sensitiveTo(ShapeElement.class).sensingPresence()
                 .sensitiveTo(ShapesCollection.class).sensingPresence()
                 .testingBothWith((shape, shapes) -> {
-                    return shapes.indexOf(shape) != 0;
+                    return shapes.canMoveToBack(shape);
                 })
                 .sensitiveTo(Widget.class).sensingPresence()
                 .sensitiveTo(ShapeControlPoint.class).sensingAbsence()
@@ -199,6 +211,54 @@ public class ShapeActions {
                     shapes.contentsEdit(Bundle.opMoveToBack(element.getName()), () -> {
                         if (shapes.toBack(element)) {
                             widget.bringToBack();
+                            widget.revalidate();
+                            widget.getScene().validate();
+                        }
+                    });
+                });
+
+        actions.action(Bundle.actionMoveUp())
+                .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_U, 0))
+                .separatorAfter()
+                .sensitiveTo(ShapeElement.class).sensingPresence()
+                .sensitiveTo(ShapesCollection.class).sensingPresence()
+                .testingBothWith((shape, shapes) -> {
+                    return shapes.canMoveUp(shape);
+                })
+                .sensitiveTo(Widget.class).sensingPresence()
+                .sensitiveTo(ShapeControlPoint.class).sensingAbsence()
+                .finish((element, shapes, widget, shouldBeNull) -> {
+                    assert shouldBeNull == null;
+                    shapes.contentsEdit(Bundle.opMoveUp(element.getName()), () -> {
+                        if (shapes.moveForward(element)) {
+//                            widget.bringToBack();
+                            ZSync sync = widget.getLookup().lookup(ZSync.class);
+                            if (sync != null) {
+                                sync.syncZOrder();
+                            }
+                            widget.revalidate();
+                            widget.getScene().validate();
+                        }
+                    });
+                });
+
+        actions.action(Bundle.actionMoveDown())
+                .withKeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_B, 0))
+                .sensitiveTo(ShapeElement.class).sensingPresence()
+                .sensitiveTo(ShapesCollection.class).sensingPresence()
+                .testingBothWith((shape, shapes) -> {
+                    return shapes.canMoveBack(shape);
+                })
+                .sensitiveTo(Widget.class).sensingPresence()
+                .sensitiveTo(ShapeControlPoint.class).sensingAbsence()
+                .finish((element, shapes, widget, shouldBeNull) -> {
+                    assert shouldBeNull == null;
+                    shapes.contentsEdit(Bundle.opMoveDown(element.getName()), () -> {
+                        if (shapes.moveBack(element)) {
+                            ZSync sync = widget.getLookup().lookup(ZSync.class);
+                            if (sync != null) {
+                                sync.syncZOrder();
+                            }
                             widget.revalidate();
                             widget.getScene().validate();
                         }
@@ -349,11 +409,16 @@ public class ShapeActions {
             DialogBuilder.forName("shapeText")
                     .setTitle(Bundle.opSetText())
                     .modal().showMultiLineTextLineDialog(text.item().as(Textual.class).getText(), 1, 768, newText -> {
-                        shapes.edit(Bundle.opSetText(), text, () -> {
-                            text.item().as(Textual.class).setText(newText);
-                            text.changed();
-                            ctrl.pointCountMayBeChanged(text);
-                            ctrl.shapeGeometryChanged(text);
+                        shapes.edit(Bundle.opSetText(), text, (abortable) -> {
+                            Textual txt = text.item().as(Textual.class);
+                            if (!Objects.equals(txt.getText(), text)) {
+                                txt.setText(newText);
+                                text.changed();
+                                ctrl.pointCountMayBeChanged(text);
+                                ctrl.shapeGeometryChanged(text);
+                            } else {
+                                abortable.abort();
+                            }
                         }).hook(() -> {
                             text.changed();
                             ctrl.pointCountMayBeChanged(text);
@@ -438,8 +503,8 @@ public class ShapeActions {
             if (xform != null && !xform.isIdentity()) {
                 coll.edit(Bundle.opTransformFill(el.getName()), el, () -> {
                     PaintKey<?> fill = el.getFillKey();
-                    if (fill instanceof TexturedPaintWrapperKey<?,?>) {
-                        fill = ((TexturedPaintWrapperKey<?,?>) fill).delegate();
+                    if (fill instanceof TexturedPaintWrapperKey<?, ?>) {
+                        fill = ((TexturedPaintWrapperKey<?, ?>) fill).delegate();
                     }
                     fill = fill.createTransformedCopy(xform);
                     el.setFill(fill.toPaint());
@@ -513,11 +578,17 @@ public class ShapeActions {
         }).sensitiveTo(ShapesCollection.class).sensingExactlyOne()
                 .finish((shape, shapes) -> {
                     PathIteratorWrapper w = shape.item().as(PathIteratorWrapper.class);
+                    int oldHash = w.hashCode();
                     assert w != null;
-                    shapes.edit(Bundle.opConvertToCurves(), shape, () -> {
-                        w.toCubicSplines();
-                        ctrl.shapeGeometryChanged(shape);
-                        ctrl.pointCountMayBeChanged(shape);
+                    shapes.edit(Bundle.opConvertToCurves(), shape, (abortable) -> {
+                        boolean result = w.toCubicSplines();
+                        // if nothing changed, don't add an undoable edit
+                        if (!result || w.hashCode() == oldHash) {
+                            abortable.abort();
+                        } else {
+                            ctrl.shapeGeometryChanged(shape);
+                            ctrl.pointCountMayBeChanged(shape);
+                        }
                     }).hook(() -> {
                         ctrl.shapeGeometryChanged(shape);
                         ctrl.pointCountMayBeChanged(shape);
@@ -528,7 +599,7 @@ public class ShapeActions {
                 .sensitiveTo(ShapeElement.class).sensingPresence()
                 .sensitiveTo(ShapesCollection.class).sensingPresence()
                 .finish((shape, shapes) -> {
-                    DialogBuilder.forName("convertToShapes")
+                    DialogBuilder.forName("convertToPathText")
                             .okCancel()
                             .showMultiLineTextLineDialog("This text will wrap around the shape", 2, 512, txt -> {
                                 Customizer<Font> cus = Customizers.getCustomizer(Font.class, "font");
@@ -559,11 +630,13 @@ public class ShapeActions {
                             .sensitiveTo(ShapeControlPoint.class).testingEach(pt -> {
                         return pt.availableControlPointKinds().contains(k);
                     }).finish((shapes, element, cp) -> {
-                        shapes.edit(Bundle.opPointType(k), element, () -> {
+                        shapes.edit(Bundle.opPointType(k), element, (abortable) -> {
                             boolean result = k.changeType(element.item().as(PathIteratorWrapper.class), cp.index());
                             if (result) {
                                 ctrl.shapeGeometryChanged(element);
                                 ctrl.pointCountMayBeChanged(element);
+                            } else {
+                                abortable.abort();
                             }
                         });
                     });
@@ -574,15 +647,20 @@ public class ShapeActions {
         actions.submenu(Bundle.submenuControlPoints(), a -> {
             for (ControlPointKind k : new ControlPointKind[]{ControlPointKind.LINE_TO_DESTINATION, ControlPointKind.CUBIC_CURVE_DESTINATION, ControlPointKind.QUADRATIC_CURVE_DESTINATION}) {
                 a.action(k.toString())
+                        .sensitiveTo(ShapesCollection.class).sensingPresence()
                         .sensitiveTo(ShapeElement.class)
                         .testingOne(element -> {
                             return element.isPaths()
                                     && element.item().is(PathIteratorWrapper.class);
-                        }).finish(element -> {
-                    if (k.addDefaultPoint(element.item().as(PathIteratorWrapper.class), lastPopupLocation)) {
-                        ctrl.pointCountMayBeChanged(element);
-                        ctrl.shapeGeometryChanged(element);
-                    }
+                        }).finish((coll, element) -> {
+                    coll.edit(Bundle.opPointType(element.getName()), element, abortable -> {
+                        if (k.addDefaultPoint(element.item().as(PathIteratorWrapper.class), lastPopupLocation)) {
+                            ctrl.pointCountMayBeChanged(element);
+                            ctrl.shapeGeometryChanged(element);
+                        } else {
+                            abortable.abort();
+                        }
+                    });
                 });
             }
         });
@@ -641,6 +719,51 @@ public class ShapeActions {
                             }
                         });
             }
+            a.action(Bundle.actionArbitraryScale()).sensitiveTo(ShapesCollection.class)
+                    .sensingPresence().sensitiveTo(ShapeElement.class)
+                    .testingEach(item -> {
+                        return item.canApplyTransform(testScale);
+                    }).finishMultiple((colls, shapes) -> {
+                Customizer<AffineTransform> ac = Customizers.getCustomizer(AffineTransform.class, "scaleShape");
+                AffineTransform xf = DialogBuilder.forName("scaleShape").modal()
+                        .okCancel().ownedBy(WindowManager.getDefault().getMainWindow())
+                        .forContent(ac.getComponent())
+                        .openDialog(comp -> {
+                            return ac.get();
+                        });
+                if (xf == null || xf.isIdentity()) {
+                    return;
+                }
+                Rectangle2D.Double oldCenter = new Rectangle2D.Double();
+                Rectangle2D.Double newCenter = new Rectangle2D.Double();
+                if (shapes.size() == 1) {
+                    // XXX need to capture the original bounds and re-center
+                    ShapeElement el = shapes.iterator().next();
+                    colls.iterator().next().edit(Bundle.opArbitraryScale(el.getName()), el, abortable -> {
+                        oldCenter.width = oldCenter.height = newCenter.width = newCenter.height = 0;
+                        el.addToBounds(oldCenter);
+                        el.applyTransform(xf);
+                        el.addToBounds(newCenter);
+                        double diffX = newCenter.getCenterX() - oldCenter.getCenterX();
+                        double diffY = newCenter.getCenterY() - oldCenter.getCenterY();
+                        el.translate(-diffX, -diffY);
+                        ctrl.shapeGeometryChanged(el);
+                    });
+                } else {
+                    colls.iterator().next().geometryEdit(Bundle.opArbitraryScaleMultiple(), () -> {
+                        for (ShapeElement el : shapes) {
+                            oldCenter.width = oldCenter.height = newCenter.width = newCenter.height = 0;
+                            el.addToBounds(oldCenter);
+                            el.applyTransform(xf);
+                            el.addToBounds(newCenter);
+                            double diffX = newCenter.getCenterX() - oldCenter.getCenterX();
+                            double diffY = newCenter.getCenterY() - oldCenter.getCenterY();
+                            el.translate(-diffX, -diffY);
+                            ctrl.shapeGeometryChanged(el);
+                        }
+                    });
+                }
+            });
         });
 
         actions.submenu(Bundle.submenuRotate(), a -> {
@@ -909,6 +1032,12 @@ public class ShapeActions {
     }
 
     private Point lastPopupLocation = new Point();
+
+    public JPopupMenu popup(Lookup lkp) {
+        JPopupMenu menu = new JPopupMenu();
+        actions.applyToPopup(menu, lkp);
+        return menu;
+    }
 
     public JPopupMenu menu(Widget widget, Point localLocation) {
         if (localLocation != null) {

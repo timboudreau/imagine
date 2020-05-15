@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.Supplier;
 import org.imagine.editor.api.snap.SnapPoints;
@@ -24,6 +25,7 @@ import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.OnSnap;
 import org.imagine.vector.editor.ui.ShapeSnapPointEntry;
 import org.imagine.vector.editor.ui.tools.CSGOperation;
+import org.imagine.vector.editor.ui.undo.Abortable;
 import org.imagine.vector.editor.ui.undo.UndoRedoHookable;
 
 /**
@@ -58,8 +60,12 @@ public interface ShapesCollection extends Hibernator, Iterable<ShapeElement> {
      */
     UndoRedoHookable edit(String name, ShapeElement el, Runnable r);
 
+    UndoRedoHookable edit(String name, ShapeElement el, Consumer<Abortable> editPerformer);
+
     Supplier<SnapPoints<ShapeSnapPointEntry>> snapPoints(double radius,
             OnSnap<ShapeSnapPointEntry> onSnap);
+
+    UndoRedoHookable abortableGeometryEdit(String name, Consumer<Abortable> r);
 
     /**
      * Initiate an edit of the geometry of multiple shapes (e.g., applying an
@@ -71,6 +77,8 @@ public interface ShapesCollection extends Hibernator, Iterable<ShapeElement> {
     UndoRedoHookable geometryEdit(String name, Runnable r);
 
     UndoRedoHookable contentsEdit(String name, Runnable r);
+
+    UndoRedoHookable contentsEdit(String name, Consumer<Abortable> abortableConsumer);
 
     void addToBounds(Rectangle2D b);
 
@@ -116,6 +124,26 @@ public interface ShapesCollection extends Hibernator, Iterable<ShapeElement> {
     boolean toFront(ShapeElement en);
 
     boolean toBack(ShapeElement en);
+
+    boolean moveBack(ShapeElement el);
+
+    boolean moveForward(ShapeElement el);
+
+    default boolean canMoveUp(ShapeElement el) {
+        return indexOf(el) > 0;
+    }
+
+    default boolean canMoveBack(ShapeElement el) {
+        return indexOf(el) < size() - 1;
+    }
+
+    default boolean canMoveToFront(ShapeElement el) {
+        return indexOf(el) > 0;
+    }
+
+    default boolean canMoveToBack(ShapeElement el) {
+        return indexOf(el) < size() - 1;
+    }
 
     List<? extends ShapeElement> possiblyOverlapping(ShapeElement el);
 

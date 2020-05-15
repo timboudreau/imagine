@@ -6,9 +6,9 @@
 package org.netbeans.paint.tools.freehand;
 
 import com.pump.geom.BasicMouseSmoothing;
-import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
+import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.KeyEvent;
@@ -94,7 +94,7 @@ public class FreehandTool extends ResponderTool {
             if (shape != null) {
                 PaintingStyle style = ResponderTool.fillC.get();
                 Fill fill = ResponderTool.paintC.get();
-                Color outline = ResponderTool.outlineC.get();
+                Paint outline = ResponderTool.outlineC.get().getPaint();
                 if (style.isFill()) {
                     g.setPaint(fill.getPaint());
                     g.fill(shape);
@@ -180,7 +180,7 @@ public class FreehandTool extends ResponderTool {
                 if (shape != null) {
                     PaintingStyle style = ResponderTool.fillC.get();
                     Fill fill = ResponderTool.paintC.get();
-                    Color outline = ResponderTool.outlineC.get();
+                    Paint outline = ResponderTool.outlineC.get().getPaint();
                     if (style.isFill()) {
                         g.setPaint(fill.getPaint());
                         g.fill(shape);

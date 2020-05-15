@@ -1,15 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.java.dev.imagine.toolcustomizers;
 
 import com.mastfrog.function.state.Bool;
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
@@ -34,16 +29,13 @@ import org.imagine.editor.api.Join;
 import org.imagine.geometry.EqLine;
 import org.imagine.geometry.Triangle2D;
 import org.imagine.utils.java2d.GraphicsUtils;
-import org.netbeans.paint.api.components.DefaultSharedLayoutData;
 import org.netbeans.paint.api.components.EnumComboBoxModel;
-import org.netbeans.paint.api.components.FontManagingPanelUI;
-import org.netbeans.paint.api.components.LayoutDataProvider;
 import org.netbeans.paint.api.components.PopupSliderUI;
 import org.netbeans.paint.api.components.RadialSliderUI;
-import org.netbeans.paint.api.components.SharedLayoutData;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
+import org.netbeans.paint.api.components.SharedLayoutRootPanel;
 import org.netbeans.paint.api.components.StringConverter;
-import org.netbeans.paint.api.components.TitledPanel;
+import org.netbeans.paint.api.components.TitledPanel2;
 import org.netbeans.paint.api.components.VerticalFlowLayout;
 import org.netbeans.paint.api.components.fractions.Fraction;
 import org.netbeans.paint.api.components.fractions.FractionsEditor;
@@ -101,50 +93,24 @@ public class BasicStrokeCustomizer extends AbstractCustomizer<BasicStroke> imple
     }
 
     public static void main(String[] args) {
-        class JP extends JPanel implements SharedLayoutData {
+        Font f = new Font("Arial", Font.PLAIN, 24);
+        UIManager.put("controlFont", f);
+        UIManager.put("Label.font", f);
+        UIManager.put("Panel.font", f);
+        UIManager.put("Slider.font", f);
+        UIManager.put("ComboBox.font", f);
+        UIManager.put("Tree.font", f);
+        UIManager.put("Button.font", f);
+        UIManager.put("TextField.font", f);
+        UIManager.put("List.font", f);
 
-            double scale = 1.5;
-//            double scale = 1.25;
-//            double scale = 3;
-            private final SharedLayoutData data = new DefaultSharedLayoutData();
-
-            JP() {
-                super(new VerticalFlowLayout(12));
-                setUI(new FontManagingPanelUI(
-                        AffineTransform.getScaleInstance(scale, scale)));
-                setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-            }
-
-            @Override
-            public int xPosForColumn(int column) {
-                return data.xPosForColumn(column);
-            }
-
-            @Override
-            public void register(LayoutDataProvider p) {
-                data.register(p);
-            }
-
-            @Override
-            public void unregister(LayoutDataProvider p) {
-                data.unregister(p);
-            }
-
-            @Override
-            public void expanded(LayoutDataProvider p, boolean state) {
-                data.expanded(p, state);
-            }
-        }
-        JP jp = new JP();
+//        TitledPanel2.debugLayout(true);
         BasicStrokeCustomizer cus = new BasicStrokeCustomizer("wurgle");
-        for (JComponent comp : cus.getComponents()) {
-            jp.add(comp);
-        }
-
-//        JComponent comp = cus.getComponent();
-//        jp.add(comp);
         JFrame frm = new JFrame("Demo");
-        frm.setContentPane(jp);
+        JComponent comp = cus.getComponent();
+        System.out.println("COMPONENT " + comp);
+
+        frm.setContentPane(comp);
         frm.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frm.pack();
         frm.setVisible(true);
@@ -152,10 +118,23 @@ public class BasicStrokeCustomizer extends AbstractCustomizer<BasicStroke> imple
 
     @Override
     protected JComponent[] createComponents() {
-        JComponent[] result = new JComponent[]{
-            new TP()
+        JSlider widthSlider = createWidthSlider();
+
+//        JPanel pnl = new JPanel(new VerticalFlowLayout());
+        JPanel pnl = new SharedLayoutRootPanel();
+        pnl.add(createWidthPanel());
+        pnl.add(createCombos());
+        pnl.add(createMiterPanel());
+        pnl.add(createDashedBox());
+        pnl.add(createDashesEditor());
+        pnl.add(createPreview());
+        TitledPanel2 tp = new TitledPanel2("STROKE", BasicStrokeCustomizer.class, false,
+                expanded -> {
+                    return expanded ? pnl : widthSlider;
+                });
+        return new JComponent[]{
+            tp
         };
-        return result;
     }
 
     private JComponent createDashedBox() {
@@ -166,7 +145,7 @@ public class BasicStrokeCustomizer extends AbstractCustomizer<BasicStroke> imple
             change();
         });
         dashed.setSelected(this.dashed);
-        return dashed;
+        return new SharedLayoutPanel(dashed);
     }
 
     private JComponent createCombos() {
@@ -175,9 +154,9 @@ public class BasicStrokeCustomizer extends AbstractCustomizer<BasicStroke> imple
         JComboBox<Join> joinBox = EnumComboBoxModel.newComboBox(join);
         joinLabel.setLabelFor(joinBox);
         SharedLayoutPanel pnl1 = new SharedLayoutPanel();
-        SharedLayoutPanel pnl2 = new SharedLayoutPanel();
+//        SharedLayoutPanel pnl2 = new SharedLayoutPanel();
         pnl1.add(joinLabel);
-        pnl2.add(joinBox);
+        pnl1.add(joinBox);
 
         joinBox.addItemListener(ie -> {
             this.join = (Join) joinBox.getSelectedItem();
@@ -193,11 +172,11 @@ public class BasicStrokeCustomizer extends AbstractCustomizer<BasicStroke> imple
         });
         capLabel.setLabelFor(capBox);
         pnl1.add(capLabel);
-        pnl2.add(capBox);
-        JPanel pnl = new JPanel(new VerticalFlowLayout());
-        pnl.add(pnl1);
-        pnl.add(pnl2);
-        return pnl;
+        pnl1.add(capBox);
+//        JPanel pnl = new JPanel(new VerticalFlowLayout());
+//        pnl.add(pnl1);
+//        pnl.add(pnl2);
+        return pnl1;
     }
 
     private static final int PHASE_MULTIPLIER = 100;
@@ -354,44 +333,6 @@ public class BasicStrokeCustomizer extends AbstractCustomizer<BasicStroke> imple
         return slider;
     }
 
-    final class TP extends TitledPanel {
-
-        private final JPanel pnl;
-        private final JSlider widthSlider;
-
-        TP() {
-            super(BasicStrokeCustomizer.class, "STROKE");
-            super.configButton.setVisible(false);
-
-            setCenterComponent(widthSlider = createWidthSlider());
-
-            pnl = new JPanel(new VerticalFlowLayout());
-            pnl.add(createWidthPanel());
-            pnl.add(createCombos());
-            pnl.add(createMiterPanel());
-            pnl.add(createDashedBox());
-            pnl.add(createDashesEditor());
-            pnl.add(createPreview());
-        }
-
-        @Override
-        public Component setExpanded(boolean val) {
-            if (val != isExpanded()) {
-                if (val) {
-                    setCenterComponent(pnl);
-                } else {
-                    setCenterComponent(widthSlider);
-                }
-            }
-            return super.setExpanded(val);
-        }
-
-        @Override
-        protected void onCustomize() {
-            // do nothing
-        }
-    }
-
     private static class WidthSC implements StringConverter {
 
         private final DecimalFormat fmt = new DecimalFormat("###0.##");
@@ -475,7 +416,7 @@ public class BasicStrokeCustomizer extends AbstractCustomizer<BasicStroke> imple
         phase = value.getDashPhase();
         float[] dash = value.getDashArray();
         revAtLastGet = -1;
-        last = null;
+        last = value;
         if (dash == null) {
             dashed = false;
             dashArray = new float[]{1};
@@ -491,6 +432,11 @@ public class BasicStrokeCustomizer extends AbstractCustomizer<BasicStroke> imple
             Preferences prefs = NbPreferences.forModule(BasicStrokeCustomizer.class);
             saveToPrefs(prefs);
         }
+    }
+
+    private void save() {
+        Preferences prefs = NbPreferences.forModule(BasicStrokeCustomizer.class);
+        saveToPrefs(prefs);
     }
 
     @Override

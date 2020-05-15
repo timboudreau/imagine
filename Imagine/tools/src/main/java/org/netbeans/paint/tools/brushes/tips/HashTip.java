@@ -11,6 +11,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import javax.swing.JComponent;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.spi.tool.ToolElement;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Constants;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
@@ -23,6 +24,7 @@ import org.openide.util.NbBundle;
  * 
  * @author Tim Boudreau
  */
+@ToolElement(folder = "brushtips", position=200, icon = "org/netbeans/paint/tools/resources/roundbrushtip.png", name = "Hatching Tip")
 public class HashTip implements BrushTip, Customizable {
     Customizer<Integer> vertDist = Customizers.getCustomizer(Integer.class,
             NbBundle.getMessage(HashTip.class,"hashVertical"), 0, 100); //NOI18N

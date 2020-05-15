@@ -29,11 +29,14 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
+import javax.swing.JPopupMenu;
 import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.api.vector.Centered;
 import net.java.dev.imagine.api.vector.Shaped;
 import net.java.dev.imagine.api.vector.Transformable;
+import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.imagine.awt.key.PaintKey;
+import org.imagine.editor.api.ContextLog;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.grid.Grid;
 import org.imagine.editor.api.grid.SnapSettings;
@@ -43,6 +46,7 @@ import org.imagine.editor.api.snap.Thresholds;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.LineVector;
+import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.PooledTransform;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.ShapeEntry;
@@ -52,6 +56,7 @@ import org.imagine.vector.editor.ui.palette.PaintPalettes;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
+import org.imagine.vector.editor.ui.spi.ZSync;
 import org.imagine.vector.editor.ui.tools.MutableProxyLookup;
 import org.imagine.vector.editor.ui.tools.widget.actions.AdjustmentKeyAction;
 import org.imagine.vector.editor.ui.tools.widget.actions.MoveInSceneCoordinateSpaceAction;
@@ -74,6 +79,7 @@ import org.netbeans.api.visual.widget.Widget.Dependency;
 import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
+import org.openide.util.lookup.Lookups;
 
 /**
  *
@@ -81,6 +87,7 @@ import org.openide.util.NbBundle.Messages;
  */
 public class DesignWidgetManager implements DesignerControl {
 
+    static final ContextLog DWLOG = ContextLog.get("designwidget");
     private final ShapesCollection shapes;
     private final Scene scene;
     // Controls colors and shapes for decorations we draw
@@ -139,22 +146,26 @@ public class DesignWidgetManager implements DesignerControl {
     private Widget temporaryDragImageWidget;
     private final ShapeActions shapeActions = new ShapeActions(this);
     private final Thresholds thresholds;
-    private final SceneZoom sceneZoom;
+    private final Zoom sceneZoom;
+    private final Lookup layerLookup;
+    private final ZSync sync = DesignWidgetManager.this::syncZOrder;
 
-    public DesignWidgetManager(Scene scene, ShapesCollection coll, MutableProxyLookup lookup) {
+    public DesignWidgetManager(Scene scene, ShapesCollection coll, MutableProxyLookup lookup, Zoom zoom, Lookup layerLookup) {
         this.scene = scene;
         this.shapes = coll;
         this.selectionLookup = lookup;
-        sceneZoom = new SceneZoom();
+        sceneZoom = zoom == null ? new SceneZoom() : zoom;
         focusAction = new FocusAction(selectionLookup, this::onFocusedWidgetChanged);
         moveAction = new MoveInSceneCoordinateSpaceAction();
 //        popupAction = ShapePopupActions.popupMenuAction(this);
         popupAction = shapeActions.popupMenuAction();
         thresholds = new ThresholdsOverZoom(sceneZoom);
+        this.layerLookup = layerLookup;
+        DWLOG.log(() -> "Create DWM for " + layerLookup.lookup(LayerImplementation.class));
     }
 
     public DesignWidgetManager(Scene scene, ShapesCollection coll) {
-        this(scene, coll, new MutableProxyLookup());
+        this(scene, coll, new MutableProxyLookup(), null, Lookup.EMPTY);
     }
 
     class SceneRepaintHandle implements RepaintHandle {
@@ -191,12 +202,12 @@ public class DesignWidgetManager implements DesignerControl {
         }
 
         @Override
-        public float getZoom() {
+        public double getZoom() {
             return (float) scene.getZoomFactor();
         }
 
         @Override
-        public void setZoom(float val) {
+        public void setZoom(double val) {
             scene.setZoomFactor(val);
         }
 
@@ -212,7 +223,11 @@ public class DesignWidgetManager implements DesignerControl {
         public Zoom get() {
             return this;
         }
+    }
 
+    public JPopupMenu getPopupMenu(ShapeElement el) {
+        Widget w = widget.find(el);
+        return shapeActions.popup(Lookups.fixed(shapes, el, w));
     }
 
     public HetroObjectLayerWidget getMainWidget() {
@@ -229,7 +244,7 @@ public class DesignWidgetManager implements DesignerControl {
 
 //        widget.addChild(snapLayer = new SnapDecorationsLayer(scene));
         widget.addChild(snapLayer = new SnapDecorationsLayer2(scene,
-                new SceneRepaintHandle(), selectionLookup, sceneZoom));
+                new SceneRepaintHandle(), selectionLookup, () -> sceneZoom));
 
 //        widget.parentFor(ShapeElement.class).getActions().addAction(shapeAcceptAction);
         widget.addPriorAction(shapeAcceptAction);
@@ -397,7 +412,11 @@ public class DesignWidgetManager implements DesignerControl {
     }
 
     private void init() {
-        shapes.forEach(this::addWidgetsForShapeElement);
+        for (int i = shapes.size() - 1; i >= 0; i--) {
+            ShapeElement el = shapes.get(i);
+            addWidgetsForShapeElement(el);
+        }
+//        shapes.forEach(this::addWidgetsForShapeElement);
     }
 
     private Widget addWidgetsForShapeElement(ShapeElement en) {
@@ -433,6 +452,7 @@ public class DesignWidgetManager implements DesignerControl {
         Widget w = widget.find(el);
         if (w == null) {
             addWidgetsForShapeElementToLiveScene(el);
+            syncZOrder();
             return true;
         }
         return false;
@@ -451,16 +471,27 @@ public class DesignWidgetManager implements DesignerControl {
 
     @Override
     public void updateSelection(ShapeElement el) {
+        if (el == null) {
+            System.out.println("clearing selection");
+            scene.validate();
+            selectionLookup.updateLookups(Lookup.EMPTY);
+            scene.setFocusedWidget(widget);
+            scene.repaint();
+            return;
+        }
         Widget w = widget.find(el);
-        if (w != null) {
+        if (w != null && scene.getFocusedWidget() != w) {
+            System.out.println("updating selection to " + el.getName());
             selectionLookup.updateLookups(w.getLookup());
             scene.setFocusedWidget(w);
+            scene.validate();
+            scene.repaint();
         }
     }
 
     @Override
     public void updateSelection(ShapeControlPoint pt) {
-        Widget w = widget.find(pt);
+        Widget w = widget.find(pt.owner());
         if (w != null) {
             selectionLookup.updateLookups(w.getLookup());
             scene.setFocusedWidget(w);
@@ -571,6 +602,7 @@ public class DesignWidgetManager implements DesignerControl {
                 Exceptions.printStackTrace(ex);
             } finally {
                 if (needValidate) {
+                    syncZOrder();
                     scene.validate();
                 }
             }
@@ -647,6 +679,24 @@ public class DesignWidgetManager implements DesignerControl {
                 scene.setFocusedWidget(lastAdded);
             }
         }
+        syncZOrder();
+    }
+
+    private void syncZOrder() {
+        boolean needRefresh = false;
+        for (int i = 0; i < shapes.size(); i++) {
+            ShapeElement el = shapes.get(i);
+            Widget w = widget.find(el);
+            if (w != null) {
+                w.bringToBack();
+            } else {
+                needRefresh = true;
+                break;
+            }
+        }
+        if (needRefresh) {
+            sync();
+        }
     }
 
     public void revalidateControlPoints(ShapeElement e) {
@@ -660,7 +710,7 @@ public class DesignWidgetManager implements DesignerControl {
     OneShapeWidget createShapeWidget(Scene scene, ShapeElement entry) {
         OneShapeWidget result = new OneShapeWidget(scene, entry, shapes,
                 props.decorationController(), shapeDrag, uiState,
-                shapeKeyHandler, widget.aspectRatio());
+                shapeKeyHandler, widget.aspectRatio(), sync);
         WidgetAction.Chain actions = result.getActions();
         actions.addAction(popupAction);
         actions.addAction(nextPrevKeyAction);
@@ -860,6 +910,8 @@ public class DesignWidgetManager implements DesignerControl {
             if (!uiState.shapesDraggable()) {
                 return;
             }
+            DWLOG.log(() -> "ShapeDragHandler.onBeginDrag(" + w.getLookup().lookup(ShapeElement.class)
+                    + " start " + GeometryStrings.toString(original) + " -> " + GeometryStrings.toString(current));
             uiState.setConnectorLinesVisible(false);
             uiState.setControlPointsVisible(false);
             withShapeInfo(w, original, current, true, (e, osw) -> {
@@ -885,6 +937,8 @@ public class DesignWidgetManager implements DesignerControl {
             withShapeInfo(w, original, current, true, (e, osw) -> {
                 // that's it, withShapeInfo updates the temporary shape
                 // and revalidates the widget
+                DWLOG.log(() -> "ShapeDragHandler.onDrag(" + e
+                        + " " + GeometryStrings.toString(original) + " -> " + GeometryStrings.toString(current));
             });
         }
 
@@ -903,6 +957,8 @@ public class DesignWidgetManager implements DesignerControl {
                     osw.onEndDrag(true);
                     revalidateControlPoints(e);
                     many.syncOne(e);
+                    DWLOG.log(() -> "ShapeDragHandler.onEndDrag(" + e
+                            + " " + GeometryStrings.toString(original) + " -> " + GeometryStrings.toString(current));
                 });
             } finally {
                 clearDragState();
@@ -932,6 +988,8 @@ public class DesignWidgetManager implements DesignerControl {
             try {
                 if (snapshot != null) {
                     withShapeInfo(w, original, null, false, (e, osw) -> {
+                        DWLOG.log(() -> "ShapeDragHandler.onCancelDrag(" + e
+                                + " " + GeometryStrings.toString(original));
                         snapshot.run();
                         osw.revalidate();
                         osw.getScene().validate();

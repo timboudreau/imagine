@@ -1,7 +1,8 @@
-package org.netbeans.paint.tools.path;
+package org.netbeans.paint.tools.responder;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Paint;
 import java.util.function.Supplier;
 import net.dev.java.imagine.spi.tool.ToolUIContext;
 import org.imagine.editor.api.CheckerboardBackground;
@@ -16,6 +17,7 @@ public final class PathUIProperties {
 
     private final Supplier<ToolUIContext> ctx;
     private static final int BASE_POINT_RADIUS = 7;
+    private static final int BASE_HIT_RADIUS = 9;
 
     public PathUIProperties(Supplier<ToolUIContext> ctx) {
         this.ctx = ctx;
@@ -25,8 +27,20 @@ public final class PathUIProperties {
         return ctx;
     }
 
+    public double hitRadius() {
+        ToolUIContext ctx = this.ctx.get();
+        if (ctx == null) {
+            ctx = ToolUIContext.DUMMY_INSTANCE;
+        }
+        return ctx.zoom().inverseScale(BASE_HIT_RADIUS);
+    }
+
     public double pointRadius() {
-        return ctx.get().zoom().inverseScale(BASE_POINT_RADIUS);
+        ToolUIContext ctx = this.ctx.get();
+        if (ctx == null) {
+            ctx = ToolUIContext.DUMMY_INSTANCE;
+        }
+        return ctx.zoom().inverseScale(BASE_POINT_RADIUS);
     }
 
     public ToolUIContext ctx() {
@@ -45,6 +59,10 @@ public final class PathUIProperties {
             default:
                 return ctx().background().contrasting();
         }
+    }
+
+    public Paint proposedPointFill() {
+        return Hues.Pink.fromTemplateColor(destinationPointFill());
     }
 
     public Color destinationPointFill() {
@@ -157,11 +175,11 @@ public final class PathUIProperties {
         return result;
     }
     private BasicStroke lineStroke;
-    private float lineStrokeZoom;
+    private double lineStrokeZoom;
 
     public BasicStroke lineStroke() {
         Zoom zoom = ctx().zoom();
-        float z = zoom.getZoom();
+        double z = zoom.getZoom();
         if (lineStroke != null && z == lineStrokeZoom) {
             return lineStroke;
         }
@@ -170,11 +188,11 @@ public final class PathUIProperties {
     }
 
     private BasicStroke proposedLineStroke;
-    private float proposedLineStrokeZoom;
+    private double proposedLineStrokeZoom;
 
     public BasicStroke proposedLineStroke() {
         Zoom zoom = ctx().zoom();
-        float z = zoom.getZoom();
+        double z = zoom.getZoom();
         if (proposedLineStroke != null && z == proposedLineStrokeZoom) {
             return proposedLineStroke;
         }
@@ -187,11 +205,11 @@ public final class PathUIProperties {
     }
 
     private BasicStroke connectorStroke;
-    private float connectorStrokeZoom = -1;
+    private double connectorStrokeZoom = -1;
 
     public BasicStroke connectorStroke() {
         Zoom zoom = ctx().zoom();
-        float z = zoom.getZoom();
+        double z = zoom.getZoom();
         if (connectorStroke != null && z == connectorStrokeZoom) {
             return connectorStroke;
         }

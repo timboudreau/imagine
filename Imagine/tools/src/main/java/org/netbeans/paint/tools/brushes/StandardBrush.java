@@ -18,6 +18,7 @@ import java.awt.RenderingHints;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.spi.tool.ToolElement;
 import net.java.dev.imagine.api.toolcustomizers.Constants;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import org.netbeans.paint.api.components.explorer.Customizable;
@@ -30,6 +31,7 @@ import org.netbeans.paint.tools.spi.BrushTip;
  *
  * @author Timothy Boudreau
  */
+@ToolElement(folder="brushes", name="Standard", position=100)
 public class StandardBrush implements Customizable, Brush {
 
     private final Customizer<Integer> sizeC = Customizers.getCustomizer(
@@ -101,7 +103,7 @@ public class StandardBrush implements Customizable, Brush {
         jp.add(js, BorderLayout.NORTH);
         jp.add(aaC.getComponent(), BorderLayout.CENTER);
         result.add(jp, BorderLayout.NORTH);
-        tipSelector = new FolderPanel("brushtips", BrushTip.class); //NOI18N
+        tipSelector = FolderPanel.create("brushtips", BrushTip.class); //NOI18N
         result.add(tipSelector, BorderLayout.CENTER);
         result.add(FillCustomizer.getDefault().getComponent(),
                 BorderLayout.SOUTH);

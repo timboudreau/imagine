@@ -26,7 +26,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -323,10 +322,10 @@ public class ImageTool implements MouseListener, MouseMotionListener, KeyListene
             double fw = w / iw;
             double fh = h / ih;
 
-            AffineTransform at = AffineTransform.getTranslateInstance(bds.x, bds.y);
-            at.concatenate(AffineTransform.getScaleInstance(fw, fh));
-
-            gg.drawRenderedImage(img, at);
+            PooledTransform.withTranslateInstance(bds.x, bds.y, xf -> {
+                PooledTransform.withScaleInstance(fw, fh, xf::concatenate);
+                gg.drawRenderedImage(img, xf);
+            });
         }
 
         private class FileSetter implements Runnable {

@@ -42,6 +42,7 @@ import org.imagine.vector.editor.ui.io.VectorIO;
 import org.imagine.vector.editor.ui.spi.HitTester;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.imagine.vector.editor.ui.tools.CSGOperation;
+import org.imagine.vector.editor.ui.undo.Abortable;
 import org.imagine.vector.editor.ui.undo.AbstractShapeEdit;
 import org.imagine.vector.editor.ui.undo.UndoRedoHookable;
 
@@ -95,8 +96,7 @@ public class Shapes implements HitTester, ShapesCollection {
         }
         Shapes result = new Shapes();
         for (int i = 0; i < count; i++) {
-//            result.addShape(result.size(), ShapeEntry.read(vio, reader));
-            result.shapes.add(0, ShapeEntry.read(vio, reader));
+            result.shapes.add(ShapeEntry.read(vio, reader));
         }
         return result;
     }
@@ -148,6 +148,13 @@ public class Shapes implements HitTester, ShapesCollection {
         return AbstractShapeEdit.noOp();
     }
 
+    public UndoRedoHookable abortableGeometryEdit(String name, Consumer<Abortable> r) {
+        r.accept(() -> {
+        });
+        onChange();
+        return AbstractShapeEdit.noOp();
+    }
+
     @Override
     public void getBounds(Rectangle2D into) {
         for (ShapeEntry se : shapes) {
@@ -165,6 +172,14 @@ public class Shapes implements HitTester, ShapesCollection {
     }
 
     @Override
+    public UndoRedoHookable contentsEdit(String name, Consumer<Abortable> abortableConsumer) {
+        abortableConsumer.accept(() -> {
+        });
+        onChange();
+        return AbstractShapeEdit.noOp();
+    }
+
+    @Override
     public UndoRedoHookable contentsEdit(String name, Runnable r) {
         r.run();
         onChange();
@@ -176,20 +191,29 @@ public class Shapes implements HitTester, ShapesCollection {
     }
 
     @Override
-    public boolean toFront(ShapeElement en) {
-        int ix = indexOf(en);
-        if (ix < 0 || ix == shapes.size() - 1) {
+    public boolean moveForward(ShapeElement el) {
+        int ix = indexOf(el);
+        if (ix <= 0) {
             return false;
-        } else {
-            en = shapes.get(ix);
         }
         shapes.remove(ix);
-        addShape(shapes.size() - 1, (ShapeEntry) en);
+        addShape(ix - 1, (ShapeEntry) el);
         return true;
     }
 
     @Override
-    public boolean toBack(ShapeElement en) {
+    public boolean moveBack(ShapeElement el) {
+        int ix = indexOf(el);
+        if (ix < 0) {
+            return false;
+        }
+        shapes.remove(ix);
+        shapes.add(Math.min(shapes.size() - 1, ix + 1), (ShapeEntry) el);
+        return true;
+    }
+
+    @Override
+    public boolean toFront(ShapeElement en) {
         int ix = indexOf(en);
         if (ix <= 0) {
             return false;
@@ -198,6 +222,19 @@ public class Shapes implements HitTester, ShapesCollection {
         }
         shapes.remove(ix);
         addShape(0, (ShapeEntry) en);
+        return true;
+    }
+
+    @Override
+    public boolean toBack(ShapeElement en) {
+        int ix = indexOf(en);
+        if (ix < 0 || ix == shapes.size() - 1) {
+            return false;
+        } else {
+            en = shapes.get(ix);
+        }
+        shapes.remove(ix);
+        addShape(shapes.size() - 1, (ShapeEntry) en);
         return true;
     }
 
@@ -505,6 +542,21 @@ public class Shapes implements HitTester, ShapesCollection {
             onChange();
             return dup;
         }
+    }
+
+    public UndoRedoHookable edit(String name, ShapeElement el, Consumer<Abortable> editPerformer) {
+        int ix = indexOf(el);
+        if (ix < 0) {
+            if (ix < 0) {
+                throw new IllegalArgumentException("Not present: " + el
+                        + " in " + shapes);
+            } else {
+                el = shapes.get(ix);
+            }
+        }
+        editPerformer.accept(null);
+        onChange();
+        return AbstractShapeEdit.noOp();
     }
 
     @Override

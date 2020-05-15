@@ -63,8 +63,6 @@ public class SizePanel extends SharedLayoutRootPanel {
         Mnemonics.setLocalizedText(heightLabel, Bundle.height());
         widthEditor = new NumberEditor(widthModel);
         heightEditor = new NumberEditor(heightModel);
-//        widthEditor.putClientProperty("noStretch", true);
-//        heightEditor.putClientProperty("noStretch", true);
         widthEditor.field().setHorizontalAlignment(JTextField.LEADING);
         heightEditor.field().setHorizontalAlignment(JTextField.LEADING);
         widthLabel.setLabelFor(widthEditor);
@@ -87,6 +85,8 @@ public class SizePanel extends SharedLayoutRootPanel {
         if (!sizeConstraint.isValidValue(height)) {
             height = sizeConstraint.maximum().intValue();
         }
+        this.width = width;
+        this.height = height;
     }
 
     public void save() {

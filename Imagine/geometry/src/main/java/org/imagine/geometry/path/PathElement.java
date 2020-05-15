@@ -9,6 +9,7 @@ import com.mastfrog.function.DoubleBiConsumer;
 import static com.mastfrog.util.preconditions.Checks.notNull;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -153,6 +154,9 @@ public interface PathElement extends Iterable<EqPointDouble> {
             @Override
             public PathElement next() {
                 updateState();
+                if (!iter.isDone()) {
+                    iter.next();
+                }
                 switch (state) {
                     case 0:
                         throw new AssertionError("Cannot be in 0 after updateState()");
@@ -288,5 +292,30 @@ public interface PathElement extends Iterable<EqPointDouble> {
                 return point(++cursor);
             }
         };
+    }
+
+    default void applyTo(Path2D path) {
+        double[] data = points();
+        PathElementKind k = kind();
+        assert k == PathElementKind.CLOSE || data.length >= k.arraySize();
+        switch (k) {
+            case CLOSE:
+                path.closePath();
+                break;
+            case LINE:
+                path.lineTo(data[0], data[1]);
+                break;
+            case MOVE:
+                path.moveTo(data[0], data[1]);
+                break;
+            case QUADRATIC:
+                path.quadTo(data[0], data[1], data[2], data[3]);
+                break;
+            case CUBIC:
+                path.curveTo(data[0], data[1], data[2], data[3], data[4], data[5]);
+                break;
+            default:
+                throw new AssertionError(k);
+        }
     }
 }

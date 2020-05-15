@@ -13,8 +13,9 @@ import com.mastfrog.function.QuadConsumer;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.FileDialog;
-import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.HeadlessException;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
@@ -27,9 +28,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
+import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.Icon;
 import javax.swing.JComboBox;
@@ -41,11 +45,16 @@ import static javax.swing.JFileChooser.SELECTED_FILES_CHANGED_PROPERTY;
 import static javax.swing.JFileChooser.SELECTED_FILE_CHANGED_PROPERTY;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 import javax.swing.filechooser.FileView;
+import org.imagine.nbutil.ComponentUtils;
+import org.imagine.nbutil.filechooser.FlexEmptyBorder.Side;
 import org.openide.awt.Mnemonics;
 import org.openide.util.BaseUtilities;
 import org.openide.util.NbBundle.Messages;
@@ -129,6 +138,9 @@ public class FileChooserBuilder {
     private FileKinds fileKinds = FileKinds.DIRECTORIES_AND_FILES;
     private AccessoryInfo<?> accessory;
     private IconProvider iconProvider;
+    private final Set<FileFilter> fileFilters = new LinkedHashSet<>();
+    private boolean confirm;
+    private String forcedExtension;
 
     /**
      * Create a new FileChooserBuilder using the name of the passed class as the
@@ -152,6 +164,31 @@ public class FileChooserBuilder {
     public FileChooserBuilder(String dirKey) {
         Parameters.notNull("dirKey", dirKey);
         this.dirKey = dirKey;
+    }
+
+    /**
+     * Force the passed file extension to be appended to the selected file
+     * <i>when this builder is used to create a Save dialog only</i>.
+     *
+     * @param ext The extension to apply to the file name before testing if it
+     * already exists, and to return to the user
+     * @return this
+     */
+    public FileChooserBuilder forceExtension(String ext) {
+        if (ext == null || ext.length() == 0 || ".".equals(ext)) {
+            forcedExtension = null;
+        } else {
+            if (ext.charAt(0) == '.') {
+                ext = ext.substring(1);
+            }
+            this.forcedExtension = ext;
+        }
+        return this;
+    }
+
+    public FileChooserBuilder confirmOverwrites() {
+        confirm = true;
+        return this;
     }
 
     public <C extends JComponent> FileChooserBuilder setAccessory(Supplier<C> comp, QuadConsumer<Integer, Path, C, Integer> onChange) {
@@ -315,6 +352,7 @@ public class FileChooserBuilder {
      */
     public FileChooserBuilder setFileFilter(FileFilter filter) {
         this.filter = filter;
+        this.fileFilters.add(filter);
         return this;
     }
 
@@ -420,7 +458,7 @@ public class FileChooserBuilder {
     public JFileChooser createFileChooser() {
         JFileChooser result = new SavedDirFileChooser(dirKey, failoverDir,
                 force, approver, showRecentFolders ? new A(dirKey) : null, showRecentFolders,
-                initialSelection);
+                initialSelection, fileFilters, confirm, forcedExtension);
         prepareFileChooser(result);
         return result;
     }
@@ -672,6 +710,12 @@ public class FileChooserBuilder {
         return this;
     }
 
+    public FileChooserBuilder withFileExtension(String desc, String ext) {
+        ExtensionFileFilter filter = new ExtensionFileFilter(ext, desc);
+        setFileFilter(filter);
+        return this;
+    }
+
     /**
      * Object which can approve the selection (enabling the OK button or
      * equivalent) in a JFileChooser. Equivalent to overriding
@@ -701,12 +745,23 @@ public class FileChooserBuilder {
         private final SelectionApprover approver;
         private final ActionListener a;
         private final boolean showRecentFolders;
+        private final boolean confirmOverwrite;
+        private final String forcedExtension;
 
-        SavedDirFileChooser(String dirKey, File failoverDir, boolean force, SelectionApprover approver, ActionListener a, boolean showRecentFolders, File initialSelection) {
+        SavedDirFileChooser(String dirKey, File failoverDir, boolean force,
+                SelectionApprover approver, ActionListener a, boolean showRecentFolders,
+                File initialSelection, Set<FileFilter> filters, boolean confirmOverwrite,
+                String forcedExtension) {
             this.dirKey = dirKey;
             this.approver = approver;
             this.a = a;
             this.showRecentFolders = showRecentFolders;
+            this.confirmOverwrite = confirmOverwrite;
+            this.forcedExtension = forcedExtension;
+            setBorder(new FlexEmptyBorder());
+            for (FileFilter filter : filters) {
+                addChoosableFileFilter(filter);
+            }
             if (force && failoverDir != null && failoverDir.exists() && failoverDir.isDirectory()) {
                 setCurrentDirectory(failoverDir);
             } else {
@@ -753,6 +808,47 @@ public class FileChooserBuilder {
         }
 
         @Override
+        @Messages({
+            "# {0} - fileName",
+            "fileExists={0} exists.\n\nReplace it?",
+            "ttlFileExists=Confirm Overwrite File"
+        })
+        public int showSaveDialog(Component parent) throws HeadlessException {
+            int result = super.showSaveDialog(parent);
+            if (result == JFileChooser.APPROVE_OPTION && confirmOverwrite) {
+                File f = getSelectedFile();
+                if (f != null && forcedExtension != null) {
+                    if (!f.getName().endsWith("." + forcedExtension)) {
+                        File nue = new File(f.getParent(), f.getName() + "." + forcedExtension);
+                        setSelectedFile(nue);
+                        f = nue;
+                    }
+                }
+                if (f != null && f.exists()) {
+                    // Accessibility - need selectable text
+                    JTextArea jta = new JTextArea(Bundle.fileExists(f.getName()));
+                    jta.setBorder(BorderFactory.createEmptyBorder());
+                    jta.setEditable(false);
+                    jta.setColumns(30);
+                    jta.setLineWrap(true);
+                    jta.setWrapStyleWord(true);
+                    jta.setBackground(UIManager.getColor("control"));
+                    jta.setForeground(UIManager.getColor("controlText"));
+                    jta.setFont(ComponentUtils.getFont(parent));
+                    JPanel pnl = new JPanel(new BorderLayout());
+                    pnl.setBorder(new FlexEmptyBorder());
+                    pnl.add(jta, BorderLayout.CENTER);
+                    if (JOptionPane.showConfirmDialog(this, pnl,
+                            Bundle.ttlFileExists(),
+                            JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) != JOptionPane.YES_OPTION) {
+                        result = JFileChooser.CANCEL_OPTION;
+                    }
+                }
+            }
+            return result;
+        }
+
+        @Override
         public int showDialog(Component parent, String approveButtonText) throws HeadlessException {
             int result = super.showDialog(parent, approveButtonText);
             if (result == APPROVE_OPTION) {
@@ -769,6 +865,7 @@ public class FileChooserBuilder {
                         this, getCurrentDirectory().getPath()),
                         BorderLayout.NORTH);
             }
+            result.pack();
             return result;
         }
 
@@ -968,12 +1065,20 @@ public class FileChooserBuilder {
         String[] dirs = s.split(File.pathSeparator);
         Set<String> set = new HashSet<String>(Arrays.asList(dirs));
         dirs = (String[]) set.toArray(new String[set.size()]);
-        JPanel result = new JPanel();
-        result.setLayout(new FlowLayout());
+        JPanel result = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.LINE_START;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0.25;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        result.setBorder(new FlexEmptyBorder(Side.TOP, Side.LEFT, Side.RIGHT));
         JLabel lbl = new JLabel();
         Mnemonics.setLocalizedText(lbl, Bundle.LBL_RECENT_DIRS());
-        result.add(lbl);
+        result.add(lbl, gbc);
         final JComboBox box = new JComboBox(dirs);
+        lbl.setBorder(new FlexEmptyBorder(1, 0, FlexEmptyBorder.Side.RIGHT));
         box.setSelectedItem(origSelection);
         box.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -988,7 +1093,10 @@ public class FileChooserBuilder {
         });
         box.setPrototypeDisplayValue("1234512345123451234512345"); //NOI18N
         box.setRenderer(new Ren());
-        result.add(box);
+        gbc.weightx = 0.75;
+        gbc.gridx++;
+        result.add(box, gbc);
+        lbl.setLabelFor(box);
         return result;
     }
 
@@ -1006,4 +1114,78 @@ public class FileChooserBuilder {
         }
     }
 
+    private static final class ExtensionFileFilter extends FileFilter {
+
+        private final String ext;
+        private final String desc;
+
+        public ExtensionFileFilter(String ext) {
+            this(ext, null);
+        }
+
+        public ExtensionFileFilter(String ext, String desc) {
+            this.ext = ext;
+            this.desc = desc;
+        }
+
+        @Override
+        public boolean accept(File f) {
+            if (f.isHidden()) {
+                return false;
+            } else if (f.isDirectory()) {
+                return true;
+            }
+            boolean result = f.getName().endsWith(ext);
+            if (!result) {
+                return f.getName().toLowerCase().endsWith(ext.toLowerCase());
+            }
+            return result;
+        }
+
+        @Override
+        @Messages({"# {0} - extension", "ext={0} Files"})
+        public String getDescription() {
+            if (desc != null) {
+                return desc;
+            }
+            String e = ext;
+            if (e.length() > 1 && e.charAt(0) != '.') {
+                e = "." + e;
+            }
+            return Bundle.ext(e);
+        }
+
+        public String toString() {
+            return getDescription();
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 79 * hash + Objects.hashCode(this.ext);
+            hash = 79 * hash + Objects.hashCode(this.desc);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final ExtensionFileFilter other = (ExtensionFileFilter) obj;
+            if (!Objects.equals(this.ext, other.ext)) {
+                return false;
+            }
+            if (!Objects.equals(this.desc, other.desc)) {
+                return false;
+            }
+            return true;
+        }
+    }
 }

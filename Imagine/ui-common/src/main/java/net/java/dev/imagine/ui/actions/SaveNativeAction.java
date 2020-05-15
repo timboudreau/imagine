@@ -28,7 +28,7 @@ public class SaveNativeAction extends GenericContextSensitiveAction<Picture> {
         super("ACT_SaveNative", Picture.class);
 	setIcon(
               ImageUtilities.loadImage (
-	      "net/java/dev/imagine/ui/actions/save24.png")); //NOI18N
+	      "net/java/dev/imagine/ui/actions/save.svg")); //NOI18N
     }
 
     @Override

@@ -7,7 +7,6 @@ import net.dev.java.imagine.spi.tool.ToolsTest.Surface;
 import net.dev.java.imagine.spi.tool.ToolsTest;
 import net.dev.java.imagine.spi.tool.ToolsTest.Layer;
 import org.netbeans.ProxyURLStreamHandlerFactory;
-import org.junit.BeforeClass;
 import javax.swing.Action;
 import javax.swing.JToggleButton;
 import javax.swing.JMenuItem;
@@ -29,9 +28,15 @@ import net.dev.java.imagine.api.tool.SelectedTool;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
 import net.dev.java.imagine.spi.tool.ToolImplementation;
+import net.dev.java.imagine.spi.tool.ToolUIContext;
 import net.dev.java.imagine.spi.tool.Tools;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -39,8 +44,9 @@ import static org.junit.Assert.*;
  */
 public class ToolAnnotationProcessorTest {
 
-    @BeforeClass
+    @BeforeAll
     public static void init() {
+        System.out.println("BEFORE DO THE THING");
         //ensure nbres protocol works
         ProxyURLStreamHandlerFactory.register();
         org.netbeans.core.startup.Main.initializeURLFactory();
@@ -48,7 +54,9 @@ public class ToolAnnotationProcessorTest {
 
     @Test
     public void testActions() {
+        System.out.println("DO THE THING");
         Tools t = Tools.getDefault();
+        System.out.println("TOOLS: " + t);
         net.dev.java.imagine.api.tool.Tool thing = t.get("thing");
         assertNotNull(thing);
         assertEquals("Thing Tool", thing.getDisplayName());
@@ -122,7 +130,7 @@ public class ToolAnnotationProcessorTest {
 
         assertNotNull(thing);
         Layer fl = new FakeLayer(Integer.valueOf(1)).getLayer();
-        boolean attached = thing.attach(fl);
+        boolean attached = thing.attach(fl, ToolUIContext.DUMMY_INSTANCE);
         assertTrue(attached);
         assertNotNull("Delegate missing from lookup contents: " + 
                 thing.getLookup().lookup(Object.class), thing.getLookup().lookup(Q.class));
@@ -131,11 +139,11 @@ public class ToolAnnotationProcessorTest {
         q = null;
 
         Layer cantAttach = new FakeLayer(Float.valueOf(1)).getLayer();
-        attached = thing.attach(cantAttach);
+        attached = thing.attach(cantAttach, ToolUIContext.DUMMY_INSTANCE);
         assertFalse(attached);
 
         Layer hasSurface = new FakeLayer(new FakeSurface().getSurface()).getLayer();
-        attached = thing.attach(hasSurface);
+        attached = thing.attach(hasSurface, ToolUIContext.DUMMY_INSTANCE);
         assertTrue(attached);
         assertNotNull(someTool);
         assertTrue(someTool.attached);
@@ -146,13 +154,13 @@ public class ToolAnnotationProcessorTest {
         assertFalse(old.attached);
         someTool = null;
 
-        attached = thing.attach(hasSurface);
+        attached = thing.attach(hasSurface, ToolUIContext.DUMMY_INSTANCE);
         assertTrue(attached);
         assertNotNull(someTool);
         assertTrue(someTool.attached);
         assertNotSame("Instance should not have been reused", old, someTool);
 
-        thing.attach(cantAttach);
+        thing.attach(cantAttach, ToolUIContext.DUMMY_INSTANCE);
         assertFalse("Detach should be called on attaching to a different layer",
                 someTool.attached);
 
@@ -213,6 +221,12 @@ public class ToolAnnotationProcessorTest {
             someTool = this;
         }
         boolean attached;
+
+        @Override
+        public void attach(Lookup.Provider on, ToolUIContext ctx) {
+            super.attach(on);
+            attached = true;
+        }
 
         @Override
         public void attach(Lookup.Provider layer) {

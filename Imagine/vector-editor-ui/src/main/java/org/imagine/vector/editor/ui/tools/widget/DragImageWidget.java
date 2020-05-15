@@ -1,5 +1,6 @@
 package org.imagine.vector.editor.ui.tools.widget;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
@@ -17,6 +18,8 @@ class DragImageWidget extends Widget {
     DragImageWidget(Scene scene, Image img) {
         super(scene);
         this.dragImage = img;
+        setOpaque(false);
+        setBackground(new Color(255, 255, 255, 0));
     }
 
     @Override

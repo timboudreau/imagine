@@ -125,7 +125,7 @@ public class PencilTool extends MouseDrivenTool implements ChangeListener, Actio
 	c.gridy = 1;
 	c.weighty = 1.0;
 	c.weightx = 1.0;
-        paintSelector = new FolderPanel ("fills", Fill.class); //NOI18N
+        paintSelector = FolderPanel.create("fills", Fill.class); //NOI18N
 	result.add (paintSelector, c);
         return result;
     }

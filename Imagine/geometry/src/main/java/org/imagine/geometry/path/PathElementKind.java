@@ -2,6 +2,7 @@ package org.imagine.geometry.path;
 
 import com.mastfrog.function.DoubleBiConsumer;
 import com.mastfrog.function.DoubleBiFunction;
+import java.awt.geom.Path2D;
 import static java.awt.geom.PathIterator.SEG_CLOSE;
 import static java.awt.geom.PathIterator.SEG_CUBICTO;
 import static java.awt.geom.PathIterator.SEG_LINETO;
@@ -20,6 +21,63 @@ public enum PathElementKind {
     QUADRATIC,
     CUBIC,
     CLOSE;
+
+    public PointKind pointKindFor(int pointIndex) {
+        PointKind[] kinds = pointKinds();
+        if (pointIndex < 0 || pointIndex >= this.pointCount()) {
+            throw new IllegalArgumentException(this + " has " + pointCount()
+                    + " points, but point kind " + pointIndex + " requested");
+        }
+        return kinds[pointIndex];
+    }
+
+    public boolean isCurve() {
+        return this == CUBIC || this == QUADRATIC;
+    }
+
+    public PointKind[] pointKinds() {
+        switch (this) {
+            case CLOSE:
+                return new PointKind[0];
+            case LINE:
+                return new PointKind[]{PointKind.LINE_DESTINATION_POINT};
+            case MOVE:
+                return new PointKind[]{PointKind.MOVE_DESTINATION_POINT};
+            case CUBIC:
+                return new PointKind[]{PointKind.CUBIC_FIRST_CONTROL_POINT,
+                    PointKind.CUBIC_SECOND_CONTROL_POINT, PointKind.CUBIC_DESTINATION_POINT};
+            case QUADRATIC:
+                return new PointKind[]{PointKind.QUADRATIC_FIRST_CONTROL_POINT, PointKind.QUADRATIC_DESTINATION_POINT};
+            default:
+                throw new AssertionError(this);
+        }
+    }
+
+    public void apply(double[] pointData, Path2D path) {
+        if (this != CLOSE) {
+            assert pointData != null;
+            assert pointData.length >= arraySize() : "Wrong array size " + pointData.length + " for " + this;
+        }
+        switch (this) {
+            case CLOSE:
+                path.closePath();
+                break;
+            case MOVE:
+                path.moveTo(pointData[0], pointData[1]);
+                break;
+            case LINE:
+                path.lineTo(pointData[0], pointData[1]);
+                break;
+            case QUADRATIC:
+                path.quadTo(pointData[0], pointData[1], pointData[2], pointData[3]);
+                break;
+            case CUBIC:
+                path.curveTo(pointData[0], pointData[1], pointData[2], pointData[3], pointData[4], pointData[5]);
+                break;
+            default:
+                throw new AssertionError(this);
+        }
+    }
 
     public boolean destinationPoint(double[] pointData, DoubleBiConsumer consumer) {
         if (this == CLOSE) {

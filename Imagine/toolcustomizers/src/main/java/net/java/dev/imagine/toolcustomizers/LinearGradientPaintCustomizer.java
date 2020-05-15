@@ -3,21 +3,24 @@ package net.java.dev.imagine.toolcustomizers;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.Insets;
 import java.awt.LinearGradientPaint;
 import java.awt.MultipleGradientPaint;
 import java.awt.MultipleGradientPaint.ColorSpaceType;
 import java.awt.MultipleGradientPaint.CycleMethod;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
+import java.util.Iterator;
 import java.util.prefs.Preferences;
-import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
@@ -25,15 +28,22 @@ import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import org.imagine.editor.api.AspectRatio;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.util.PooledTransform;
+import org.netbeans.paint.api.components.FlexEmptyBorder;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.netbeans.paint.api.components.SharedLayoutRootPanel;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
+import org.netbeans.paint.api.components.TitledPanel2;
+import org.netbeans.paint.api.components.dialog.ButtonMeaning;
+import org.netbeans.paint.api.components.dialog.DialogBuilder;
 import org.netbeans.paint.api.components.fractions.FractionsAndColorsEditor;
 import org.netbeans.paint.api.components.points.PointSelector;
 import org.netbeans.paint.api.components.points.PointSelectorBackgroundPainter;
 import org.netbeans.paint.api.components.points.PointSelectorMode;
 import org.openide.awt.Mnemonics;
+import org.openide.util.Lookup;
+import org.openide.util.LookupEvent;
+import org.openide.util.LookupListener;
 import org.openide.util.NbBundle;
+import org.openide.util.NbBundle.Messages;
 import org.openide.util.NbPreferences;
 import org.openide.util.Utilities;
 
@@ -96,24 +106,92 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
         fire();
     }
 
+    private static final class PSListener extends ComponentAdapter implements LookupListener {
+
+        private final Reference<PointSelector> selectorRef;
+        private final Lookup.Result<AspectRatio> result;
+        private boolean active;
+        PSListener(PointSelector selector, Lookup.Result<AspectRatio> result) {
+            this.result = result;
+            selectorRef = new WeakReference<PointSelector>(selector);
+            refresh(result);
+            if (selector.isShowing()) {
+                componentShown(null);
+            }
+        }
+        
+        private void refresh() {
+            refresh(result);
+        }
+
+        @Override
+        public void resultChanged(LookupEvent le) {
+            Lookup.Result<AspectRatio> res = (Lookup.Result<AspectRatio>) le.getSource();
+            refresh(res);
+        }
+
+        private void refresh(Lookup.Result<AspectRatio> res) {
+            Iterator<? extends AspectRatio> instances = res.allInstances().iterator();
+            if (instances.hasNext()) {
+                refresh(res, instances.next());
+            }
+        }
+
+        private void refresh(Lookup.Result<AspectRatio> res, AspectRatio ratio) {
+            if (!active) {
+                return;
+            }
+            PointSelector sel = selectorRef.get();
+            if (sel == null) {
+                res.removeLookupListener(this);
+                active = false;
+                return;
+            }
+            Rectangle2D rect = ratio.rectangle();
+            System.out.println("Refresh aspect ratio " + ratio);
+            sel.setTargetBounds(rect);
+        }
+
+        @Override
+        public void componentHidden(ComponentEvent e) {
+            active = false;
+            result.removeLookupListener(this);
+        }
+
+        @Override
+        public void componentShown(ComponentEvent e) {
+            active = true;
+            result.addLookupListener(this);
+            refresh();
+        }
+    }
+
+    static void listenForAspectRatio(PointSelector selector) {
+        Lookup.Result<AspectRatio> ratio = Utilities.actionsGlobalContext().lookupResult(AspectRatio.class);
+        PSListener listener = new PSListener(selector, ratio);
+        selector.addComponentListener(listener);
+    }
+
     @Override
     public JComponent getComponent() {
-        JPanel panel = new SharedLayoutRootPanel();
+        NestingPanel panel = new NestingPanel();
+        panel.setBorder(new FlexEmptyBorder(FlexEmptyBorder.Side.TOP));
         FractionsAndColorsEditor fAndC = new FractionsAndColorsEditor(params.fractions, params.colors);
         AspectRatio ratio = Utilities.actionsGlobalContext().lookup(AspectRatio.class);
         if (ratio == null) {
             ratio = AspectRatio.create(() -> new Dimension(400, 300));
         }
 
-        Insets titleInsets = new Insets(12, 0, 5, 0);
-        Insets emptyInsets = new Insets(0, 0, 0, 0);
+//        JLabel psLabel = new JLabel();
+//        Mnemonics.setLocalizedText(psLabel, NbBundle.getMessage(LinearGradientPaintCustomizer.class, "TARGET_AND_FOCUS"));
+//        psLabel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("controlDkShadow")));
+        JLabel psLabel = panel.addHeadingLabel(NbBundle.getMessage(LinearGradientPaintCustomizer.class, "TARGET_AND_FOCUS"));
 
-        JLabel psLabel = new JLabel();
-        Mnemonics.setLocalizedText(psLabel, NbBundle.getMessage(LinearGradientPaintCustomizer.class, "TARGET_AND_FOCUS"));
-
-        Rectangle2D.Double dbl = new Rectangle2D.Double(0, 0,
+        Rectangle2D.Double bounds = new Rectangle2D.Double(0, 0,
                 ratio.width(), ratio.height());
-        PointSelector ps = new PointSelector(dbl);
+        PointSelector ps = new PointSelector(bounds);
+        psLabel.setLabelFor(ps);
+        listenForAspectRatio(ps);
         ps.setMode(PointSelectorMode.POINT_AND_LINE);
 
         ps.setTargetPoint(params.targetPoint);
@@ -142,80 +220,36 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
         colorSpaceCombo.setRenderer(ren);
         colorSpaceLabel.setLabelFor(colorSpaceCombo);
 
-        JLabel fcLabel = new JLabel();
-        Mnemonics.setLocalizedText(fcLabel,
-                NbBundle.getMessage(LinearGradientPaintCustomizer.class, "COLORS_AND_FRACTIONS"));
+        JButton adjustButton = new JButton();
+        Mnemonics.setLocalizedText(adjustButton, Bundle.adjustColors());
+        adjustButton.addActionListener(ae -> {
+            DialogBuilder.forName("adjustColors")
+                    .forComponent(() -> {return new AdjustColorsPanel(fAndC.getColors());}, (AdjustColorsPanel pnl, ButtonMeaning update) -> {
+                        if (update.isAffirmitive()) {
+                            fAndC.setColors(pnl.colors());
+                        }
+                        return true;
+                    }).openDialog();
+        });
 
-        fcLabel.setLabelFor(fAndC);
-
-        Insets compInsets = new Insets(0, 0, 0, 5);
-
-        panel.setLayout(new VerticalFlowLayout());
-        panel.add(new SharedLayoutPanel(cycleLabel, colorSpaceLabel));
-        panel.add(new SharedLayoutPanel(cycleCombo, colorSpaceCombo));
+//        JLabel fcLabel = new JLabel();
+//        Mnemonics.setLocalizedText(fcLabel,
+//                NbBundle.getMessage(LinearGradientPaintCustomizer.class, "COLORS_AND_FRACTIONS"));
+//        fcLabel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("controlDkShadow")));
+        SharedLayoutPanel colorLabelsPanel = new SharedLayoutPanel(cycleLabel, colorSpaceLabel);
+        SharedLayoutPanel colorsPanel = new SharedLayoutPanel(cycleCombo, colorSpaceCombo, adjustButton);
+        panel.add(colorLabelsPanel);
+        panel.add(colorsPanel);
+//        panel.add(new SharedLayoutPanel(cycleCombo, colorSpaceCombo));
         panel.add(psLabel);
         panel.add(ps);
-        panel.add(fcLabel);
+        JLabel fcLabel = panel.addHeadingLabel(NbBundle.getMessage(LinearGradientPaintCustomizer.class, "COLORS_AND_FRACTIONS"));
+        fcLabel.setLabelFor(fAndC);
+//        panel.add(fcLabel);
+
+        fAndC.setBorder(SharedLayoutPanel.createIndentBorder());
+        ps.setBorder(SharedLayoutPanel.createIndentBorder());
         panel.add(fAndC);
-/*
-        GridBagConstraints c = new GridBagConstraints();
-        c.gridwidth = 3;
-        c.gridheight = 1;
-        c.gridx = 0;
-        c.gridy = 0;
-        c.weightx = 0;
-        c.weighty = 0;
-
-        c.anchor = GridBagConstraints.LAST_LINE_START;
-        c.insets = titleInsets;
-        c.gridwidth = 1;
-        c.gridy++;
-
-        c.fill = GridBagConstraints.NONE;
-        panel.add(cycleLabel, c);
-        c.gridx++;
-        panel.add(colorSpaceLabel, c);
-
-        c.insets = compInsets;
-        c.gridx = 0;
-        c.gridy++;
-        c.anchor = GridBagConstraints.FIRST_LINE_START;
-        panel.add(cycleCombo, c);
-        c.gridx++;
-        panel.add(colorSpaceCombo, c);
-
-        c.gridx = 0;
-        c.gridy++;
-        c.insets = titleInsets;
-        c.anchor = GridBagConstraints.LAST_LINE_START;
-        panel.add(psLabel, c);
-
-        c.weighty = 0.75;
-        c.gridwidth = 3;
-        c.gridy++;
-        c.insets = emptyInsets;
-        c.anchor = GridBagConstraints.CENTER;
-        c.fill = GridBagConstraints.BOTH;
-        panel.add(ps, c);
-
-        c.weightx = 0;
-        c.weighty = 0;
-        c.insets = titleInsets;
-        c.anchor = GridBagConstraints.LAST_LINE_START;
-        c.gridwidth = 3;
-        c.gridx = 0;
-        c.gridy++;
-        c.fill = GridBagConstraints.NONE;
-        panel.add(fcLabel, c);
-
-        c.weightx = 1;
-        c.weighty = 0.25;
-        c.anchor = GridBagConstraints.FIRST_LINE_START;
-        c.gridy++;
-        c.gridx = 0;
-        c.fill = GridBagConstraints.BOTH;
-        panel.add(fAndC, c);
-*/
 
         ps.setBackgroundPainter(this);
 
@@ -252,8 +286,6 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
                 changed();
             });
         });
-
-        panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         return panel;
     }
 
@@ -264,6 +296,7 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
                         "LINEAR_GRADIENT_PAINT");
     }
 
+    @Messages("adjustColors=Ad&just Colors")
     @Override
     public LinearGradientPaint get() {
         if (revAtLastGet != rev) {
@@ -380,8 +413,16 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
         LinearGradientPaintCustomizer c = new LinearGradientPaintCustomizer("Wookie");
         JComponent comp = c.getComponent();
         JFrame jf = new JFrame(c.getName());
+
+        TitledPanel2 tp2 = new TitledPanel2("Whoopie", false, expanded -> {
+            return expanded ? comp : new JComboBox();
+        });
+
+        SharedLayoutRootPanel root = new SharedLayoutRootPanel(1, tp2);
+//        JPanel root = new JPanel();
+//        root.add(tp2);
         jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        jf.setContentPane(comp);
+        jf.setContentPane(root);
         jf.pack();
         jf.setVisible(true);
     }

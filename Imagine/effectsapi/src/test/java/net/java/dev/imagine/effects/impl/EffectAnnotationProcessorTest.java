@@ -2,8 +2,9 @@ package net.java.dev.imagine.effects.impl;
 
 import java.util.Collection;
 import net.java.dev.imagine.effects.api.Effect;
-import static org.junit.Assert.*;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -20,7 +21,6 @@ public class EffectAnnotationProcessorTest {
         assertEquals("SomeEffect", e.getName());
         assertTrue(e.createInitialParam() instanceof Data);
         assertEquals(Data.class, e.parameterType());
-        
         assertEquals(e, Effect.getEffectByName("SomeEffect"));
     }
 }

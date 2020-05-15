@@ -56,6 +56,7 @@ public final class NumberEditor extends JComponent {
         this.model = model;
         floatingPoint = model.isFloatingPoint();
         setBorder(BorderFactory.createEmptyBorder());
+        System.out.println("MAX CHARS " + model.maxCharacters());
         field.setColumns(model.maxCharacters());
         field.setHorizontalAlignment(horizontalAlignment);
         Border border = field.getBorder();
@@ -147,7 +148,11 @@ public final class NumberEditor extends JComponent {
 
     @Override
     public Dimension getPreferredSize() {
-        return field.getPreferredSize();
+        Dimension result = field.getPreferredSize();
+        if (result.width == 2147483637) {
+            result.width = 240;
+        }
+        return result;
     }
 
     @Override
@@ -261,7 +266,8 @@ public final class NumberEditor extends JComponent {
     }
 
     public void mouseWheelMoved(MouseWheelEvent e) {
-        double pre = e.getPreciseWheelRotation();
+        // Negate, so up increases numbers and down decreeses them - make it intuitive
+        double pre = -e.getPreciseWheelRotation();
         if (pre == 0) {
             return;
         }

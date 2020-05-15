@@ -14,8 +14,6 @@ package net.java.dev.imagine.ui.actions;
 
 import java.util.Collection;
 import javax.swing.Action;
-import static net.java.dev.imagine.ui.actions.ZoomInAction.MAX_ZOOM;
-import static net.java.dev.imagine.ui.actions.ZoomInAction.prev;
 import org.netbeans.paint.api.actions.GenericContextSensitiveAction;
 import org.imagine.editor.api.Zoom;
 import org.openide.util.ImageUtilities;
@@ -49,15 +47,12 @@ public class ZoomOutAction extends GenericContextSensitiveAction<Zoom> {
                 "ACT_ZoomOut"));
     }
 
-    private float nextZoom(float zoom) {
-        return prev(zoom);
-    }
-
     @Override
     public void performAction(Zoom zoom) {
-        assert zoom != null;
-        float f = zoom.getZoom();
-        zoom.setZoom(nextZoom(f));
+        if (zoom == null) {
+            return;
+        }
+        zoom.zoomOut();
     }
 
     @Override
@@ -69,11 +64,7 @@ public class ZoomOutAction extends GenericContextSensitiveAction<Zoom> {
             return true;
         }
         Zoom zoom = (Zoom) coll.iterator().next();
-        return canZoom(zoom);
-    }
-
-    private boolean canZoom(Zoom zoom) {
-        return zoom.getZoom() < MAX_ZOOM;
+        return zoom.canZoomOut();
     }
 
 }

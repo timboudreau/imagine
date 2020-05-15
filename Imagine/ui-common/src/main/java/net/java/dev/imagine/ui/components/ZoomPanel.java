@@ -91,7 +91,7 @@ public class ZoomPanel extends JPanel implements LookupListener, ActionListener,
 	last = getZoom();
 	box.setEnabled (last != null);
 	if (last != null) {
-	    float factor= last.getZoom();
+	    double factor = last.getZoom();
 	    Percentage sel = new Percentage (factor);
 	    ignoreChanges = true;
 	    try {
@@ -114,31 +114,29 @@ public class ZoomPanel extends JPanel implements LookupListener, ActionListener,
 
     
     private static final class Percentage {
-	private int percent;
+
+        private final double zoom;
 	
-	Percentage (int percent) {
-	    this.percent = percent;
-	}
-	
-	Percentage (float f) {
-	    this ((int) (f * 100f));
+	Percentage (double zoom) {
+            this.zoom = zoom;
 	}
 	
 	float getFactor() {
-	    return (float) percent / 100f;
+	    return (float) zoom;
 	}
 	
 	public String toString() {
-	    return percent + "%"; //NOI18N
+	    return Zoom.stringValue(zoom);
 	}
 	
 	public int hashCode() {
-	    return percent * 1301;
+	    long result = Double.doubleToLongBits(zoom) * 1301;
+            return (int) (result ^ result >> 32);
 	}
 	
 	public boolean equals (Object o) {
-	    return o instanceof Percentage && 
-		    ((Percentage) o).percent == percent;
+	    return o == this ? true : o instanceof Percentage &&
+		    ((Percentage) o).zoom == zoom;
 	}
     }
 }

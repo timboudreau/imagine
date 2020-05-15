@@ -1,5 +1,6 @@
 package org.netbeans.paint.tools.path;
 
+import org.netbeans.paint.tools.responder.PathUIProperties;
 import org.netbeans.paint.tools.responder.ResponderTool;
 import org.netbeans.paint.tools.responder.Responder;
 import java.awt.BasicStroke;
@@ -14,8 +15,6 @@ import java.awt.geom.Rectangle2D;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
-import net.dev.java.imagine.spi.tool.Tool;
-import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Surface;
 import org.imagine.geometry.Circle;
 import org.imagine.editor.api.PaintingStyle;
@@ -28,33 +27,12 @@ import org.netbeans.paint.tools.responder.PaintingResponder;
  *
  * @author Tim Boudreau
  */
-@ToolDef(name = "Path", iconPath = "org/netbeans/paint/tools/resources/path.svg",
-        category = "vector")
-@Tool(value=Surface.class, toolbarPosition=2000)
 public final class PathTool extends ResponderTool implements Consumer<Rectangle>, Supplier<PathUIProperties> {
 
     private VectorPathModel currentState;
-    private PathUIProperties colors;
 
     public PathTool(Surface obj) {
         super(obj);
-    }
-
-    public PathUIProperties get() {
-        if (colors == null) {
-            return new PathUIProperties(this::ctx);
-        }
-        return colors;
-    }
-
-    @Override
-    protected void onAttach() {
-        colors = new PathUIProperties(this::ctx);
-    }
-
-    @Override
-    protected void onDetach() {
-        colors = null;
     }
 
     @Override
@@ -88,8 +66,7 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
                     g.fill(shape);
                 }
                 if (ps.isOutline()) {
-                    g.setColor(outlineC.get());
-                    System.out.println("Outline " + outlineC.get() + " size " + strokeC.get());
+                    g.setPaint(outlineC.get().getPaint());
                     g.setStroke(strokeC.get());
                     g.draw(shape);
                 } else {
@@ -103,8 +80,8 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
 
     @Override
     protected Rectangle paintLive(Graphics2D g, Rectangle layerBounds) {
-        g.setPaint(ResponderTool.outlineC.get());
-        g.setStroke(colors.lineStroke());
+        g.setPaint(outlineC.get().getPaint());
+        g.setStroke(get().lineStroke());
         return null;
     }
 
@@ -120,13 +97,13 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
             // Note that the click comes *before* the call to attach(), if the
             // layer we're editing was not active - so colors is null at this point.
             state = new VectorPathModel(pt, () -> {
-                return colors;
+                return get();
             });
             return new AddPointHandler(state, pt);
         }
 
         private void repaintPoint() {
-            double rad = colors.pointRadius();
+            double rad = get().pointRadius();
             Rectangle r = new Rectangle();
             r.setFrame(lastMove.x - rad, lastMove.y - rad, lastMove.x + rad, lastMove.y + rad);
             repaint(r);
@@ -147,10 +124,10 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
         public Rectangle paint(Graphics2D g, Rectangle bounds) {
             if (lastMove != null) {
                 circ.setCenter(lastMove);
-                circ.setRadius(colors.pointRadius());
-                g.setPaint(colors.initialPointFill());
+                circ.setRadius(get().pointRadius());
+                g.setPaint(get().initialPointFill());
                 g.fill(circ);
-                g.setPaint(colors.lineDraw());
+                g.setPaint(get().lineDraw());
                 g.draw(circ);
             }
             if (state != null) {
@@ -166,7 +143,7 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
                 ctx().fetchVisibleBounds(r);
                 lastMove = new EqPointDouble(r.getCenterX(), r.getCenterY());
             }
-            double amt = colors.ctx().zoom().inverseScale(1);
+            double amt = get().ctx().zoom().inverseScale(1);
             switch (e.getKeyCode()) {
                 case KeyEvent.VK_BACK_SPACE:
                     if (state.removeLast().isEmpty()) {
@@ -191,9 +168,7 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
                     break;
                 case KeyEvent.VK_SPACE:
                 case KeyEvent.VK_PERIOD:
-                    state = new VectorPathModel(lastMove, () -> {
-                        return colors;
-                    });
+                    state = new VectorPathModel(lastMove, PathTool.this);
                     return new AddPointHandler(state, lastMove);
             }
             return this;
@@ -229,7 +204,7 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
         private EqPointDouble hoverPoint;
 
         private void repaintPoint() {
-            double rad = colors.pointRadius();
+            double rad = get().pointRadius();
             Rectangle r = new Rectangle();
             r.setFrame(lastMovePoint.x - rad, lastMovePoint.y - rad,
                     lastMovePoint.x + rad, lastMovePoint.y + rad);
@@ -307,7 +282,7 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
 
         @Override
         protected Responder onKeyPress(KeyEvent e) {
-            double amt = colors.ctx().zoom().inverseScale(1);
+            double amt = ctx().zoom().inverseScale(1);
             if (e.isShiftDown() && e.isControlDown()) {
                 amt *= 100;
             } else if (e.isShiftDown()) {
@@ -364,17 +339,17 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
         @Override
         public Rectangle paint(Graphics2D g, Rectangle bounds) {
             lastRepaintBounds.setBounds(0, 0, 0, 0);
-            double xl = colors.ctx().zoom().inverseScale(1.1);
+            double xl = ctx().zoom().inverseScale(1.1);
 
-            g.setColor(colors.lineDraw());
-            g.setStroke(colors.lineStroke());
+            g.setColor(get().lineDraw());
+            g.setStroke(get().lineStroke());
             Shape p = state.toPath();
             if (p != null) {
                 g.draw(p);
                 lastRepaintBounds.add(p.getBounds());
-                if (colors.hasLineShadows()) {
+                if (get().hasLineShadows()) {
                     g.translate(xl, xl);
-                    g.setPaint(colors.lineShadow());
+                    g.setPaint(get().lineShadow());
                 }
             }
 
@@ -382,8 +357,8 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
             if (sp != null) {
                 lastRepaintBounds.add(sp);
             }
-            float hitTolerance = colors.ctx().zoom().inverseScale(1);
-            BasicStroke stroke = colors.lineStroke();
+            float hitTolerance = get().ctx().zoom().inverseScale(1);
+            BasicStroke stroke = get().lineStroke();
             if (lastMovePoint != null) {
                 EqPointDouble point = state.lastPoint();
                 if (point != null) {
@@ -395,16 +370,16 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
                     }
                     if (canPaint) {
                         if (bounds == null || (bounds.contains(lastMovePoint) || bounds.contains(point))) {
-                            BasicStroke pls = colors.proposedLineStroke();
+                            BasicStroke pls = get().proposedLineStroke();
                             g.setStroke(pls);
-                            g.setColor(colors.proposedLineDraw());
+                            g.setColor(get().proposedLineDraw());
                             assert lastMovePoint != null : "lastMovePoint null";
                             assert scratchLine != null : "scratchLine null";
                             scratchLine.setLine(lastMovePoint.x, lastMovePoint.y, point.x, point.y);
                             g.draw(scratchLine);
-                            if (colors.hasLineShadows()) {
-                                double offset = colors.ctx().zoom().inverseScale(pls.getLineWidth());
-                                g.setColor(colors.proposedLineShadow());
+                            if (get().hasLineShadows()) {
+                                double offset = get().ctx().zoom().inverseScale(pls.getLineWidth());
+                                g.setColor(get().proposedLineShadow());
                                 g.translate(offset, offset);
                                 g.draw(scratchLine);
                                 g.translate(-offset, -offset);
@@ -413,12 +388,12 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
                             lastRepaintBounds.add(scratchRect);
 
                             g.setStroke(stroke);
-                            circle.setRadius(colors.pointRadius());
+                            circle.setRadius(get().pointRadius());
                             circle.setCenter(point.x, point.y);
 
-                            g.setColor(colors.destinationPointFill());
+                            g.setColor(get().destinationPointFill());
                             g.fill(circle);
-                            g.setColor(colors.destinationPointDraw());
+                            g.setColor(get().destinationPointDraw());
                             g.draw(circle);
                             Rectangle2D r = circle.getBounds2D();
                             r.add(r.getX() + r.getWidth() + stroke.getLineWidth(),
@@ -429,9 +404,9 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
 
                             circle.setCenter(lastMovePoint.x, lastMovePoint.y);
 
-                            g.setColor(colors.destinationPointFill());
+                            g.setColor(get().destinationPointFill());
                             g.fill(circle);
-                            g.setColor(colors.destinationPointDraw());
+                            g.setColor(get().destinationPointDraw());
                             g.draw(circle);
                             lastRepaintBounds.add(circle.getBounds());
 
@@ -453,12 +428,12 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
             }
 
             if (hoverPoint != null) {
-                circle.setRadius(colors.pointRadius());
+                circle.setRadius(get().pointRadius());
                 circle.setCenter(hoverPoint.x, hoverPoint.y);
 
-                g.setColor(colors.hoveredDotFill());
+                g.setColor(get().hoveredDotFill());
                 g.fill(circle);
-                g.setColor(colors.hoveredDotDraw());
+                g.setColor(get().hoveredDotDraw());
                 g.draw(circle);
                 Rectangle2D r = circle.getBounds2D();
                 r.add(r.getX() + r.getWidth() + stroke.getLineWidth(),
@@ -515,7 +490,7 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
 
             @Override
             protected Responder onKeyPress(KeyEvent e) {
-                double amt = colors.ctx().zoom().inverseScale(1);
+                double amt = get().ctx().zoom().inverseScale(1);
                 if (e.isShiftDown() && e.isControlDown()) {
                     amt *= 100;
                 } else if (e.isShiftDown()) {
@@ -562,17 +537,17 @@ public final class PathTool extends ResponderTool implements Consumer<Rectangle>
 
             public Rectangle paint(Graphics2D g, Rectangle bounds) {
                 lastRepaintBounds.setBounds(0, 0, 0, 0);
-                g.setColor(colors.lineDraw());
-                g.setStroke(colors.lineStroke());
+                g.setColor(get().lineDraw());
+                g.setStroke(get().lineStroke());
                 Shape p = state.toPath();
                 if (p != null) {
                     g.draw(p);
                     Rectangle r = p.getBounds();
                     lastRepaintBounds.add(r);
-                    if (colors.hasLineShadows()) {
-                        double xl = colors.ctx().zoom().inverseScale(1.1);
+                    if (get().hasLineShadows()) {
+                        double xl = get().ctx().zoom().inverseScale(1.1);
                         g.translate(xl, xl);
-                        g.setPaint(colors.lineShadow());
+                        g.setPaint(get().lineShadow());
                     }
                 }
                 Rectangle sp = state.paint(g, bounds, false);

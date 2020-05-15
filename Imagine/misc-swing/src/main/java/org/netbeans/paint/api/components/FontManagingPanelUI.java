@@ -30,6 +30,8 @@ import javax.swing.plaf.metal.MetalComboBoxButton;
 import javax.swing.text.JTextComponent;
 import javax.swing.tree.TreeCellRenderer;
 import net.java.dev.colorchooser.ColorChooser;
+import org.netbeans.paint.api.components.fractions.FractionsEditor;
+import org.netbeans.paint.api.components.points.PointSelector;
 
 /**
  * A panel UI that forces the font of all descendant components to a specific
@@ -50,7 +52,7 @@ public class FontManagingPanelUI extends BasicPanelUI {
     }
 
     public FontManagingPanelUI(AffineTransform xform) {
-        this(defaultFont().deriveFont(xform), xform);
+        this(xform.isIdentity() ? defaultFont() : defaultFont().deriveFont(xform), xform);
     }
 
     public FontManagingPanelUI(Font font, AffineTransform xform) {
@@ -144,6 +146,9 @@ public class FontManagingPanelUI extends BasicPanelUI {
         }
 
         private void adjustFont(Component comp) {
+            if (xform.isIdentity()) {
+                return;
+            }
             if (comp == null) {
                 return;
             }
@@ -179,6 +184,9 @@ public class FontManagingPanelUI extends BasicPanelUI {
                     || comp instanceof CellRendererPane
                     || comp instanceof ListCellRenderer
                     || comp instanceof TreeCellRenderer
+                    || comp instanceof ColorChooser
+                    || comp instanceof FractionsEditor
+                    || comp instanceof PointSelector
                     || comp instanceof JRootPane) {
                 return false;
             }

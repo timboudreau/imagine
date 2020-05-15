@@ -42,7 +42,7 @@
 package net.java.dev.colorchooser;
 
 import java.awt.Color;
-import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DnDConstants;
@@ -593,7 +593,8 @@ public final class ColorChooser extends JComponent {
         JButton jb = new JButton("GC");
         final ColorChooser cc = new ColorChooser();
 
-        cc.setPreferredSize(new Dimension(32, 32));
+        cc.setFont(new Font("Arial", Font.PLAIN, 48));
+
         JTextArea area = new JTextArea(ColorParser.toMinimalString(cc.getColor()));
         cc.addActionListener((ActionEvent ae) -> {
             jb1.setForeground(cc.getColor());
@@ -607,7 +608,6 @@ public final class ColorChooser extends JComponent {
 
         cc.setDragDropEnabled(true);
         cc2.setDragDropEnabled(true);
-        cc2.setPreferredSize(new Dimension(32, 32));
 
         area.setDragEnabled(true);
 

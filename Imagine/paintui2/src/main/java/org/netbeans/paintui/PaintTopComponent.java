@@ -26,8 +26,6 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -39,7 +37,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
-import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
@@ -58,7 +55,6 @@ import net.java.dev.imagine.spi.image.PictureImplementation;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import net.java.dev.imagine.ui.actions.spi.Resizable;
 import org.netbeans.api.progress.ProgressHandle;
-import org.netbeans.api.progress.ProgressHandleFactory;
 import org.netbeans.paintui.PictureScene.PI;
 import net.java.dev.imagine.ui.actions.spi.Selectable;
 import net.java.dev.imagine.ui.common.ImageEditorFactory;
@@ -70,7 +66,6 @@ import org.imagine.editor.api.Zoom;
 import org.imagine.nbutil.filechooser.FileChooserBuilder;
 import org.imagine.nbutil.filechooser.FileChooserBuilder.SelectionApprover;
 import org.imagine.nbutil.filechooser.FileKinds;
-import org.netbeans.api.visual.widget.Scene.SceneListener;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.StatusDisplayer;
@@ -180,6 +175,20 @@ public final class PaintTopComponent extends TopComponent implements
         init();
     }
 
+    public PaintTopComponent(BufferedImage img, File origin) throws IOException {
+        this(new PictureScene(img));
+        this.canvas.picture().getPicture().associateFile(origin.toPath());
+        this.file = origin;
+        updateActivatedNode(origin);
+        init();
+        setDisplayName(fileName(origin.toPath()));
+    }
+
+    public PaintTopComponent(Dimension dim, BackgroundStyle backgroundStyle) {
+        this(new PictureScene(dim, backgroundStyle));
+        init();
+    }
+
     @Override
     public Dimension getAvailableSize() {
         return getSize();
@@ -222,20 +231,6 @@ public final class PaintTopComponent extends TopComponent implements
             }
         }
         return null;
-    }
-
-    public PaintTopComponent(BufferedImage img, File origin) throws IOException {
-        this(new PictureScene(img));
-        this.canvas.picture().getPicture().associateFile(origin.toPath());
-        this.file = origin;
-        updateActivatedNode(origin);
-        init();
-        setDisplayName(fileName(origin.toPath()));
-    }
-
-    public PaintTopComponent(Dimension dim, BackgroundStyle backgroundStyle) {
-        this(new PictureScene(dim, backgroundStyle));
-        init();
     }
 
     private void init() {
@@ -288,95 +283,7 @@ public final class PaintTopComponent extends TopComponent implements
                 UIManager.getColor("controlShadow"))); //NOI18N
         add(pane, BorderLayout.CENTER);
         undoManager.setLimit(UNDO_LIMIT);
-        picture.addChangeListener(this);
-    }
-
-    static class InnerPanel extends JComponent implements SceneListener {
-
-        private final JComponent inner;
-        private Dimension prefSize;
-        private final PictureScene scene;
-        private final Zoom zoom;
-
-        InnerPanel(JComponent inner, PictureScene scene, Zoom zoom) {
-            this.inner = inner;
-            add(inner);
-            setBorder(BorderFactory.createEmptyBorder());
-            this.scene = scene;
-            this.zoom = zoom;
-        }
-
-        @Override
-        public Dimension getPreferredSize() {
-            return prefSize == null
-                    ? inner.getPreferredSize() : new Dimension(prefSize);
-//            return inner.getPreferredSize();
-        }
-
-        private boolean pristine = true;
-
-        private void ensureZoom() {
-            if (pristine) {
-                Rectangle r = scene.getBounds();
-                if (r == null) {
-                    scene.validate();
-                    r = scene.getBounds();
-                }
-                if (r == null) {
-                    return;
-                }
-                // If we are opening an extremely small or large image,
-                // adjust the zoom level to fit the image within the visible area
-                Dimension pictureSize = r.getSize();
-                Dimension currentSize = getParent().getSize();
-                System.out.println("\n\nPristine validate " + currentSize + " and " + pictureSize);
-                if (currentSize.width != 0 && currentSize.height != 0
-                        && pictureSize.width != 0 && pictureSize.height != 0) {
-                    pristine = false;
-                    int myArea = currentSize.width * currentSize.height;
-                    int pictureArea = pictureSize.width * pictureSize.height;
-                    if (pictureArea < myArea / 4) {
-                        if (pictureSize.width > pictureSize.height) {
-                            double widthFactor = (double) currentSize.width / pictureSize.width;
-                            zoom.setZoom((float) widthFactor);
-                            System.out.println("\n\nSCALE TO WIDTH " + widthFactor + "\n\n");
-                        } else {
-                            double heightFactor = (double) currentSize.height / pictureSize.height;
-                            zoom.setZoom((float) heightFactor);
-                            System.out.println("\n\nSCALE TO HEIGHT " + heightFactor + "\n\n");
-                        }
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void doLayout() {
-            ensureZoom();
-            Dimension d = inner.getPreferredSize();
-            int offX = 0;
-            int offY = 0;
-            if (d.width < getWidth()) {
-                offX = (getWidth() - d.width) / 2;
-            }
-            if (d.height < getHeight()) {
-                offY = (getHeight() - d.height) / 2;
-            }
-            inner.setBounds(offX, offY, d.width, d.height);
-        }
-
-        @Override
-        public void sceneRepaint() {
-        }
-
-        @Override
-        public void sceneValidating() {
-        }
-
-        @Override
-        public void sceneValidated() {
-            prefSize = inner.getPreferredSize();
-        }
+//        picture.addChangeListener(this);
     }
 
     @Override
@@ -455,11 +362,18 @@ public final class PaintTopComponent extends TopComponent implements
 
     @Override
     public void stateChanged(ChangeEvent e) {
+        if (!ActiveEditor.isActive(this)) {
+            return;
+        }
         PI picture = canvas.getPicture();
         LayerImplementation layerImpl = picture.getActiveLayer();
         if (layerImpl != lastActiveLayer && lastActiveLayer != null) {
             SurfaceImplementation lastSurface = lastActiveLayer.getSurface();
             if (lastSurface != null && lastActiveLayer != null) {
+                Tool old = canvas.activeTool();
+                if (old != null && old.isAttachedTo(lastActiveLayer.getLayer())) {
+                    old.detach();
+                }
                 //Force it to dispose its undo data
                 clog("stateChanged clear surface tool");
                 lastSurface.setTool(null);
@@ -472,6 +386,7 @@ public final class PaintTopComponent extends TopComponent implements
                 picture.aspectRatio()));
         Layer layer = null;
         Selection<?> sel = null;
+        Surface surf = null;
         if (layerImpl != null) {
             l.add(picture.getPicture().getLayers());
             layer = layerImpl.getLookup().lookup(Layer.class);
@@ -482,8 +397,7 @@ public final class PaintTopComponent extends TopComponent implements
             if (sel != null) {
                 l.add(sel);
             }
-            Surface surf
-                    = layerImpl.getLookup().lookup(Surface.class); //XXX what is this?
+            surf = layerImpl.getLookup().lookup(Surface.class); //XXX what is this?
 
             if (surf != null) {
                 l.add(surf);
@@ -503,9 +417,13 @@ public final class PaintTopComponent extends TopComponent implements
                     + " canvas lookup and NO layer lookup");
             UIContextLookupProvider.setLayerAndSelection(canvas.getLookup(), null);
         }
-//        UIContextLookupProvider.setLayer(layerImpl.getLookup());
-//        System.err.println("Lookup contents set to " + UIContextLookupProvider.theLookup().lookupAll(Object.class));
-        updateActiveTool();
+        boolean toolUpdated = updateActiveTool();
+        if (!toolUpdated) {
+            if (surf != null) {
+                surf.setTool(null);
+            }
+            canvas.setActiveTool((Tool) null);
+        }
     }
 
     public void save(BiConsumer<Exception, Path> c) {
@@ -528,18 +446,21 @@ public final class PaintTopComponent extends TopComponent implements
         File f = new FileChooserBuilder("image")
                 .setFileKinds(FileKinds.FILES_ONLY)
                 .setFileHiding(true)
+                .confirmOverwrites()
                 .setTitle(Bundle.DLG_SaveAs())
                 .setApproveText(Bundle.DLG_BTN_SaveAs())
                 .setAccessibleDescription(Bundle.DLG_SaveAs())
                 .setSelectionApprover(new SelectionApprover() {
                     @Override
                     public boolean approve(File[] files) {
-                        System.out.println("APPROVE " + Arrays.toString(files));
                         return true;
                     }
                 })
                 .showSaveDialog();
 
+        if (f == null) {
+            return;
+        }
         if (!f.exists()) {
             try {
                 if (!f.createNewFile()) {
@@ -635,6 +556,7 @@ public final class PaintTopComponent extends TopComponent implements
             this.file = f;
             setDisplayName(fileName(f.toPath()));
             updateActivatedNode(f);
+            canvas.picture().getPicture().associateFile(f.toPath());
             return file;
         });
     }
@@ -646,29 +568,37 @@ public final class PaintTopComponent extends TopComponent implements
         requestActive();
     }
 
-    @Override
-    protected void componentActivated() {
-        clog("componentActivated");
-        lastActive = new WeakReference<>(this);
+    public void becomeActiveEditor() {
+        canvas.getPicture().addChangeListener(this);
         active = true;
         startListening();
         updateActiveTool();
         stateChanged(null);
         canvas.getView().requestFocus();
-//        for (TopComponent tc : layerTopComponents) {
-//            tc.open();
-//        }
+    }
+
+    public void resignActiveEditor() {
+        canvas.getPicture().removeChangeListener(this);
+        active = false;
+        stopListening();
+        setActiveTool(null);
+    }
+
+    boolean isActiveWindowSystemWindow() {
+        return active;
+    }
+
+    @Override
+    protected void componentActivated() {
+        clog("componentActivated");
+        ActiveEditor.setActiveEditor(this);
+        active = true;
     }
 
     @Override
     protected void componentDeactivated() {
         clog("componentDeactivated");
         active = false;
-        stopListening();
-//        setActiveTool(null);
-//        for (TopComponent tc : layerTopComponents) {
-//            tc.close();
-//        }
     }
 
     @Override
@@ -681,6 +611,7 @@ public final class PaintTopComponent extends TopComponent implements
             ProgressHandle h;
 
             public void run() {
+                /*
                 if (EventQueue.isDispatchThread()) {
                     invalidate();
                     revalidate();
@@ -689,7 +620,7 @@ public final class PaintTopComponent extends TopComponent implements
                 }
                 ct++;
                 if (ct == 1) {
-                    h = ProgressHandleFactory.createHandle(NbBundle.getMessage(PaintTopComponent.class,
+                    h = ProgressHandle.createHandle(NbBundle.getMessage(PaintTopComponent.class,
                             "MSG_UNHIBERNATING")); //NOI18N
                     h.start();
                     h.switchToDeterminate(layerCount);
@@ -703,6 +634,7 @@ public final class PaintTopComponent extends TopComponent implements
                     }
                     EventQueue.invokeLater(this);
                 }
+                 */
             }
         });
 //        }
@@ -720,7 +652,7 @@ public final class PaintTopComponent extends TopComponent implements
     }
 
     private void setActiveTool(Tool tool) {
-        clog("Set active tool " + tool);
+        CLOG.log(() -> "PTC.Set active tool " + tool);
 //        System.out.println("set active tool " + tool);
         canvas.setActiveTool(tool);
     }
@@ -738,22 +670,23 @@ public final class PaintTopComponent extends TopComponent implements
         tools = null;
     }
 
-    private void updateActiveTool() {
-        if (isActive() && tools != null) {
+    private boolean updateActiveTool() {
+        if (ActiveEditor.isActive(this) && tools != null) {
             Collection<? extends Tool> oneOrNone = tools == null
                     ? Collections.emptySet() : tools.allInstances();
             Tool to = oneOrNone.isEmpty() ? null : (Tool) oneOrNone.iterator().next();
-            clog("Update active tool " + to);
+            CLOG.log(() -> "PTC.updateActiveTool " + to);
             setActiveTool(to);
+            return true;
         } else {
-            System.out.println("Not active, no update active tool");
+            clog("Not active, no update active tool");
+            return false;
         }
     }
 
     @Override
     protected void componentClosed() {
-        stopListening();
-        if (isActive()) {
+        if (ActiveEditor.closed(this)) {
             UIContextLookupProvider.set(new Object[0]);
             if (lastActiveLayer != null) {
                 lastActiveLayer.getSurface().setTool(null);
@@ -767,7 +700,6 @@ public final class PaintTopComponent extends TopComponent implements
         canvas.removeChildren();
         active = false;
         removeAll();
-        super.componentClosed();
     }
 
     @Override
@@ -808,13 +740,4 @@ public final class PaintTopComponent extends TopComponent implements
         }
         return false;
     }
-
-    boolean isActive() {
-        return lastActive != null && lastActive.get() == this
-                || UIContextLookupProvider.lookup(PaintTopComponent.class)
-                == this;
-//        return TopComponent.getRegistry().getActivated() == this;
-    }
-
-    private static Reference<PaintTopComponent> lastActive;
 }

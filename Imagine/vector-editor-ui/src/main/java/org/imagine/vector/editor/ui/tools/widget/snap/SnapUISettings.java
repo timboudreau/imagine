@@ -65,7 +65,7 @@ public class SnapUISettings {
     }
 
     public BasicStroke decorationStroke(SnapKind kind, ShapeElement selection, Zoom zoom) {
-        float z = zoom.getZoom();
+        float z = zoom.getZoomAsFloat();
         if (z != lastStrokeZoom || decorationStroke == null) {
             float factor = 1F / z;
             float sz = pointStrokeSize(kind) * factor;
@@ -79,7 +79,7 @@ public class SnapUISettings {
     }
 
     public BasicStroke indicatorStroke(SnapKind kind, ShapeElement selection, Zoom zoom) {
-        float z = zoom.getZoom();
+        float z = zoom.getZoomAsFloat();
         if (z != lastIndicatorZoom || indicatorStroke == null) {
             lastIndicatorZoom = z;
             float factor = 1F / z;
@@ -156,14 +156,12 @@ public class SnapUISettings {
 
     public double targetPointRadius(SnapKind kind, ShapeElement selection, Zoom zoom) {
         double result = targetPointRadius(kind, selection);
-        double factor = 1D / zoom.getZoom();
-        return result * factor;
+        return zoom.inverseScale(result);
     }
 
     public double originPointRadius(SnapKind kind, ShapeElement selection, Zoom zoom) {
         double result = originPointRadius(kind, selection);
-        double factor = 1D / zoom.getZoom();
-        return result * factor;
+        return zoom.inverseScale(result);
     }
 
     public double targetPointRadius(SnapKind kind, ShapeElement selection) {

@@ -24,10 +24,6 @@ class PaletteItemsPanel<T> extends JPanel {
     private final AbstractTileFactory<T, ?> tileFactory;
     private static final Logger LOG = Logger.getLogger(PaletteItemsPanel.class.getName());
 
-    static {
-        LOG.setLevel(Level.ALL);
-    }
-
     @SuppressWarnings("LeakingThisInConstructor")
     PaletteItemsPanel(AbstractTileFactory<T, ?> tileFactory) {
         super(new TilingLayout(() -> {
@@ -119,7 +115,7 @@ class PaletteItemsPanel<T> extends JPanel {
 
         @Override
         public void onItemAdded(String name, T item) {
-            LOG.log(Level.FINE, "Panel onItemAdded {0} with {1}", new Object[] {name, item});;
+            LOG.log(Level.FINE, "Panel onItemAdded {0} with {1}", new Object[]{name, item});;
             Tile<? super T> tile = tileFactory.createTile(name, item);
             if (findTile(name) == null) {
                 addTile(tile);

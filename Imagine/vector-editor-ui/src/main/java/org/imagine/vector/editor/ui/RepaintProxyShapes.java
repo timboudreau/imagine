@@ -40,6 +40,7 @@ import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.imagine.vector.editor.ui.spi.ShapeInfo;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
 import org.imagine.vector.editor.ui.tools.CSGOperation;
+import org.imagine.vector.editor.ui.undo.Abortable;
 import org.imagine.vector.editor.ui.undo.ContentsEdit;
 import org.imagine.vector.editor.ui.undo.GeometryEdit;
 import org.imagine.vector.editor.ui.undo.UndoRedoHookable;
@@ -96,6 +97,19 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
     @Override
     public void addToBounds(Rectangle2D b) {
         shapes.addToBounds(b);
+    }
+
+    @Override
+    public UndoRedoHookable contentsEdit(String name, Consumer<Abortable> abortableConsumer) {
+        Rectangle2D.Double bds = new Rectangle2D.Double();
+        getBounds(bds);
+        return ContentsEdit.addEdit(name, this, handle, (abortable) -> {
+            abortableConsumer.accept(abortable);
+            if (!abortable.isAborted()) {
+                addToBounds(bds);
+                handle.repaintArea(bds);
+            }
+        });
     }
 
     @Override
@@ -162,6 +176,10 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
             r.run();
             adder.run();
         });
+    }
+
+    public UndoRedoHookable abortableGeometryEdit(String name, Consumer<Abortable> r) {
+        return GeometryEdit.performAbortableEdit(name, this, handle, r);
     }
 
     @Override
@@ -251,6 +269,20 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
     }
 
     @Override
+    public UndoRedoHookable edit(String name, ShapeElement el, Consumer<Abortable> editPerformer) {
+        Rectangle oldBounds = el.getBounds();
+        return SingleShapeEdit.maybeAddAbortableEdit(name, el, this, handle, abortable -> {
+            shapes.edit(name, el, willBeNull -> {
+                editPerformer.accept(abortable);
+                if (!abortable.isAborted()) {
+                    oldBounds.add(el.getBounds());
+                    handle.repaintArea(oldBounds);
+                }
+            });
+        });
+    }
+
+    @Override
     public Rectangle getBounds() {
         return shapes.getBounds();
     }
@@ -289,11 +321,7 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
     public boolean toBack(ShapeElement en) {
         ShapeEntry e = unwrap(en);
         if (shapes.toBack(e)) {
-            Rectangle r = e.getBounds();
-            for (ShapeElement se : possiblyOverlapping(e)) {
-                r.add(se.getBounds());
-            }
-            handle.repaintArea(r);
+            repaintWithOverlaps(en);
             return true;
         }
         return false;
@@ -303,14 +331,38 @@ public final class RepaintProxyShapes implements ShapesCollection, Wrapper<Shape
     public boolean toFront(ShapeElement en) {
         ShapeEntry e = unwrap(en);
         if (shapes.toFront(e)) {
-            Rectangle r = e.getBounds();
-            for (ShapeElement se : possiblyOverlapping(e)) {
-                r.add(se.getBounds());
-            }
-            handle.repaintArea(r);
+            repaintWithOverlaps(e);
             return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean moveForward(ShapeElement el) {
+        ShapeEntry e = unwrap(el);
+        if (shapes.moveForward(e)) {
+            repaintWithOverlaps(e);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean moveBack(ShapeElement el) {
+        ShapeEntry e = unwrap(el);
+        if (shapes.moveForward(e)) {
+            repaintWithOverlaps(e);
+            return true;
+        }
+        return false;
+    }
+
+    private void repaintWithOverlaps(ShapeElement e) {
+        Rectangle r = e.getBounds();
+        for (ShapeElement se : possiblyOverlapping(e)) {
+            se.addToBounds(r);
+        }
+        handle.repaintArea(r);
     }
 
     private List<WrapperShapeEntry> wrap(List<? extends ShapeElement> l) {

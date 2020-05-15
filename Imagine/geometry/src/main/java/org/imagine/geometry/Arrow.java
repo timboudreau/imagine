@@ -29,6 +29,7 @@ import org.imagine.geometry.util.GeometryStrings;
  */
 public class Arrow implements Shape {
 
+    public static final double DEFAULT_HEAD_ANGLE = 22.5;
     public double headLength;
     public double headAngleA;
     public double headAngleB;
@@ -52,7 +53,7 @@ public class Arrow implements Shape {
     }
 
     public Arrow(double headLength, boolean aHead, boolean bHead, double x1, double y1, double x2, double y2) {
-        this(headLength, 22.5, aHead, bHead, x1, y1, x2, y2);
+        this(headLength, DEFAULT_HEAD_ANGLE, aHead, bHead, x1, y1, x2, y2);
     }
 
     public Arrow(double headLength, double headAngle, boolean aHead, boolean bHead, double x1, double y1, double x2, double y2) {
@@ -73,6 +74,7 @@ public class Arrow implements Shape {
 
     /**
      * Get the length of this arrow.
+     *
      * @return the length
      */
     public double length() {
@@ -163,6 +165,29 @@ public class Arrow implements Shape {
         return this;
     }
 
+    private double headOffset = 2;
+
+    public double headOffset() {
+        return headOffset;
+    }
+
+    /**
+     * When painting at low resolution (for example, when drawing images for
+     * system cursors), it may be needed to shift the position of the arrow head
+     * away from the exact position of the line endpoints in order to have
+     * stroking them with a wide and then narrow stroke not result in bumps that
+     * correspond to the end of the line, depending on the stroke cap style.
+     *
+     * The default value is 1.5.
+     *
+     * @param val The head offset
+     * @return The head offset
+     */
+    public Arrow setHeadOffset(double val) {
+        this.headOffset = val;
+        return this;
+    }
+
     double[] headPoints(boolean a) {
         if (a) {
             if (!aHead) {
@@ -172,8 +197,11 @@ public class Arrow implements Shape {
             double[] result = new double[6];
             Circle.positionOf(ang + headAngleA, x1, y1, headLength, result, 0);
             Circle.positionOf(ang - headAngleA, x1, y1, headLength, result, 4);
-            result[2] = x1;
-            result[3] = y1;
+
+            Circle.positionOf(Angle.opposite(ang), x1, y1, headOffset, (nx, ny) -> {
+                result[2] = nx;
+                result[3] = ny;
+            });
             return result;
         } else {
             if (!bHead) {
@@ -183,8 +211,10 @@ public class Arrow implements Shape {
             double[] result = new double[6];
             Circle.positionOf(ang + headAngleB, x2, y2, headLength, result, 0);
             Circle.positionOf(ang - headAngleB, x2, y2, headLength, result, 4);
-            result[2] = x2;
-            result[3] = y2;
+            Circle.positionOf(ang, x2, y2, headOffset, (nx, ny) -> {
+                result[2] = nx;
+                result[3] = ny;
+            });
             return result;
         }
     }
@@ -262,9 +292,31 @@ public class Arrow implements Shape {
 
     @Override
     public PathIterator getPathIterator(AffineTransform at) {
+        double[] linePoints = new double[]{x1, y1, x2, y2};
+
+//        double ang = angle();
+//        if (aHead || bHead) {
+//            EqLine ln = toLine();
+//            EqPointDouble mid = ln.midPoint();
+//            double rad = (ln.length() / 2) - 1.5;
+//            if (aHead) {
+//                Circle.positionOf(Angle.opposite(ang), mid.x, mid.y, rad, (newX1, newY1) -> {
+//                    linePoints[0] = newX1;
+//                    linePoints[1] = newY1;
+//                });
+//                System.out.println("do ahead");
+//            }
+//            if (bHead) {
+//                Circle.positionOf(ang, mid.x, mid.y, length() - rad, (newX2, newY2) -> {
+//                    linePoints[2] = newX2;
+//                    linePoints[3] = newY2;
+//                    System.out.println("do bhead");
+//                });
+//            }
+//        }
         double[][] pts = new double[][]{
             headPoints(true),
-            new double[]{x1, y1, x2, y2},
+            linePoints,
             headPoints(false)
         };
         if (at != null && !at.isIdentity()) {

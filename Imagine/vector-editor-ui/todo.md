@@ -1,3 +1,5 @@
+Second fill customizer is sharing data with the first
+
 IO Bugs:
 
  * Should pad some file sections for future proofing
@@ -8,8 +10,11 @@ IO Bugs:
  * Current zoom level should be saved with picture
 
 Misc:
- * Non-ugly defaults for linear and radial gradient
- * Create vector icons for shapes palette and paints palette
+
+ * All slider changes generate vast numbers of undo events - ensure getValueIsAdjusting is implemented properly, and coalesce
+ * Wrong font in "file already exists" dialog - why?
+ * Something has gone horribly wrong with text dialog sizing
+ * Customizers need a rethink - need to say if they're in use, better UI separation
  * Save As chooser should hide hidden folders and files
  * Pick layer type in new image dlg
  * New image dialog does not retain sizes
@@ -26,30 +31,22 @@ SVG Import Bugs:
  * Need an AlphaComposite wrapper, or detect when an entire layer is being painted with the same opacity
 
 Test:
- * Linear gradient customzier grow bug
- * File chooser
- * Palette order
- * Recent files
- * Auto Scaling
- * Zoom to Fit
- * Menu Order
 
+ * Palette order
+
+General:
+
+ * Idle detection and timers
 
 Vector Bugs:
- * Waffle Tool
- * Transform fill option
-    * Plus auto-transformed fills so 0,0 is the location
+ * Auto-transform fills so 0,0 is the location
  * Rectangular, etc. selection needs fixing or a rethink
- * Circle control point dragging is broken
- * Crosshair cursor hit regions from ManyControlPointsWidget not scaled well
  * A transform set on the graphics context in VectorWrapperGraphics is not applied - should apply it with applyTransform() to items as they arrive
- * GradientPaintWrapper and LinearPaintWrapper should implement Transformable
  * On draw, outline-only shapes are getting filled with the outline color and tracked as Fill instead
  * Tool action forwarding appears to be devouring keyboard shortcuts
  * Double-click on text or path text should open text editor
  * Path text loses last character of string - there but not painted
  * Shape Design tool widget not removed when it is detached
- * Z-Order is backwards for OneShapeWidgets
  * Polygon2D delete point can leave coordinates array with an odd length - test boundary conditions
  * PathTool drawing extra line to end point - caused by fix for no line when only one point present and moving mouse
  * PathTool adds a duplicate point instead of just closing the shape when you close by clicking the start point
@@ -63,6 +60,7 @@ Vector Bugs:
  * Rectangle and others need to revalidate all control points after drag
  * Rotation should not work on a rectangle
  * Should not apply extent/angle snap to shapes that can only have right angles such as rectangle and round rects
+    * Shaped.isRightAngles() ?
  * Oval needs to renormalize points after applying a transform, particularly rotation which can give negative dimensions
  * Ability to create a new picture starting with a Vector layer
  * Put back keyboard actions for rewrite of points widget
@@ -70,7 +68,6 @@ Vector Bugs:
  * Grid snap of 2 does not work at high zoom (5000%)
  * Shapes.edit and friends should take a BooleanConsumer to abort generating an undo action for an action that failed
  * Triangles and similar should have edge handle control points
- * Where is rectanglar selection?
  * Dragging point 0 of a rectangle does strange sizing things
  * Need multiselect drag / move / etc.
  * New Editor: When scene bounds are < 0, drag offsets are wrong - probably fix in ViewL - should be adding -scene.x/y (or we are doing that twice?))

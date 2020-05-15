@@ -4,6 +4,8 @@
  */
 package org.netbeans.paint.api.components;
 
+import java.awt.Container;
+
 /**
  * Interface that can be implemented on an ancestor component, to cause all
  * descendant components that use LDPLayout to align by column.
@@ -12,9 +14,17 @@ package org.netbeans.paint.api.components;
  */
 public interface LayoutDataProvider {
 
-    public int getColumnPosition(int col);
+    int getColumnPosition(int col);
 
-    public boolean isExpanded();
+    boolean isExpanded();
 
-    public void doSetExpanded(boolean val);
+    void doSetExpanded(boolean val);
+
+    default boolean is(Container container) {
+        return container == this;
+    }
+
+    default int getIndent() {
+        return 0;
+    }
 }

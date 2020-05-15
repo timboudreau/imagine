@@ -11,10 +11,13 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.Point2D;
 import java.util.function.Supplier;
+import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 import net.dev.java.imagine.api.tool.aspects.ScalingMouseListener;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.ui.common.PositionStatusLineElementProvider;
 import org.imagine.editor.api.ContextLog;
+import org.imagine.geometry.util.GeometryStrings;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.widget.Widget;
 import org.openide.util.Lookup;
@@ -67,13 +70,12 @@ class ToolEventDispatchAction extends WidgetAction.Adapter {
     }
 
     State dispatch(Widget widget, WidgetMouseEvent evt, int awtId) {
+        ALOG.log(() -> "dispatch mouse " + wme2s(awtId, widget, evt));
         Point pt = evt.getPoint();
         pslep.setStatus(new StringBuilder(Integer.toString(pt.x)).append(',').append(pt.y).toString());
         if (scene.picture().getActiveLayer() != null) {
             MouseListener ml = toolAs(MouseListener.class);
-            //                if (ml != null) {
             return dispatchToTool(widget, toMouseEvent(evt, awtId), ml);
-            //                }
         }
         return State.REJECTED;
     }
@@ -238,6 +240,71 @@ class ToolEventDispatchAction extends WidgetAction.Adapter {
         return scene.activeLayerWidget();
     }
 
+    private static String typeToString(int awtId) {
+        switch (awtId) {
+            case MouseEvent.MOUSE_CLICKED:
+                return "click";
+            case MouseEvent.MOUSE_PRESSED:
+                return "press";
+            case MouseEvent.MOUSE_DRAGGED:
+                return "drag";
+            case MouseEvent.MOUSE_ENTERED:
+                return "enter";
+            case MouseEvent.MOUSE_EXITED:
+                return "exit";
+            case MouseEvent.MOUSE_RELEASED:
+                return "release";
+            case MouseEvent.MOUSE_WHEEL:
+                return "wheel";
+            default:
+                return "<unknown-" + awtId + ">";
+        }
+
+    }
+
+    private static String wme2s(int awtId, Widget widget, WidgetMouseEvent evt) {
+        String tp = typeToString(awtId);
+        String pointString = GeometryStrings.toString(evt.getPoint());
+        Point2D.Double realPt = ViewL.lastPoint(widget);
+        String realPointString = GeometryStrings.toString(realPt);
+        String realPointString2 = GeometryStrings.toString(ViewL.lastPoint2D(widget));
+        String localPointString = GeometryStrings.toString(ViewL.lastWidgetPoint2D(widget));
+        return tp + " @ " + pointString + " real " + realPointString + " 2d " + realPointString2
+                + " local " + localPointString;
+    }
+
+    private boolean isActiveEditor(Widget widge) {
+        JComponent comp = widge.getScene().getView();
+        if (comp == null) {
+            return false;
+        }
+        PaintTopComponent tc = (PaintTopComponent) SwingUtilities.getAncestorOfClass(PaintTopComponent.class, comp);
+        if (tc == null) { // demo
+            return true;
+        }
+        return tc.isActiveWindowSystemWindow();
+    }
+
+    private boolean ignoreInactiveComponentGesture(Widget widge, int awtId, WidgetMouseEvent evt) {
+        JComponent view = widge.getScene().getView();
+        if (view == null) {
+            return true;
+        }
+        PaintTopComponent tc = (PaintTopComponent) SwingUtilities.getAncestorOfClass(PaintTopComponent.class, view);
+        if (tc != null) {
+            if (!isActiveEditor(widge)) {
+                switch (awtId) {
+                    case MouseEvent.MOUSE_DRAGGED:
+                    case MouseEvent.MOUSE_RELEASED:
+                    case MouseEvent.MOUSE_PRESSED:
+                        ALOG.log(() -> "Ignore event for inactive tc: " + wme2s(awtId, widge, evt));
+                        return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public State mouseClicked(Widget widget, WidgetMouseEvent wme) {
         return ifActiveLayer(true, widget, () -> dispatch(widget, wme, MouseEvent.MOUSE_CLICKED));
@@ -245,11 +312,17 @@ class ToolEventDispatchAction extends WidgetAction.Adapter {
 
     @Override
     public State mousePressed(Widget widget, WidgetMouseEvent wme) {
+        if (ignoreInactiveComponentGesture(widget, MouseEvent.MOUSE_CLICKED, wme)) {
+            return State.REJECTED;
+        }
         return ifActiveLayer(widget, () -> dispatch(widget, wme, MouseEvent.MOUSE_PRESSED));
     }
 
     @Override
     public State mouseReleased(Widget widget, WidgetMouseEvent wme) {
+        if (ignoreInactiveComponentGesture(widget, MouseEvent.MOUSE_RELEASED, wme)) {
+            return State.REJECTED;
+        }
         return ifActiveLayer(widget, () -> dispatch(widget, wme, MouseEvent.MOUSE_RELEASED));
     }
 
@@ -265,6 +338,9 @@ class ToolEventDispatchAction extends WidgetAction.Adapter {
 
     @Override
     public State mouseDragged(Widget widget, WidgetMouseEvent wme) {
+        if (ignoreInactiveComponentGesture(widget, MouseEvent.MOUSE_RELEASED, wme)) {
+            return State.REJECTED;
+        }
         return ifActiveLayer(widget, () -> dispatch(widget, wme, MouseEvent.MOUSE_DRAGGED));
     }
 

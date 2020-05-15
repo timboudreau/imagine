@@ -13,7 +13,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
-import org.netbeans.paint.api.components.SharedLayoutPanel;
+import org.netbeans.paint.api.components.VerticalFlowLayout;
 import org.openide.util.ChangeSupport;
 
 /**
@@ -34,11 +34,17 @@ public abstract class AbstractCustomizer<T> extends ListenableCustomizerSupport<
         if (component != null) {
             return component;
         }
-        JPanel result = new SharedLayoutPanel();
+//        JPanel result = new SharedLayoutRootPanel();
+        JPanel result = new JPanel(new VerticalFlowLayout(0, true));
         for (JComponent comp : getComponents()) {
             result.add(comp);
         }
         return component = result;
+    }
+
+    @Override
+    public boolean isInUse() {
+        return component != null && component.isDisplayable();
     }
 
     public final String getName() {

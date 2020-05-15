@@ -9,6 +9,7 @@ import java.awt.Paint;
 import java.awt.RadialGradientPaint;
 import javax.swing.JComponent;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
+import net.dev.java.imagine.spi.tool.ToolElement;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import org.netbeans.paint.tools.spi.Fill;
@@ -17,6 +18,7 @@ import org.netbeans.paint.tools.spi.Fill;
  *
  * @author Tim Boudreau
  */
+@ToolElement(folder = "fills", name="Radial Gradient", position=400, icon="org/netbeans/paint/tools/resources/radialgradientfill.png")
 public class RadialGradientFill extends GradientFill implements Fill, Customizable {
 
     private final Customizer<RadialGradientPaint> cust;

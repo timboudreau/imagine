@@ -32,24 +32,6 @@ public class AggregateCustomizer <T extends Object> implements Customizer<T> {
         for (Customizer c : merge) {
             jp.add(c.getComponent());
         }
-//        JPanel jp = new JPanel();
-//        jp.setLayout (new GridBagLayout());
-//        GridBagConstraints gbc = new GridBagConstraints();
-//        gbc.weightx = 1;
-//        gbc.weighty = 1;
-//        gbc.anchor = GridBagConstraints.WEST;
-//        gbc.gridx = 0;
-//        gbc.gridy = 0;
-//        gbc.fill = GridBagConstraints.HORIZONTAL;
-//        for (Customizer c : merge) {
-//            if (c != null) {
-//                JComponent comp = c.getComponent();
-//                if (comp != null) {
-//                    gbc.gridy++;
-//                    jp.add (comp, gbc);
-//                }
-//            }
-//        }
         return jp;
     }
 
