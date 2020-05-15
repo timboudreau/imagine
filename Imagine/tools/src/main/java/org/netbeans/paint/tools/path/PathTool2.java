@@ -1,10 +1,6 @@
 package org.netbeans.paint.tools.path;
 
-import com.mastfrog.function.DoubleBiConsumer;
 import com.mastfrog.function.state.Bool;
-import com.mastfrog.function.state.Dbl;
-import com.mastfrog.function.state.Obj;
-import com.mastfrog.util.collections.CollectionUtils;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -16,18 +12,13 @@ import java.awt.Shape;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
@@ -42,9 +33,7 @@ import org.imagine.geometry.Circle;
 import org.imagine.geometry.EnhRectangle2D;
 import org.imagine.geometry.EqLine;
 import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.path.PathElement;
 import org.imagine.geometry.path.PathElementKind;
-import org.imagine.geometry.path.PointKind;
 import org.imagine.geometry.util.PooledTransform;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.api.components.Cursors;
@@ -67,7 +56,7 @@ import org.openide.util.Utilities;
 @Tool(value = Surface.class, toolbarPosition = 2000)
 public class PathTool2 extends ResponderTool {
 
-    private Model model = new Model();
+    private PathModel model = new PathModel();
 
     public PathTool2(Surface obj) {
         super(obj);
@@ -75,7 +64,7 @@ public class PathTool2 extends ResponderTool {
 
     @Override
     protected void reset() {
-        model = new Model();
+        model = new PathModel();
         scratchRect.clear();
         pointsHidden = false;
         repaint();
@@ -285,7 +274,7 @@ public class PathTool2 extends ResponderTool {
 
         @Override
         protected Responder onRelease(double x, double y, MouseEvent e) {
-            Model.Entry entry = model.add(PathElementKind.MOVE, x, y);
+            PathModel.Entry entry = model.add(PathElementKind.MOVE, x, y);
             return new ConnectingPointResponder();
         }
 
@@ -750,13 +739,13 @@ public class PathTool2 extends ResponderTool {
                     double offset = offsetForInputEvent(e);
                     switch (e.getKeyCode()) {
                         case KeyEvent.VK_DELETE:
-                            Set<Model.Entry> toDelete = new HashSet<>();
+                            Set<PathModel.Entry> toDelete = new HashSet<>();
                             model.visitPoints((point) -> {
                                 if (rect.contains(point.getX(), point.getY())) {
                                     toDelete.add(point.owner());
                                 }
                             });
-                            for (Model.Entry se : toDelete) {
+                            for (PathModel.Entry se : toDelete) {
                                 model.delete(se);
                             }
                             if (model.isEmpty()) {
@@ -1436,383 +1425,4 @@ public class PathTool2 extends ResponderTool {
             return cursors().x();
         }
     }
-
-    static class Model implements Iterable<Pt> {
-
-        private Shape cachedShape;
-        private final List<Entry> entries = new ArrayList<>(32);
-        private DoubleBiConsumer onChange;
-
-        Pt hit(double x, double y, double radius) {
-            Obj<Pt> result = Obj.create();
-            Dbl bestDistance = Dbl.of(Double.MAX_VALUE);
-            for (Entry e : entries) {
-                for (Pt pt : e.iterable()) {
-                    pt.ifHit(x, y, radius, (point, dist) -> {
-                        if (bestDistance.min(dist) > dist) {
-                            result.set(pt);
-                        }
-                    });
-                }
-            }
-            return result.get();
-        }
-
-        Pt firstPoint() {
-            if (entries.isEmpty()) {
-                return null;
-            }
-            return entries.get(0).pointsIterator().next();
-        }
-
-        Pt lastPoint() {
-            if (entries.isEmpty()) {
-                return null;
-            }
-            return entries.get(entries.size() - 1).destination();
-        }
-
-        void collectBounds(EnhRectangle2D bds) {
-            bds.clear();
-            for (Entry e : entries) {
-                e.addToBounds(bds);
-            }
-        }
-
-        boolean removeLast() {
-            if (!entries.isEmpty()) {
-                entries.remove(entries.size() - 1);
-                return !entries.isEmpty();
-            }
-            return false;
-        }
-
-        void visitPoints(Consumer<Pt> c) {
-            entries.forEach(e -> e.iterable().forEach(c));
-        }
-
-        @Override
-        public Iterator<Pt> iterator() {
-            List<Iterator<Pt>> all = new ArrayList<>();
-            for (Entry e : entries) {
-                all.add(e.pointsIterator());
-            }
-            return CollectionUtils.combine(all);
-        }
-
-        public int size() {
-            return entries.size();
-        }
-
-        public Shape toShape() {
-            if (cachedShape != null) {
-                return cachedShape;
-            }
-            Path2D.Double path = new Path2D.Double();
-            for (Entry e : entries) {
-                e.applyTo(path);
-            }
-            return cachedShape = path;
-        }
-
-        Model onChange(DoubleBiConsumer onChange) {
-            this.onChange = onChange;
-            return this;
-        }
-
-        public Entry add(PathElementKind kind, double x, double y) {
-            if (entries.isEmpty() && kind != PathElementKind.MOVE) {
-                return add(PathElementKind.MOVE, x, y);
-            }
-            double[] arr = new double[kind.arraySize()];
-            for (int i = 0; i < arr.length; i += 2) {
-                arr[i] = x;
-                arr[i + 1] = y;
-            }
-            Entry result = new Entry(kind, arr);
-            entries.add(result);
-            onChange(x, y);
-            return result;
-        }
-
-        void onChange(double x, double y) {
-            cachedShape = null;
-            if (onChange != null) {
-                onChange.accept(x, y);
-            }
-        }
-
-        private void delete(Entry se) {
-            entries.remove(se);
-        }
-
-        private boolean isEmpty() {
-            return entries.isEmpty();
-        }
-
-        class Entry implements PathElement {
-
-            private final PathElementKind kind;
-            private final double[] points;
-
-            public Entry(PathElementKind kind, double[] points) {
-                switch (kind) {
-                    case CLOSE:
-                        break;
-                    default:
-                        if (kind.arraySize() != points.length) {
-                            throw new IllegalArgumentException("Wrong size: " + points.length + " for " + kind);
-                        }
-                }
-                this.kind = kind;
-                this.points = points;
-            }
-
-            void addToBounds(EnhRectangle2D rect) {
-                if (kind == PathElementKind.CLOSE) {
-                    return;
-                }
-                for (int i = 0; i < points.length; i += 2) {
-                    if (rect.isEmpty()) {
-                        rect.x = points[i];
-                        rect.y = points[i + 1];
-                        rect.width = 1;
-                        rect.height = 1;
-                    } else {
-                        rect.add(points[i], points[i + 1]);
-                    }
-                }
-            }
-
-            Iterator<Pt> secondaryPointsIterator() {
-                switch (kind) {
-                    case CLOSE:
-                    case LINE:
-                    case MOVE:
-                        return Collections.emptyIterator();
-                    case CUBIC:
-                        return Arrays.asList(new Pt(1, this), new Pt(0, this)).iterator();
-                    case QUADRATIC:
-                        return Collections.singleton(new Pt(0, this)).iterator();
-                    default:
-                        throw new AssertionError(kind);
-                }
-            }
-
-            Pt destination() {
-                return new Pt(kind.pointCount() - 1, this);
-            }
-
-            Iterable<Pt> iterable() {
-                return () -> {
-                    return pointsIterator();
-                };
-            }
-
-            private Iterator<Pt> pointsIterator() {
-                return new Iterator<Pt>() {
-                    int ix = -1;
-
-                    @Override
-                    public boolean hasNext() {
-                        return ix + 1 < kind.pointCount();
-                    }
-
-                    @Override
-                    public Pt next() {
-                        return new Pt(++ix, Entry.this);
-                    }
-                };
-            }
-
-            @Override
-            public int type() {
-                return kind.intValue();
-            }
-
-            @Override
-            public double[] points() {
-                return points;
-            }
-
-            @Override
-            public PathElementKind kind() {
-                return kind;
-            }
-
-            Model model() {
-                return Model.this;
-            }
-
-            int index() {
-                return Model.this.entries.indexOf(this);
-            }
-
-        }
-    }
-
-    static class Pt extends EnhPoint2D {
-
-        private final int index;
-        private final Model.Entry owner;
-
-        public Pt(int index, Model.Entry owner) {
-            this.index = index;
-            this.owner = owner;
-            if (index < 0 || index >= owner.kind().pointCount()) {
-                throw new IllegalArgumentException("Bad point index "
-                        + index + " of " + owner.kind().pointCount() + " for "
-                        + owner.kind());
-            }
-        }
-
-        public <T extends Rectangle2D> T addSiblingsToBounds(T rect) {
-            for (int i = 0; i < owner.points.length; i += 2) {
-                rect.add(owner.points[i], owner.points[i + 1]);
-            }
-            return rect;
-        }
-
-        Pt next() {
-            if (isDestination()) {
-                int elIx = owner.index();
-                if (elIx < owner.model().size()) {
-                    return owner.model().entries.get(elIx + 1).pointsIterator().next();
-                } else {
-                    return owner.model().firstPoint();
-                }
-            } else {
-                return new Pt(index + 1, owner);
-            }
-        }
-
-        Pt prev() {
-            if (index == 0) {
-                int elIx = owner.index();
-                if (elIx == 0) {
-                    return owner.model().firstPoint();
-                }
-                return owner.model().entries.get(elIx - 1).destination();
-            }
-            return new Pt(index - 1, owner);
-        }
-
-        public boolean isDestination() {
-            return kind().isDestination();
-        }
-
-        public Pt configureLineToSiblings(EqLine line, Runnable painter) {
-            switch (owner.kind()) {
-                case CLOSE:
-                case MOVE:
-                case LINE:
-                    break;
-                default:
-                    if (isDestination()) {
-                        line.x1 = getX();
-                        line.y1 = getY();
-                        for (int i = 0; i < owner.points.length - 2; i += 2) {
-                            line.x2 = owner.points[i];
-                            line.y2 = owner.points[i + 1];
-                            painter.run();
-                        }
-                    }
-            }
-            return this;
-        }
-
-        @Override
-        public Model.Entry owner() {
-            return owner;
-        }
-
-        public PointKind kind() {
-            return owner.kind.pointKindFor(index);
-        }
-
-        @Override
-        public double getX() {
-            return owner.points[index * 2];
-        }
-
-        @Override
-        public double getY() {
-            return owner.points[(index * 2) + 1];
-        }
-
-        @Override
-        public void setLocation(double x, double y) {
-            double oldX = owner.points[index * 2];
-            double oldY = owner.points[(index * 2) + 1];
-            if (oldX != x || oldY != y) {
-                owner.points[index * 2] = x;
-                owner.points[(index * 2) + 1] = y;
-                owner.model().onChange(oldX, oldY);
-                owner.model().onChange(x, y);
-            }
-        }
-
-        public boolean equals(Object o) {
-            if (o == this) {
-                return true;
-            } else if (o == null) {
-                return false;
-            }
-            if (o instanceof Pt) {
-                Pt other = (Pt) o;
-                return other.index == index && other.owner() == owner();
-            }
-            return false;
-        }
-
-        public int hashCode() {
-            return 73 * index + (47 * owner.hashCode());
-        }
-    }
-
-    static abstract class EnhPoint2D extends Point2D {
-
-        public abstract PointKind kind();
-
-        public abstract PathElement owner();
-
-        public void setX(double x) {
-            setLocation(x, getY());
-        }
-
-        public void setY(double y) {
-            setLocation(getX(), y);
-        }
-
-        public void move(double dx, double dy) {
-            setLocation(getX() + dx, getY() + dy);
-        }
-
-        public boolean ifHit(double x, double y, double radius, DistPointConsumer c) {
-            double dist = distance(x, y, radius);
-            boolean result = dist != java.lang.Double.MAX_VALUE;
-            if (result) {
-                c.hit(this, dist);
-            }
-            return result;
-        }
-
-        public double distance(double x, double y, double radius) {
-            double dist = distance(x, y);
-            if (dist > radius) {
-                return java.lang.Double.MAX_VALUE;
-            }
-            return dist;
-        }
-
-        public boolean isDestination() {
-            return kind().isDestination();
-        }
-    }
-
-    interface DistPointConsumer {
-
-        void hit(EnhPoint2D point, double distance);
-    }
-
 }

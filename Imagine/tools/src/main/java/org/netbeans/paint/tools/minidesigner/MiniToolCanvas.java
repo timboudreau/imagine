@@ -49,7 +49,7 @@ import org.imagine.editor.api.Zoom;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.PooledTransform;
-import org.netbeans.paint.tools.path.PathTool;
+import org.netbeans.paint.tools.path.PathTool2;
 import org.openide.util.ChangeSupport;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.AbstractLookup;
@@ -149,7 +149,7 @@ public class MiniToolCanvas extends JComponent implements Lookup.Provider {
             JFrame jf = new JFrame();
             jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
             MiniToolCanvas mini = new MiniToolCanvas();
-            mini.attach(new PathTool(mini.getLookup().lookup(Surface.class)));
+            mini.attach(new PathTool2(mini.getLookup().lookup(Surface.class)));
 //            mini.attachGeneric(new CircleTool(mini.getLookup().lookup(Surface.class)));
             mini.onCommitRequest(() -> {
                 System.out.println("Commit!");
