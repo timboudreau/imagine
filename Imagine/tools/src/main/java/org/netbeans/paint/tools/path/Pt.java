@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.netbeans.paint.tools.path;
 
 import java.awt.geom.Rectangle2D;
@@ -23,7 +17,9 @@ class Pt extends EnhPoint2D {
         this.index = index;
         this.owner = owner;
         if (index < 0 || index >= owner.kind().pointCount()) {
-            throw new IllegalArgumentException("Bad point index " + index + " of " + owner.kind().pointCount() + " for " + owner.kind());
+            throw new IllegalArgumentException("Bad point index " + index
+                    + " of " + owner.kind().pointCount() + " for "
+                    + owner.kind());
         }
     }
 
@@ -129,5 +125,4 @@ class Pt extends EnhPoint2D {
     public int hashCode() {
         return 73 * index + (47 * owner.hashCode());
     }
-
 }

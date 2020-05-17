@@ -1,5 +1,6 @@
 package org.netbeans.paintui;
 
+import com.mastfrog.util.strings.Strings;
 import net.java.dev.imagine.ui.common.BackgroundStyle;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -11,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -30,7 +32,6 @@ import net.java.dev.imagine.ui.common.BackgroundStyleApplier;
 import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.ContextLog;
-import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.border.BorderFactory;
 import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.widget.LayerWidget;
@@ -39,6 +40,7 @@ import org.netbeans.api.visual.widget.Widget;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.SnapPointsSupplier;
 import org.imagine.utils.java2d.GraphicsUtils;
+import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.EventProcessingType;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.netbeans.paintui.widgetlayers.WidgetController;
@@ -55,7 +57,7 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
     private final PI picture;
     private Tool activeTool;
     private final ZoomImpl zoom = new ZoomImpl(this);
-    private final WidgetAction toolAction = new ToolEventDispatchAction(this);
+    private final ToolEventDispatchAction toolAction = new ToolEventDispatchAction(this);
     private final Widget mainLayer = new LayerWidget(this);
     private final SelectionWidget selectionLayer = new SelectionWidget();
     private final GridWidget gridWidget = new GridWidget(this);
@@ -87,6 +89,14 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
     public PictureScene(BufferedImage img) {
         picture = new PI(new RH(), img);
         init(new Dimension(img.getWidth(), img.getHeight()));
+    }
+
+    void onOwningComponentActivated() {
+        toolAction.activate();
+    }
+
+    void onOwningComponentDeactivated() {
+        toolAction.deactivate();
     }
 
     PI picture() {
@@ -287,6 +297,7 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
             CLOG.log(() -> "PicSc  setting tool on surface to " + tool.getName());
             layer.getSurface().setTool(tool);
         }
+        setFocusedWidget(selectionLayer);
         return true;
     }
 
@@ -316,6 +327,35 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
         });
     }
 
+    static String stateToString(ObjectState st) {
+        Set<String> s = new TreeSet<>();
+        if (st.isFocused()) {
+            s.add("focused");
+        }
+        if (st.isHighlighted()) {
+            s.add("highlighted");
+        }
+        if (st.isHovered()) {
+            s.add("hovered");
+        }
+        if (st.isObjectFocused()) {
+            s.add("objectFocused");
+        }
+        if (st.isObjectHovered()) {
+            s.add("objectHovered");
+        }
+        if (st.isSelected()) {
+            s.add("selected");
+        }
+        if (st.isWidgetAimed()) {
+            s.add("widgetAimed");
+        }
+        if (st.isWidgetHovered()) {
+            s.add("widgetHovered");
+        }
+        return s.isEmpty() ? "<none>" : Strings.join(',', s);
+    }
+
     private class SelectionWidget extends Widget implements ChangeListener {
 
         SelectionWidget() {
@@ -334,6 +374,11 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
 
         void detach() {
             picture.getSelection().removeChangeListener(this);
+        }
+
+        @Override
+        protected void notifyStateChanged(ObjectState previousState, ObjectState state) {
+            System.out.println("SelLayer state " + stateToString(previousState) + " -> " + stateToString(state));
         }
 
         @Override
@@ -412,7 +457,10 @@ final class PictureScene extends Scene implements WidgetController, ChangeListen
 
             @Override
             public void setCursor(Cursor cursor) {
-                currentLayerWidget.setCursor(cursor);
+                SelectionWidget.this.setCursor(cursor);
+                getScene().getFocusedWidget().setCursor(cursor);
+                getScene().setCursor(cursor);
+                mainLayer.setCursor(cursor);
             }
 
             @Override

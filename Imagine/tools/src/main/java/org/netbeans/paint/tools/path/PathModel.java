@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.netbeans.paint.tools.path;
 
 import com.mastfrog.function.DoubleBiConsumer;
@@ -180,9 +174,9 @@ class PathModel implements Iterable<Pt> {
                 case MOVE:
                     return Collections.emptyIterator();
                 case CUBIC:
-                    return Arrays.asList(new Pt(1, this), new Pt(0, this)).iterator();
+                    return Arrays.asList(new Pt(0, this), new Pt(1, this)).iterator();
                 case QUADRATIC:
-                    return Collections.singleton(new Pt(0, this)).iterator();
+                    return CollectionUtils.singletonIterator(new Pt(0, this));
                 default:
                     throw new AssertionError(kind);
             }

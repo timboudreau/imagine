@@ -2,10 +2,9 @@ package org.netbeans.paint.tools.responder;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Paint;
 import java.util.function.Supplier;
 import net.dev.java.imagine.spi.tool.ToolUIContext;
-import org.imagine.editor.api.CheckerboardBackground;
+import org.imagine.editor.api.EditorBackground;
 import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.tools.colors.Hues;
 
@@ -51,18 +50,44 @@ public final class PathUIProperties {
         return result;
     }
 
-    public Color lineDraw() {
-        CheckerboardBackground bg = ctx().background();
-        switch (bg) {
-            case MEDIUM:
-                return Color.BLACK;
-            default:
-                return ctx().background().contrasting();
-        }
+    public boolean isBrightBackground() {
+        return ctx().background().isBright();
     }
 
-    public Paint proposedPointFill() {
-        return Hues.Pink.fromTemplateColor(destinationPointFill());
+    public Color lineDraw() {
+        return ctx().background().isMedium() ? Color.BLACK : ctx().background().contrasting();
+    }
+
+    public Color selectedPointFill() {
+        if (isBrightBackground()) {
+            return Hues.Blue.toColor(0.75F, 0.875F);
+        }
+        return Hues.Blue.withBrightnessFrom(ctx().background().midContrasting(), 0.75F);
+    }
+
+    public Color selectedPointDraw() {
+        if (isBrightBackground()) {
+            return Hues.Blue.toColor(0.75F, 0.75F);
+        }
+        return Hues.Blue.withBrightnessFrom(ctx().background().lowContrasting(), 0.625F);
+    }
+
+    public Color selectionShapeDraw() {
+        Color base = ctx().background().contrasting();
+        return withAlpha(base, 170);
+    }
+
+    public Color selectionShapeFill() {
+        Color base = ctx().background().contrasting();
+        return withAlpha(base, 90);
+    }
+
+    public Color proposedPointFill() {
+        return Hues.Green.withBrightnessFrom(ctx().background().midContrasting(), 0.875F);
+    }
+
+    public Color proposedPointDraw() {
+        return Hues.Green.withBrightnessFrom(ctx().background().midContrasting(), 0.625F);
     }
 
     public Color destinationPointFill() {
@@ -70,38 +95,41 @@ public final class PathUIProperties {
     }
 
     public Color initialPointFill() {
-        return Hues.Yellow.fromTemplateColor(drawBase());
+        return Hues.Magenta.fromTemplateColor(ctx().background().contrasting());
     }
 
     public Color destinationPointDraw() {
-        return ctx().background() == CheckerboardBackground.LIGHT
+        return ctx().background().isBright()
                 ? lineDraw().brighter() : lineDraw().darker();
     }
 
     public Color hoveredDotDraw() {
-        return invert(hoveredDotFill());
+        if (isBrightBackground()) {
+            return Color.BLUE;
+        }
+        return alphaReduced(hoveredDotFill());
     }
 
     public Color hoveredDotFill() {
-        return Color.YELLOW;
+        if (isBrightBackground()) {
+            return Color.ORANGE;
+        }
+        return withAlpha(Hues.Orange.fromTemplateColor(ctx().background().midContrasting()), 255);
     }
 
     private Color drawBase() {
         Color templ;
         float sat;
-        switch (ctx().background()) {
-            case DARK:
-                templ = lineDraw();
-                sat = 0.7F;
-                break;
-            case MEDIUM:
-                templ = new Color(90, 90, 180, 230);
-                sat = 0.875F;
-                break;
-            case LIGHT:
-            default:
-                sat = 0.925F;
-                templ = new Color(128, 128, 128, 200);
+        EditorBackground bg = ctx().background();
+        if (bg.isDark()) {
+            templ = lineDraw();
+            sat = 0.7F;
+        } else if (bg.isMedium()) {
+            templ = new Color(90, 90, 180, 230);
+            sat = 0.875F;
+        } else {
+            sat = 0.925F;
+            templ = new Color(128, 128, 128, 200);
         }
         return Hues.Green.withBrightnessFrom(templ, sat);
     }
@@ -109,44 +137,52 @@ public final class PathUIProperties {
     private Color fillBase() {
         Color templ;
         float sat;
-        switch (ctx().background()) {
-            case DARK:
-                templ = new Color(180, 180, 180, 210);
-                sat = 0.7F;
-                break;
-            case MEDIUM:
-                templ = new Color(200, 200, 250, 230);
-                sat = 0.875F;
-                break;
-            case LIGHT:
-            default:
-                sat = 0.925F;
-                templ = new Color(180, 180, 200, 200);
+        EditorBackground bg = ctx().background();
+        if (bg.isDark()) {
+            templ = new Color(180, 180, 180, 210);
+            sat = 0.7F;
+        } else if (bg.isMedium()) {
+            templ = new Color(200, 200, 250, 230);
+            sat = 0.875F;
+        } else {
+            sat = 0.925F;
+            templ = new Color(180, 180, 200, 200);
         }
         return Hues.Green.withBrightnessFrom(templ, sat);
     }
 
     public Color controlPointFill() {
+        if (isBrightBackground()) {
+            return new Color(128, 128, 255);
+        }
         return Hues.Blue.fromTemplateColor(fillBase());
     }
 
     public Color controlPointDraw() {
+        if (isBrightBackground()) {
+            return new Color(90, 90, 255, 200);
+        }
         return Hues.Orange.fromTemplateColor(drawBase());
     }
 
     public Color connectorLineDraw() {
+        if (isMediumBackground()) {
+            return Color.BLACK;
+        }
         return Hues.Green.midPoint(Hues.Orange)
                 .withBrightnessFrom(ctx().background()
                         .nonContrasting(), 0.25F);
     }
 
     public Color proposedLineDraw() {
+        if (hasLineShadows()) {
+            return Hues.Blue.fromTemplateColor(drawBase());
+        }
         return Hues.Orange.fromTemplateColor(drawBase());
     }
 
     public boolean hasLineShadows() {
-//        return ctx().background() == CheckerboardBackground.MEDIUM;
-        return true;
+        return ctx().background().isMedium();
     }
 
     private Color alphaReduced(Color c) {
@@ -155,8 +191,13 @@ public final class PathUIProperties {
         return new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha);
     }
 
+    private Color withAlpha(Color c, int alpha) {
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha);
+    }
+
     public Color lineShadow() {
-        return alphaReduced(lineDraw());
+//        return alphaReduced(ctx().background().nonContrasting());
+        return alphaReduced(ctx().background().contrasting());
     }
 
     public Color connectorLineShadow() {
@@ -177,6 +218,10 @@ public final class PathUIProperties {
     private BasicStroke lineStroke;
     private double lineStrokeZoom;
 
+    private boolean isMediumBackground() {
+        return ctx().background().isMedium();
+    }
+
     public BasicStroke lineStroke() {
         Zoom zoom = ctx().zoom();
         double z = zoom.getZoom();
@@ -184,7 +229,7 @@ public final class PathUIProperties {
             return lineStroke;
         }
         lineStrokeZoom = z;
-        return lineStroke = zoom.getStroke(1.125);
+        return lineStroke = zoom.getStroke(isMediumBackground() ? 2.5 : 1.125);
     }
 
     private BasicStroke proposedLineStroke;
@@ -197,7 +242,7 @@ public final class PathUIProperties {
             return proposedLineStroke;
         }
         proposedLineStrokeZoom = z;
-        return proposedLineStroke = zoom.getStroke(0.75);
+        return proposedLineStroke = zoom.getStroke(isMediumBackground() ? 1.25 : 0.75);
     }
 
     public Color proposedLineShadow() {
@@ -214,7 +259,7 @@ public final class PathUIProperties {
             return connectorStroke;
         }
         connectorStrokeZoom = z;
-        float zoomedStrokeWidth = zoom.inverseScale(1);
+        float zoomedStrokeWidth = zoom.inverseScale(isMediumBackground() ? 2F : 1.25F);
         float[] dashes = new float[]{zoom.inverseScale(1.5F), zoom.inverseScale(2.5F)};
         return connectorStroke = new BasicStroke(zoomedStrokeWidth, BasicStroke.CAP_BUTT,
                 BasicStroke.JOIN_ROUND, 1F, dashes, 0F);

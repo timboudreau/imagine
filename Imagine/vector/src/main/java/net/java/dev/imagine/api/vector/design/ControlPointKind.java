@@ -118,7 +118,6 @@ public enum ControlPointKind {
     }
 
     public boolean changeType(PathIteratorWrapper path, int index) {
-        System.out.println("Change type " + index);
         if (!isQuadratic() || isInitial() || isControlPoint()) {
             // If not quadratic, this point is not part of a path
 
@@ -127,27 +126,20 @@ public enum ControlPointKind {
             // We don't allow replacing a control point, since it is
             // not a real point - you have to do this on the physical
             // point
-            System.out.println("Wrong kind for type change " + this
-                    + " at " + index);
             return false;
         }
-        System.out.println("type ok");
         int count = path.getControlPointCount();
         // The model is out of date with the UI - bail out
         if (index >= count) {
-            System.out.println("index " + index + " >= count " + count);
             return false;
         }
-        System.out.println("index ok");
         // Figure out what kind the current point currently is
         ControlPointKind[] kinds = path.getControlPointKinds();
         ControlPointKind oldKind = kinds[index];
         if (oldKind == this) {
-            System.out.println("  old kind = this, fail " + this);
             // Should not happen
             return false;
         }
-        System.out.println("Change oldKind " + oldKind + " to " + this);
         // Fetch ALL of the control points into an array
         double[] pts = new double[count * 2];
         path.getControlPoints(pts);
@@ -250,7 +242,6 @@ public enum ControlPointKind {
                         return true;
                 }
         }
-        System.out.println("Fallthrough " + oldKind + " -> " + this);
         return false;
     }
 

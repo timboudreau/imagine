@@ -184,11 +184,9 @@ final class ControlPointImpl implements ControlPoint {
                 return false;
             }
             if (!((Mutable) primitive).delete(index)) {
-                System.out.println("Mutable delete " + index + " returned false");
                 Toolkit.getDefaultToolkit().beep();
             } else {
                 upd();
-                System.out.println("Do delete on " + this);
                 controller.deleted(this);
                 return true;
             }

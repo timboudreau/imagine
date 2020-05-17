@@ -1,8 +1,12 @@
 package org.netbeans.paint.tools.path;
 
 import com.mastfrog.function.state.Bool;
+import java.awt.AlphaComposite;
+import static java.awt.AlphaComposite.SRC_OVER;
 import java.awt.BasicStroke;
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Cursor;
 import java.awt.EventQueue;
 import java.awt.Graphics2D;
@@ -20,13 +24,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JToolBar;
 import javax.swing.WindowConstants;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Surface;
 import org.imagine.editor.api.CheckerboardBackground;
+import org.imagine.editor.api.EditorBackground;
 import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.geometry.Circle;
@@ -37,9 +44,11 @@ import org.imagine.geometry.path.PathElementKind;
 import org.imagine.geometry.util.PooledTransform;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.api.components.Cursors;
+import org.netbeans.paint.api.components.EnumComboBoxModel;
 import org.netbeans.paint.tools.MutableRectangle2D;
 import org.netbeans.paint.tools.minidesigner.MiniToolCanvas;
 import org.netbeans.paint.tools.minidesigner.ResizeMode;
+import org.netbeans.paint.tools.path.PathTool2.BaseConnectingPointResponder.SelectionResponder.WithSelectionResponder;
 import org.netbeans.paint.tools.responder.HoverPointResponder;
 import org.netbeans.paint.tools.responder.PaintingResponder;
 import org.netbeans.paint.tools.responder.PathUIProperties;
@@ -60,6 +69,8 @@ public class PathTool2 extends ResponderTool {
 
     public PathTool2(Surface obj) {
         super(obj);
+//        printStackTraceOnTransitions(WithSelectionResponder.class, ConnectingPointResponder.class);
+        logTransitions();
     }
 
     @Override
@@ -88,32 +99,39 @@ public class PathTool2 extends ResponderTool {
     private final Circle cir = new Circle();
     private final EqLine scratchLine = new EqLine();
     private boolean pointsHidden;
+    private boolean previewMode;
 
     @Override
     protected Rectangle paintCommit(Graphics2D g) {
         Shape shape = model.toShape();
-        if (shape != null) {
-            scratchRect.clear();
-            PaintingStyle ps = ResponderTool.fillC.get();
+        if (shape != null && !shape.getBounds().isEmpty()) {
             GraphicsUtils.setHighQualityRenderingHints(g);
-            if (ps.isFill()) {
-                g.setPaint(ResponderTool.paintC.get().getPaint());
-                g.fill(shape);
-            }
-            if (ps.isOutline()) {
-                BasicStroke stroke = ResponderTool.strokeC.get();
-                g.setStroke(stroke);
-                g.setPaint(ResponderTool.outlineC.get().getPaint());
-                g.draw(shape);
-                scratchRect.add(shape, stroke);
-            } else {
-                scratchRect.add(shape);
-            }
-            Rectangle result = scratchRect.getBounds();
+            Rectangle result = reallyPaintShape(g, shape);
             reset();
+            repaint();
             return result;
         }
         return new Rectangle();
+    }
+
+    private Rectangle reallyPaintShape(Graphics2D g, Shape shape) {
+        scratchRect.clear();
+        PaintingStyle ps = ResponderTool.fillC.get();
+        if (ps.isFill()) {
+            g.setPaint(ResponderTool.paintC.get().getPaint());
+            g.fill(shape);
+        }
+        if (ps.isOutline()) {
+            BasicStroke stroke = ResponderTool.strokeC.get();
+            g.setStroke(stroke);
+            g.setPaint(ResponderTool.outlineC.get().getPaint());
+            g.draw(shape);
+            scratchRect.add(shape, stroke);
+        } else {
+            scratchRect.add(shape);
+        }
+        Rectangle result = scratchRect.getBounds();
+        return result;
     }
 
     @Override
@@ -123,9 +141,22 @@ public class PathTool2 extends ResponderTool {
             return new Rectangle();
         }
         GraphicsUtils.setHighQualityRenderingHints(g);
+        if (previewMode) {
+            Composite oldComposite = g.getComposite();
+            g.setComposite(AlphaComposite.getInstance(SRC_OVER, 0.625F));
+            reallyPaintShape(g, shape);
+            g.setComposite(oldComposite);
+        }
         PathUIProperties props = get();
         BasicStroke stroke = props.lineStroke();
         g.setStroke(stroke);
+        if (props.hasLineShadows()) {
+            g.setPaint(props.lineShadow());
+            double scaledTranslate = (stroke.getLineWidth() / 2);
+            g.translate(scaledTranslate, scaledTranslate);
+            g.draw(shape);
+            g.translate(-scaledTranslate, -scaledTranslate);
+        }
         g.setPaint(props.lineDraw());
         g.draw(shape);
         scratchRect.clear();
@@ -186,7 +217,15 @@ public class PathTool2 extends ResponderTool {
             mini.onCommitRequest(() -> {
                 System.out.println("Commit!");
             });
-            jf.setContentPane(mini);
+            JToolBar tb = new JToolBar();
+            JComboBox<?> box = EnumComboBoxModel.newComboBox((CheckerboardBackground) ImageEditorBackground.getDefault().style());
+            box.addItemListener(e -> {
+                ImageEditorBackground.getDefault().setStyle((EditorBackground) box.getSelectedItem());
+            });
+            tb.add(box);
+            jf.setLayout(new BorderLayout());
+            jf.add(tb, BorderLayout.NORTH);
+            jf.add(mini, BorderLayout.CENTER);
             jf.pack();
             jf.setVisible(true);
         });
@@ -237,6 +276,11 @@ public class PathTool2 extends ResponderTool {
         protected Responder onKeyPress(KeyEvent e) {
             double offset = offsetForInputEvent(e);
             switch (e.getKeyCode()) {
+                case KeyEvent.VK_P:
+                    previewMode = !previewMode;
+                    repaint();
+                    e.consume();
+                    break;
                 case KeyEvent.VK_DOWN:
                     moveHoverPoint(0, offset);
                     e.consume();
@@ -298,8 +342,8 @@ public class PathTool2 extends ResponderTool {
                 g.setPaint(props.proposedPointFill());
                 g.fill(circ);
                 BasicStroke stroke = props.proposedLineStroke();
+                g.setPaint(props.proposedPointDraw());
                 g.setStroke(stroke);
-                g.setPaint(props.proposedLineDraw());
                 g.draw(circ);
                 repaintBounds.add(circ, stroke);
             });
@@ -330,6 +374,7 @@ public class PathTool2 extends ResponderTool {
         return offset;
     }
 
+
     abstract class BaseConnectingPointResponder extends HoverPointResponder implements PaintingResponder {
 
         final EnhRectangle2D lastRepaintBounds = new EnhRectangle2D();
@@ -337,12 +382,16 @@ public class PathTool2 extends ResponderTool {
         final EqLine line = new EqLine();
 
         protected BaseConnectingPointResponder() {
-            System.out.println("Create a " + getClass().getSimpleName());
         }
 
         @Override
         protected void activate(Rectangle addTo) {
             setCursor(activeCursor());
+        }
+
+        @Override
+        protected void resign(Rectangle addTo) {
+            addTo.setFrame(lastRepaintBounds);
         }
 
         protected <T> T withPointMatchingLocation(double x, double y, Function<Pt, T> f) {
@@ -402,6 +451,10 @@ public class PathTool2 extends ResponderTool {
                     moveHoverPoint(-offset, 0);
                     e.consume();
                     break;
+                case KeyEvent.VK_P:
+                    previewMode = !previewMode;
+                    e.consume();
+                    break;
                 case KeyEvent.VK_UP:
                     moveHoverPoint(0, -offset);
                     e.consume();
@@ -446,6 +499,7 @@ public class PathTool2 extends ResponderTool {
                             commit();
                             return firstResponder();
                         }
+                        return result;
                     }
                     break;
                 case KeyEvent.VK_ESCAPE:
@@ -554,13 +608,14 @@ public class PathTool2 extends ResponderTool {
 
             @Override
             public Rectangle paint(Graphics2D g, Rectangle bounds) {
-                g.setColor(Color.BLUE);
+                PathUIProperties props = get();
+                g.setPaint(props.selectedPointFill());
                 cir.setCenter(pt);
                 cir.setRadius(get().pointRadius());
                 BasicStroke strk = get().connectorStroke();
                 g.setStroke(strk);
                 g.fill(cir);
-                g.setColor(new Color(128, 128, 255));
+                g.setPaint(props.selectedPointDraw());
                 g.draw(cir);
                 Rectangle result = painted;
                 result.x -= strk.getLineWidth() + 1;
@@ -574,6 +629,10 @@ public class PathTool2 extends ResponderTool {
             protected Responder onKeyPress(KeyEvent e) {
                 double off = offsetForInputEvent(e);
                 switch (e.getKeyCode()) {
+                    case KeyEvent.VK_P:
+                        previewMode = !previewMode;
+                        e.consume();
+                        break;
                     case KeyEvent.VK_ESCAPE:
                         return BaseConnectingPointResponder.this.onKeyPress(e);
                     case KeyEvent.VK_UP:
@@ -608,7 +667,7 @@ public class PathTool2 extends ResponderTool {
 
             @Override
             protected Cursor activeCursor() {
-                return Cursor.getDefaultCursor();
+                return cursors().arrowPlus();
             }
 
             @Override
@@ -649,6 +708,11 @@ public class PathTool2 extends ResponderTool {
             }
 
             @Override
+            protected void activate(Rectangle addTo) {
+                setCursor(cursors().dottedRect());
+            }
+
+            @Override
             protected Responder onDrag(double x, double y, MouseEvent e) {
                 EqPointDouble pt = new EqPointDouble(x, y);
                 int point = rect.nearestCorner(pt);
@@ -672,12 +736,12 @@ public class PathTool2 extends ResponderTool {
             }
 
             public Rectangle paint(Graphics2D g, Rectangle bounds, List<Pt> selected) {
-                Color base = ImageEditorBackground.getDefault().style().contrasting();
-                Color haze = new Color(base.getRed(), base.getGreen(), base.getBlue(), 90);
-                g.setColor(haze);
+                PathUIProperties props = get();
+                Paint haze = props.selectionShapeFill();
+                g.setPaint(haze);
                 g.fill(rect);
-                Color hazeLine = new Color(base.getRed(), base.getGreen(), base.getBlue(), 170);
-                g.setColor(hazeLine);
+                Paint hazeLine = props.selectionShapeDraw();
+                g.setPaint(hazeLine);
                 g.draw(rect);
                 EnhRectangle2D r = new EnhRectangle2D(rect);
                 model.visitPoints((pt) -> {
@@ -685,12 +749,12 @@ public class PathTool2 extends ResponderTool {
                         if (selected != null && !selected.contains(pt)) {
                             return;
                         }
-                        g.setColor(Color.BLUE);
+                        g.setPaint(props.selectedPointFill());
                         circle.setCenter(pt);
                         circle.setRadius(get().pointRadius());
                         g.fill(circle);
                         g.setStroke(get().connectorStroke());
-                        g.setColor(new Color(128, 128, 255));
+                        g.setPaint(props.selectedPointDraw());
                         g.draw(circle);
                         r.add(circle, get().connectorStroke());
                     }
@@ -701,12 +765,11 @@ public class PathTool2 extends ResponderTool {
             class WithSelectionResponder extends Responder implements PaintingResponder {
 
                 private final MutableRectangle2D rect;
-                private Pt armedPoint;
+                private Pt armed;
                 private boolean dragRectangleArmed;
 
                 public WithSelectionResponder(MutableRectangle2D rect) {
                     this.rect = rect;
-                    System.out.println("Create a WithSelectionResponder");
                 }
 
                 WithSelectionResponder(Point2D point) {
@@ -732,6 +795,25 @@ public class PathTool2 extends ResponderTool {
                         return true;
                     }
                     return false;
+                }
+
+                private boolean hasArmedPoint() {
+                    return armed != null;
+                }
+
+                private EqPointDouble armedLocation = new EqPointDouble();
+
+                private void setArmedPoint(Pt armed) {
+                    if (hasArmedPoint()) {
+                        repaintPoint(armedLocation);
+                    }
+                    if (armed != null) {
+                        this.armed = armed;
+                        armedLocation.setLocation(armed);
+                        repaintPoint(armedLocation);
+                    } else {
+                        armed = null;
+                    }
                 }
 
                 @Override
@@ -761,7 +843,7 @@ public class PathTool2 extends ResponderTool {
                             e.consume();
                             return owner();
                         case KeyEvent.VK_SHIFT:
-                            if (armedPoint != null) {
+                            if (hasArmedPoint()) {
                                 setCursor(cursors().rotateMany());
                             }
                             break;
@@ -784,6 +866,10 @@ public class PathTool2 extends ResponderTool {
                             if (moveSelection(1, 0)) {
                                 e.consume();
                             }
+                            break;
+                        case KeyEvent.VK_P:
+                            previewMode = !previewMode;
+                            e.consume();
                             break;
                         case KeyEvent.VK_H:
                             pointsHidden = !pointsHidden;
@@ -827,12 +913,16 @@ public class PathTool2 extends ResponderTool {
                             break;
                         case KeyEvent.VK_R:
                             if (mac ? e.isMetaDown() : e.isControlDown()) {
-                                rotateSelectedPoints(1);
+                                if (rotateSelectedPoints(1)) {
+                                    e.consume();
+                                }
                             } else {
-                                rect.width += offset;
-                                repaint(rect);
-                                all = null;
-                                e.consume();
+                                if (rect.width + offset > 0) {
+                                    rect.width += offset;
+                                    repaint(rect);
+                                    all = null;
+                                    e.consume();
+                                }
                             }
                             break;
                         case KeyEvent.VK_E:
@@ -844,11 +934,13 @@ public class PathTool2 extends ResponderTool {
                             }
                             break;
                         case KeyEvent.VK_U:
-                            rect.y -= offset;
-                            rect.height += offset;
-                            repaint(rect);
-                            all = null;
-                            e.consume();
+                            if (rect.height + offset > 0) {
+                                rect.y -= offset;
+                                rect.height += offset;
+                                repaint(rect);
+                                all = null;
+                                e.consume();
+                            }
                             break;
                         case KeyEvent.VK_Y:
                             if (rect.height - offset > 0) {
@@ -952,7 +1044,7 @@ public class PathTool2 extends ResponderTool {
                             repaint();
                             break;
                         case KeyEvent.VK_SHIFT:
-                            if (armedPoint != null) {
+                            if (hasArmedPoint()) {
                                 setCursor(cursors().multiMove());
                             }
                     }
@@ -962,8 +1054,8 @@ public class PathTool2 extends ResponderTool {
                 @Override
                 protected Responder onMove(double x, double y, MouseEvent e) {
                     if (!rect.contains(x, y)) {
-                        armedPoint = null;
-                        setCursor(Cursor.getDefaultCursor());
+                        setArmedPoint(null);
+                        setCursor(cursors().x());
                         return this;
                     }
                     double hitDistance = get().pointRadius();
@@ -981,13 +1073,13 @@ public class PathTool2 extends ResponderTool {
                                     setCursor(cursors.multiMove());
                                 }
                                 cursorSet.set();
-                                armedPoint = point;
+                                setArmedPoint(point);
                                 repaint(circle, get().lineStroke());
                             }
                         }
                     });
                     cursorSet.ifUntrue(() -> {
-                        armedPoint = null;
+                        setArmedPoint(null);
                     });
 
                     ResizeMode rm = ResizeMode.forRect(x, y, hitDistance, rect);
@@ -997,16 +1089,26 @@ public class PathTool2 extends ResponderTool {
                         dragRectangleArmed = true;
                     }
                     cursorSet.ifUntrue(() -> {
-                        setCursor(Cursor.getDefaultCursor());
+                        setCursor(activeCursor());
                     });
                     return super.onMove(x, y, e); //To change body of generated methods, choose Tools | Templates.
                 }
 
                 EqPointDouble dragBase = new EqPointDouble();
+                private boolean hasDragBase;
+
+                private void setDragBase(double x, double y) {
+                    if (hasDragBase) {
+                        repaintPoint(dragBase);
+                    }
+                    dragBase.setLocation(x, y);
+                    repaintPoint(dragBase);
+                    hasDragBase = true;
+                }
 
                 @Override
                 protected Responder onPress(double x, double y, MouseEvent e) {
-                    dragBase.setLocation(x, y);
+                    setDragBase(x, y);
                     onMove(x, y, e);
                     if (dragRectangleArmed) {
                         double hitDistance = get().pointRadius();
@@ -1015,21 +1117,37 @@ public class PathTool2 extends ResponderTool {
                             return new ResizeSelectionResponder(md);
                         }
                     }
-                    if (armedPoint == null) {
-                        return owner().onPress(x, y, e);
+                    return this;
+                }
+
+                WithSelectionResponder clearDragBase() {
+                    if (hasDragBase) {
+                        hasDragBase = false;
+                        repaintPoint(dragBase);
+                        dragBase.setLocation(0, 0);
                     }
                     return this;
                 }
 
                 @Override
                 protected void resign(Rectangle addTo) {
+                    clearDragBase();
                     setCursor(Cursor.getDefaultCursor());
                 }
 
                 @Override
+                protected void activate(Rectangle addTo) {
+                    setCursor(cursors().x());
+                }
+
+                @Override
                 protected Responder onRelease(double x, double y, MouseEvent e) {
+                    if (!hasArmedPoint()) {
+                        return defer(BaseConnectingPointResponder.this);
+                    }
+                    setArmedPoint(null);
                     onMove(x, y, e);
-                    return super.onRelease(x, y, e); //To change body of generated methods, choose Tools | Templates.
+                    return this;
                 }
 
                 EqPointDouble rotateCenter;
@@ -1037,25 +1155,28 @@ public class PathTool2 extends ResponderTool {
 
                 @Override
                 protected Responder onDrag(double x, double y, MouseEvent e) {
-                    if (armedPoint != null) {
+                    if (hasArmedPoint()) {
                         if (e.isShiftDown()) {
                             double dist = dragBase.distance(x, y);
                             if (dragBase.getX() < x && dragBase.getY() < y) {
                                 dist = -dist;
                             }
-                            dragBase.setLocation(x, y);
+                            setDragBase(x, y);
                             rotateSelectedPoints(dist);
                         } else {
-                            double dx = x - armedPoint.getX();
-                            double dy = y - armedPoint.getY();
+                            double dx = x - armed.getX();
+                            double dy = y - armed.getY();
                             if (all == null) {
-                                armedPoint.setLocation(x, y);
+                                armed.setLocation(x, y);
+                                armedLocation.setLocation(x, y);
+                                setHoverPoint(armed);
+                                owner().setHoverPoint(x, y);
+                                dragBase.setLocation(x, y);
                                 all = new ArrayList<>();
-                                all.add(armedPoint);
-
+                                all.add(armed);
                                 model.visitPoints((point) -> {
                                     if (rect.contains(point)) {
-                                        if (point.getX() != armedPoint.getX() || point.getY() != armedPoint.getY()) {
+                                        if (point.getX() != armed.getX() || point.getY() != armed.getY()) {
                                             point.setLocation(point.getX() + dx, point.getY() + dy);
                                             all.add(point);
                                         }
@@ -1072,14 +1193,12 @@ public class PathTool2 extends ResponderTool {
                         }
                         return this;
                     }
-                    rect.setFrame(x, y, x, y);
+                    rect.setFrame(x, y, 0, 0);
                     repaint();
-                    // if on a point, move everything
-//                    return SelectionResponder.this.onDrag(x, y, e);
-                    return this;
+                    return owner();
                 }
 
-                private void rotateSelectedPoints(double dist) {
+                private boolean rotateSelectedPoints(double dist) {
                     List<Pt> points = selectedPoints();
                     if (!points.isEmpty()) {
                         EnhRectangle2D hits = new EnhRectangle2D();
@@ -1121,19 +1240,30 @@ public class PathTool2 extends ResponderTool {
                         rect.setFrame(hits);
                         rect.grow(get().pointRadius());
                         repaint();
+                        return true;
                     }
+                    return false;
                 }
 
                 @Override
                 protected Responder onClick(double x, double y, MouseEvent e) {
-                    return owner().onClick(x, y, e);
+                    // avoid the click event being processed by the owner,
+                    // which will create a new point if the user just clicked to
+                    // dismiss the selection
+                    System.out.println("Click dismiss to " + owner());
+                    return defer(owner().clearHoverPoint());
+//                    return owner().onClick(x, y, e);
+                }
+
+                Rectangle paintRect(Graphics2D g, Rectangle bounds) {
+                    return SelectionResponder.this.paint(g, bounds, all);
                 }
 
                 @Override
                 public Rectangle paint(Graphics2D g, Rectangle bounds) {
-                    Rectangle result = SelectionResponder.this.paint(g, bounds, all);
-                    if (armedPoint != null) {
-                        circle.setCenter(armedPoint);
+                    Rectangle result = paintRect(g, bounds);
+                    if (hasArmedPoint()) {
+                        circle.setCenter(armedLocation);
                         g.setColor(get().hoveredDotFill());
                         g.fill(circle);
                         g.setColor(get().hoveredDotDraw());
@@ -1148,12 +1278,10 @@ public class PathTool2 extends ResponderTool {
 
                     ResizeSelectionResponder(ResizeMode mode) {
                         this.mode = mode;
-                        System.out.println("Create a ResizeSelectionResponder");
                     }
 
                     ResizeSelectionResponder(double x, double y) {
                         mode = ResizeMode.forRect(x, y, get().pointRadius(), rect);
-                        System.out.println("Create a ResizeSelectionResponder");
                     }
 
                     @Override
@@ -1182,17 +1310,16 @@ public class PathTool2 extends ResponderTool {
 
                     @Override
                     protected Responder onRelease(double x, double y, MouseEvent e) {
-                        return WithSelectionResponder.this.onMove(x, y, e);
+                        return WithSelectionResponder.this.clearDragBase().onMove(x, y, e);
                     }
 
                     @Override
                     public Rectangle paint(Graphics2D g, Rectangle bounds) {
-                        return WithSelectionResponder.this.paint(g, bounds);
+                        return WithSelectionResponder.this.paintRect(g, bounds);
                     }
                 }
             }
         }
-
     }
 
     class ConnectingPointResponder extends BaseConnectingPointResponder {
@@ -1216,9 +1343,17 @@ public class PathTool2 extends ResponderTool {
             repaintLast();
             repaintPoint(x, y);
             repaintPoint(hoverPoint());
-            Iterator<Pt> iter = model.add(kindForEvent(evt), x, y).secondaryPointsIterator();
+            PathElementKind kind = kindForEvent(evt);
+            System.out.println(this + " commitKey " + kind + " for shift " + evt.isShiftDown() + " ctrl " + evt.isControlDown() + " alt " + evt.isAltDown());
+            Iterator<Pt> iter = model.add(kind, x, y).secondaryPointsIterator();
             if (iter.hasNext()) {
+                System.out.println("ret ctrol pt pos");
                 return new ControlPointPositioner(iter);
+            } else {
+                if (kind.isCurve()) {
+                    throw new IllegalStateException("Should have gotten a control point iterator for " + kind);
+                }
+                System.out.println("no control points for " + kind);
             }
             return this;
         }
@@ -1234,10 +1369,11 @@ public class PathTool2 extends ResponderTool {
         }
 
         @Override
-        protected Responder onClick(double x, double y, MouseEvent e) {
-            int ct = e.getClickCount();
-            if (!e.isPopupTrigger() && (ct == 1 || ct == 2)) {
-                PathElementKind k = kindForEvent(e);
+        protected Responder onClick(double x, double y, MouseEvent evt) {
+            int ct = evt.getClickCount();
+            if (!evt.isPopupTrigger() && (ct == 1 || ct == 2)) {
+                PathElementKind k = kindForEvent(evt);
+                System.out.println(this + " commitMouse " + k + " for shift " + evt.isShiftDown() + " ctrl " + evt.isControlDown() + " alt " + evt.isAltDown());
                 Iterator<Pt> iter = model.add(k, x, y).secondaryPointsIterator();
                 if (iter.hasNext()) {
                     return new ControlPointPositioner(iter);
@@ -1252,7 +1388,7 @@ public class PathTool2 extends ResponderTool {
 
         @Override
         protected Cursor activeCursor() {
-            return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+            return cursors().arrowPlus();
         }
 
         class ArmedForMoveExistingPointResponder extends BaseConnectingPointResponder {
@@ -1268,6 +1404,49 @@ public class PathTool2 extends ResponderTool {
             @Override
             protected Cursor activeCursor() {
                 return cursors().arrowsCrossed();
+            }
+
+            @Override
+            protected void resign(Rectangle addTo) {
+                addTo.setFrame(lastBounds);
+            }
+
+            @Override
+            protected void configureCircleAndLine(double x, double y) {
+                super.configureCircleAndLine(x, y);
+                circ.setCenter(pt);
+                line.x1 = line.x2 = line.y1 = line.y2 = 0;
+            }
+
+            protected void configureGraphicsForCircleDraw(Graphics2D g, PathUIProperties props) {
+                super.configureGraphicsForCircleDraw(g, props);
+                g.setColor(props.hoveredDotDraw());
+            }
+
+            @Override
+            protected void configureGraphicsForLine(Graphics2D g, PathUIProperties props) {
+                super.configureGraphicsForLine(g, props);
+                g.setColor(new Color(0, 0, 0, 0));
+            }
+
+            @Override
+            protected void configureGraphicsForCircleFill(Graphics2D g, PathUIProperties props) {
+                super.configureGraphicsForCircleDraw(g, props);
+                g.setColor(props.hoveredDotFill());
+            }
+
+            @Override
+            public Rectangle paint(Graphics2D g, Rectangle bounds) {
+                Rectangle r = super.paint(g, bounds);
+                double rad = circ.radius();
+                rad *= 1.5;
+                circ.setRadius(rad);
+                configureGraphicsForCircleDraw(g, get());
+                g.draw(circ);
+                circ.setRadius(rad * 1.25);
+                r.add(circ.getBounds());
+                lastBounds.setFrame(r);
+                return r;
             }
 
             @Override
@@ -1370,6 +1549,19 @@ public class PathTool2 extends ResponderTool {
         }
 
         @Override
+        protected EqPointDouble moveHoverPoint(double dx, double dy) {
+            EqPointDouble result = super.moveHoverPoint(dx, dy);
+            if (result != null) {
+                currentPoint.setLocation(result);
+                repaint(repaintBounds);
+                repaintBounds.clear();
+                currentPoint.owner().addToBounds(repaintBounds);
+                repaint(repaintBounds);
+            }
+            return result;
+        }
+
+        @Override
         protected Responder onMove(double x, double y, MouseEvent e) {
             repaintLast();
             currentPoint.setLocation(x, y);
@@ -1422,7 +1614,7 @@ public class PathTool2 extends ResponderTool {
 
         @Override
         protected Cursor activeCursor() {
-            return cursors().x();
+            return cursors().shortArrow();
         }
     }
 }

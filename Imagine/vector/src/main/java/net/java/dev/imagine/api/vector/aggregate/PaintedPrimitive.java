@@ -395,22 +395,22 @@ public abstract class PaintedPrimitive implements Primitive, Proxy, Aggregate {
             for (Attribute<?> attr : attributes) {
 //                System.out.println("ATTR " + attr + " " + attr.getClass().getSimpleName());
                 attr.as(Background.class, bg -> {
-                    System.out.println("set background");
+//                    System.out.println("set background");
                     currentBackground.set(bg.toColor());
                 });
                 if (attr instanceof ColorWrapper) {
                     if (expectingFill) {
-                        System.out.println("set fill " + attr.as(ColorWrapper.class).get());
+//                        System.out.println("set fill " + attr.as(ColorWrapper.class).get());
                         currentFill.set(attr.as(ColorWrapper.class).get());
                     } else {
-                        System.out.println("set draw " + attr.as(ColorWrapper.class).get());
+//                        System.out.println("set draw " + attr.as(ColorWrapper.class).get());
                         currentDraw.set(attr.as(ColorWrapper.class).get());
                     }
                 } else if (attr instanceof AffineTransformWrapper) {
-                    System.out.println("set transform");
+//                    System.out.println("set transform");
                     currentTransform.set(attr.as(AffineTransformWrapper.class).getAffineTransform());
                 } else if (attr instanceof BasicStrokeWrapper) {
-                    System.out.println("set stroke " + attr.as(BasicStrokeWrapper.class).get());
+//                    System.out.println("set stroke " + attr.as(BasicStrokeWrapper.class).get());
                     currentStroke.set(attr.as(BasicStrokeWrapper.class).get());
                 }
             }

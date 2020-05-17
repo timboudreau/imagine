@@ -13,7 +13,6 @@ public enum Hues implements Hue {
     Blue(0.6666667F),
     Green(0.33333334F),
     Red(0.0F),
-    Pink(0.0F),
     Yellow(0.16666667F),
     Orange(0.13071896F),
     Magenta(0.8333333F),

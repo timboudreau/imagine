@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
+import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.tool.Tool;
 import net.dev.java.imagine.api.tool.ToolUIContextImplementation;
@@ -64,7 +65,7 @@ import org.openide.util.lookup.InstanceContent;
  *
  * @author Tim Boudreau
  */
-public class MiniToolCanvas extends JComponent implements Lookup.Provider {
+public class MiniToolCanvas extends JComponent implements Lookup.Provider, ChangeListener {
 
     private final InstanceContent content = new InstanceContent();
     private final Lookup lkp = new AbstractLookup(content);
@@ -136,12 +137,30 @@ public class MiniToolCanvas extends JComponent implements Lookup.Provider {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void reshape(int x, int y, int w, int h) {
         boolean changed = getX() != x || getY() != y || getWidth() != w || getHeight() != h;
         super.reshape(x, y, w, h);
         if (changed) {
             updateAspectRatio();
         }
+    }
+
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        ImageEditorBackground.getDefault().addChangeListener(this);
+    }
+
+    @Override
+    public void removeNotify() {
+        ImageEditorBackground.getDefault().removeChangeListeners(this);
+        super.removeNotify();
+    }
+
+    @Override
+    public void stateChanged(ChangeEvent e) {
+        repaint();
     }
 
     public static void main(String[] args) {

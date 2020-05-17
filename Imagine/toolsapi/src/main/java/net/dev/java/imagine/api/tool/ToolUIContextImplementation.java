@@ -4,7 +4,7 @@ import java.awt.Rectangle;
 import net.dev.java.imagine.spi.tool.ToolUIContext;
 import net.dev.java.imagine.spi.tool.impl.UIContextAccessor;
 import org.imagine.editor.api.AspectRatio;
-import org.imagine.editor.api.CheckerboardBackground;
+import org.imagine.editor.api.EditorBackground;
 import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.editor.api.Zoom;
 
@@ -18,7 +18,7 @@ public interface ToolUIContextImplementation {
 
     AspectRatio aspectRatio();
 
-    default CheckerboardBackground background() {
+    default EditorBackground background() {
         return ImageEditorBackground.getDefault().style();
     }
 

@@ -19,8 +19,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import org.imagine.editor.api.ImageEditorBackground;
-import org.imagine.editor.api.CheckerboardBackground;
-import org.netbeans.paint.api.components.EnumComboBoxModel;
+import org.imagine.editor.api.EditorBackground;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.Presenter;
 
@@ -33,19 +32,19 @@ public class ImageEditorBackgroundAction extends AbstractAction implements Prese
     private static final String PROP_BG = "bg";
 
     public ImageEditorBackgroundAction() {
-        putValue(NAME, NbBundle.getMessage(ImageEditorBackgroundAction.class, 
+        putValue(NAME, NbBundle.getMessage(ImageEditorBackgroundAction.class,
                 "IMAGE_EDITOR_BACKGROUND")); //NOI18N
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof JComboBox<?>) {
-            CheckerboardBackground bg = (CheckerboardBackground) ((JComboBox<?>) e.getSource())
+            EditorBackground bg = (EditorBackground) ((JComboBox<?>) e.getSource())
                     .getSelectedItem();
             ImageEditorBackground.getDefault().setStyle(bg);
         } else {
             JRadioButtonMenuItem item = (JRadioButtonMenuItem) e.getSource();
-            CheckerboardBackground bg = (CheckerboardBackground) item.getClientProperty(PROP_BG);
+            EditorBackground bg = (EditorBackground) item.getClientProperty(PROP_BG);
             ImageEditorBackground.getDefault().setStyle(bg);
         }
     }
@@ -54,10 +53,12 @@ public class ImageEditorBackgroundAction extends AbstractAction implements Prese
     public JMenuItem getMenuPresenter() {
         JMenu menu = new JMenu((String) getValue(NAME));
         ButtonGroup grp = new ButtonGroup();
-        CheckerboardBackground selected = ImageEditorBackground.getDefault().style();
-        for (CheckerboardBackground bg : CheckerboardBackground.values()) {
+        ImageEditorBackground ieb = ImageEditorBackground.getDefault();
+        EditorBackground[] backgrounds = ieb.allBackgrounds();
+        EditorBackground selected = ImageEditorBackground.getDefault().style();
+        for (EditorBackground bg : backgrounds) {
             JRadioButtonMenuItem item = new JRadioButtonMenuItem(bg.toString());
-            item.setSelected(selected == bg);
+            item.setSelected(bg.equals(selected));
             grp.add(item);
             item.putClientProperty(PROP_BG, bg);
             menu.add(item);
@@ -72,8 +73,8 @@ public class ImageEditorBackgroundAction extends AbstractAction implements Prese
         JLabel lbl = new JLabel(NbBundle.getMessage(ImageEditorBackgroundAction.class,
                 "IMAGE_EDITOR_BACKGROUND"));
         pnl.add(lbl);
-        JComboBox<CheckerboardBackground> box
-                = EnumComboBoxModel.newComboBox(ImageEditorBackground.getDefault().style());
+        JComboBox<? extends EditorBackground> box
+                = ImageEditorBackground.getDefault().createSelectorComboBox();
         box.setFocusable(false); // use the menu item for keyboard access
         pnl.add(box);
         box.addActionListener(this);

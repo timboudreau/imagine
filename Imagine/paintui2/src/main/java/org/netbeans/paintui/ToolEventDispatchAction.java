@@ -1,5 +1,6 @@
 package org.netbeans.paintui;
 
+import com.mastfrog.function.BooleanConsumer;
 import java.awt.Component;
 import java.awt.Point;
 import java.awt.event.KeyEvent;
@@ -26,14 +27,30 @@ import org.openide.util.Lookup;
  *
  * @author Tim Boudreau
  */
-class ToolEventDispatchAction extends WidgetAction.Adapter {
+class ToolEventDispatchAction extends WidgetAction.Adapter implements BooleanConsumer {
 
     private final PositionStatusLineElementProvider pslep = Lookup.getDefault().lookup(PositionStatusLineElementProvider.class);
     private final PictureScene scene;
     private static final ContextLog ALOG = ContextLog.get("toolactions");
+    private boolean mainWindowActive;
 
     ToolEventDispatchAction(PictureScene scene) {
         this.scene = scene;
+    }
+
+    ToolEventDispatchAction activate() {
+        mainWindowActive = MainWindowActivation.listen(this);
+        return this;
+    }
+
+    ToolEventDispatchAction deactivate() {
+        MainWindowActivation.unlisten(this);
+        return this;
+    }
+
+    @Override
+    public void accept(boolean val) {
+        mainWindowActive = val;
     }
 
     <T> T toolAs(Class<T> what) {
@@ -197,6 +214,9 @@ class ToolEventDispatchAction extends WidgetAction.Adapter {
     }
 
     State ifActiveLayer(boolean log, Widget widget, Supplier<State> run) {
+        if (!mainWindowActive) {
+            return State.REJECTED;
+        }
         // If the current tool has installed its own layer, let that layer
         // handle input events
         if (scene.activeLayerWidget().isLayersWidgetActive()) {

@@ -5,7 +5,7 @@ import java.awt.Rectangle;
 import net.dev.java.imagine.api.tool.ToolUIContextImplementation;
 import net.dev.java.imagine.spi.tool.impl.UIContextAccessor;
 import org.imagine.editor.api.AspectRatio;
-import org.imagine.editor.api.CheckerboardBackground;
+import org.imagine.editor.api.EditorBackground;
 import org.imagine.editor.api.Zoom;
 
 /**
@@ -28,7 +28,7 @@ public final class ToolUIContext {
         return impl.aspectRatio();
     }
 
-    public CheckerboardBackground background() {
+    public EditorBackground background() {
         return impl.background();
     }
 

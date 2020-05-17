@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.netbeans.paint.api.components;
 
 import java.awt.BasicStroke;
@@ -27,12 +22,14 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -40,9 +37,14 @@ import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 import org.imagine.geometry.Arrow;
 import org.imagine.geometry.Circle;
+import org.imagine.geometry.EnhRectangle2D;
 import org.imagine.geometry.EqLine;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.Quadrant;
+import static org.imagine.geometry.Quadrant.NORTHEAST;
+import static org.imagine.geometry.Quadrant.NORTHWEST;
+import static org.imagine.geometry.Quadrant.SOUTHEAST;
+import static org.imagine.geometry.Quadrant.SOUTHWEST;
 import org.imagine.geometry.Rhombus;
 import org.imagine.geometry.Triangle2D;
 import org.imagine.geometry.util.PooledTransform;
@@ -60,7 +62,7 @@ public final class Cursors {
 
     private static final boolean DISABLED = Boolean.getBoolean("disable.custom.cursors");
     private final CursorProperties props;
-    private final Cursor[] cursors = new Cursor[21];
+    private final Cursor[] cursors = new Cursor[26];
 
     private Cursors(CursorProperties props) {
         this.props = props;
@@ -88,8 +90,8 @@ public final class Cursors {
         pnl.setPreferredSize(new Dimension(400, 400));
         jf.setContentPane(pnl);
 
-//        pnl.setBackground(Color.DARK_GRAY);
-//        pnl.setForeground(Color.WHITE);
+        pnl.setBackground(Color.DARK_GRAY);
+        pnl.setForeground(Color.WHITE);
 
 //        jf.setCursor(Cursors.forBrightBackgrounds().southEastNorthWest());
 //        jf.setCursor(Cursors.forComponent(pnl).horizontal());
@@ -98,7 +100,7 @@ public final class Cursors {
 //        jf.setCursor(Cursors.forComponent(pnl).star());
 //        jf.setCursor(Cursors.forComponent(pnl).no());
 //        jf.setCursor(Cursors.forComponent(pnl).hin());
-        jf.setCursor(Cursors.forComponent(pnl).rotateMany());
+        jf.setCursor(Cursors.forComponent(pnl).arrowTilde());
 //        jf.pack();
         jf.setSize(new Dimension(1200, 800));
         jf.setVisible(true);
@@ -127,7 +129,7 @@ public final class Cursors {
 //            drawNoImage(gg, TWO_COLOR_DEFAULT_DARK.scaled(2));
 //            drawBarbellImage(gg, TWO_COLOR_DEFAULT_DARK.scaled(2));
 //            drawRhombus(gg, TWO_COLOR_DEFAULT_LIGHT.scaled(2), false);
-            drawRotateMany(gg, TWO_COLOR_DEFAULT_LIGHT.scaled(2));
+            drawArrowTilde(gg, TWO_COLOR_DEFAULT_DARK.scaled(2));
         }
     }
 
@@ -218,29 +220,19 @@ public final class Cursors {
 //        // no cursor
 //        cursors[4] = Toolkit.getDefaultToolkit().
 //                createCustomCursor(no, new Point(5, 5), "no");
-        cursors[4] = props.createCursor("no", props.centerX(), props.centerY(), g -> {
-            drawNoImage(g, props);
-        });
+        cursors[4] = props.createCursor("no", props.centerX(), props.centerY(), Cursors::drawNoImage);
 
 //        BufferedImage starImage = createCursorImage(gg -> drawStarImage(light, gg, 16, 16));
 //        // diagonal bottom-left to top-right
 //        cursors[5] = Toolkit.getDefaultToolkit().
 //                createCustomCursor(starImage, new Point(8, 8), "star");
-        cursors[5] = props.createCursor("star", props.centerX(), props.centerY(), g -> {
-            drawStarImage(g, props);
-        });
+        cursors[5] = props.createCursor("star", props.centerX(), props.centerY(), Cursors::drawStarImage);
 
-        cursors[6] = props.createCursor("x", props.centerX(), props.centerY(), g -> {
-            drawX(g, props);
-        });
+        cursors[6] = props.createCursor("x", 0, 0, Cursors::drawX);
 
-        cursors[7] = props.createCursor("arrowsX", props.centerX(), props.centerY(), g -> {
-            arrowsX(g, props);
-        });
+        cursors[7] = props.createCursor("arrowsX", props.centerX(), props.centerY(), Cursors::drawArrowsCrossed);
 
-        cursors[8] = props.createCursor("barbell", 0, props.centerY(), g -> {
-            drawBarbellImage(g, props);
-        });
+        cursors[8] = props.createCursor("barbell", 0, props.centerY(), Cursors::drawBarbellImage);
 
         cursors[9] = props.createCursor("rhombus", props.centerX(), props.centerY(), g -> {
             drawRhombus(g, props, false);
@@ -268,31 +260,204 @@ public final class Cursors {
             drawTriangleLeft(g, props, true);
         });
 
-        cursors[17] = props.createCursor("arrowsCrossed", props.centerX(), props.centerY(), g -> {
-            drawAnglesCrossed(g, props);
-        });
+        cursors[17] = props.createCursor("arrowsCrossed", 0, 0, Cursors::drawAnglesCrossed);
 
-        cursors[18] = props.createCursor("multiMove", props.width() - 1, props.height() - 1, g -> {
-            drawMultiMove(g, props);
-        });
+        cursors[18] = props.createCursor("multiMove", props.width() - 1, props.height() - 1, Cursors::drawMultiMove);
 
-        cursors[19] = props.createCursor("rotate", 0, 0, g -> {
-            drawRotate(g, props);
-        });
+        cursors[19] = props.createCursor("rotate", 0, 0, Cursors::drawRotate);
 
-        cursors[20] = props.createCursor("rotateMany", 0, 0, g -> {
-            drawRotateMany(g, props);
-        });
+        cursors[20] = props.createCursor("rotateMany", 0, 0, Cursors::drawRotateMany);
 
+        cursors[21] = props.createCursor(
+                "dottedRect", 0, 0, Cursors::drawDottedRect);
+
+        cursors[22] = props.createCursor(
+                "arrow+", 0, 0, Cursors::drawArrowPlus);
+        cursors[23] = props.createCursor(
+                "shortArrow", 0, 0, Cursors::drawArrowPlus);
+        cursors[24] = props.createCursor(
+                "closeShape", 0, 0, Cursors::drawCloseShape);
+        cursors[25] = props.createCursor(
+                "arrowTilde", 0, 0, Cursors::drawArrowTilde);
     }
 
     static final Color LG = new Color(214, 214, 214);
+
+    public static void drawCloseShape(Graphics2D g, CursorProperties props) {
+        Circle circ = new Circle(props.centerX(), props.centerY(), (props.centerX() - ((props.width() / 12) + (props.width() / 16))));
+        Area a = new Area(new Rectangle(0, 0, props.centerX(), props.centerY()));
+        Area a2 = new Area(new Rectangle(0, 0, props.width(), props.height()));
+        a2.subtract(a);
+        g.setClip(a2);
+        g.setColor(props.shadow());
+        g.setStroke(new BasicStroke(props.mainStroke().getLineWidth() * 1.5F));
+        g.draw(circ);
+
+        g.setColor(props.primary());
+        g.setStroke(props.mainStroke());
+        g.draw(circ);
+//        g.drawRect(0, 0, props.width() - 1, props.height() - 1);
+        g.setClip(null);
+        BasicStroke mstroke = new BasicStroke(props.mainStroke().getLineWidth(), BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 17F);
+        BasicStroke lstroke = new BasicStroke(props.mainStroke().getLineWidth() * 1.5F, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 17F);
+        Triangle2D[] tris = new Triangle2D[2];
+        double off = -(props.width() / 16);
+        double ooff = props.width() / 32;
+        Runnable heads = () -> {
+            double headLength = props.width() / 10;
+            circ.positionOf(0, (x, y) -> {
+                Circle.positionOf(135, x + off, y, headLength, (x1, y1) -> {
+                    Circle.positionOf(45, x + off, y, headLength, (x2, y2) -> {
+//                        Area aa = new Area(new Rectangle2D.Double(x2 + off, y - (lstroke.getLineWidth() / 2),
+//                                x2 - x, lstroke.getLineWidth()));
+//                        Area aa1 = new Area(new Rectangle(0, 0, props.width(), props.height()));
+//                        aa1.subtract(aa);
+//                        g.setClip(aa1);
+                        g.draw(tris[0] = new Triangle2D(x + off, y + ooff, x1 - off, y1 + ooff, x2 - off, y2 + ooff));
+//                        g.setClip(null);
+                    });
+                });
+            });
+            circ.positionOf(270, (x, y) -> {
+                Circle.positionOf(135, x, y - off, headLength, (x1, y1) -> {
+                    Circle.positionOf(-135, x, y - off, headLength, (x2, y2) -> {
+                        g.draw(tris[1] = new Triangle2D(x + ooff, y + off, x1 + ooff, y1 + off, x2 + ooff, y2 + off));
+                    });
+                });
+            });
+        };
+        g.setClip(0, 0, props.width(), props.height());
+        g.setColor(props.shadow());
+        g.setStroke(lstroke);
+        heads.run();
+        int lo = props.width() / 12;
+        g.drawLine(lo, lo, props.centerX() / 2, props.centerY() / 2);
+        g.setColor(props.primary());
+        g.setStroke(mstroke);
+        heads.run();
+        g.drawLine(lo, lo, props.centerX() / 2, props.centerY() / 2);
+        g.fill(tris[0]);
+        g.fill(tris[1]);
+
+//        g.setColor(Color.GREEN);
+        Rectangle2D.Double r = new Rectangle2D.Double();
+        r.x = tris[0].bx() + (off / 2) - (ooff / 2);
+        r.y = tris[0].centerY() - (mstroke.getLineWidth() / 2);
+        r.width = mstroke.getLineWidth();
+        r.height = mstroke.getLineWidth() - (mstroke.getLineWidth() / 2);
+        g.fill(r);
+        g.draw(r);
+
+    }
+
+    public static void drawShortArrow(Graphics2D g, CursorProperties props) {
+        Area bds = new Area(new Rectangle(0, 0, props.width(), props.height()));
+        Area a = new Area(new Triangle2D(props.width(), props.height(),
+                props.width(), 0,
+                0, props.height()));
+        bds.subtract(a);
+        g.setClip(bds);
+        drawAngle45(g, props);
+        g.setClip(null);
+        drawAngle45(g, props);
+//        g.setBackground(new Color(255, 255, 255, 0));
+//        g.clearRect(props.centerX(), props.centerY(), (props.width() - props.centerX()) + 2, (props.height() - props.centerY()) + 2);
+    }
+
+    public static void drawArrowTilde(Graphics2D g, CursorProperties props) {
+        Area bds = new Area(new Rectangle(0, 0, props.width(), props.height()));
+        Area a = new Area(new Triangle2D(props.width(), props.height(),
+                props.width(), 0,
+                0, props.height()));
+        bds.subtract(a);
+        g.setClip(bds);
+        drawAngle45(g, props);
+        g.setClip(null);
+
+        g.translate(-((props.width() / 16) - props.width() / 16), -((props.height() / 4) + (props.height() / 8) + props.height() / 32));
+
+        int in = props.width() / 16;
+        int in2 = in * 2;
+        int halfY = ((props.height() - props.centerY()) / 2) - in;
+        int halfX = ((props.width() - props.centerX()) / 2) - in;
+
+        Path2D.Double path = new Path2D.Double();
+        double ax = props.centerX() + in;
+        double ay = props.centerY() + halfY + in / 2;
+        path.moveTo(ax, ay);
+
+        double cx = props.width() - in;
+        double cy = props.centerY() + halfY + in / 2;
+
+        double qx = props.centerX() + halfX + in;
+        double qy = props.centerY() + in;
+
+        path.quadTo(qx, qy, cx, cy);
+        double len = cx - ax;
+        double qy2 = ay + (in * 2);
+        path.quadTo(qx + len, qy2, cx + len, ay);
+
+        g.translate(-props.centerX() + (props.width() / 32), props.centerY());
+
+        g.setStroke(props.shadowStroke());
+        g.setColor(props.shadow());
+//        g.drawLine(props.centerX() + in, props.centerY() + halfY + in / 2, props.width() - in, props.centerY() + halfY + in / 2);
+//        g.drawLine(props.centerX() + halfX + in, props.centerY() + in, props.centerX() + halfX + in, props.height() - in2);
+        g.draw(path);
+        g.setColor(props.primary());
+        g.setStroke(props.mainStroke());
+        g.draw(path);
+//        g.drawLine(props.centerX() + in, props.centerY() + halfY + in / 2, props.width() - in, props.centerY() + halfY + in / 2);
+//        g.drawLine(props.centerX() + halfX + in, props.centerY() + in, props.centerX() + halfX + in, props.height() - in2);
+    }
+
+    public static void drawArrowPlus(Graphics2D g, CursorProperties props) {
+        drawAngle45(g, props);
+        g.setBackground(new Color(255, 255, 255, 0));
+        g.clearRect(props.centerX(), props.centerY(), (props.width() - props.centerX()) + 5, (props.height() - props.centerY()) + 5);
+        g.translate(-((props.width() / 16) - props.width() / 16), -((props.height() / 4) + (props.height() / 8) + props.height() / 32));
+
+        int in = props.width() / 12;
+        int in2 = in * 2;
+        int halfY = ((props.height() - props.centerY()) / 2) - in;
+        int halfX = ((props.width() - props.centerX()) / 2) - in;
+
+        g.setStroke(props.shadowStroke());
+        g.setColor(props.shadow());
+        g.drawLine(props.centerX() + in, props.centerY() + halfY + in / 2, props.width() - in, props.centerY() + halfY + in / 2);
+        g.drawLine(props.centerX() + halfX + in, props.centerY() + in, props.centerX() + halfX + in, props.height() - in2);
+        g.setColor(props.primary());
+        g.setStroke(props.mainStroke());
+        g.drawLine(props.centerX() + in, props.centerY() + halfY + in / 2, props.width() - in, props.centerY() + halfY + in / 2);
+        g.drawLine(props.centerX() + halfX + in, props.centerY() + in, props.centerX() + halfX + in, props.height() - in2);
+    }
+
+    public static void drawDottedRect(Graphics2D g, CursorProperties props) {
+        int off = props.width() / 8;
+        Rectangle rect = new Rectangle(off, off, props.width() - (off * 2), props.height() - (off * 2));
+        float ws = props.mainStroke().getLineWidth() * 1.5F;
+        int sz = props.width() - (off * 2);
+        System.out.println("sz " + sz + " ");
+        float[] flts = new float[]{sz / 4F};
+        float shift = (sz / 8);
+//        shift = 0;
+        BasicStroke shadowStroke = new BasicStroke(ws, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1F, flts, shift);
+        g.setStroke(shadowStroke);
+        g.setColor(props.shadow());
+        g.drawRect(rect.x, rect.y, rect.width, rect.height);
+//        g.draw(rect);
+        float wl = props.mainStroke().getLineWidth();
+        g.setColor(props.primary());
+        BasicStroke lineStroke = new BasicStroke(wl, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1F, flts, shift);
+        g.setStroke(lineStroke);
+        g.drawRect(rect.x, rect.y, rect.width, rect.height);
+    }
 
     private static void drawRotateMany(Graphics2D g, CursorProperties props) {
         drawRotate(g, props);
         double off = (props.width() / 9);
         double rad = props.width() / 10;
-        Circle circ = new Circle(props.centerX()-off, props.centerY()-off, rad);
+        Circle circ = new Circle(props.centerX() - off, props.centerY() - off, rad);
         fillLine(g, props, circ);
         paintLine(g, props, circ);
         circ.setCenter(props.centerX() + off, props.centerY() + off);
@@ -481,6 +646,11 @@ public final class Cursors {
         g.setStroke(props.mainStroke());
         g.setColor(props.primary());
         g.drawLine(props.cornerOffset(), props.cornerOffset(), props.width() - props.cornerOffset(), props.height() - props.cornerOffset());
+        g.setBackground(new Color(255, 255, 255, 0));
+        EnhRectangle2D r = new EnhRectangle2D(0, 0, props.width() / 6, props.height() / 6);
+        r.setCenter(props.centerX(), props.centerY());
+        Rectangle r2 = r.getBounds();
+        g.clearRect(r2.x, r2.y, r2.width, r2.height);
         g.setTransform(old);
     }
 
@@ -611,7 +781,7 @@ public final class Cursors {
         paintLine(g, props, rhom);
     }
 
-    private static void arrowsX(Graphics2D g, CursorProperties props) {
+    private static void drawArrowsCrossed(Graphics2D g, CursorProperties props) {
         int w = props.width();
         int h = props.height();
         int o1 = w / 16;
@@ -931,6 +1101,46 @@ public final class Cursors {
         return cursors[20];
     }
 
+    public Cursor dottedRect() {
+        if (DISABLED) {
+            return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+        }
+        checkInit();
+        return cursors[21];
+    }
+
+    public Cursor arrowPlus() {
+        if (DISABLED) {
+            return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+        }
+        checkInit();
+        return cursors[22];
+    }
+
+    public Cursor shortArrow() {
+        if (DISABLED) {
+            return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+        }
+        checkInit();
+        return cursors[23];
+    }
+
+    public Cursor closeShape() {
+        if (DISABLED) {
+            return Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+        }
+        checkInit();
+        return cursors[24];
+    }
+
+    public Cursor arrowTilde() {
+        if (DISABLED) {
+            return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+        }
+        checkInit();
+        return cursors[25];
+    }
+
     private void checkInit() {
         if (DISABLED) {
             return;
@@ -1044,6 +1254,7 @@ public final class Cursors {
 
     private static boolean isDarker(Color a, Color b) {
         return brightnessOf(a) < brightnessOf(b);
+
     }
 
     interface CursorProperties {
@@ -1070,6 +1281,10 @@ public final class Cursors {
 
         default BasicStroke shadowStroke() {
             return new BasicStroke((width() / 8F) + 1);
+        }
+
+        default BasicStroke shadowStrokeThin() {
+            return new BasicStroke(mainStroke().getLineWidth() * 1.5F);
         }
 
         default BasicStroke mainStroke() {
@@ -1103,6 +1318,12 @@ public final class Cursors {
         boolean isDarkBackground();
 
         Graphics2D hint(Graphics2D g);
+
+        default Cursor createCursor(String name, int hitX, int hitY, BiConsumer<Graphics2D, CursorProperties> c) {
+            return createCursor(name, hitX, hitY, g -> {
+                c.accept(g, this);
+            });
+        }
 
         default Cursor createCursor(String name, int hitX, int hitY, Consumer<Graphics2D> c) {
             BufferedImage img = createCursorImage(c);
@@ -1151,7 +1372,8 @@ public final class Cursors {
             = new CursorPropertiesImpl(LG, BLACK, 16, 16, true);
 
     private static final CursorProperties TWO_COLOR_DEFAULT_LIGHT
-            = new CursorPropertiesImpl(DARK_GRAY, LG, 16, 16, false);
+            = new CursorPropertiesImpl(DARK_GRAY, LG,
+                    16, 16, false);
 
     static class CursorPropertiesImpl implements CursorProperties {
 

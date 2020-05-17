@@ -113,7 +113,6 @@ public class VectorWrapperGraphics extends Graphics2D {
     public Graphics create() {
         VectorWrapperGraphics result = new VectorWrapperGraphics(handle, (Graphics2D) other.create(),
                 new Point(location), w, h);
-        System.out.println("VWG create child");
 //        if (onDispose != null) {
 //            Runnable origOnDispose = onDispose;
 //            Runnable childOnDispose = () -> {
@@ -198,13 +197,11 @@ public class VectorWrapperGraphics extends Graphics2D {
             } else {
                 Shape interpreted = ShapeCharacteristics.bestShapeFor(shape);
                 if (interpreted != null) {
-                    System.out.println("INTERPRETED SHAPE " + interpreted);
                     return primitiveFor(interpreted, fill);
                 }
                 result = new PathIteratorWrapper(shape.getPathIterator(null), fill);
             }
         }
-        System.out.println("push shape " + result);
         return result;
     }
 
@@ -773,7 +770,6 @@ public class VectorWrapperGraphics extends Graphics2D {
     }
 
     private void push(Primitive primitive) {
-        System.out.println("Push " + primitive);
         handle.drawn(primitive);
     }
 
@@ -867,8 +863,6 @@ public class VectorWrapperGraphics extends Graphics2D {
         return result;
     }
 
-    private boolean disposed;
-
     @Override
     public void dispose() {
         if (onDispose != null) {
@@ -876,8 +870,6 @@ public class VectorWrapperGraphics extends Graphics2D {
             onDispose = null;
         }
         other.dispose();
-        System.out.println("VWG disposed");
-        disposed = true;
     }
 
     public void draw(java.awt.Rectangle rect) {

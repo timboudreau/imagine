@@ -41,6 +41,13 @@ public abstract class HoverPointResponder extends Responder {
         return hasHoverPoint;
     }
 
+    @Override
+    void onTakeoverFrom(Responder prev) {
+        if (prev instanceof HoverPointResponder) {
+            ((HoverPointResponder) prev).copyHoverPointTo(this);
+        }
+    }
+
     protected EqPointDouble moveHoverPoint(double dx, double dy) {
         hoverPoint.x += dx;
         hoverPoint.y += dy;
@@ -57,6 +64,13 @@ public abstract class HoverPointResponder extends Responder {
 
     protected void onHasHoverPointChanged(double x, double y, boolean hasHoverPoint) {
 
+    }
+
+    protected final Responder copyHoverPointTo(Responder other) {
+        if (hasHoverPoint() && other instanceof HoverPointResponder) {
+            ((HoverPointResponder) other).setHoverPoint(hoverPoint);
+        }
+        return other;
     }
 
     @Override

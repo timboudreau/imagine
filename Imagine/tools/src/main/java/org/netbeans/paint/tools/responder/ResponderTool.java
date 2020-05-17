@@ -8,6 +8,7 @@ import java.awt.Shape;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
@@ -21,7 +22,6 @@ import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import static net.java.dev.imagine.api.toolcustomizers.Constants.FILL;
 import static net.java.dev.imagine.api.toolcustomizers.Constants.STROKE;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
-import static org.imagine.editor.api.CheckerboardBackground.LIGHT;
 import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.tools.fills.FillCustomizer;
@@ -309,7 +309,7 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
     }
 
     protected final Cursors cursors() {
-        return ImageEditorBackground.getDefault().style() == LIGHT
+        return ImageEditorBackground.getDefault().style().isBright()
                 ? Cursors.forBrightBackgrounds() : Cursors.forDarkBackgrounds();
     }
 
@@ -382,10 +382,16 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
 
     protected boolean updateHandler(Responder nue) {
         if (nue != currentHandler) {
+            if (isPrintStackTrace(currentHandler.getClass(), nue.getClass())) {
+                new Exception(currentHandler + " --> " + nue).printStackTrace();
+            } else if (logTransitions) {
+                System.out.println(currentHandler + "\t--> " + nue);
+            }
             updateScratch.setFrame(0, 0, 0, 0);
-            currentHandler._resign(updateScratch);
+            Responder old = currentHandler;
             currentHandler = nue;
-            nue._activate(updateScratch);
+            nue._activate(old, updateScratch);
+            old._resign(updateScratch);
             if (pendingCursor != null) {
                 setCursor(pendingCursor);
                 pendingCursor = null;
@@ -401,5 +407,55 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
 
     final Responder currentHandler() {
         return currentHandler;
+    }
+
+    private boolean logTransitions;
+
+    protected final void logTransitions() {
+        logTransitions = true;
+    }
+
+    protected final void logTransitions(boolean val) {
+        logTransitions = val;
+    }
+
+    private Set<XKey> stackTransitionKeys = new HashSet<>();
+
+    private boolean isPrintStackTrace(Class<? extends Responder> from, Class<? extends Responder> to) {
+        return stackTransitionKeys == null ? false : stackTransitionKeys.contains(new XKey(from, to));
+    }
+
+    protected final void printStackTraceOnTransitions(Class<? extends Responder> from, Class<? extends Responder> to) {
+        if (stackTransitionKeys == null) {
+            stackTransitionKeys = new HashSet<>();
+        }
+        stackTransitionKeys.add(new XKey(from, to));
+    }
+
+    private static final class XKey {
+
+        private final int idHash1;
+        private final int idHash2;
+
+        XKey(Class<? extends Responder> a, Class<? extends Responder> b) {
+            idHash1 = a.hashCode();
+            idHash2 = b.hashCode();
+        }
+
+        public boolean equals(Object o) {
+            if (o == this) {
+                return true;
+            } else if (o == null) {
+                return false;
+            } else if (o instanceof XKey) {
+                return ((XKey) o).idHash1 == idHash1
+                        && ((XKey) o).idHash2 == idHash2;
+            }
+            return false;
+        }
+
+        public int hashCode() {
+            return idHash1 + (437 * idHash2);
+        }
     }
 }

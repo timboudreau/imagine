@@ -30,9 +30,25 @@ public interface Hue {
         return () -> hue;
     }
 
+    default Color toColor(float saturation, float value) {
+        return new Color(Color.HSBtoRGB(hue(), saturation, value));
+    }
+
+    default Color toColor(float saturation, float value, float alpha) {
+        Color res = new Color(Color.HSBtoRGB(hue(), saturation, value));
+        if (alpha != 1F) {
+            int alph = (int) Math.max(0, Math.min(255, alpha * 255));
+            res = new Color(res.getRed(), res.getGreen(), res.getBlue(), alph);
+        }
+        return res;
+    }
+
     default Color fromTemplateColor(Color templ) {
         Color.RGBtoHSB(templ.getRed(), templ.getGreen(), templ.getBlue(), Hues.SCRATCH);
         Hues.SCRATCH[0] = hue();
+        if (Hues.SCRATCH[1] == 0) {
+            Hues.SCRATCH[1] = Math.max(Hues.SCRATCH[2], 0.45F);
+        }
         Color result = new Color(Color.HSBtoRGB(Hues.SCRATCH[0], Hues.SCRATCH[1], Hues.SCRATCH[2]));
         if (templ.getAlpha() != 255) {
             result = new Color(result.getRed(), result.getGreen(), result.getBlue(), templ.getAlpha());

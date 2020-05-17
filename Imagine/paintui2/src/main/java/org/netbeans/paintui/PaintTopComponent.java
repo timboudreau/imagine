@@ -591,14 +591,17 @@ public final class PaintTopComponent extends TopComponent implements
     @Override
     protected void componentActivated() {
         clog("componentActivated");
+        canvas.onOwningComponentActivated();;
         ActiveEditor.setActiveEditor(this);
         active = true;
+        canvas.getView().requestFocus();
     }
 
     @Override
     protected void componentDeactivated() {
         clog("componentDeactivated");
         active = false;
+        canvas.onOwningComponentDeactivated();;
     }
 
     @Override

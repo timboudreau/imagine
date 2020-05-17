@@ -24,7 +24,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.api.image.Surface;
 import org.imagine.editor.api.AspectRatio;
-import org.imagine.editor.api.CheckerboardBackground;
 import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.editor.api.Zoom;
 import org.imagine.geometry.Circle;
@@ -43,6 +42,11 @@ import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
 
 /**
+ * A Tool implementation specific to the generic design customizer, which uses
+ * the mini-tool-canvas to allow the user to edit a portion of a path. This tool
+ * should not be registered in the set of user-visible tools, as it is really
+ * specific to that purpose, and doesn't offer any way to complete the shape
+ * (which is always complete as far as that ui is concerned.
  *
  * @author Tim Boudreau
  */
@@ -164,8 +168,7 @@ final class PointEditTool extends ResponderTool implements ChangeListener, Looku
             mdl.visitPoints(currentLookup().lookup(PointsProvider.class), (seg, index, kind, point) -> {
                 test.setCenter(point);
                 if (test.contains(x, y)) {
-                    CheckerboardBackground style = ImageEditorBackground.getDefault().style();
-                    Cursors cursors = style == CheckerboardBackground.LIGHT ? Cursors.forBrightBackgrounds() : Cursors.forDarkBackgrounds();
+                    Cursors cursors = cursors();
                     setCursor(cursors.arrowsCrossed());
                     cursorSet.set();
                 }
@@ -173,8 +176,7 @@ final class PointEditTool extends ResponderTool implements ChangeListener, Looku
             cursorSet.ifUntrue(() -> {
                 setCursor(Cursor.getDefaultCursor());
                 if (lastHitTest.contains(new EqPointDouble(x, y))) {
-                    CheckerboardBackground style = ImageEditorBackground.getDefault().style();
-                    Cursors cursors = style == CheckerboardBackground.LIGHT ? Cursors.forBrightBackgrounds() : Cursors.forDarkBackgrounds();
+                    Cursors cursors = cursors();
                     setCursor(cursors.star());
                 }
             });
@@ -426,6 +428,7 @@ final class PointEditTool extends ResponderTool implements ChangeListener, Looku
                 }
 
                 EqPointDouble dragBase = new EqPointDouble();
+
                 @Override
                 protected Responder onPress(double x, double y, MouseEvent e) {
                     dragBase.setLocation(x, y);

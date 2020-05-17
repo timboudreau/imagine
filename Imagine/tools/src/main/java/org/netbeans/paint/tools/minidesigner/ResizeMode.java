@@ -2,7 +2,6 @@ package org.netbeans.paint.tools.minidesigner;
 
 import java.awt.Cursor;
 import java.awt.geom.Point2D;
-import org.imagine.editor.api.CheckerboardBackground;
 import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.geometry.EqPointDouble;
 import org.netbeans.paint.api.components.Cursors;
@@ -16,7 +15,8 @@ public enum ResizeMode {
     TOP_EDGE, LEFT_EDGE, RIGHT_EDGE, BOTTOM_EDGE, NORTHWEST, NORTHEAST, SOUTHEAST, SOUTHWEST;
 
     public Cursor cursor() {
-        Cursors cur = ImageEditorBackground.getDefault().style() == CheckerboardBackground.LIGHT ? Cursors.forBrightBackgrounds() : Cursors.forDarkBackgrounds();
+        Cursors cur = ImageEditorBackground.getDefault().style().isBright()
+                ? Cursors.forBrightBackgrounds() : Cursors.forDarkBackgrounds();
         switch (this) {
             case NORTHEAST:
                 return cur.southWestNorthEast();

@@ -22,7 +22,6 @@ import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
-import org.imagine.editor.api.CheckerboardBackground;
 import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.geometry.Circle;
@@ -176,7 +175,7 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
 
     @Override
     protected void onAttachRepainter(PaintParticipant.Repainter repainter) {
-        boolean dark = ImageEditorBackground.getDefault().style() == CheckerboardBackground.DARK;
+        boolean dark = ImageEditorBackground.getDefault().style().isDark();
         Cursors cursors = dark ? Cursors.forDarkBackgrounds() : Cursors.forBrightBackgrounds();
         repainter.setCursor(cursors.star());
     }
@@ -267,7 +266,7 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
 
         @Override
         protected void activate(Rectangle addTo) {
-            boolean dark = ImageEditorBackground.getDefault().style() == CheckerboardBackground.DARK;
+            boolean dark = ImageEditorBackground.getDefault().style().isDark();
             Cursors cursors = dark ? Cursors.forDarkBackgrounds() : Cursors.forBrightBackgrounds();
             setCursor(cursors.star());
         }

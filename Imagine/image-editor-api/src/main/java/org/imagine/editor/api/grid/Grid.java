@@ -17,14 +17,13 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
-import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.prefs.Preferences;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import org.imagine.editor.api.CheckerboardBackground;
+import org.imagine.editor.api.EditorBackground;
 import org.imagine.editor.api.ImageEditorBackground;
 import org.openide.util.NbPreferences;
 import org.openide.util.WeakSet;
@@ -44,9 +43,8 @@ public final class Grid implements Serializable {
     private Color color = Color.GRAY;
     private GridStyle style = GridStyle.DOTS;
     private transient Set<ChangeListener> listeners;
-    private transient Map<CheckerboardBackground, DoubleMap<TexturePaint>> linesPaintMapForBackground = new EnumMap<>(CheckerboardBackground.class);
-    private transient Map<CheckerboardBackground, DoubleMap<TexturePaint>> dotsPaintMapForBackground = new EnumMap<>(CheckerboardBackground.class);
-
+    private transient Map<EditorBackground, DoubleMap<Paint>> linesPaintMapForBackground = ImageEditorBackground.getDefault().createCacheMap();
+    private transient Map<EditorBackground, DoubleMap<Paint>> dotsPaintMapForBackground = ImageEditorBackground.getDefault().createCacheMap();
 
     public Grid(int size, boolean enabled, Color color, GridStyle style) {
         this.size = size;
@@ -255,11 +253,11 @@ public final class Grid implements Serializable {
         supp().remove(listener);
     }
 
-    private DoubleMap<TexturePaint> linesZoomMap(CheckerboardBackground bg) {
+    private DoubleMap<Paint> linesZoomMap(EditorBackground bg) {
         if (linesPaintMapForBackground == null) { // deserialized instance
-            linesPaintMapForBackground = new EnumMap<>(CheckerboardBackground.class);
+            linesPaintMapForBackground = ImageEditorBackground.getDefault().createCacheMap();
         }
-        DoubleMap<TexturePaint> result = linesPaintMapForBackground.get(bg);
+        DoubleMap<Paint> result = linesPaintMapForBackground.get(bg);
         if (result == null) {
             result = DoubleMap.create(5);
             linesPaintMapForBackground.put(bg, result);
@@ -267,11 +265,11 @@ public final class Grid implements Serializable {
         return result;
     }
 
-    private DoubleMap<TexturePaint> dotsZoomMap(CheckerboardBackground bg) {
+    private DoubleMap<Paint> dotsZoomMap(EditorBackground bg) {
         if (dotsPaintMapForBackground == null) { // deserialized instance
-            dotsPaintMapForBackground = new EnumMap(CheckerboardBackground.class);
+            dotsPaintMapForBackground = ImageEditorBackground.getDefault().createCacheMap();
         }
-        DoubleMap<TexturePaint> result = dotsPaintMapForBackground.get(bg);
+        DoubleMap<Paint> result = dotsPaintMapForBackground.get(bg);
         if (result == null) {
             result = DoubleMap.create(5);
             dotsPaintMapForBackground.put(bg, result);
@@ -279,10 +277,10 @@ public final class Grid implements Serializable {
         return result;
     }
 
-    public TexturePaint linesPaint(double zoom) {
-        CheckerboardBackground bg = ImageEditorBackground.getDefault().style();
-        DoubleMap<TexturePaint> linesZoomMap = linesZoomMap(bg);
-        TexturePaint result = linesZoomMap.get(zoom);
+    public Paint linesPaint(double zoom) {
+        EditorBackground bg = ImageEditorBackground.getDefault().style();
+        DoubleMap<Paint> linesZoomMap = linesZoomMap(bg);
+        Paint result = linesZoomMap.get(zoom);
         if (result != null) {
             return result;
         }
@@ -291,10 +289,10 @@ public final class Grid implements Serializable {
         return result;
     }
 
-    public TexturePaint dotsPaint(double zoom) {
-        CheckerboardBackground bg = ImageEditorBackground.getDefault().style();
-        DoubleMap<TexturePaint> dotsZoomMap = dotsZoomMap(bg);
-        TexturePaint result = dotsZoomMap.get(zoom);
+    public Paint dotsPaint(double zoom) {
+        EditorBackground bg = ImageEditorBackground.getDefault().style();
+        DoubleMap<Paint> dotsZoomMap = dotsZoomMap(bg);
+        Paint result = dotsZoomMap.get(zoom);
         if (result != null) {
             return result;
         }
@@ -303,7 +301,7 @@ public final class Grid implements Serializable {
         return result;
     }
 
-    private TexturePaint createLineTextureImage(double scale, CheckerboardBackground bg) {
+    private Paint createLineTextureImage(double scale, EditorBackground bg) {
         int mult = 7;
         double sz = size * scale;
         double dim = sz * mult;
@@ -339,7 +337,7 @@ public final class Grid implements Serializable {
         return new TexturePaint(img, rect);
     }
 
-    private TexturePaint createDotTextureImage(double scale, CheckerboardBackground bg) {
+    private Paint createDotTextureImage(double scale, EditorBackground bg) {
         int mult = 7;
         double sz = size * scale;
         double dim = sz * mult;
