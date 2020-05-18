@@ -48,7 +48,6 @@ import org.netbeans.paint.api.components.EnumComboBoxModel;
 import org.netbeans.paint.tools.MutableRectangle2D;
 import org.netbeans.paint.tools.minidesigner.MiniToolCanvas;
 import org.netbeans.paint.tools.minidesigner.ResizeMode;
-import org.netbeans.paint.tools.path.PathTool2.BaseConnectingPointResponder.SelectionResponder.WithSelectionResponder;
 import org.netbeans.paint.tools.responder.HoverPointResponder;
 import org.netbeans.paint.tools.responder.PaintingResponder;
 import org.netbeans.paint.tools.responder.PathUIProperties;
