@@ -12,7 +12,7 @@
         <brandingToken>imagine</brandingToken>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <nbcluster>imagine</nbcluster>
-        <mastfrog.version>2.6.8</mastfrog.version>
+        <mastfrog.version>2.6.9</mastfrog.version>
         <batik.version>1.12</batik.version>
     </properties>
     <build>
