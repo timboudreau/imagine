@@ -49,7 +49,6 @@
             <artifactId>misc-swing</artifactId>
         </dependency>
         <dependency>
-            <type>jar</type>
             <groupId>${project.groupId}</groupId>
             <artifactId>colorchooser</artifactId>
         </dependency>

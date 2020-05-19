@@ -8,7 +8,6 @@
         <version>2.0-dev</version>
     </parent>
     <artifactId>borrowed</artifactId>
-    <packaging>jar</packaging>
     <build>
         <plugins>
             <plugin>

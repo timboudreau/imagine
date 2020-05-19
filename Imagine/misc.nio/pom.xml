@@ -21,12 +21,12 @@
             <plugin>
                 <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <version>4.3</version>
                 <configuration>
                     <publicPackages>
                         <publicPackage>org.netbeans.paint.misc.image</publicPackage>
                         <publicPackage>org.netbeans.paint.misc.nio</publicPackage>
                     </publicPackages>
+                    <moduleType>autoload</moduleType>
                 </configuration>
             </plugin>
         </plugins>
