@@ -10,10 +10,6 @@
     <artifactId>customizers2</artifactId>
     <packaging>nbm</packaging>
     <name>customizers2</name>
-    <properties>
-        <netbeans.run.params.ide/>
-        <netbeans.run.params>${netbeans.run.params.ide}</netbeans.run.params>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>org.netbeans.api</groupId>

@@ -10,9 +10,6 @@
     <artifactId>effectsapi</artifactId>
     <packaging>nbm</packaging>
     <name>Effects API</name>
-    <properties>
-        <!--<maven.test.skip>true</maven.test.skip>-->
-    </properties>
     <dependencies>
         <!--
 XXX move the effects action and processor out of here to its

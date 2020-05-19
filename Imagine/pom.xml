@@ -7,14 +7,6 @@
     <version>2.0-dev</version>
     <packaging>pom</packaging>
     <name>Imagine - NB App Parent</name>
-    <properties>
-        <netbeans.version>RELEASE113</netbeans.version>
-        <brandingToken>imagine</brandingToken>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <nbcluster>imagine</nbcluster>
-        <mastfrog.version>2.6.9</mastfrog.version>
-        <batik.version>1.12</batik.version>
-    </properties>
     <build>
         <pluginManagement>
             <plugins>
@@ -618,4 +610,14 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+    <properties>
+        <batik.version>1.12</batik.version>
+        <brandingToken>imagine</brandingToken>
+        <mastfrog.version>2.6.9</mastfrog.version>
+        <nbcluster>imagine</nbcluster>
+        <netbeans.run.params>${netbeans.run.params.ide}</netbeans.run.params>
+        <netbeans.run.params.ide/>
+        <netbeans.version>RELEASE113</netbeans.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 </project>

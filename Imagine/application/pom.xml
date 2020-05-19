@@ -11,10 +11,6 @@
     <packaging>nbm-application</packaging>
     <name>Imagine - NB App</name>
     <description>An Extensible Image Editor</description>
-    <properties>
-        <netbeans.run.params.ide/>
-        <netbeans.run.params>${netbeans.run.params.ide}</netbeans.run.params>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>org.netbeans.cluster</groupId>
@@ -241,7 +237,6 @@
         <dependency>
             <groupId>org.netbeans.modules</groupId>
             <artifactId>org-netbeans-modules-applemenu</artifactId>
-            <version>${netbeans.version}</version>
         </dependency>
     </dependencies>
     <build>
