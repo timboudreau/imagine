@@ -1,23 +1,35 @@
-package org.netbeans.paint.api.components;
+package org.netbeans.paint.api.cursor;
 
 import java.awt.BasicStroke;
+import static java.awt.BasicStroke.CAP_BUTT;
+import static java.awt.BasicStroke.CAP_ROUND;
+import static java.awt.BasicStroke.CAP_SQUARE;
+import static java.awt.BasicStroke.JOIN_MITER;
+import static java.awt.BasicStroke.JOIN_ROUND;
 import java.awt.Color;
 import static java.awt.Color.BLACK;
+import static java.awt.Color.BLUE;
 import static java.awt.Color.DARK_GRAY;
-import java.awt.Component;
+import static java.awt.Color.RED;
+import static java.awt.Color.WHITE;
 import java.awt.Cursor;
+import static java.awt.Cursor.CROSSHAIR_CURSOR;
+import static java.awt.Cursor.DEFAULT_CURSOR;
+import static java.awt.Cursor.E_RESIZE_CURSOR;
+import static java.awt.Cursor.HAND_CURSOR;
+import static java.awt.Cursor.MOVE_CURSOR;
+import static java.awt.Cursor.S_RESIZE_CURSOR;
+import static java.awt.Cursor.TEXT_CURSOR;
+import static java.awt.Cursor.getPredefinedCursor;
 import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsEnvironment;
+import static java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import java.awt.Shape;
-import java.awt.Toolkit;
-import java.awt.Transparency;
+import static java.awt.Toolkit.getDefaultToolkit;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
@@ -26,15 +38,19 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import static java.lang.Math.abs;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.WindowConstants;
+import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
 import org.imagine.geometry.Arrow;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.EnhRectangle2D;
@@ -47,7 +63,12 @@ import static org.imagine.geometry.Quadrant.SOUTHEAST;
 import static org.imagine.geometry.Quadrant.SOUTHWEST;
 import org.imagine.geometry.Rhombus;
 import org.imagine.geometry.Triangle2D;
-import org.imagine.geometry.util.PooledTransform;
+import org.imagine.geometry.util.GeometryStrings;
+import static org.netbeans.paint.api.cursor.CursorUtils.brightnessOf;
+import static org.netbeans.paint.api.cursor.CursorUtils.configFor;
+import static org.netbeans.paint.api.cursor.CursorUtils.rotated;
+import static org.netbeans.paint.api.cursor.CursorUtils.twoColorRenderingHints;
+import org.openide.util.Exceptions;
 
 /**
  * Provides horizontal, vertical, diagonal and circle with line through it
@@ -55,61 +76,97 @@ import org.imagine.geometry.util.PooledTransform;
  *
  * @author Tim Boudreau
  */
-public final class Cursors {
+final class CursorsImpl implements Cursors {
 
-    private static Cursors DARK;
-    private static Cursors LIGHT;
-
+    private static CursorsImpl DARK;
+    private static CursorsImpl LIGHT;
+    static final Color BRIGHT_COLOR = WHITE;
     private static final boolean DISABLED = Boolean.getBoolean("disable.custom.cursors");
     private final CursorProperties props;
     private final Cursor[] cursors = new Cursor[26];
+    /*
+     * On linux and perhaps others, we are actually dealing with two-color
+     * 8-bit color images with a small palette, and color conversion can
+     * turn any subtleties in color into black or white.
+     */
+    private static final CursorProperties TWO_COLOR_DEFAULT_DARK
+            = new CursorPropertiesImpl(BRIGHT_COLOR, BLACK, 16, 16, true);
 
-    private Cursors(CursorProperties props) {
+    private static final CursorProperties TWO_COLOR_DEFAULT_LIGHT
+            = new CursorPropertiesImpl(DARK_GRAY, BRIGHT_COLOR,
+                    16, 16, false);
+
+    private CursorsImpl(CursorProperties props) {
         this.props = props;
     }
 
-    public static Cursors forDarkBackgrounds() {
+    public static CursorsImpl darkBackgroundCursors() {
         if (DARK == null) {
-            DARK = new Cursors(forToolkit(true));
+            DARK = new CursorsImpl(forToolkit(true));
         }
         return DARK;
     }
 
-    public static Cursors forBrightBackgrounds() {
+    public static CursorsImpl brightBackgroundCursors() {
         if (LIGHT == null) {
-            LIGHT = new Cursors(forToolkit(false));
+            LIGHT = new CursorsImpl(forToolkit(false));
         }
         return LIGHT;
     }
 
     public static void main(String[] args) {
         JFrame jf = new JFrame();
-        jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        jf.setDefaultCloseOperation(EXIT_ON_CLOSE);
         JPanel pnl = new JPanel();
         pnl.add(new Comp());
         pnl.setPreferredSize(new Dimension(400, 400));
         jf.setContentPane(pnl);
 
-        pnl.setBackground(Color.DARK_GRAY);
-        pnl.setForeground(Color.WHITE);
+        int colors = getDefaultToolkit().getMaximumCursorColors();
+        System.out.println("max cur colors " + colors);
+        System.out.println("TOOLKIT CLASS " + getDefaultToolkit().getClass().getName()
+        );
 
+        //        pnl.setBackground(Color.DARK_GRAY);
+//        pnl.setForeground(Color.WHITE);
 //        jf.setCursor(Cursors.forBrightBackgrounds().southEastNorthWest());
 //        jf.setCursor(Cursors.forComponent(pnl).horizontal());
 //        jf.setCursor(Cursors.forComponent(pnl).southEastNorthWest());
 //        jf.setCursor(Cursors.forComponent(pnl).vertical());
 //        jf.setCursor(Cursors.forComponent(pnl).star());
-//        jf.setCursor(Cursors.forComponent(pnl).no());
+        jf.setCursor(Cursors.forComponent(pnl).southEastNorthWest());
 //        jf.setCursor(Cursors.forComponent(pnl).hin());
-        jf.setCursor(Cursors.forComponent(pnl).arrowTilde());
+//        jf.setCursor(Cursors.forComponent(pnl).triangleRight());
+//        Cursor cur = Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+        try ( InputStream in = Cursor.class.getResourceAsStream("/sun/awt/resources/cursors/cursors.properties")) {
+            System.out.println("IN " + in);
+            if (in != null) {
+                byte[] bytes = new byte[128];
+                int count;
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                while ((count = in.read(bytes)) > 0) {
+                    out.write(bytes, 0, count);
+                }
+                String s = new String(out.toByteArray(), US_ASCII);
+                System.out.println("CURWSORS: \n" + s);
+            } else {
+                System.out.println("no cursor resource");
+            }
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+
+//        jf.setCursor(cur);
 //        jf.pack();
-        jf.setSize(new Dimension(1200, 800));
+        jf.setSize(new Dimension(1_200, 800));
         jf.setVisible(true);
     }
 
     static class Comp extends JComponent {
 
-        private final AffineTransform xf = AffineTransform.getScaleInstance(16, 16);
+        private final AffineTransform xf = AffineTransform.getScaleInstance(1, 1);
 
+        @Override
         public Dimension getPreferredSize() {
             Rectangle r = new Rectangle(0, 0, 32, 32);
             return xf.createTransformedShape(r).getBounds().getSize();
@@ -129,11 +186,11 @@ public final class Cursors {
 //            drawNoImage(gg, TWO_COLOR_DEFAULT_DARK.scaled(2));
 //            drawBarbellImage(gg, TWO_COLOR_DEFAULT_DARK.scaled(2));
 //            drawRhombus(gg, TWO_COLOR_DEFAULT_LIGHT.scaled(2), false);
-            drawArrowTilde(gg, TWO_COLOR_DEFAULT_DARK.scaled(2));
+            drawAngle45(gg, TWO_COLOR_DEFAULT_DARK.scaled(2));
         }
     }
 
-    private static final Map<CursorProperties, Cursors> FOR_PROPERTIES
+    private static final Map<CursorProperties, CursorsImpl> FOR_PROPERTIES
             = new HashMap<>();
 
     /**
@@ -143,8 +200,8 @@ public final class Cursors {
      * @param comp
      * @return
      */
-    public static Cursors forComponent(JComponent comp) {
-        Cursors result = (Cursors) comp.getClientProperty(
+    static CursorsImpl cursorsForComponent(JComponent comp) {
+        CursorsImpl result = (CursorsImpl) comp.getClientProperty(
                 CLIENT_PROP_CURSORS);
         if (result != null) {
             return result;
@@ -152,19 +209,19 @@ public final class Cursors {
         CursorProperties props = propertiesForComponent(comp);
         result = FOR_PROPERTIES.get(props);
         if (result == null && props != null) {
-            result = new Cursors(props);
+            result = new CursorsImpl(props);
             FOR_PROPERTIES.put(props, result);
         }
         if (result == null) {
             boolean useLight = isDarkBackground(comp);
             if (useLight) {
                 if (LIGHT == null) {
-                    LIGHT = new Cursors(TWO_COLOR_DEFAULT_LIGHT);
+                    LIGHT = new CursorsImpl(TWO_COLOR_DEFAULT_LIGHT);
                 }
                 result = LIGHT;
             } else {
                 if (DARK == null) {
-                    DARK = new Cursors(TWO_COLOR_DEFAULT_DARK);
+                    DARK = new CursorsImpl(TWO_COLOR_DEFAULT_DARK);
                 }
                 result = DARK;
             }
@@ -179,31 +236,25 @@ public final class Cursors {
         float bri1 = brightnessOf(fg);
         float bri2 = brightnessOf(bg);
         boolean result;
-        if (Math.abs(bri1 - bri2) > 0.1) {
+        if (abs(bri1 - bri2) > 0.1) {
             result = bri1 > bri2;
         } else {
-            result = Math.min(bri1, bri2) < 0.45F;
+            result = min(bri1, bri2) < 0.45F;
         }
         return result;
     }
 
     private static final String CLIENT_PROP_CURSORS = "angleCursors";
 
-    private static float brightnessOf(Color c) {
-        float[] hsb = new float[4];
-        Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), hsb);
-        return hsb[2];
-    }
-
     private static void cursors(Cursor[] cursors, CursorProperties props) {
         BufferedImage base_45 = props.createCursorImage(g -> {
             drawAngle45(g, props);
         });
-        cursors[0] = Toolkit.getDefaultToolkit().
+        cursors[0] = getDefaultToolkit().
                 createCustomCursor(base_45, new Point(props.centerX(), props.centerY()), "northwest");
 
         // diagonal top-left to bottom-right
-        cursors[1] = Toolkit.getDefaultToolkit().
+        cursors[1] = getDefaultToolkit().
                 createCustomCursor(rotated(base_45, 1), new Point(props.centerX(), props.centerY()), "northeast");
 
         BufferedImage base0_90 = props.createCursorImage(gg -> {
@@ -211,28 +262,28 @@ public final class Cursors {
         });
 
         // horizontal
-        cursors[2] = Toolkit.getDefaultToolkit().
+        cursors[2] = getDefaultToolkit().
                 createCustomCursor(base0_90, new Point(7 * (props.width() / 16), 7 * (props.width() / 16)), "southeast");
         // vertical
-        cursors[3] = Toolkit.getDefaultToolkit().
+        cursors[3] = getDefaultToolkit().
                 createCustomCursor(rotated(base0_90, 1), new Point(7 * (props.width() / 16), 7 * (props.width() / 16)), "southwest");
 //        BufferedImage no = createCursorImage(48, 48, g -> drawNoImage(g, light, 48, 48));
 //        // no cursor
 //        cursors[4] = Toolkit.getDefaultToolkit().
 //                createCustomCursor(no, new Point(5, 5), "no");
-        cursors[4] = props.createCursor("no", props.centerX(), props.centerY(), Cursors::drawNoImage);
+        cursors[4] = props.createCursor("no", props.centerX(), props.centerY(), CursorsImpl::drawNoImage);
 
 //        BufferedImage starImage = createCursorImage(gg -> drawStarImage(light, gg, 16, 16));
 //        // diagonal bottom-left to top-right
 //        cursors[5] = Toolkit.getDefaultToolkit().
 //                createCustomCursor(starImage, new Point(8, 8), "star");
-        cursors[5] = props.createCursor("star", props.centerX(), props.centerY(), Cursors::drawStarImage);
+        cursors[5] = props.createCursor("star", props.centerX(), props.centerY(), CursorsImpl::drawStarImage);
 
-        cursors[6] = props.createCursor("x", 0, 0, Cursors::drawX);
+        cursors[6] = props.createCursor("x", 0, 0, CursorsImpl::drawX);
 
-        cursors[7] = props.createCursor("arrowsX", props.centerX(), props.centerY(), Cursors::drawArrowsCrossed);
+        cursors[7] = props.createCursor("arrowsX", props.centerX(), props.centerY(), CursorsImpl::drawArrowsCrossed);
 
-        cursors[8] = props.createCursor("barbell", 0, props.centerY(), Cursors::drawBarbellImage);
+        cursors[8] = props.createCursor("barbell", 0, props.centerY(), CursorsImpl::drawBarbellImage);
 
         cursors[9] = props.createCursor("rhombus", props.centerX(), props.centerY(), g -> {
             drawRhombus(g, props, false);
@@ -260,30 +311,23 @@ public final class Cursors {
             drawTriangleLeft(g, props, true);
         });
 
-        cursors[17] = props.createCursor("arrowsCrossed", 0, 0, Cursors::drawAnglesCrossed);
+        cursors[17] = props.createCursor("arrowsCrossed", 0, 0, CursorsImpl::drawAnglesCrossed);
 
-        cursors[18] = props.createCursor("multiMove", props.width() - 1, props.height() - 1, Cursors::drawMultiMove);
+        cursors[18] = props.createCursor("multiMove", props.width() - 1, props.height() - 1, CursorsImpl::drawMultiMove);
 
-        cursors[19] = props.createCursor("rotate", 0, 0, Cursors::drawRotate);
+        cursors[19] = props.createCursor("rotate", 0, 0, CursorsImpl::drawRotate);
 
-        cursors[20] = props.createCursor("rotateMany", 0, 0, Cursors::drawRotateMany);
+        cursors[20] = props.createCursor("rotateMany", 0, 0, CursorsImpl::drawRotateMany);
 
-        cursors[21] = props.createCursor(
-                "dottedRect", 0, 0, Cursors::drawDottedRect);
+        cursors[21] = props.createCursor("dottedRect", 0, 0, CursorsImpl::drawDottedRect);
 
-        cursors[22] = props.createCursor(
-                "arrow+", 0, 0, Cursors::drawArrowPlus);
-        cursors[23] = props.createCursor(
-                "shortArrow", 0, 0, Cursors::drawArrowPlus);
-        cursors[24] = props.createCursor(
-                "closeShape", 0, 0, Cursors::drawCloseShape);
-        cursors[25] = props.createCursor(
-                "arrowTilde", 0, 0, Cursors::drawArrowTilde);
+        cursors[22] = props.createCursor("arrow+", 0, 0, CursorsImpl::drawArrowPlus);
+        cursors[23] = props.createCursor("shortArrow", 0, 0, CursorsImpl::drawArrowPlus);
+        cursors[24] = props.createCursor("closeShape", 0, 0, CursorsImpl::drawCloseShape);
+        cursors[25] = props.createCursor("arrowTilde", 0, 0, CursorsImpl::drawArrowTilde);
     }
 
-    static final Color LG = new Color(214, 214, 214);
-
-    public static void drawCloseShape(Graphics2D g, CursorProperties props) {
+    private static void drawCloseShape(Graphics2D g, CursorProperties props) {
         Circle circ = new Circle(props.centerX(), props.centerY(), (props.centerX() - ((props.width() / 12) + (props.width() / 16))));
         Area a = new Area(new Rectangle(0, 0, props.centerX(), props.centerY()));
         Area a2 = new Area(new Rectangle(0, 0, props.width(), props.height()));
@@ -298,8 +342,8 @@ public final class Cursors {
         g.draw(circ);
 //        g.drawRect(0, 0, props.width() - 1, props.height() - 1);
         g.setClip(null);
-        BasicStroke mstroke = new BasicStroke(props.mainStroke().getLineWidth(), BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 17F);
-        BasicStroke lstroke = new BasicStroke(props.mainStroke().getLineWidth() * 1.5F, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 17F);
+        BasicStroke mstroke = new BasicStroke(props.mainStroke().getLineWidth(), CAP_SQUARE, JOIN_MITER, 17F);
+        BasicStroke lstroke = new BasicStroke(props.mainStroke().getLineWidth() * 1.5F, CAP_SQUARE, JOIN_MITER, 17F);
         Triangle2D[] tris = new Triangle2D[2];
         double off = -(props.width() / 16);
         double ooff = props.width() / 32;
@@ -441,14 +485,14 @@ public final class Cursors {
         float[] flts = new float[]{sz / 4F};
         float shift = (sz / 8);
 //        shift = 0;
-        BasicStroke shadowStroke = new BasicStroke(ws, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1F, flts, shift);
+        BasicStroke shadowStroke = new BasicStroke(ws, CAP_ROUND, JOIN_ROUND, 1F, flts, shift);
         g.setStroke(shadowStroke);
         g.setColor(props.shadow());
         g.drawRect(rect.x, rect.y, rect.width, rect.height);
 //        g.draw(rect);
         float wl = props.mainStroke().getLineWidth();
         g.setColor(props.primary());
-        BasicStroke lineStroke = new BasicStroke(wl, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1F, flts, shift);
+        BasicStroke lineStroke = new BasicStroke(wl, CAP_BUTT, JOIN_ROUND, 1F, flts, shift);
         g.setStroke(lineStroke);
         g.drawRect(rect.x, rect.y, rect.width, rect.height);
     }
@@ -528,7 +572,7 @@ public final class Cursors {
         bottomRightPlus.translate(props.width() / 32, props.width() / 32);
 
         EqLine ln = new EqLine(bottomRight, big.center());
-        g.setColor(Color.WHITE);
+        g.setColor(WHITE);
         double r4 = big.radius() / 2;
         EqLine ln2 = new EqLine(bottomRightPlus, bottomRightPlus);
 //        g.draw(big);
@@ -763,8 +807,12 @@ public final class Cursors {
             g.setColor(props.primary());
             g.fill(rhom);
         }
+        g.setColor(BLUE);
         fillLine(g, props, rhom);
         paintLine(g, props, rhom);
+        g.setColor(RED);
+        g.draw(new Line2D.Double(rhom.ax(), rhom.ay(), rhom.centerX(),
+                rhom.cy()));
     }
 
     private static void drawTriangleLeft(Graphics2D g, CursorProperties props, boolean fill) {
@@ -802,34 +850,6 @@ public final class Cursors {
         g.draw(tri2);
         g.setStroke(new BasicStroke(props.mainStroke().getLineWidth() * 1.5F));
         g.drawLine(props.centerX(), o1 * 2, props.centerX(), props.height() - (o1 * 2));
-    }
-
-    private static BufferedImage createCursorImage(int w, int h, Consumer<Graphics2D> c) {
-        BufferedImage result = createCursorImage(w, h);
-        Graphics2D g = result.createGraphics();
-        try {
-            c.accept(g);
-        } finally {
-            g.dispose();
-        }
-        return result;
-    }
-
-    private static BufferedImage createCursorImage(int w, int h) {
-        BufferedImage result = GraphicsEnvironment.getLocalGraphicsEnvironment()
-                .getDefaultScreenDevice().getDefaultConfiguration()
-                .createCompatibleImage(w, h, Transparency.TRANSLUCENT);
-        return result;
-    }
-
-    private static void twoColorRenderingHints(Graphics2D g) {
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-        g.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        g.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
-        g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_NORMALIZE);
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-        g.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE);
     }
 
     private static void drawBarbellImage(Graphics2D g, CursorProperties props) {
@@ -903,7 +923,7 @@ public final class Cursors {
         props = props.creationVariant();
         int w = props.width();
         int h = props.height();
-        int centerFree = Math.min(w, h) / 8;
+        int centerFree = min(w, h) / 8;
         int edgeFree = centerFree / 2;
         int cornerFree = centerFree * 2;
 
@@ -933,209 +953,235 @@ public final class Cursors {
         g.fillRect(cx - edgeFree, cy - edgeFree, centerFree, centerFree);
     }
 
+    @Override
     public Cursor star() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+            return getPredefinedCursor(CROSSHAIR_CURSOR);
         }
         checkInit();
         return cursors[5];
     }
 
+    @Override
     public Cursor barbell() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR);
+            return getPredefinedCursor(TEXT_CURSOR);
         }
         checkInit();
         return cursors[8];
     }
 
+    @Override
     public Cursor x() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
+            return getPredefinedCursor(MOVE_CURSOR);
         }
         checkInit();
         return cursors[6];
     }
 
+    @Override
     public Cursor hin() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR);
+            return getPredefinedCursor(E_RESIZE_CURSOR);
         }
         checkInit();
         return cursors[7];
     }
 
+    @Override
     public Cursor no() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
+            return getPredefinedCursor(DEFAULT_CURSOR);
         }
         checkInit();
         return cursors[4];
     }
 
+    @Override
     public Cursor horizontal() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR);
+            return getPredefinedCursor(E_RESIZE_CURSOR);
         }
         checkInit();
         return cursors[2];
     }
 
+    @Override
     public Cursor vertical() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.S_RESIZE_CURSOR);
+            return getPredefinedCursor(S_RESIZE_CURSOR);
         }
         checkInit();
         return cursors[3];
     }
 
+    @Override
     public Cursor southWestNorthEast() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+            return getPredefinedCursor(CROSSHAIR_CURSOR);
         }
         checkInit();
         return cursors[1];
     }
 
+    @Override
     public Cursor southEastNorthWest() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+            return getPredefinedCursor(CROSSHAIR_CURSOR);
         }
         checkInit();
         return cursors[0];
     }
 
+    @Override
     public Cursor rhombus() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
+            return getPredefinedCursor(DEFAULT_CURSOR);
         }
         checkInit();
         return cursors[9];
     }
 
+    @Override
     public Cursor rhombusFilled() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
+            return getPredefinedCursor(DEFAULT_CURSOR);
         }
         checkInit();
         return cursors[10];
     }
 
+    @Override
     public Cursor triangleDown() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
+            return getPredefinedCursor(DEFAULT_CURSOR);
         }
         checkInit();
         return cursors[11];
     }
 
+    @Override
     public Cursor triangleDownFilled() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
+            return getPredefinedCursor(DEFAULT_CURSOR);
         }
         checkInit();
         return cursors[12];
     }
 
+    @Override
     public Cursor triangleRight() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
+            return getPredefinedCursor(DEFAULT_CURSOR);
         }
         checkInit();
         return cursors[13];
     }
 
+    @Override
     public Cursor triangleRightFilled() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
+            return getPredefinedCursor(DEFAULT_CURSOR);
         }
         checkInit();
         return cursors[14];
     }
 
+    @Override
     public Cursor triangleLeft() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
+            return getPredefinedCursor(DEFAULT_CURSOR);
         }
         checkInit();
         return cursors[15];
     }
 
+    @Override
     public Cursor triangleLeftFilled() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
+            return getPredefinedCursor(DEFAULT_CURSOR);
         }
         checkInit();
         return cursors[16];
     }
 
+    @Override
     public Cursor arrowsCrossed() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
+            return getPredefinedCursor(MOVE_CURSOR);
         }
         checkInit();
         return cursors[17];
     }
 
+    @Override
     public Cursor multiMove() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
+            return getPredefinedCursor(MOVE_CURSOR);
         }
         checkInit();
         return cursors[18];
     }
 
+    @Override
     public Cursor rotate() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR);
+            return getPredefinedCursor(TEXT_CURSOR);
         }
         checkInit();
         return cursors[19];
     }
 
+    @Override
     public Cursor rotateMany() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR);
+            return getPredefinedCursor(TEXT_CURSOR);
         }
         checkInit();
         return cursors[20];
     }
 
+    @Override
     public Cursor dottedRect() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+            return getPredefinedCursor(HAND_CURSOR);
         }
         checkInit();
         return cursors[21];
     }
 
+    @Override
     public Cursor arrowPlus() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+            return getPredefinedCursor(HAND_CURSOR);
         }
         checkInit();
         return cursors[22];
     }
 
+    @Override
     public Cursor shortArrow() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+            return getPredefinedCursor(HAND_CURSOR);
         }
         checkInit();
         return cursors[23];
     }
 
+    @Override
     public Cursor closeShape() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+            return getPredefinedCursor(CROSSHAIR_CURSOR);
         }
         checkInit();
         return cursors[24];
     }
 
+    @Override
     public Cursor arrowTilde() {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+            return getPredefinedCursor(HAND_CURSOR);
         }
         checkInit();
         return cursors[25];
@@ -1150,9 +1196,10 @@ public final class Cursors {
         }
     }
 
+    @Override
     public Cursor cursorPerpendicularTo(double angle) {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+            return getPredefinedCursor(CROSSHAIR_CURSOR);
         }
         Quadrant quad = Quadrant.forAngle(angle);
         int quarter = quad.quarter(angle);
@@ -1178,9 +1225,10 @@ public final class Cursors {
         return cursorPerpendicularToQuadrant(quad);
     }
 
+    @Override
     public Cursor cursorPerpendicularToQuadrant(Quadrant quad) {
         if (DISABLED) {
-            return Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+            return getPredefinedCursor(CROSSHAIR_CURSOR);
         }
         switch (quad) {
             case SOUTHEAST:
@@ -1194,51 +1242,35 @@ public final class Cursors {
         }
     }
 
-    private static BufferedImage rotated(BufferedImage img, int quadrants) {
-        BufferedImage nue = new BufferedImage(img.getWidth(), img.getHeight(),
-                img.getType());
-        PooledTransform.withQuadrantRotateInstance(quadrants, img.getWidth() / 2D, img.getHeight() / 2D, xform -> {
-            Graphics2D g = (Graphics2D) nue.getGraphics();
-            try {
-                g.drawImage(img, xform, null);
-            } finally {
-                g.dispose();
-            }
-        });
-        return nue;
-    }
-
-    private static GraphicsConfiguration configFor(Component comp) {
-        GraphicsConfiguration config = comp.getGraphicsConfiguration();
-        if (config == null) {
-            Frame[] fr = Frame.getFrames();
-            if (fr != null && fr.length > 0) {
-                config = fr[0].getGraphicsConfiguration();
-            }
-        }
-        if (config == null) {
-            config = GraphicsEnvironment
-                    .getLocalGraphicsEnvironment().getDefaultScreenDevice()
-                    .getDefaultConfiguration();
-        }
-        return config;
-    }
-
     private static CursorProperties propertiesForComponent(JComponent component) {
-        boolean dark = Cursors.isDarkBackground(component);
+        boolean dark = isDarkBackground(component);
         return propertiesForComponent(component, dark);
     }
 
     private static CursorProperties propertiesForComponent(JComponent component, boolean dark) {
         GraphicsConfiguration config = configFor(component);
+        System.out.println("CONFIG " + config.hashCode() + " - " + config);
         Rectangle screenBounds = config.getBounds();
-        CursorProperties result = forScreenSize(screenBounds.getSize(), dark ? TWO_COLOR_DEFAULT_LIGHT : TWO_COLOR_DEFAULT_DARK);
+        System.out.println("Screeen bounds " + GeometryStrings.toString(screenBounds));
+        int w = config.getDevice().getDisplayMode().getWidth();
+        int h = config.getDevice().getDisplayMode().getHeight();
+        System.out.println("screen size " + w + " * " + h);
+        Rectangle2D r2d = new Rectangle2D.Double(0, 0, 1, 1);
+        r2d = config.getNormalizingTransform().createTransformedShape(r2d).getBounds2D();
+        System.out.println("WITH NORM XFFORM " + GeometryStrings.toString(r2d));
+        r2d.setFrame(0, 0, 1, 1);
+        r2d = config.getDefaultTransform().createTransformedShape(r2d).getBounds2D();
+        System.out.println("WITH DEFL XFFORM " + GeometryStrings.toString(r2d));
+        System.out.println("CurSize 16" + getDefaultToolkit().getBestCursorSize(16, 16));
+//        screenBounds = config.getNormalizingTransform().createTransformedShape(screenBounds).getBounds();
+        System.out.println("FINAL SCREEEN SIZE " + screenBounds.getSize());
+        Dimension size = screenBounds.getSize();
+        CursorProperties result = forScreenSize(size, dark ? TWO_COLOR_DEFAULT_LIGHT : TWO_COLOR_DEFAULT_DARK);
         return result;
     }
 
     private static CursorProperties forToolkit(boolean dark) {
-        Rectangle screenBounds = GraphicsEnvironment
-                .getLocalGraphicsEnvironment().getDefaultScreenDevice()
+        Rectangle screenBounds = getLocalGraphicsEnvironment().getDefaultScreenDevice()
                 .getDefaultConfiguration().getBounds();
 
         CursorProperties result = forScreenSize(screenBounds.getSize(), dark ? TWO_COLOR_DEFAULT_LIGHT : TWO_COLOR_DEFAULT_DARK);
@@ -1246,269 +1278,12 @@ public final class Cursors {
     }
 
     private static CursorProperties forScreenSize(Dimension screenBounds, CursorProperties base) {
-        if (Math.max(screenBounds.width, screenBounds.height) > 1900) {
+        if (true) {
+//            return base.scaled(3);
+        }
+        if (max(screenBounds.width, screenBounds.height) > 1_900) {
             base = base.scaled(2);
         }
         return base;
-    }
-
-    private static boolean isDarker(Color a, Color b) {
-        return brightnessOf(a) < brightnessOf(b);
-
-    }
-
-    interface CursorProperties {
-
-        Color shadow();
-
-        Color primary();
-
-        Color attention();
-
-        Color warning();
-
-        default Color darkerMainColor() {
-            return isDarker(shadow(), primary()) ? shadow() : primary();
-        }
-
-        default Color lighterMainColor() {
-            return !isDarker(shadow(), primary()) ? shadow() : primary();
-        }
-
-        int width();
-
-        int height();
-
-        default BasicStroke shadowStroke() {
-            return new BasicStroke((width() / 8F) + 1);
-        }
-
-        default BasicStroke shadowStrokeThin() {
-            return new BasicStroke(mainStroke().getLineWidth() * 1.5F);
-        }
-
-        default BasicStroke mainStroke() {
-            return new BasicStroke(width() / 16F);
-        }
-
-        default BasicStroke wideShadowStroke() {
-            return new BasicStroke((width() / 8F) + 2);
-        }
-
-        default BasicStroke wideMainStroke() {
-            return new BasicStroke(height() / 16F);
-        }
-
-        default int centerX() {
-            return width() / 2;
-        }
-
-        default int centerY() {
-            return height() / 2;
-        }
-
-        int edgeOffset();
-
-        int cornerOffset();
-
-        int minimumHollow();
-
-        CursorProperties scaled(int by);
-
-        boolean isDarkBackground();
-
-        Graphics2D hint(Graphics2D g);
-
-        default Cursor createCursor(String name, int hitX, int hitY, BiConsumer<Graphics2D, CursorProperties> c) {
-            return createCursor(name, hitX, hitY, g -> {
-                c.accept(g, this);
-            });
-        }
-
-        default Cursor createCursor(String name, int hitX, int hitY, Consumer<Graphics2D> c) {
-            BufferedImage img = createCursorImage(c);
-            return Toolkit.getDefaultToolkit().
-                    createCustomCursor(img, new Point(hitX, hitY), name);
-        }
-
-        default CursorProperties warningVariant() {
-            Color newColor = Color.RED;
-            return isDarker(primary(), shadow()) ? withColors(newColor, shadow())
-                    : withColors(primary(), newColor);
-        }
-
-        default CursorProperties attentionVariant() {
-            Color newColor = Color.BLUE;
-            return isDarker(primary(), shadow()) ? withColors(newColor, shadow())
-                    : withColors(primary(), newColor);
-        }
-
-        default CursorProperties creationVariant() {
-            Color newColor = new Color(0, 128, 0);
-            return isDarker(primary(), shadow()) ? withColors(newColor, shadow())
-                    : withColors(primary(), newColor);
-        }
-
-        default CursorProperties withColors(Color primary, Color shadow) {
-            return this;
-        }
-
-        CursorProperties withSize(int w, int h);
-
-        default BufferedImage createCursorImage(Consumer<Graphics2D> c) {
-            return Cursors.createCursorImage(width(), height(), g -> {
-                hint(g);
-                c.accept(g);
-            });
-        }
-    }
-
-    /*
-     * On linux and perhaps others, we are actually dealing with two-color
-     * 8-bit color images with a small palette, and color conversion can
-     * turn any subtleties in color into black or white.
-     */
-    private static final CursorProperties TWO_COLOR_DEFAULT_DARK
-            = new CursorPropertiesImpl(LG, BLACK, 16, 16, true);
-
-    private static final CursorProperties TWO_COLOR_DEFAULT_LIGHT
-            = new CursorPropertiesImpl(DARK_GRAY, LG,
-                    16, 16, false);
-
-    static class CursorPropertiesImpl implements CursorProperties {
-
-        private final Color shadow;
-        private final Color main;
-        private final int width;
-        private final int height;
-        private final boolean darkBackground;
-
-        public CursorPropertiesImpl(Color shadow, Color main, int width, int height, boolean darkBackground) {
-            this.shadow = shadow;
-            this.main = main;
-            if (width % 16 != 0) {
-                width = Math.max(16, (width / 16) * 16);
-            }
-            if (height % 16 != 0) {
-                height = Math.max(16, (height / 16) * 16);
-            }
-            Dimension d = Toolkit.getDefaultToolkit().getBestCursorSize(width, height);
-            this.width = Math.max(4, d.width);
-            this.height = Math.max(4, d.height);
-            this.darkBackground = darkBackground;
-        }
-
-        @Override
-        public CursorProperties withSize(int w, int h) {
-            return new CursorPropertiesImpl(shadow, main, w, h, darkBackground);
-        }
-
-        @Override
-        public CursorProperties withColors(Color primary, Color shad) {
-            return new CursorPropertiesImpl(primary, shad, width, height, darkBackground);
-        }
-
-        public Graphics2D hint(Graphics2D g) {
-            twoColorRenderingHints(g);
-            return g;
-        }
-
-        public boolean isDarkBackground() {
-            return darkBackground;
-        }
-
-        public CursorProperties scaled(int by) {
-            return new CursorPropertiesImpl(shadow, main, width * by, height * by, darkBackground);
-        }
-
-        public int minimumHollow() {
-            return (width / 8) + 1;
-        }
-
-        public int edgeOffset() {
-            return width / 16;
-        }
-
-        public int cornerOffset() {
-            return (width / 8) + 1;
-        }
-
-        @Override
-        public Color shadow() {
-            return shadow;
-        }
-
-        @Override
-        public Color primary() {
-            return main;
-        }
-
-        @Override
-        public Color attention() {
-            return main;
-        }
-
-        @Override
-        public Color warning() {
-            return main;
-        }
-
-        @Override
-        public int width() {
-            return width;
-        }
-
-        @Override
-        public int height() {
-            return height;
-        }
-
-        @Override
-        public String toString() {
-            return "CursorPropertiesImpl{" + "shadow=" + shadow + ", main="
-                    + main + ", width=" + width + ", height=" + height
-                    + ", darkBackground=" + darkBackground + '}';
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 7;
-            hash = 29 * hash + Objects.hashCode(this.shadow);
-            hash = 29 * hash + Objects.hashCode(this.main);
-            hash = 29 * hash + this.width;
-            hash = 29 * hash + this.height;
-            hash = 29 * hash + (this.darkBackground ? 1 : 0);
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final CursorPropertiesImpl other = (CursorPropertiesImpl) obj;
-            if (this.width != other.width) {
-                return false;
-            }
-            if (this.height != other.height) {
-                return false;
-            }
-            if (this.darkBackground != other.darkBackground) {
-                return false;
-            }
-            if (!Objects.equals(this.shadow, other.shadow)) {
-                return false;
-            }
-            if (!Objects.equals(this.main, other.main)) {
-                return false;
-            }
-            return true;
-        }
     }
 }

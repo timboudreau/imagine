@@ -4,7 +4,7 @@ import java.awt.Cursor;
 import java.awt.geom.Point2D;
 import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.geometry.EqPointDouble;
-import org.netbeans.paint.api.components.Cursors;
+import org.netbeans.paint.api.cursor.Cursors;
 import org.netbeans.paint.tools.MutableRectangle2D;
 
 /**

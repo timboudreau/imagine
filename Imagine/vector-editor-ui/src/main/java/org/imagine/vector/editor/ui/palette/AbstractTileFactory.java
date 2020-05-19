@@ -49,7 +49,7 @@ import javax.swing.TransferHandler;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import org.imagine.utils.java2d.GraphicsUtils;
-import org.netbeans.paint.api.components.Cursors;
+import org.netbeans.paint.api.cursor.Cursors;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.awt.Mnemonics;

@@ -13,6 +13,7 @@
  */
 package org.netbeans.paint.api.components;
 
+import org.netbeans.paint.api.cursor.Cursors;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;

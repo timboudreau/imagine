@@ -28,7 +28,7 @@ import org.imagine.geometry.Circle;
 import org.imagine.geometry.EnhRectangle2D;
 import org.imagine.geometry.EqLine;
 import org.imagine.geometry.EqPointDouble;
-import org.netbeans.paint.api.components.Cursors;
+import org.netbeans.paint.api.cursor.Cursors;
 import org.netbeans.paint.api.components.explorer.FolderPanel;
 import static org.netbeans.paint.api.components.explorer.FolderPanel.PROP_SELECTION;
 import org.netbeans.paint.tools.minidesigner.GenericPathCreator;

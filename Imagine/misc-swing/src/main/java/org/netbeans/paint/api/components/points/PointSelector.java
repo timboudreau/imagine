@@ -47,7 +47,7 @@ import org.imagine.geometry.Circle;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.Triangle2D;
 import org.imagine.geometry.util.PooledTransform;
-import org.netbeans.paint.api.components.Cursors;
+import org.netbeans.paint.api.cursor.Cursors;
 import org.netbeans.paint.api.components.RadialSliderUI;
 import static org.netbeans.paint.api.components.points.PointSelectorMode.POINT_AND_LINE;
 import org.openide.util.Exceptions;

@@ -38,7 +38,7 @@ import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import org.imagine.geometry.Rhombus;
-import org.netbeans.paint.api.components.Cursors;
+import org.netbeans.paint.api.cursor.Cursors;
 
 /**
  *

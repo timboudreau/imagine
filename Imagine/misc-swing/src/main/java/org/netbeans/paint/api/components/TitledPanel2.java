@@ -5,6 +5,7 @@
  */
 package org.netbeans.paint.api.components;
 
+import org.netbeans.paint.api.cursor.Cursors;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;

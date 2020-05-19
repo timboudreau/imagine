@@ -93,6 +93,7 @@
                     <moduleType>autoload</moduleType>
                     <publicPackages>
                         <publicPackage>org.netbeans.paint.api.components</publicPackage>
+                        <publicPackage>org.netbeans.paint.api.cursor</publicPackage>
                         <publicPackage>org.netbeans.paint.api.components.explorer</publicPackage>
                         <publicPackage>org.netbeans.paint.api.components.fractions</publicPackage>
                         <publicPackage>org.netbeans.paint.api.components.number</publicPackage>

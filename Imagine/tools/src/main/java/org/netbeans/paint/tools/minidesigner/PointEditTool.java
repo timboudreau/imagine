@@ -32,7 +32,7 @@ import org.imagine.geometry.EqLine;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.PooledTransform;
-import org.netbeans.paint.api.components.Cursors;
+import org.netbeans.paint.api.cursor.Cursors;
 import org.netbeans.paint.tools.MutableRectangle2D;
 import org.netbeans.paint.tools.responder.PaintingResponder;
 import org.netbeans.paint.tools.responder.Responder;

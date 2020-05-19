@@ -463,7 +463,12 @@
             </dependency>
             <dependency>
                 <groupId>org.netbeans.modules</groupId>
-                <artifactId>org-netbeans-core-startup</artifactId>
+                <artifactId>org-netbeans-bootstrap</artifactId>
+                <version>${netbeans.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.netbeans.modules</groupId>
+                <artifactId>org-netbeans-modules-applemenu</artifactId>
                 <version>${netbeans.version}</version>
             </dependency>
             <dependency>

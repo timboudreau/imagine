@@ -43,7 +43,7 @@ import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.path.PathElementKind;
 import org.imagine.geometry.util.PooledTransform;
 import org.imagine.utils.java2d.GraphicsUtils;
-import org.netbeans.paint.api.components.Cursors;
+import org.netbeans.paint.api.cursor.Cursors;
 import org.netbeans.paint.api.components.EnumComboBoxModel;
 import org.netbeans.paint.tools.MutableRectangle2D;
 import org.netbeans.paint.tools.minidesigner.MiniToolCanvas;

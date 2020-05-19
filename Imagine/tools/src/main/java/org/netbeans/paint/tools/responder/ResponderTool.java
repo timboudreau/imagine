@@ -28,7 +28,7 @@ import org.netbeans.paint.tools.fills.FillCustomizer;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.EqPointDouble;
-import org.netbeans.paint.api.components.Cursors;
+import org.netbeans.paint.api.cursor.Cursors;
 import org.openide.util.Lookup;
 import org.openide.util.Utilities;
 

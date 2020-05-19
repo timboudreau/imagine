@@ -1,5 +1,17 @@
 Second fill customizer is sharing data with the first
 
+Mac-OS:
+
+ * Fonts combo box is gargantuan - maybe not taking DPI into account when sizing the images?
+ * Tools toolbar is absent (and would not fit if it weere not)
+ * Cursors are decidedly suboptimal - in particular, triangle unfilled shows compression artifacts (why)
+   * May want to turn this into an interface, and have the options of a completely diffent mac os impl
+ * 32px icons do strange things to menus
+ * Zoom menu is empty
+ * Color choosers should size based on the font size of their *parent* - too large in some places
+ * Apple AWT module missing - Cmd-Q, quit action don't work
+
+
 IO Bugs:
 
  * Should pad some file sections for future proofing
@@ -10,7 +22,7 @@ IO Bugs:
  * Current zoom level should be saved with picture
 
 Misc:
-
+ * Background pattern should be zoom-independent but is scaling with zoom
  * All slider changes generate vast numbers of undo events - ensure getValueIsAdjusting is implemented properly, and coalesce
  * Wrong font in "file already exists" dialog - why?
  * Something has gone horribly wrong with text dialog sizing
