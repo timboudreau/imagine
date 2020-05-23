@@ -113,11 +113,9 @@ public class PathSegmentModel implements Iterable<SegmentEntry> {
         if (mul == Double.POSITIVE_INFINITY || mul == Double.NEGATIVE_INFINITY) {
             // if we proceed, we will reliably trigger a segment violation in
             // anglesModulus in libdcpr
-            System.out.println("MUL is " + mul + " for min " + min + " / max " + max + " range " + range);
             mul = 1;
         }
         for (SegmentEntry se : entries) {
-            System.out.println("renomr " + se + " to " + range + " max " + max + " min " + min + " mul " + mul);
             se.renormalize(offset, mul);
         }
         fire();

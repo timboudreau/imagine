@@ -120,8 +120,6 @@ public class RectangularSelectionTool extends MouseDrivenTool implements PaintPa
             } else {
                 sel.clear();
             }
-        } else {
-            System.err.println("SELECTION NULL");
         }
         startingPoint = null;
     }

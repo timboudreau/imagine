@@ -1,38 +1,20 @@
 package org.netbeans.paint.api.components.dialog;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dialog.ModalityType;
 import java.awt.DisplayMode;
 import java.awt.EventQueue;
 import java.awt.GraphicsConfiguration;
-import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Window;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.prefs.Preferences;
 import javax.swing.Action;
-import javax.swing.BorderFactory;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.UIManager;
-import javax.swing.border.Border;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.JTextComponent;
-import org.netbeans.paint.api.components.FlexEmptyBorder;
-import org.openide.util.Exceptions;
 import org.openide.util.NbPreferences;
 import org.openide.util.Parameters;
 import static org.openide.util.Parameters.notNull;
@@ -55,6 +37,7 @@ public abstract class DialogBuilder {
     ButtonMeaning defaultButtonMeaning = ButtonMeaning.AFFIRM;
     Window owner;
     ShowHideObserver<? super JComponent> observer;
+    boolean ignoreSavedBounds;
 
     DialogBuilder(String key) {
         this.key = key;
@@ -106,6 +89,7 @@ public abstract class DialogBuilder {
             if (w <= 10 || h <= 10) {
                 return null;
             }
+            System.out.println("UUsing saved bounds for " + base + ": " + w + " * " + h);
             int relX = prefs.getInt(base + "-relx", Integer.MIN_VALUE);
             int relY = prefs.getInt(base + "-rely", Integer.MIN_VALUE);
             Rectangle configBounds = config.getBounds();
@@ -128,6 +112,12 @@ public abstract class DialogBuilder {
                     if (!configBounds.contains(prospectiveBounds)) {
                         prospectiveBounds = null;
                     }
+                }
+            }
+            if (prospectiveBounds != null) {
+                if (!config.getBounds().contains(prospectiveBounds)) {
+                    System.out.println("prospective bounds are offscreen");
+                    return null;
                 }
             }
             return prospectiveBounds;
@@ -164,8 +154,13 @@ public abstract class DialogBuilder {
         return false;
     }
 
+    public DialogBuilder ignoreSavedBounds() {
+        ignoreSavedBounds = true;
+        return this;
+    }
+
     private boolean isSavable() {
-        return !locationByPlatform;
+        return !locationByPlatform && !ignoreSavedBounds;
     }
 
     private String keyBase(GraphicsConfiguration config) {
@@ -386,7 +381,7 @@ public abstract class DialogBuilder {
     }
 
     public void showTextLineDialog(String initialText, Predicate<String> validator, Consumer<String> consumer) {
-        okCancel().showTextLineDialog(80, initialText, validator, consumer);
+        okCancel().showTextLineDialog(40, initialText, validator, consumer);
     }
 
     public void showTextLineDialog(int columns, String initialText, Predicate<String> validator, Consumer<String> consumer) {
@@ -403,7 +398,7 @@ public abstract class DialogBuilder {
     }
 
     public void showMultiLineTextLineDialog(String initialText, int minLength, int maxLength, Consumer<String> consumer) {
-        showMultiLineTextLineDialog(80, 5, initialText, s -> {
+        showMultiLineTextLineDialog(40, 5, initialText, s -> {
             return !(s.length() < minLength || s.length() > maxLength);
         }, consumer);
     }
@@ -440,143 +435,8 @@ public abstract class DialogBuilder {
                 .openDialog(InputLinePanel::getText);
     }
 
-    static final class InputLinePanel extends JPanel implements DocumentListener, FocusListener, ShowHideObserver<InputLinePanel>, BiPredicate<InputLinePanel, ButtonMeaning> {
-
-        private final JTextComponent field;
-        private final Predicate<String> tester;
-        private final Border fieldOrigBorder;
-        private final Border errorBorder;
-        private boolean inputValid = true;
-        private final Consumer<String> consumer;
-
-        InputLinePanel(int columns, String initialText, DialogBuilder bldr, Predicate<String> tester, Consumer<String> consumer, JTextComponent comp) {
-            setLayout(new BorderLayout());
-            this.tester = tester;
-            setBorder(new FlexEmptyBorder());
-            comp.setText(initialText);
-            JLabel lbl = new JLabel(bldr.title);
-            field = comp;
-            lbl.setLabelFor(field);
-            Border origBorder = field.getBorder();
-            if (origBorder == null) {
-                origBorder = BorderFactory.createLineBorder(field.getForeground(), 1);
-            }
-            this.fieldOrigBorder = origBorder;
-            Color c = UIManager.getColor("nb.errorForeground");
-            if (c == null) {
-                c = Color.RED.darker();
-            }
-            Insets ins = origBorder.getBorderInsets(field);
-            errorBorder = BorderFactory.createMatteBorder(ins.top, ins.left, ins.bottom, ins.right, c);
-            this.consumer = consumer;
-            if (field instanceof JTextArea) {
-                add(lbl, BorderLayout.NORTH);
-                JScrollPane pane = new JScrollPane(field);
-                add(pane, BorderLayout.CENTER);
-            } else {
-                add(field, BorderLayout.LINE_START);
-                add(lbl, BorderLayout.CENTER);
-            }
-            field.getDocument().addDocumentListener(this);
-            field.addFocusListener(this);
-        }
-
-        String getText() {
-            return field.getText();
-        }
-
-        private DialogController<InputLinePanel> ctrllr;
-
-        void setDialogController(DialogController<InputLinePanel> ctrllr) {
-            if (!inputValid) {
-                ctrllr.setValidity(false);
-            }
-        }
-
-        private void setInputValid(boolean inputValid) {
-            if (inputValid != this.inputValid) {
-                this.inputValid = inputValid;
-                if (inputValid) {
-                    field.setBorder(fieldOrigBorder);
-                } else {
-                    field.setBorder(errorBorder);
-                }
-                field.repaint();
-                if (ctrllr != null) {
-                    ctrllr.setValidity(inputValid);
-                }
-            }
-        }
-
-        private void onChange(DocumentEvent e) {
-            try {
-                String txt = e.getDocument().getText(0, e.getDocument().getLength());
-                setInputValid(tester.test(txt.trim()));
-            } catch (BadLocationException ex) {
-                Exceptions.printStackTrace(ex);
-            }
-        }
-
-        @Override
-        public void requestFocus() {
-            field.requestFocus();
-        }
-
-        @Override
-        public void addNotify() {
-            super.addNotify();
-            EventQueue.invokeLater(this::requestFocus);
-        }
-
-        @Override
-        public void insertUpdate(DocumentEvent e) {
-            onChange(e);
-        }
-
-        @Override
-        public void removeUpdate(DocumentEvent e) {
-            onChange(e);
-        }
-
-        @Override
-        public void changedUpdate(DocumentEvent e) {
-            onChange(e);
-        }
-
-        @Override
-        public void focusGained(FocusEvent e) {
-            field.selectAll();
-        }
-
-        @Override
-        public void focusLost(FocusEvent e) {
-            // do nothing
-        }
-
-        @Override
-        public void onTransition(boolean hide, InputLinePanel component, String key, DialogController ctrllr, JDialog dlg) {
-            System.out.println("transition " + (hide ? "HIDE " : "SHOW ") + last + " valid " + inputValid + " txt + " + getText());
-            if (hide) {
-                if (last.isAffirmitive() && inputValid) {
-                    if (consumer != null) {
-                        consumer.accept(field.getText().trim());
-                    }
-                }
-            } else {
-                setInputValid(tester.test(field.getText()));
-                ctrllr.setValidity(inputValid);
-                setDialogController(ctrllr);
-            }
-        }
-
-        private ButtonMeaning last = ButtonMeaning.IGNORE;
-
-        @Override
-        public boolean test(InputLinePanel t, ButtonMeaning u) {
-            System.out.println("TEST " + u);
-            last = u;
-            assert t == this;
-            return u.isAffirmitive() ? inputValid : true;
-        }
+    String title() {
+        return title;
     }
+
 }

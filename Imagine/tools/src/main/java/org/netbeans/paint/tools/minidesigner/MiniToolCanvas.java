@@ -48,7 +48,6 @@ import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.editor.api.Zoom;
 import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.PooledTransform;
 import org.netbeans.paint.tools.path.PathTool2;
 import org.openide.util.ChangeSupport;
@@ -114,9 +113,6 @@ public class MiniToolCanvas extends JComponent implements Lookup.Provider, Chang
         // some tools will be listening for the instance to change,
         // so give that to them
         replaceInLookup(this.ratio, this.ratio = new AR());
-        System.out.println("Update AR "
-                + GeometryStrings.toString(ratio.width())
-                + " x " + GeometryStrings.toString(ratio.height()));
     }
 
     public <T> void addToLookup(T obj) {
@@ -574,7 +570,8 @@ public class MiniToolCanvas extends JComponent implements Lookup.Provider, Chang
             int awtId = evt.getID();
             int x = (int) Math.round(pt.x);
             int y = (int) Math.round(pt.y);
-            return new MouseEvent(MiniToolCanvas.this, awtId, evt.getWhen(), evt.getModifiers(), x, y,
+            return new MouseEvent(MiniToolCanvas.this, awtId, evt.getWhen(),
+                    evt.getModifiersEx(), x, y,
                     evt.getXOnScreen(), evt.getYOnScreen(),
                     evt.getClickCount(), evt.isPopupTrigger(), evt.getButton());
         }
@@ -622,12 +619,10 @@ public class MiniToolCanvas extends JComponent implements Lookup.Provider, Chang
         @Override
         public void beginUndoableOperation(String name) {
             // do nothing
-            System.out.println("begin undoable");
         }
 
         @Override
         public void endUndoableOperation() {
-            System.out.println("end undoable");
             // do nothing
             for (Runnable r : onCommitRequest) {
                 r.run();

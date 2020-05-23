@@ -108,7 +108,7 @@ public interface PaintParticipant {
         }
 
         default void requestRepaint(Shape shape, BasicStroke stroke) {
-            requestRepaint(shape, stroke.getLineWidth());
+            requestRepaint(shape, stroke == null ? 1 : stroke.getLineWidth());
         }
 
         default void requestRepaint(Shape shape, double strokeSize) {
@@ -116,7 +116,7 @@ public interface PaintParticipant {
             r.width += Math.ceil(strokeSize * 2);
             r.height += Math.ceil(strokeSize * 2);
             r.x -= Math.ceil(strokeSize);
-            r.x -= Math.ceil(strokeSize);
+            r.y -= Math.ceil(strokeSize);
             requestRepaint(r);
         }
 

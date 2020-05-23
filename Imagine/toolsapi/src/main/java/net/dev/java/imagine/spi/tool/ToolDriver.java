@@ -15,11 +15,11 @@ import org.openide.util.Lookup;
 import org.openide.util.Lookup.Provider;
 
 /**
- * Object which can create instances of ToolImplementation based on some criteria.
- * If you are using the &#064;Tool and &#064;ToolDef annotations, it is extremely
- * unlikely that this class will be useful;  only in the odd case that you want to
- * write your own layer entries and subclass this to customize how the ToolImplementation
- * is constructed might it be necessary.
+ * Object which can create instances of ToolImplementation based on some
+ * criteria. If you are using the &#064;Tool and &#064;ToolDef annotations, it
+ * is extremely unlikely that this class will be useful; only in the odd case
+ * that you want to write your own layer entries and subclass this to customize
+ * how the ToolImplementation is constructed might it be necessary.
  *
  * @author Tim Boudreau
  */
@@ -38,7 +38,7 @@ public class ToolDriver<T, R> {
     /**
      * Create a new ToolDriver, getting constructor parameters from FileObject
      * attributes.
-     * 
+     *
      * @param fo A FileObject
      * @return A ToolDriver, or null if any classes cannot be loaded
      */
@@ -80,19 +80,21 @@ public class ToolDriver<T, R> {
     /**
      * Get the type this ToolDriver needs to find in the selected layer's lookup
      * in order to create a ToolImplementation instance.
-     * @return 
+     *
+     * @return
      */
     public final Class<T> sensitiveTo() {
         return sensitiveTo;
     }
 
     /**
-     * Get the type that this ToolDriver will instantiate to drive the 
-     * created ToolImplementation.  This may be a subclass of ToolImplementation,
-     * or something simple such as a MouseListener (in which case, a wrapper
+     * Get the type that this ToolDriver will instantiate to drive the created
+     * ToolImplementation. This may be a subclass of ToolImplementation, or
+     * something simple such as a MouseListener (in which case, a wrapper
      * ToolImplementation instance will be generated, with this object in its
      * lookup).
-     * @return 
+     *
+     * @return
      */
     public final Class<R> type() {
         return implType;
@@ -100,8 +102,9 @@ public class ToolDriver<T, R> {
 
     /**
      * Create a ToolImplementation, if possible
+     *
      * @param layer A Lookup.Provider, presumably an instance of Layer
-     * @return  A ToolImplementation if an instance of <code>sensitiveTo()</code>
+     * @return A ToolImplementation if an instance of <code>sensitiveTo()</code>
      * is present in the Lookup of the passed Lookup.Provider
      */
     public ToolImplementation<T> create(Lookup.Provider layer) {
@@ -114,8 +117,11 @@ public class ToolDriver<T, R> {
 
     private final Map<T, ToolImplementation<T>> cache
             = new WeakHashMap<>();
+
     /**
-     * Create the ToolImplementation, constructing an instance of R by reflection.
+     * Create the ToolImplementation, constructing an instance of R by
+     * reflection.
+     *
      * @param t An object of type T found in the layer's lookup
      * @return A ToolImplementation, or null
      */
@@ -152,6 +158,11 @@ public class ToolDriver<T, R> {
         public WrapperImplementation(T obj, Object delegate) {
             super(obj);
             this.delegate = delegate;
+        }
+
+        @Override
+        public String toString() {
+            return "Wrap(" + delegate.getClass().getName() + ": " + delegate + ")";
         }
 
         @Override

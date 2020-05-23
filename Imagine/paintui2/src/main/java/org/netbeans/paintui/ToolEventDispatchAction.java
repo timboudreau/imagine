@@ -64,7 +64,7 @@ class ToolEventDispatchAction extends WidgetAction.Adapter implements BooleanCon
         //                Rectangle activeLayerBounds = picture.getActiveLayer().getBounds();
         //                p.translate(-activeLayerBounds.x, -activeLayerBounds.y);
         //            }
-        return new MouseEvent(source, awtId, evt.getWhen(), evt.getModifiers(), p.x, p.y, evt.getClickCount(), evt.isPopupTrigger(), evt.getButton());
+        return new MouseEvent(source, awtId, evt.getWhen(), evt.getModifiersEx(), p.x, p.y, evt.getClickCount(), evt.isPopupTrigger(), evt.getButton());
     }
 
     private MouseWheelEvent toMouseWheelEvent(WidgetMouseWheelEvent evt) {

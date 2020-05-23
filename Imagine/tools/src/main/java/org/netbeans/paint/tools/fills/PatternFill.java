@@ -63,7 +63,6 @@ public class PatternFill implements Fill, Customizable, Serializable {
     public PatternFill(FileObject fob) {
         path = fob.getPath();
         name = fob.getName();
-        System.err.println("Created a pattern fill from " + path);
     }
 
     public static PatternFill create(FileObject fileObject) {

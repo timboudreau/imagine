@@ -107,12 +107,17 @@ final class VectorLayer extends AbstractLayerImplementation {
 
     @Override
     public void resize(int width, int height, boolean canvasOnly) {
+        int oldW = canvasSize.width;
+        int oldH = canvasSize.height;
         canvasSize.width = width;
         canvasSize.height = height;
         if (canvasOnly) {
+            firePropertyChange(PROP_BOUNDS, new Rectangle(0, 0, oldW, oldH),
+                    new Rectangle(0, 0, width, height));
             return;
         }
-        Dimension oldSize = getBounds().getSize();
+        Rectangle oldBounds = getBounds();
+        Dimension oldSize = oldBounds.getSize();
         if (width == oldSize.width && height == oldSize.height) {
             return;
         }
@@ -126,6 +131,7 @@ final class VectorLayer extends AbstractLayerImplementation {
         double xfactor = nw / ow;
         double yfactor = nh / oh;
         PooledTransform.withScaleInstance(xfactor, yfactor, shapes::applyTransform);
+        firePropertyChange(PROP_BOUNDS, oldBounds, getBounds());
     }
 
     @Override

@@ -318,6 +318,7 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
     protected final void setCursor(Cursor cursor) {
         if (repainter != null) {
             repainter.setCursor(cursor);
+            pendingCursor = null;
         } else {
             pendingCursor = cursor;
         }

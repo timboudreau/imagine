@@ -8,6 +8,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.util.function.BiConsumer;
 import net.dev.java.imagine.api.tool.Tool;
@@ -65,6 +66,11 @@ public class VectorSurface extends SurfaceImplementation implements SnapPointsSu
         SnapPoints result = shapes.snapPoints(SnapPointRendering.visualSize(),
                 snapPainter).get();
         return result;
+    }
+
+    @Override
+    public BufferedImage getImage() {
+        return null;
     }
 
     class ER extends EffectReceiver<AffineTransform> {

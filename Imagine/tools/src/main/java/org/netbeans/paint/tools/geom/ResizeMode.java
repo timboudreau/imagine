@@ -1,11 +1,11 @@
-package org.netbeans.paint.tools.minidesigner;
+package org.netbeans.paint.tools.geom;
 
 import java.awt.Cursor;
 import java.awt.geom.Point2D;
 import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.geometry.EqPointDouble;
 import org.netbeans.paint.api.cursor.Cursors;
-import org.netbeans.paint.tools.MutableRectangle2D;
+import org.netbeans.paint.tools.geom.MutableRectangle2D;
 
 /**
  *
@@ -21,12 +21,10 @@ public enum ResizeMode {
             case NORTHEAST:
                 return cur.southWestNorthEast();
             case SOUTHWEST:
-                System.out.println("A " + this);
                 return cur.southEastNorthWest();
             case SOUTHEAST:
                 return cur.southWestNorthEast();
             case NORTHWEST:
-                System.out.println("B " + this);
                 return cur.southEastNorthWest();
             case BOTTOM_EDGE:
             case TOP_EDGE:
@@ -113,7 +111,6 @@ public enum ResizeMode {
                 }
                 break;
             default:
-                System.out.println("Huh? " + this);
         }
         return this;
     }
@@ -131,16 +128,12 @@ public enum ResizeMode {
                 if (dist <= hitRadius) {
                     switch (corn) {
                         case MutableRectangle2D.NE:
-                            System.out.println("nearest to " + x + ", " + y + " is NE in " + rect);
                             return NORTHEAST;
                         case MutableRectangle2D.NW:
-                            System.out.println("nearest to " + x + ", " + y + " is NW in " + rect);
                             return NORTHWEST;
                         case MutableRectangle2D.SE:
-                            System.out.println("nearest to " + x + ", " + y + " is SE in " + rect);
                             return SOUTHEAST;
                         case MutableRectangle2D.SW:
-                            System.out.println("nearest to " + x + ", " + y + " is SW in " + rect);
                             return SOUTHWEST;
                         default:
                             throw new AssertionError("Corner " + corn);

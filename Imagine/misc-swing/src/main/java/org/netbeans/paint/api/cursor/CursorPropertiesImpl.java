@@ -3,10 +3,13 @@ package org.netbeans.paint.api.cursor;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
 import static java.awt.Toolkit.getDefaultToolkit;
+import java.awt.image.BufferedImage;
 import static java.lang.Math.max;
 import java.util.Objects;
-import static org.netbeans.paint.api.cursor.CursorUtils.twoColorRenderingHints;
+import java.util.function.Consumer;
+import static org.netbeans.paint.api.cursor.CursorUtils.applyRenderingHints;
 
 /**
  *
@@ -19,35 +22,65 @@ class CursorPropertiesImpl implements CursorProperties {
     final int width;
     final int height;
     final boolean darkBackground;
+    private final GraphicsConfiguration config;
 
-    CursorPropertiesImpl(Color shadow, Color main, int width, int height, boolean darkBackground) {
+    CursorPropertiesImpl(Color shadow, Color main, int width, int height, boolean darkBackground, GraphicsConfiguration config) {
         this.shadow = shadow;
+        this.config = config;
         this.main = main;
-        if (width % 16 != 0) {
-            width = max(16, (width / 16) * 16);
-        }
-        if (height % 16 != 0) {
-            height = max(16, (height / 16) * 16);
-        }
         Dimension d = getDefaultToolkit().getBestCursorSize(width, height);
         this.width = max(4, d.width);
         this.height = max(4, d.height);
         this.darkBackground = darkBackground;
     }
 
+    private int imageWidth() {
+        int w = this.width;
+        if ((w / 16) * 16 < w) {
+            w = max(16, ((1 + (w / 16)) * 16));
+        }
+        return w;
+    }
+
+    private int imageHeight() {
+        int height = this.height;
+        if ((height / 16) * 16 < height) {
+            height = max(16, ((1 + (height / 16)) * 16));
+        }
+        return height;
+    }
+
+    @Override
+    public BufferedImage createCursorImage(Consumer<Graphics2D> c) {
+        int w = imageWidth();
+        int h = imageHeight();
+        return CursorUtils.createCursorImage(config, w, h, g -> {
+            // where the edges of a white border are antialiased into the
+            // color value of the transparent background of the image, which
+            // is initially black
+            g.setBackground(new Color(shadow.getRed(), shadow.getGreen(), shadow.getBlue(), 0));
+            g.setColor(new Color(shadow.getRed(), shadow.getGreen(), shadow.getBlue(), 0));
+//            g.clearRect(0, 0, w, h);
+//            g.fillRect(0, 0, w, h);
+//            System.out.println("clear to " + g.getBackground());
+            c.accept(g);
+        });
+    }
+
     @Override
     public CursorProperties withSize(int w, int h) {
-        return new CursorPropertiesImpl(shadow, main, w, h, darkBackground);
+        return new CursorPropertiesImpl(shadow, main, w, h, darkBackground, config);
     }
 
     @Override
     public CursorProperties withColors(Color primary, Color shad) {
-        return new CursorPropertiesImpl(primary, shad, width, height, darkBackground);
+        return new CursorPropertiesImpl(shad, primary, width, height,
+                darkBackground, config);
     }
 
     @Override
     public Graphics2D hint(Graphics2D g) {
-        twoColorRenderingHints(g);
+        applyRenderingHints(g);
         return g;
     }
 
@@ -57,8 +90,19 @@ class CursorPropertiesImpl implements CursorProperties {
     }
 
     @Override
-    public CursorProperties scaled(int by) {
-        return new CursorPropertiesImpl(shadow, main, width * by, height * by, darkBackground);
+    public CursorProperties scaled(double by, GraphicsConfiguration config) {
+        int w = (int) Math.ceil(width * by);
+        int h = (int) Math.ceil(height * by);
+        return new CursorPropertiesImpl(shadow, main, w, h,
+                darkBackground, config);
+    }
+
+    @Override
+    public CursorProperties scaled(double by) {
+        int w = (int) Math.ceil(width * by);
+        int h = (int) Math.ceil(height * by);
+        return new CursorPropertiesImpl(shadow, main, w, h,
+                darkBackground, config);
     }
 
     @Override
@@ -136,6 +180,9 @@ class CursorPropertiesImpl implements CursorProperties {
             return false;
         }
         final CursorPropertiesImpl other = (CursorPropertiesImpl) obj;
+        if (this.config != other.config) {
+            return false;
+        }
         if (this.width != other.width) {
             return false;
         }

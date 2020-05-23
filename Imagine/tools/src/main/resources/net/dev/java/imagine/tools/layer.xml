@@ -13,6 +13,9 @@
             <attr name="position" intvalue="450"/>
         </file>
     </folder>
+    <folder name="pathcreators">
+        <attr name="displayName" bundlevalue="org.netbeans.paint.tools.Bundle#pathcreators"/>
+    </folder>
 
     <folder name="brushtips">
         <attr name="displayName" bundlevalue="org.netbeans.paint.tools.Bundle#brushtips"/>

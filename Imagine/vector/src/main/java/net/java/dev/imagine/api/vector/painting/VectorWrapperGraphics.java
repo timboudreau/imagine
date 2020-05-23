@@ -116,7 +116,7 @@ public class VectorWrapperGraphics extends Graphics2D {
 //        if (onDispose != null) {
 //            Runnable origOnDispose = onDispose;
 //            Runnable childOnDispose = () -> {
-//                
+//
 //            };
 //        }
         return result;
@@ -261,13 +261,11 @@ public class VectorWrapperGraphics extends Graphics2D {
     }
 
     private void changed(int x, int y, int w, int h) {
-        if (strokeWidth > 1) {
-            float half = strokeWidth / 2;
-            x -= half;
-            y -= half;
-            w += strokeWidth;
-            h += strokeWidth;
-        }
+        double half = strokeWidth / 2;
+        x -= half;
+        y -= half;
+        w += strokeWidth;
+        h += strokeWidth;
         handle.repaintArea(x, y, w, h);
     }
 
@@ -433,7 +431,7 @@ public class VectorWrapperGraphics extends Graphics2D {
         other.setPaint(paint);
     }
 
-    float strokeWidth = 1;
+    double strokeWidth = 1;
 
     @Override
     public void setStroke(Stroke s) {
@@ -539,7 +537,7 @@ public class VectorWrapperGraphics extends Graphics2D {
             }
         }
     }
- 
+
     @Override
     public void setTransform(AffineTransform tx) {
         AffineTransform old = other.getTransform();

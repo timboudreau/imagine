@@ -8,11 +8,12 @@
  */
 package org.netbeans.paint.tools;
 
+import org.netbeans.paint.tools.geom.MutableRectangle2D;
 import java.awt.BasicStroke;
 import net.dev.java.imagine.api.tool.aspects.Attachable;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
-import static org.netbeans.paint.tools.MutableRectangle.*;
+import static org.netbeans.paint.tools.geom.MutableRectangle2D.*;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics2D;

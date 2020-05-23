@@ -499,7 +499,6 @@ public class GenericDesignCustomizer extends JPanel implements PointsProvider, P
             props = new PathUIProperties(() -> ctx);
             Path2D.Double path = new Path2D.Double();
             lastShape = path;
-            System.out.println("Start/End " + start + " / " + end);
             model.apply(path, start, end, true, 1);
             g.setColor(props.lineDraw());
             g.setStroke(props.lineStroke());

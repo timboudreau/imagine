@@ -91,7 +91,6 @@ public final class AddFillPanel extends JPanel implements ActionListener, Lookup
             BufferedImage img = surface.getImage();
             Shape shape = sel.asShape();
             Rectangle bds = shape == null ? layer.getBounds() : shape.getBounds();
-            System.err.println("Shape is " + shape + " bounds " + bds);
             BufferedImage sub = img.getSubimage(bds.x, bds.y, bds.width, bds.height);
             DialogDescriptor.InputLine input = new DialogDescriptor.InputLine(NbBundle.getMessage(
                     AddFillPanel.class, "MSG_ASK_FILL_NAME"), NbBundle.getMessage(AddFillPanel.class,

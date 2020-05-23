@@ -217,7 +217,7 @@ public final class NumberEditor extends JComponent {
         super.removeNotify();
     }
 
-    private void refresh() {
+    public void refresh() {
         refreshing = true;
         lastValue = model.get();
         field.setText(model.stringValue());

@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.netbeans.paint.api.cursor;
 
 import java.awt.Color;
@@ -24,14 +19,18 @@ import static java.awt.RenderingHints.VALUE_ANTIALIAS_OFF;
 import static java.awt.RenderingHints.VALUE_ANTIALIAS_ON;
 import static java.awt.RenderingHints.VALUE_COLOR_RENDER_QUALITY;
 import static java.awt.RenderingHints.VALUE_DITHER_ENABLE;
-import static java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC;
+import static java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR;
 import static java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR;
 import static java.awt.RenderingHints.VALUE_RENDER_QUALITY;
 import static java.awt.RenderingHints.VALUE_STROKE_NORMALIZE;
-import static java.awt.RenderingHints.VALUE_STROKE_PURE;
+import java.awt.Toolkit;
 import static java.awt.Transparency.TRANSLUCENT;
 import java.awt.image.BufferedImage;
+import static java.lang.Math.abs;
+import static java.lang.Math.min;
+import java.util.Map;
 import java.util.function.Consumer;
+import javax.swing.JComponent;
 import static org.imagine.geometry.util.PooledTransform.withQuadrantRotateInstance;
 
 /**
@@ -45,11 +44,25 @@ final class CursorUtils {
             || System.getProperty("os.name", "").toLowerCase().contains("darwin")
             || System.getProperty("mrj.version") != null;
 
-    static BufferedImage createCursorImage(int w, int h, Consumer<Graphics2D> c) {
-        BufferedImage result = createCursorImage(w, h);
+    static boolean isDarkBackground(JComponent comp) {
+        Color bg = comp.getBackground();
+        Color fg = comp.getForeground();
+        float bri1 = brightnessOf(fg);
+        float bri2 = brightnessOf(bg);
+        boolean result;
+        if (abs(bri1 - bri2) > 0.1) {
+            result = bri1 > bri2;
+        } else {
+            result = min(bri1, bri2) < 0.45F;
+        }
+        return result;
+    }
+
+    static BufferedImage createCursorImage(GraphicsConfiguration config, int w, int h, Consumer<Graphics2D> c) {
+        BufferedImage result = createCursorImage(config, w, h);
         Graphics2D g = result.createGraphics();
-        System.out.println("XF " + g.getTransform());
         try {
+            applyRenderingHints(g);
             c.accept(g);
         } finally {
             g.dispose();
@@ -57,23 +70,35 @@ final class CursorUtils {
         return result;
     }
 
-    static BufferedImage createCursorImage(int w, int h) {
-        System.out.println("Create cursor image " + w + " x " + h);
-        BufferedImage result = getLocalGraphicsEnvironment()
-                .getDefaultScreenDevice().getDefaultConfiguration()
-                .createCompatibleImage(w, h, TRANSLUCENT);
+    static BufferedImage createCursorImage(GraphicsConfiguration config, int w, int h) {
+        BufferedImage result;
+        if (config == null) {
+            result = getLocalGraphicsEnvironment()
+                    .getDefaultScreenDevice().getDefaultConfiguration()
+                    .createCompatibleImage(w, h, TRANSLUCENT);
+        } else {
+            result = config.createCompatibleImage(w, h, TRANSLUCENT);
+        }
         return result;
     }
 
-    static void twoColorRenderingHints(Graphics2D g) {
+    static void applyRenderingHints(Graphics2D g) {
         if (mac) {
+            Map hints = (Map) (Toolkit.getDefaultToolkit().getDesktopProperty("awt.font.desktophints"));
+            if (hints != null) {
+                g.setRenderingHints(hints);
+            }
+
             g.setRenderingHint(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON);
-            g.setRenderingHint(KEY_ALPHA_INTERPOLATION, VALUE_ALPHA_INTERPOLATION_QUALITY);
-            g.setRenderingHint(KEY_RENDERING, VALUE_RENDER_QUALITY);
-//            g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_DEFAULT);
-//            g.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
-            g.setRenderingHint(KEY_STROKE_CONTROL, VALUE_STROKE_PURE);
-            g.setRenderingHint(KEY_INTERPOLATION, VALUE_INTERPOLATION_BICUBIC);
+//            g.setRenderingHint(KEY_ALPHA_INTERPOLATION, VALUE_ALPHA_INTERPOLATION_QUALITY);
+//            g.setRenderingHint(KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_SPEED);
+
+//            g.setRenderingHint(KEY_RENDERING, VALUE_RENDER_QUALITY);
+//            g.setRenderingHint(KEY_COLOR_RENDERING, VALUE_COLOR_RENDER_QUALITY);
+//            g.setRenderingHint(KEY_STROKE_CONTROL, VALUE_STROKE_PURE);
+//            g.setRenderingHint(KEY_INTERPOLATION, VALUE_INTERPOLATION_BICUBIC);
+            g.setRenderingHint(KEY_INTERPOLATION, VALUE_INTERPOLATION_BILINEAR);
+//            g.setRenderingHint(KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 //            g.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_DISABLE);
 //            g.setRenderingHint(RenderingHints.KEY_RESOLUTION_VARIANT, RenderingHints.VALUE_RESOLUTION_VARIANT_DPI_FIT);
             return;
@@ -107,6 +132,7 @@ final class CursorUtils {
                 img.getType());
         withQuadrantRotateInstance(quadrants, img.getWidth() / 2D, img.getHeight() / 2D, xform -> {
             Graphics2D g = (Graphics2D) nue.getGraphics();
+            applyRenderingHints(g);
             try {
                 g.drawImage(img, xform, null);
             } finally {

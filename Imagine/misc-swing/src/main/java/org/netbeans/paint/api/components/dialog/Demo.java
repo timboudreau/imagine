@@ -20,6 +20,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
+import javax.swing.border.TitledBorder;
 import org.netbeans.paint.api.components.EnumComboBoxModel;
 
 /**
@@ -53,8 +54,16 @@ public class Demo {
         int ix = ixs++;
         private final Set<ButtonMeaning> allowCloseFor = EnumSet.allOf(ButtonMeaning.class);
         private JCheckBox defaultButtonIsNonOk = new JCheckBox("Negative default button");
+        private JPanel tex = new JPanel();
+        private JCheckBox multiline = new JCheckBox("multiline");
+        private JButton showTextDialog = new JButton("Open Text Dialog");
 
         DemoPanel() {
+            tex.setBorder(new TitledBorder("Text Dialogs"));
+            tex.add(multiline);
+            tex.add(showTextDialog);
+            showTextDialog.addActionListener(this::showTextDialog);
+
             setLayout(new FlowLayout(FlowLayout.LEADING, 12, 12));
             setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
             JLabel name = new JLabel("Dialogs Demo " + ix);
@@ -87,6 +96,7 @@ public class Demo {
             non.addActionListener(this);
             modal.addActionListener(this);
             undecorated.addActionListener(this);
+            add(tex);
         }
 
         void setValidUpdater(BooleanConsumer c) {
@@ -105,12 +115,86 @@ public class Demo {
             return allowCloseFor.contains(meaning);
         }
 
+        @Override
         public void addNotify() {
             super.addNotify();
             buttonSets.requestFocus();
         }
 
         int ttls = 1;
+
+        public void showTextDialog(ActionEvent e) {
+            boolean undecorated = "und".equals(e.getActionCommand());
+            boolean modal = "modal".equals(e.getActionCommand());
+            ButtonSet buttons = (ButtonSet) buttonSets.getSelectedItem();
+            System.out.println("SELECTED BUTTO " + buttons);
+            String ttl = "Child " + ttls++ + " of " + ix;
+            DialogBuilder b = new DialogBuilderImpl(e.getActionCommand() + "-text-" + ix)
+                    .setTitle(ttl);
+            b.ignoreSavedBounds();
+
+            if (modal) {
+                b.modal();
+            } else {
+                b.nonModal();
+            }
+            if (undecorated) {
+                b.undecorated();
+            }
+            switch (buttons) {
+                case CLOSE:
+                    b.closeOnly();
+                    break;
+                case OK_CANCEL:
+                    if (defaultButtonIsNonOk.isSelected()) {
+                        b.okCancel(buttons.negativeMeaning());
+                    } else {
+                        b.okCancel();
+                    }
+                    break;
+                case YES_NO:
+                    if (defaultButtonIsNonOk.isSelected()) {
+                        b.yesNo(buttons.nonPositiveMeaning());
+                    } else {
+                        b.yesNo();
+                    }
+                    break;
+                case YES_NO_CANCEL:
+                    if (defaultButtonIsNonOk.isSelected()) {
+                        b.yesNoCancel(buttons.nonPositiveMeaning());
+                    } else {
+                        b.yesNoCancel();
+                    }
+                    break;
+                default:
+                    throw new AssertionError(buttons);
+            }
+            b.setTitle("Starts with W");
+            if (multiline.isSelected()) {
+                b.showMultiLineTextLineDialog(s -> s.startsWith("W"), (text) -> {
+                    System.out.println("got text " + text);
+                });
+            } else {
+                b.showTextLineDialog(s -> s.startsWith("W"), (text) -> {
+                    System.out.println("    got text " + text);
+                });
+            }
+
+//            DialogController<DemoPanel> ctrlr = b.forContent(newPanel, this::shouldClose);
+//            ctrlr.onShowOrHideDialog((hid, comp, str, ctrl, dlg) -> {
+//                if (!hid) {
+//                    JButton aborter = new JButton("Abort");
+//                    aborter.addActionListener(ae -> {
+//                        ctrl.abort();
+//                    });
+//                    newPanel.add(aborter);
+//                    newPanel.setValidUpdater(ctrl::setValidity);
+//                }
+//            });
+//            Boolean val = ctrlr.openDialog(foo -> {
+//                return true;
+//            });
+        }
 
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -157,7 +241,6 @@ public class Demo {
                 default:
                     throw new AssertionError(buttons);
             }
-
             DemoPanel newPanel = new DemoPanel();
 
             DialogController<DemoPanel> ctrlr = b.forContent(newPanel, this::shouldClose);

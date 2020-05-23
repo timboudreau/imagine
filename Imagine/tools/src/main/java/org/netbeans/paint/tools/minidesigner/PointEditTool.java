@@ -1,5 +1,6 @@
 package org.netbeans.paint.tools.minidesigner;
 
+import org.netbeans.paint.tools.geom.ResizeMode;
 import com.mastfrog.function.state.Bool;
 import com.mastfrog.function.state.Dbl;
 import com.mastfrog.function.state.Obj;
@@ -30,10 +31,9 @@ import org.imagine.geometry.Circle;
 import org.imagine.geometry.EnhRectangle2D;
 import org.imagine.geometry.EqLine;
 import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.PooledTransform;
 import org.netbeans.paint.api.cursor.Cursors;
-import org.netbeans.paint.tools.MutableRectangle2D;
+import org.netbeans.paint.tools.geom.MutableRectangle2D;
 import org.netbeans.paint.tools.responder.PaintingResponder;
 import org.netbeans.paint.tools.responder.Responder;
 import org.netbeans.paint.tools.responder.ResponderTool;
@@ -493,7 +493,6 @@ final class PointEditTool extends ResponderTool implements ChangeListener, Looku
                                     dist = -dist;
                                 }
                                 dragBase.setLocation(x, y);
-                                System.out.println("deg " + dist);
                                 if (rotateCenter == null) {
                                     rotateCenter = hits.center();
                                 }
@@ -596,7 +595,6 @@ final class PointEditTool extends ResponderTool implements ChangeListener, Looku
                         ResizeMode newMode = mode.apply(x, y, rect);
                         if (newMode != mode) {
                             setCursor(newMode.cursor());
-                            System.out.println("mode " + mode + " -> " + newMode);
                         }
                         mode = newMode;
                         repaint(rect);
@@ -639,9 +637,7 @@ final class PointEditTool extends ResponderTool implements ChangeListener, Looku
                 // XXX delete on drag outside bounds?
                 PointSelectOrCreateResponder.this.onMove(x, y, e);
                 AspectRatio ratio = ctx().aspectRatio();
-                System.out.println("Ratio rect " + GeometryStrings.toString(ratio.rectangle()));
                 if (!ratio.rectangle().contains(x, y)) {
-                    System.out.println("Delete " + GeometryStrings.toString(x, y));
                     mdl.delete(entry);
                     return firstResponder();
                 }

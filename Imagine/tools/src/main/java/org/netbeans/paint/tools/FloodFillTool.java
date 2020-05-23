@@ -34,30 +34,29 @@ import org.openide.util.lookup.Lookups;
  *
  * @author Tim Boudreau
  */
-
-@ToolDef(name="FLOOD_FILL", iconPath="org/netbeans/paint/tools/resources/floodfill.png")
-@Tool(value=Surface.class, toolbarPosition=900)
+@ToolDef(name = "FLOOD_FILL", iconPath = "org/netbeans/paint/tools/resources/floodfill.png")
+@Tool(value = Surface.class, toolbarPosition = 900)
 public class FloodFillTool extends MouseAdapter implements /* Tool, MouseListener, */ CustomizerProvider, PaintParticipant, Attachable {
 
     //Flood fill algorithm from http://www.codecodex.com/wiki/index.php?title=Implementing_the_flood_fill_algorithm
     private Repainter repainter;
     private Surface surface;
     private Lookup.Provider layer;
+
     public FloodFillTool(Surface surface) {
         this.surface = surface;
     }
-    
+
     @Override
     public void attach(Provider on) {
         this.layer = on;
-        getCustomizer(); //xxx initialization?
     }
 
     @Override
     public void detach() {
         this.layer = null;
     }
-    
+
     public Lookup getLookup() {
         return Lookups.singleton(this);
     }
@@ -65,19 +64,21 @@ public class FloodFillTool extends MouseAdapter implements /* Tool, MouseListene
     public boolean canAttach(Layer layer) {
         return layer.getSurface().getImage() != null;
     }
-    
-    private Customizer<Integer> threshC = Customizers.getCustomizer(Integer.class, Constants.THRESHOLD, 0, 255);
-    private Customizer<Color> colorC = Customizers.getCustomizer(Color.class, Constants.FOREGROUND);
-    
+
+    private final Customizer<Integer> threshC = Customizers.getCustomizer(Integer.class, Constants.THRESHOLD, 0, 255);
+    private final Customizer<Color> colorC = Customizers.getCustomizer(Color.class, Constants.FOREGROUND);
+
+    @Override
     public Customizer getCustomizer() {
         return new AggregateCustomizer("foo", threshC, colorC);
     }
-    
+
     private int threshold = 0;
+
     @Override
     public void mouseClicked(MouseEvent e) {
-            BufferedImage img = surface.getImage();
-            /*
+        BufferedImage img = surface.getImage();
+        /*
             if (img == null) {
                 RasterConverter conv = RasterConverter.getDefault();
                 if (conv != null) {
@@ -92,55 +93,57 @@ public class FloodFillTool extends MouseAdapter implements /* Tool, MouseListene
                     }
                 }
             }
-            */
-            if (img == null) {
-                return;
+         */
+        if (img == null) {
+            return;
+        }
+        threshold = threshC.get();
+        Color color = colorC.get();
+        surface.beginUndoableOperation(toString()); //XXX
+        try {
+            WritableRaster raster = img.getRaster();
+            int red = color.getRed();
+            int green = color.getGreen();
+            int blue = color.getBlue();
+            int alpha = 255;
+            Point p = e.getPoint();
+            Selection s = layer.getLookup().lookup(Selection.class);
+            if (s != null) {
+                selection = s.asShape();
             }
-            threshold = threshC.get();
-            Color color = colorC.get();
-            surface.beginUndoableOperation(toString()); //XXX
-            try {
-                WritableRaster raster = img.getRaster();
-                int red = color.getRed();
-                int green = color.getGreen();
-                int blue = color.getBlue();
-                int alpha = 255;
-                Point p = e.getPoint();
-                Selection s = layer.getLookup().lookup(Selection.class);
-                if (s != null) {
-                    selection = s.asShape();
-                }
-                this.floodLoop(raster, p.x, p.y, new int[] { red, green, blue, alpha });
-                selection = null;
-                repainter.requestRepaint();
-                if (surface.getGraphics() instanceof TrackingGraphics) {
-                    System.err.println("Area modified: " + minX + "," + minY + "," + (maxX - minX)+ "," + (maxY - minY));
-                    ((TrackingGraphics) surface.getGraphics()).areaModified(minX, minY,
-                            maxX - minX, maxY - minY);
-                }
-            } finally {
-                surface.endUndoableOperation();
+            this.floodLoop(raster, p.x, p.y, new int[]{red, green, blue, alpha});
+            selection = null;
+            repainter.requestRepaint();
+            if (surface.getGraphics() instanceof TrackingGraphics) {
+                System.err.println("Area modified: " + minX + "," + minY + "," + (maxX - minX) + "," + (maxY - minY));
+                ((TrackingGraphics) surface.getGraphics()).areaModified(minX, minY,
+                        maxX - minX, maxY - minY);
             }
+        } finally {
+            surface.endUndoableOperation();
+        }
     }
     private Shape selection;
 
     int checkPixel(int[] oldPix, int[] newPix) {
         if (threshold == 0) {
-            return (newPix[0] == oldPix[0] &&
-                    newPix[1] == oldPix[1] &&
-                    newPix[2] == oldPix[2] &&
-                    newPix[3] == oldPix[3] ? 1 : 0);
+            return (newPix[0] == oldPix[0]
+                    && newPix[1] == oldPix[1]
+                    && newPix[2] == oldPix[2]
+                    && newPix[3] == oldPix[3] ? 1 : 0);
         } else {
-            return (checkThreshold(newPix[0], oldPix[0]) &&
-                    checkThreshold(newPix[1], oldPix[1]) &&
-                    checkThreshold (newPix[2], oldPix[2]) &&
-                    checkThreshold (newPix[3], oldPix[3]) ? 1 : 0);
+            return (checkThreshold(newPix[0], oldPix[0])
+                    && checkThreshold(newPix[1], oldPix[1])
+                    && checkThreshold(newPix[2], oldPix[2])
+                    && checkThreshold(newPix[3], oldPix[3]) ? 1 : 0);
         }
     }
-    
+
     boolean checkThreshold(int a, int b) {
         int test = a - b;
-        if (test < 0) test *= -1;
+        if (test < 0) {
+            test *= -1;
+        }
         return test <= threshold;
     }
 
@@ -148,6 +151,7 @@ public class FloodFillTool extends MouseAdapter implements /* Tool, MouseListene
     int minY;
     int maxX;
     int maxY;
+
     void floodLoop(WritableRaster raster, int x, int y, int[] fill, int[] old) {
         int fillL, fillR, i;
         int in_line = 1;
@@ -162,15 +166,15 @@ public class FloodFillTool extends MouseAdapter implements /* Tool, MouseListene
             if (selection != null) {
                 if (selection.contains(fillL, y)) {
 //                    try {
-                        raster.setPixel(fillL, y, fill);
-                        maxX = Math.max (fillL, maxX);
-                        maxY = Math.max (y, maxY);
-                        minX = Math.min (fillL, minX);
-                        minY = Math.min (y, minY);
+                    raster.setPixel(fillL, y, fill);
+                    maxX = Math.max(fillL, maxX);
+                    maxY = Math.max(y, maxY);
+                    minX = Math.min(fillL, minX);
+                    minY = Math.min(y, minY);
 //                    } catch (ArrayIndexOutOfBoundsException e) {
 //                        throw new ArrayIndexOutOfBoundsException("Out of bounds: " + fillL + ", " + y);
 //                    }
-                    
+
                     fillL--;
                     in_line = (fillL < 0) ? 0 : checkPixel(raster.getPixel(fillL, y, aux), old);
                 } else {
@@ -184,11 +188,11 @@ public class FloodFillTool extends MouseAdapter implements /* Tool, MouseListene
                 }
                 in_line = (fillL < 0) ? 0 : checkPixel(raster.getPixel(fillL, y, aux), old);
 //                try {
-                    raster.setPixel(fillL, y, fill);
-                    maxX = Math.max (fillL, maxX);
-                    maxY = Math.max (y, maxY);
-                    minX = Math.min (fillL, minX);
-                    minY = Math.min (y, minY);
+                raster.setPixel(fillL, y, fill);
+                maxX = Math.max(fillL, maxX);
+                maxY = Math.max(y, maxY);
+                minX = Math.min(fillL, minX);
+                minY = Math.min(y, minY);
 //                } catch (ArrayIndexOutOfBoundsException e) {
 //                    throw new ArrayIndexOutOfBoundsException("Out of bounds: " + fillL + ", " + y);
 //                }
@@ -200,13 +204,13 @@ public class FloodFillTool extends MouseAdapter implements /* Tool, MouseListene
         in_line = 1;
         while (in_line != 0) {
             if (selection != null) {
-                if (selection.contains (fillR, y)) {
+                if (selection.contains(fillR, y)) {
 //                    try {
-                        raster.setPixel(fillR, y, fill);
-                        maxX = Math.max (fillR, maxX);
-                        maxY = Math.max (y, maxY);
-                        minX = Math.min (fillR, minX);
-                        minY = Math.min (y, minY);
+                    raster.setPixel(fillR, y, fill);
+                    maxX = Math.max(fillR, maxX);
+                    maxY = Math.max(y, maxY);
+                    minX = Math.min(fillR, minX);
+                    minY = Math.min(y, minY);
 //                    } catch (ArrayIndexOutOfBoundsException e) {
 //                        throw new ArrayIndexOutOfBoundsException("Out of bounds: " + fillR + ", " + y);
 //                    }
@@ -218,11 +222,11 @@ public class FloodFillTool extends MouseAdapter implements /* Tool, MouseListene
                 }
             } else {
 //                try {
-                    raster.setPixel(fillR, y, fill);
-                    maxX = Math.max (fillR, maxX);
-                    maxY = Math.max (y, maxY);
-                    minX = Math.min (fillR, minX);
-                    minY = Math.min (y, minY);
+                raster.setPixel(fillR, y, fill);
+                maxX = Math.max(fillR, maxX);
+                maxY = Math.max(y, maxY);
+                minX = Math.min(fillR, minX);
+                minY = Math.min(y, minY);
 //                } catch (ArrayIndexOutOfBoundsException e) {
 //                    throw new ArrayIndexOutOfBoundsException("Out of bounds: " + fillR + ", " + y);
 //                }

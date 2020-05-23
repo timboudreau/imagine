@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.netbeans.paint.api.components.dialog;
 
 import java.awt.BorderLayout;
@@ -313,7 +308,9 @@ final class DialogBuilderImpl extends DialogBuilder {
             controlButtons = buttons.buttons(this::onButtonAction);
             assert types.length == controlButtons.length;
             for (JButton jb : controlButtons) {
-                jb.setBorder(BorderFactory.createCompoundBorder(new FlexEmptyBorder(1, 1, Side.LEFT), jb.getBorder()));
+                if (!Utilities.isMac()) {
+                    jb.setBorder(BorderFactory.createCompoundBorder(new FlexEmptyBorder(1, 1, Side.LEFT), jb.getBorder()));
+                }
                 dialogControlPanel.add(jb);
             }
             if (helpAction != null) {
@@ -388,8 +385,10 @@ final class DialogBuilderImpl extends DialogBuilder {
                 }
                 JRootPane root = dlg.getRootPane();
 
+                System.out.println("update for validity " + valid);
                 if (!valid) {
                     all.get(buttons.defaultDefaultButtonMeaning()).setEnabled(false);
+                    System.out.println("seet " + buttons.defaultDefaultButtonMeaning() + " ena " + false);
                     if (root.getDefaultButton() == all.get(buttons.defaultDefaultButtonMeaning())) {
                         root.setDefaultButton(all.get(buttons.nonPositiveMeaning()));
                     }
@@ -402,8 +401,11 @@ final class DialogBuilderImpl extends DialogBuilder {
                     assert btn != null : "No button for " + buttons.defaultDefaultButtonMeaning()
                             + " in " + buttons + " with " + Arrays.asList(buttons.buttons());
 
+                    System.out.println("set enabled / default to " + defaultButtonMeaning
+                            + " on " + btn.getText());
                     btn.setEnabled(true);
                     root.setDefaultButton(all.get(defaultButtonMeaning));
+                    btn.repaint(); // macos
                 }
             }
         }

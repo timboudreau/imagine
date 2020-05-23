@@ -50,7 +50,7 @@
       /><path fill="none" d="M15.2744 10.8974 Q3.9744 16.2974 15.4744 22.9974 Q26.141 16.3641 15.8077 10.9308 L15.2744 10.8974" stroke-width="1" stroke="url(#linearGradient2)"
     /></g
     ><g stroke-linecap="round" fill="url(#linearGradient3)" text-rendering="geometricPrecision" image-rendering="optimizeQuality" color-rendering="optimizeQuality" stroke-linejoin="round" stroke-dasharray="8,4" stroke="url(#linearGradient3)" color-interpolation="linearRGB" stroke-miterlimit="5"
-    ><circle cx="15.3974" cy="15.3974" stroke="none" radius="1.6667"
+    ><circle cx="15.3974" cy="15.3974" stroke="none" r="1.6667"
       /><path fill="url(#gradient3)" stroke-dasharray="none" d="M1.4359 15.2308 C14.7179 4.1026 24.8974 13.8974 29 15.2051 Q16.0769 13.7949 2.5641 15.3077 L2 15.7436" stroke="none"
       /><path fill="none" stroke-dasharray="none" d="M1.4359 15.2308 C14.7179 4.1026 24.8974 13.8974 29 15.2051 Q16.0769 13.7949 2.5641 15.3077 L2 15.7436" stroke="url(#linearGradient4)"
     /></g

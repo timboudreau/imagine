@@ -4,6 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
@@ -70,16 +71,19 @@ interface CursorProperties {
 
     int minimumHollow();
 
-    CursorProperties scaled(int by);
+    CursorProperties scaled(double by);
+
+    CursorProperties scaled(double by, GraphicsConfiguration config);
 
     boolean isDarkBackground();
 
     Graphics2D hint(Graphics2D g);
 
     default Cursor createCursor(String name, int hitX, int hitY, BiConsumer<Graphics2D, CursorProperties> c) {
-        return createCursor(name, hitX, hitY, g -> {
+        Cursor result = createCursor(name, hitX, hitY, g -> {
             c.accept(g, this);
         });
+        return result;
     }
 
     default Cursor createCursor(String name, int hitX, int hitY, Consumer<Graphics2D> c) {
@@ -108,11 +112,6 @@ interface CursorProperties {
 
     CursorProperties withSize(int w, int h);
 
-    default BufferedImage createCursorImage(Consumer<Graphics2D> c) {
-        return CursorUtils.createCursorImage(width(), height(), g -> {
-            hint(g);
-            c.accept(g);
-        });
-    }
+    BufferedImage createCursorImage(Consumer<Graphics2D> c);
 
 }

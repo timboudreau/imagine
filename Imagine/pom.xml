@@ -120,6 +120,7 @@
         <module>io</module>
         <module>svg-io</module>
         <module>nbutil</module>
+        <module>help-system</module>
     </modules>
     <repositories>
         <repository>

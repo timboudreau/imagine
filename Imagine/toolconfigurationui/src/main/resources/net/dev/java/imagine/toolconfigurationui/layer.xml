@@ -7,6 +7,10 @@
             <folder name="layersMode">
                 <file name="customizers.wstcref" url="customizers.wstcref"/>
             </folder>
+            <file name="tools-palette.wsmode" url="tools-palette.wsmode"/>
+            <folder name="tools-palette">
+                <file name="tools-palette.wstcref" url="tools-palette.wstcref"/>
+            </folder>            
         </folder>
     </folder>
 </filesystem>

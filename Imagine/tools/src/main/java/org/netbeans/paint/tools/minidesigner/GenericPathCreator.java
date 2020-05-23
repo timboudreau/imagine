@@ -200,7 +200,6 @@ public class GenericPathCreator implements PathCreator, Customizable {
             GenericDesignCustomizer cus = new GenericDesignCustomizer(mdl);
             cus.setMinimumSize(new Dimension(400, 300));
             cus.onEdit(mdl -> {
-                System.out.println("PopOut");
                 JPanel panel = new JPanel(new VerticalFlowLayout());
                 GenericDesignCustomizer popoutCustomizer = new GenericDesignCustomizer(mdl);
                 JScrollPane pane = new JScrollPane(popoutCustomizer.satelliteView());

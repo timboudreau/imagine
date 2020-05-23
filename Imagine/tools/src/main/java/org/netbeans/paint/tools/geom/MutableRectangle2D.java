@@ -1,4 +1,4 @@
-package org.netbeans.paint.tools;
+package org.netbeans.paint.tools.geom;
 
 import java.awt.geom.Point2D;
 import org.imagine.geometry.EnhRectangle2D;
@@ -27,7 +27,7 @@ public final class MutableRectangle2D extends EnhRectangle2D {
         super(genRectangle(nw, se));
     }
 
-    static String cornerString(int corner) {
+    public static String cornerString(int corner) {
         switch (corner) {
             case NONE:
                 return "None";
@@ -304,6 +304,7 @@ public final class MutableRectangle2D extends EnhRectangle2D {
      * Overridden to convert negative width/height into relocation with positive
      * width/height
      */
+    @Override
     public void setFrame(double x, double y, double w, double h) {
         if (w < 0) {
             double newW = -w;

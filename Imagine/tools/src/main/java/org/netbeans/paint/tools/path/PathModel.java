@@ -15,6 +15,8 @@ import java.util.function.Consumer;
 import org.imagine.geometry.EnhRectangle2D;
 import org.imagine.geometry.path.PathElement;
 import org.imagine.geometry.path.PathElementKind;
+import static org.imagine.geometry.path.PathElementKind.LINE;
+import static org.imagine.geometry.path.PathElementKind.MOVE;
 
 /**
  *
@@ -25,6 +27,14 @@ class PathModel implements Iterable<Pt> {
     private Shape cachedShape;
     final List<Entry> entries = new ArrayList<>(32);
     private DoubleBiConsumer onChange;
+
+    void clear() {
+        cachedShape = null;
+        entries.clear();
+        if (onChange != null) {
+            onChange.accept(0, 0);
+        }
+    }
 
     Pt hit(double x, double y, double radius) {
         Obj<Pt> result = Obj.create();
@@ -70,6 +80,28 @@ class PathModel implements Iterable<Pt> {
         return false;
     }
 
+    boolean canClose() {
+        if (entries.size() > 2) {
+            Entry last = entries.get(entries.size() - 1);
+            switch (last.kind()) {
+                case CLOSE:
+                case MOVE:
+                    return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    boolean close() {
+        boolean result = canClose();
+        if (result) {
+            Entry e = new Entry(PathElementKind.CLOSE, new double[0]);
+            entries.add(e);
+        }
+        return result;
+    }
+
     void visitPoints(Consumer<Pt> c) {
         entries.forEach(e -> e.iterable().forEach(c));
     }
@@ -106,6 +138,17 @@ class PathModel implements Iterable<Pt> {
     public Entry add(PathElementKind kind, double x, double y) {
         if (entries.isEmpty() && kind != PathElementKind.MOVE) {
             return add(PathElementKind.MOVE, x, y);
+        }
+        if (!entries.isEmpty() && (kind == MOVE || kind == LINE)) {
+            Entry last = entries.get(entries.size() - 1);
+            switch (last.kind()) {
+                case MOVE:
+                case LINE:
+                    // Avoid inserting duplicate points
+                    if (last.points[0] == x && last.points[1] == y) {
+                        return last;
+                    }
+            }
         }
         double[] arr = new double[kind.arraySize()];
         for (int i = 0; i < arr.length; i += 2) {

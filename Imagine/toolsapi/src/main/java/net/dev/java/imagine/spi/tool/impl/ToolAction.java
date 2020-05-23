@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.JCheckBoxMenuItem;
@@ -84,7 +85,7 @@ public final class ToolAction implements Action, ContextAwareAction, Presenter.M
         }
         return result;
     }
-    private final Set<Lookup.Result<?>> results = new HashSet<Lookup.Result<?>>();
+    private final Set<Lookup.Result<?>> results = new HashSet<>();
 
     private void addNotify() {
         Tool tool = tool();
@@ -214,16 +215,19 @@ public final class ToolAction implements Action, ContextAwareAction, Presenter.M
             for (Class<?> type : tool.getTypes()) {
                 result = !lkp.lookupResult(type).allItems().isEmpty();
                 if (result) {
+                    Object o = lkp.lookup(type);
+                    if (o instanceof Lookup.Provider) {
+                        Lookup.Provider prov = (Lookup.Provider) o;
+                        if (!tool.canAttach(prov)) {
+                            result = false;
+                        }
+                    }
                     break;
                 }
             }
             if (lastEnabled != result) {
                 lastEnabled = result;
                 supp.firePropertyChange("enabled", lastEnabled, result);
-                Icon ic = icon();
-                Icon dis = disabledIcon();
-//                supp.firePropertyChange(SMALL_ICON, lastEnabled ? ic : dis, result ? ic : dis);
-//                supp.firePropertyChange(LARGE_ICON_KEY, lastEnabled ? ic : dis, result ? ic : dis);
             }
             return lastEnabled = result;
         } finally {
@@ -243,12 +247,51 @@ public final class ToolAction implements Action, ContextAwareAction, Presenter.M
 
     @Override
     public Component getToolbarPresenter() {
-        JToggleButton result = new JToggleButton(this);
+        JToggleButton result = new LazyToggleButton(this);
         result.setText("");
         result.setBorderPainted(false);
         result.setDisabledIcon(disabledIcon());
+        result.setRolloverEnabled(true);
+        Tool tool = tool();
+        if (tool != null) {
+            if (SelectedTool.getDefault().isToolSelected(tool.getName())) {
+                result.setSelected(true);
+            }
+        }
 //        result.setContentAreaFilled(false);
         return result;
+    }
+
+    static final AbstractAction dummyAction = new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            throw new UnsupportedOperationException("Action should be replaced");
+        }
+    };
+
+    static class LazyToggleButton extends JToggleButton {
+
+        private final Action realAction;
+
+        LazyToggleButton(Action a) {
+            super(dummyAction);
+            realAction = a;
+        }
+
+        @Override
+        public void addNotify() {
+            setAction(realAction);
+            super.addNotify();
+        }
+
+        @Override
+        public void removeNotify() {
+            super.removeNotify();
+            // So this button doesn't remain held permanently as a listener
+            // on the action
+            setAction(dummyAction);
+        }
+
     }
 
     public void selectedToolChanged(Tool old, Tool nue) {

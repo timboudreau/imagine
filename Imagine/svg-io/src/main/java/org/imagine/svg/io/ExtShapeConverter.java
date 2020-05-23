@@ -35,16 +35,14 @@ class ExtShapeConverter extends SVGShape {
     }
 
     private Element handleCircle(Circle circle) {
-        // XXX generates correct SVG, and the result is invisible in chrome or inkscape
-        // Would be much nicer to use SVG's circle element since we have a circle
-        // shape primitive
         Element cir
                 = generatorContext.getDOMFactory().createElementNS(SVG_NAMESPACE_URI,
                         SVG_CIRCLE_TAG);
 
         cir.setAttributeNS(null, SVG_CX_ATTRIBUTE, doubleString(circle.centerX()));
-        cir.setAttributeNS(null, SVG_CY_ATTRIBUTE, doubleString(circle.centerX()));
-        cir.setAttributeNS(null, SVG_RADIUS_ATTRIBUTE, doubleString(circle.radius()));
+        cir.setAttributeNS(null, SVG_CY_ATTRIBUTE, doubleString(circle.centerY()));
+        // SVG radius attribute is "radius" which is wrong
+        cir.setAttributeNS(null, "r", doubleString(circle.radius()));
 
         return cir;
     }

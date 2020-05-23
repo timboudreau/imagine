@@ -215,8 +215,8 @@ public class LineTool implements /* Tool, */ PaintParticipant, MouseMotionListen
         return Lookups.singleton(this);
     }
 
+    @Override
     public void attachRepainter(PaintParticipant.Repainter repainter) {
-        System.out.println("Attach repainter to " + this + " - " + repainter);
         this.repainter = repainter;
     }
 

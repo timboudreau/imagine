@@ -54,6 +54,11 @@ class Pt extends EnhPoint2D {
         return new Pt(index - 1, owner);
     }
 
+    public boolean isFirstPointInModel() {
+        return index == 0 && owner().index() == 0;
+    }
+
+    @Override
     public boolean isDestination() {
         return kind().isDestination();
     }
@@ -83,6 +88,7 @@ class Pt extends EnhPoint2D {
         return owner;
     }
 
+    @Override
     public PointKind kind() {
         return owner.kind.pointKindFor(index);
     }
@@ -109,6 +115,7 @@ class Pt extends EnhPoint2D {
         }
     }
 
+    @Override
     public boolean equals(Object o) {
         if (o == this) {
             return true;
@@ -122,6 +129,7 @@ class Pt extends EnhPoint2D {
         return false;
     }
 
+    @Override
     public int hashCode() {
         return 73 * index + (47 * owner.hashCode());
     }

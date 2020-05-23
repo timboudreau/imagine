@@ -96,6 +96,21 @@ public final class FontCellRenderer implements ListCellRenderer {
             return result;
         }
 
+        static int fontSize() {
+            Object o = System.getProperty("uiFontSize");
+            if (o instanceof Integer) {
+                return (Integer) o;
+            }
+            Font f = UIManager.getFont("controlFont");
+            if (f == null) {
+                f = UIManager.getFont("Label.font");
+            }
+            if (f != null) {
+                return f.getSize();
+            }
+            return 13;
+        }
+
         FontImages() {
             names = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
             Arrays.sort(names, (a, b) -> {
@@ -134,7 +149,8 @@ public final class FontCellRenderer implements ListCellRenderer {
             this.maxHeight = maxHeight;
             this.maxWidth = maxWidth;
             int imageHeight = (maxHeight + gap) * fonts.length;
-            img = image = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(2 + maxWidth + 2, imageHeight, Transparency.TRANSLUCENT);
+            img = image = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(
+                    2 + maxWidth + 2, imageHeight, Transparency.TRANSLUCENT);
             g = img.createGraphics();
             int y = 0;
             try {
