@@ -38,6 +38,10 @@ public interface HelpItem {
 
     String asPlainText(Locale locale);
 
+    default void open() {
+        HelpComponentManagerTrampoline.INSTANCE.open(this);
+    }
+
     default void activate(MouseEvent evt) {
         HelpComponentManagerTrampoline.INSTANCE.activate(this, evt);
     }

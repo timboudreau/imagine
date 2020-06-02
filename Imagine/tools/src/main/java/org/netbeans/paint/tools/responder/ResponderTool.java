@@ -28,6 +28,7 @@ import org.netbeans.paint.tools.fills.FillCustomizer;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.EqPointDouble;
+import org.imagine.help.api.HelpItem;
 import org.netbeans.paint.api.cursor.Cursors;
 import org.openide.util.Lookup;
 import org.openide.util.Utilities;
@@ -125,6 +126,10 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
             // Ensure we clear any bounds we painted into
             rep.requestRepaint(lastRepaintBounds);
         }
+    }
+
+    protected HelpItem helpTip() {
+        return null;
     }
 
     /**
@@ -368,6 +373,10 @@ public abstract class ResponderTool extends ToolImplementation<Surface> implemen
                 repainter.setCursor(pendingCursor);
             }
             onAttachRepainter(repainter);
+            HelpItem tip = helpTip();
+            if (tip != null) {
+                tip.activate(repainter.getDialogParent());
+            }
         }
 
         @Override

@@ -49,6 +49,9 @@ import org.netbeans.paint.api.components.EnumComboBoxModel;
 import org.imagine.geometry.uirect.MutableRectangle2D;
 import org.netbeans.paint.tools.minidesigner.MiniToolCanvas;
 import org.imagine.geometry.uirect.ResizeMode;
+import org.imagine.help.api.HelpItem;
+import org.imagine.help.api.annotations.Help;
+import org.imagine.help.api.annotations.Help.HelpText;
 import org.netbeans.paint.tools.responder.HoverPointResponder;
 import org.netbeans.paint.tools.responder.PaintingResponder;
 import org.netbeans.paint.tools.responder.PathUIProperties;
@@ -64,9 +67,18 @@ import org.openide.util.Utilities;
 @ToolDef(name = "Path", iconPath = "org/netbeans/paint/tools/resources/path.svg",
         category = "vector")
 @Tool(value = Surface.class, toolbarPosition = 2000)
+@Help(id="Overview", content = @HelpText("# Path Tool\n\nThe path tool allows you to design"
+        + " shapes with precision, using\n\n"
+        + " * Straight Lines\n"
+        + " * Quadratic Curves - composed of a destination point and a single control point "
+        + "which determines the shape of the curve\n"
+        + " * Bezier Curves - composed of a destination point and _two_ control points "
+        + "which determine the shape of the curve\n\n"
+        + "These three elements are the basis of most two-dimensional shape drawing in "
+        + "SVG, truetype fonts and many other areas of computer graphics."))
 public class PathTool2 extends ResponderTool {
 
-    private PathModel model = new PathModel();
+    PathModel model = new PathModel();
 
     public PathTool2(Surface obj) {
         super(obj);
@@ -74,6 +86,38 @@ public class PathTool2 extends ResponderTool {
         logTransitions();
     }
 
+    @Help(id="Using", content = @HelpText(value="# Using the Path Tool\n\nWhen activated, the Path Tool "
+            + "is ready for you to click to create the first point in the shape - choose a spot "
+            + "to create that initial point.\n\nAfter the initial point, you have a choice of "
+            + "what _kind of path segment_ to create to the next point.  Simply clicking will "
+            + "create a straight line.\n\nTo create a _quadratic curve_, hold down the *CTRL* "
+            + "key when you click - you will then place the control point which changes the"
+            + "shape of the curve visibly as you move the mouse.\n\nTo create a _cubic curve_,"
+            + "hold down the *SHIFT* key when you click - you will then place the two control "
+            + "points.\n\n"
+            + "When placing a destination (not control) point, if you move the mouse cursor over "
+            + "an existing point, you can drag that point to move it - so points are editable after "
+            + "they are placed.\n\n"
+            + "## Keyboard Shortcuts\n\n"
+            + " * Escape - erases all points in the partially completed shape and starts over with "
+            + "positioning the initial point\n"
+            + " * Up / Down / Left / Right arrow keys - moves the position where the new point will "
+            + "be placed using the keyboard rather than the mouse\n"
+            + " * Backspace - delete the last-created destination points and any control points "
+            + "belonging to it\n"
+            + " * Tab - Tab between points which the Up / Down / Left / Right arrows will move\n"
+            + " * Space - Create a point at the current mouse-cursor position or position moved "
+            + "to using the keyboard - the same *CTRL* and *SHIFT* options determine if the new "
+            + "line will be a straight line or a _quadratic_ or _cubic_ curve\n"
+            + " * P - enable / disable preview mode, showing the shape with the currently selected "
+            + "fill color or pattern and stroke\n"
+            + " * Equals / Plus - Zoom in\n"
+            + " * Minus - Zoom out\n"
+            + " * Alt - While the ALT key is pressed, the circles that indicate points you have "
+            + "created are hidden\n"
+            + " * H - Hide points, showing only the lines of the shape, or un-hide them if H was "
+            + "previously pressed\n", keywords = {"path", "cubic", "quadratic", "shape", "control",
+            "bezier", "lines"}))
     @Override
     protected void reset() {
         model = new PathModel();
@@ -86,10 +130,20 @@ public class PathTool2 extends ResponderTool {
         });
     }
 
+    @Help(id="InitialStateTip", noIndex = true, content = {@HelpText(value="# Path Tool\n\n"
+            + "Click to create the first point of the shape.  For subsequent points, "
+            + "holding down *CTRL* will create a _quadratic_ curve, and *SHIFT* will "
+            + "create a _cubic_curve.")})
     @Override
     protected void onAttachRepainter(PaintParticipant.Repainter rep) {
         rep.requestRepaint();
     }
+
+    @Override
+    protected HelpItem helpTip() {
+        return HelpItems.InitialStateTip;
+    }
+
 
     @Override
     protected Responder firstResponder() {

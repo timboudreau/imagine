@@ -189,6 +189,7 @@ public class HelpWindowComponent extends JPanel {
                 if (1 == e.getClickCount() && !e.isPopupTrigger()) {
                     if (currentSearch != null) {
                         currentSearch.cancel();
+                        e.consume();
                     }
                 }
             }
@@ -233,6 +234,18 @@ public class HelpWindowComponent extends JPanel {
         ActionMap act = getActionMap();
         in.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancelSearch");
         act.put("cancelSearch", cancelAction);
+    }
+
+    public boolean isSearchSelected() {
+        return tabs.getSelectedIndex() == 1;
+    }
+
+    public void setSearchSelected(boolean val) {
+        if (val) {
+            tabs.setSelectedIndex(1);
+        } else {
+            tabs.setSelectedIndex(0);
+        }
     }
 
     private void setGoButtonAction(Action action) {

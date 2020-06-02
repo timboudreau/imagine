@@ -28,6 +28,9 @@ import org.imagine.geometry.Circle;
 import org.imagine.geometry.EnhRectangle2D;
 import org.imagine.geometry.EqLine;
 import org.imagine.geometry.EqPointDouble;
+import org.imagine.help.api.HelpItem;
+import org.imagine.help.api.annotations.Help;
+import org.imagine.help.api.annotations.Help.HelpText;
 import org.netbeans.paint.api.cursor.Cursors;
 import org.netbeans.paint.api.components.explorer.FolderPanel;
 import static org.netbeans.paint.api.components.explorer.FolderPanel.PROP_SELECTION;
@@ -48,6 +51,19 @@ import org.openide.util.NbBundle.Messages;
         category = "vector")
 @Tool(value = Surface.class, toolbarPosition = 2200)
 @Messages("waffle=Waffle")
+@Help(id = "Overview", content = {
+    @HelpText(value = "# Waffle Tool\n\nThe waffle tool lets"
+            + "you create a shape out of points, with repeating curve or other path "
+            + "interpolated between them, so you can, for example, create a rectangle whose "
+            + "edges resemble those of a torn postage-stamp.\n\n"
+            + "Generators for the interpolated pattern are pluggable, and two are built-in:\n\n"
+            + " * Waffle - this pattern designer simply creates a sine-wave curve, and the \n"
+            + "customizer for it lets you determine the frequency and amplitude of the curve,"
+            + "and the distance at which it repeats\n\n"
+            + " * Designer - a mini path-tool which allows you to design a section of a path "
+            + "using straight lines, cubic and quadratic curves as the Path Tool does, and "
+            + "repeat the result between points in the shape you create\n\n",
+            keywords = {"path", "pattern", "waffle"})})
 public class WaffleTool extends ResponderTool implements Supplier<PathUIProperties> {
 
     private List<EqPointDouble> points = new ArrayList<>(20);
@@ -64,12 +80,21 @@ public class WaffleTool extends ResponderTool implements Supplier<PathUIProperti
         super(obj);
     }
 
+    @Help(id = "WaffleInitialTip", content = {
+        @HelpText(value = "Click to create points and the "
+                + "pattern configured in the customizer will be interpolated between them "
+                + "to create complex shapes.")})
     static List<PathCreator> creators() {
         List<PathCreator> all = new ArrayList<>();
         all.add(new WaffleCreator());
         all.add(new GenericPathCreator());
         all.addAll(Lookup.getDefault().lookupAll(PathCreator.class));
         return all;
+    }
+
+    @Override
+    protected HelpItem helpTip() {
+        return HelpItems.WaffleInitialTip;
     }
 
     private FolderPanel<PathCreator> createFolderPanel() {

@@ -38,12 +38,14 @@ import org.imagine.geometry.EqPointDouble;
 import org.imagine.help.api.HelpItem;
 import org.imagine.markdown.uiapi.Markdown;
 import org.openide.util.NbPreferences;
+import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.WindowManager;
 
 /**
  *
  * @author Tim Boudreau
  */
+@ServiceProvider(service = HelpComponentManager.class)
 public class HelpComponentManagerImpl extends HelpComponentManager {
 
     private HelpBubbleComponent component;
@@ -248,6 +250,7 @@ public class HelpComponentManagerImpl extends HelpComponentManager {
                 MouseEvent me = (MouseEvent) event;
                 if (component.isEventOnBubble(me)) {
                     dismissPopupGesturePerformed(root);
+                    me.consume();
                 }
             }
         }

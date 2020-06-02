@@ -12,18 +12,13 @@ import static com.mastfrog.util.collections.CollectionUtils.setOf;
 import java.io.IOException;
 import java.io.OutputStream;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.logging.Level;
 import javax.annotation.processing.AbstractProcessor;
@@ -42,9 +37,9 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 import static org.imagine.help.annotation.processors.HelpAnnotationProcessor.HELP_ANNO;
-import org.imagine.help.annotation.processors.HelpAnnotationProcessor.HelpInfo.OneLocaleInfo;
+import org.imagine.help.annotation.processors.OneLocaleInfo;
 import static org.imagine.help.annotation.processors.HelpAnnotationProcessor.TOPIC_ANNO;
-import org.imagine.help.annotation.processors.HelpAnnotationProcessor.TopicInfo.OneTopicInfo;
+import org.imagine.help.annotation.processors.OneTopicInfo;
 import org.imagine.markdown.uiapi.ErrorConsumer;
 import org.imagine.markdown.uiapi.Markdown;
 import org.openide.util.lookup.ServiceProvider;
@@ -478,117 +473,6 @@ public class HelpAnnotationProcessor extends AbstractProcessor {
         return "General";
     }
 
-    static class TopicInfo implements Comparable<TopicInfo>, Iterable<OneTopicInfo> {
-
-        private final Element target;
-        private final Set<OneTopicInfo> entries = new TreeSet<>();
-
-        public TopicInfo(Element target) {
-            this.target = target;
-        }
-
-        public String toString() {
-            switch (target.getKind()) {
-                case PACKAGE:
-                    PackageElement pe = (PackageElement) target;
-                    return pe.getQualifiedName().toString();
-                case CLASS:
-                    TypeElement te = (TypeElement) target;
-                    return te.getQualifiedName().toString();
-                default:
-                    throw new AssertionError("Unsupported kind " + target.getKind());
-            }
-        }
-
-        @Override
-        public int compareTo(TopicInfo o) {
-            return toString().compareTo(o.toString());
-        }
-
-        public boolean add(String language, String country, String topic) {
-            return entries.add(new OneTopicInfo(language, country, topic));
-        }
-
-        public OneTopicInfo forLanguage(String language, String country) {
-            for (OneTopicInfo info : this) {
-                if (language.equals(info.language) && country.equals(info.country)) {
-                    return info;
-                }
-            }
-            for (OneTopicInfo info : this) {
-                if (language.equals(info.language)) {
-                    return info;
-                }
-            }
-            return null;
-        }
-
-        @Override
-        public Iterator<OneTopicInfo> iterator() {
-            return entries.iterator();
-        }
-
-        static class OneTopicInfo implements Comparable<OneTopicInfo> {
-
-            final String language;
-            final String country;
-            final String topic;
-
-            public OneTopicInfo(String language, String country, String topic) {
-                this.language = language;
-                this.country = country;
-                this.topic = topic;
-            }
-
-            public String localeVariableName() {
-                if (country == null || country.isEmpty()) {
-                    return language.toLowerCase();
-                }
-                return language.toLowerCase() + "_" + country;
-            }
-
-            public String languageTag() {
-                if (country == null || country.isEmpty()) {
-                    return language;
-                }
-                return language + "-" + country;
-            }
-
-            @Override
-            public int compareTo(OneTopicInfo o) {
-                return languageTag().compareTo(o.languageTag());
-            }
-
-            @Override
-            public int hashCode() {
-                int hash = 5;
-                hash = 79 * hash + Objects.hashCode(this.language);
-                hash = 79 * hash + Objects.hashCode(this.country);
-                return hash;
-            }
-
-            @Override
-            public boolean equals(Object obj) {
-                if (this == obj) {
-                    return true;
-                }
-                if (obj == null) {
-                    return false;
-                }
-                if (getClass() != obj.getClass()) {
-                    return false;
-                }
-                final OneTopicInfo other = (OneTopicInfo) obj;
-                if (!Objects.equals(this.language, other.language)) {
-                    return false;
-                }
-                if (!Objects.equals(this.country, other.country)) {
-                    return false;
-                }
-                return true;
-            }
-        }
-    }
 
     TopicInfo topicForElement(Element el) {
         TopicInfo info = topicForElement.get(typeOrPackageNameOf(el));
@@ -613,143 +497,5 @@ public class HelpAnnotationProcessor extends AbstractProcessor {
             return ((PackageElement) el).getQualifiedName().toString();
         }
         return ((TypeElement) el).getQualifiedName().toString();
-    }
-
-    // Make these sortable, so generation order is consistent for repeatable builds
-    static class HelpInfo implements Comparable<HelpInfo>, Iterable<OneLocaleInfo> {
-
-        final String id;
-        final List<OneLocaleInfo> locales = new ArrayList<>();
-        final Map<String, Set<OneLocaleInfo>> infosByLanguage = CollectionUtils.supplierMap(TreeSet::new);
-        final Set<Element> elements = new HashSet<>();
-
-        public HelpInfo(String id) {
-            this.id = id;
-        }
-
-        public Iterator<OneLocaleInfo> iterator() {
-            Collections.sort(locales);
-            return locales.iterator();
-        }
-
-        Element[] originatingElements() {
-            return elements.toArray(new Element[elements.size()]);
-        }
-
-        void visitLanguagesAndInfos(BiConsumer<String, Set<OneLocaleInfo>> c) {
-            infosByLanguage.forEach((lang, locs) -> {
-                if (!locs.isEmpty()) { // can happen with SupplierMap in theory
-                    c.accept(lang, locs);
-                }
-            });
-        }
-
-        public OneLocaleInfo fallback() {
-            for (OneLocaleInfo ifo : locales) {
-                if ("en".equals(ifo.language) && "US".equals(ifo.country)) {
-                    return ifo;
-                }
-            }
-            for (OneLocaleInfo ifo : locales) {
-                if ("en".equals(ifo.language)) {
-                    return ifo;
-                }
-            }
-            for (OneLocaleInfo ifo : locales) {
-                if ("".equals(ifo.language)) {
-                    return ifo;
-                }
-            }
-            return null;
-        }
-
-        OneLocaleInfo add(Element element, String locale, String variant, String text, String topic, List<String> keywords) {
-            for (OneLocaleInfo info : locales) {
-                if (info.language.equals(locale) && info.country.equals(variant)) {
-                    return null;
-                }
-            }
-            OneLocaleInfo result = new OneLocaleInfo(element, locale, variant, text, topic, keywords);
-            locales.add(result);
-            infosByLanguage.get(locale).add(result);
-            return result;
-        }
-
-        @Override
-        public int compareTo(HelpInfo o) {
-            return id.compareTo(o.id);
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 3;
-            hash = 59 * hash + Objects.hashCode(this.id);
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final HelpInfo other = (HelpInfo) obj;
-            return Objects.equals(this.id, other.id);
-        }
-
-        static class OneLocaleInfo implements Comparable<OneLocaleInfo> {
-
-            final String language;
-            final String country;
-            final String text;
-            final String topic;
-            final List<String> keywords;
-            final Element originatingElement;
-
-            public OneLocaleInfo(Element originatingElement, String locale, String country, String text, String topic, List<String> keywords) {
-                this.language = locale;
-                this.country = country;
-                this.text = text;
-                this.topic = topic;
-                this.keywords = keywords;
-                this.originatingElement = originatingElement;
-            }
-
-            public String topic() {
-                return topic;
-            }
-
-            public Set<String> keywords() {
-                Set<String> result = new TreeSet<>();
-                for (String kwd : keywords) {
-                    result.add(kwd.toLowerCase());
-                }
-                return result;
-            }
-
-            public String localeVariableName() {
-                if (country == null || country.isEmpty()) {
-                    return language.toLowerCase();
-                }
-                return language.toLowerCase() + "_" + country;
-            }
-
-            public String languageTag() {
-                if (country == null || country.isEmpty()) {
-                    return language;
-                }
-                return language + "-" + country;
-            }
-
-            @Override
-            public int compareTo(OneLocaleInfo o) {
-                return languageTag().compareTo(o.languageTag());
-            }
-        }
     }
 }
