@@ -1,6 +1,6 @@
 package org.netbeans.paint.tools.minidesigner;
 
-import org.netbeans.paint.tools.geom.ResizeMode;
+import org.imagine.geometry.uirect.ResizeMode;
 import com.mastfrog.function.state.Bool;
 import com.mastfrog.function.state.Dbl;
 import com.mastfrog.function.state.Obj;
@@ -33,10 +33,11 @@ import org.imagine.geometry.EqLine;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.util.PooledTransform;
 import org.netbeans.paint.api.cursor.Cursors;
-import org.netbeans.paint.tools.geom.MutableRectangle2D;
+import org.imagine.geometry.uirect.MutableRectangle2D;
 import org.netbeans.paint.tools.responder.PaintingResponder;
 import org.netbeans.paint.tools.responder.Responder;
 import org.netbeans.paint.tools.responder.ResponderTool;
+import org.netbeans.paint.tools.spi.CursorSupport;
 import org.openide.util.Lookup;
 import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
@@ -417,7 +418,7 @@ final class PointEditTool extends ResponderTool implements ChangeListener, Looku
 
                     ResizeMode rm = ResizeMode.forRect(x, y, hitDistance, rect);
                     if (rm != null) {
-                        setCursor(rm.cursor());
+                        setCursor(CursorSupport.cursor(rm));
                         cursorSet.set();
                         dragRectangleArmed = true;
                     }
@@ -581,7 +582,7 @@ final class PointEditTool extends ResponderTool implements ChangeListener, Looku
 
                     @Override
                     protected void resign(Rectangle addTo) {
-                        setCursor(mode.cursor());
+                        setCursor(CursorSupport.cursor(mode));
                     }
 
                     @Override
@@ -594,7 +595,7 @@ final class PointEditTool extends ResponderTool implements ChangeListener, Looku
                         repaint(rect);
                         ResizeMode newMode = mode.apply(x, y, rect);
                         if (newMode != mode) {
-                            setCursor(newMode.cursor());
+                            setCursor(CursorSupport.cursor(newMode));
                         }
                         mode = newMode;
                         repaint(rect);

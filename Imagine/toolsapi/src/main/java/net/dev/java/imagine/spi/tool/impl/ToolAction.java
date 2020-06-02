@@ -145,6 +145,9 @@ public final class ToolAction implements Action, ContextAwareAction, Presenter.M
     public Action createContextAwareInstance(Lookup lkp) {
         ToolAction result = new ToolAction(name, lkp);
         if (pairs != null && !pairs.isEmpty()) {
+            if (result.pairs == null) {
+                result.pairs = new HashMap<>();
+            }
             result.pairs.putAll(pairs);
         }
         return result;

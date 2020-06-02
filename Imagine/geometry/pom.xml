@@ -21,8 +21,9 @@
                     <publicPackages>
                         <publicPackage>org.imagine.geometry</publicPackage>
                         <publicPackage>org.imagine.geometry.analysis</publicPackage>
-                        <publicPackage>org.imagine.geometry.util</publicPackage>
                         <publicPackage>org.imagine.geometry.path</publicPackage>
+                        <publicPackage>org.imagine.geometry.uirect</publicPackage>
+                        <publicPackage>org.imagine.geometry.util</publicPackage>
                     </publicPackages>
                 </configuration>
             </plugin>

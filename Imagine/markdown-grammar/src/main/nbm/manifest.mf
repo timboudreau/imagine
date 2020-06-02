@@ -1,0 +1,2 @@
+Manifest-Version: 1.0
+OpenIDE-Module-Friends: org.imagine.help.system, org.imagine.help.annotation.processors, org.imagine.help.system.impl

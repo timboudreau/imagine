@@ -15,8 +15,13 @@
                 <artifactId>nbm-maven-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
+                    <moduleType>autoload</moduleType>
                     <publicPackages>
                         <publicPackage>org.imagine.help.api</publicPackage>
+                        <publicPackage>org.imagine.help.api.annotations</publicPackage>
+                        <publicPackage>org.imagine.help.api.search</publicPackage>
+                        <publicPackage>org.imagine.help.spi</publicPackage>
+                        <publicPackage>org.imagine.help.implspi</publicPackage>
                     </publicPackages>
                 </configuration>
             </plugin>
@@ -27,13 +32,49 @@
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-api-annotations-common</artifactId>
         </dependency>
-        <dependency>
+<!--        <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-windows</artifactId>
-        </dependency>        
+        </dependency>
         <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-awt</artifactId>
+        </dependency>-->
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-util-lookup</artifactId>
+        </dependency>
+<!--        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>geometry</artifactId>
-        </dependency>        
+        </dependency>-->
+<!--        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>markdown-grammar</artifactId>
+        </dependency>-->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+<!--        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>help-annotation-processors</artifactId>
+            <scope>test</scope>
+        </dependency>-->
     </dependencies>
 </project>

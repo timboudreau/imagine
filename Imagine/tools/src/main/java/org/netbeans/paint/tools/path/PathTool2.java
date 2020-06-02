@@ -46,14 +46,15 @@ import org.imagine.geometry.util.PooledTransform;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.api.cursor.Cursors;
 import org.netbeans.paint.api.components.EnumComboBoxModel;
-import org.netbeans.paint.tools.geom.MutableRectangle2D;
+import org.imagine.geometry.uirect.MutableRectangle2D;
 import org.netbeans.paint.tools.minidesigner.MiniToolCanvas;
-import org.netbeans.paint.tools.geom.ResizeMode;
+import org.imagine.geometry.uirect.ResizeMode;
 import org.netbeans.paint.tools.responder.HoverPointResponder;
 import org.netbeans.paint.tools.responder.PaintingResponder;
 import org.netbeans.paint.tools.responder.PathUIProperties;
 import org.netbeans.paint.tools.responder.Responder;
 import org.netbeans.paint.tools.responder.ResponderTool;
+import org.netbeans.paint.tools.spi.CursorSupport;
 import org.openide.util.Utilities;
 
 /**
@@ -1194,7 +1195,7 @@ public class PathTool2 extends ResponderTool {
 
                     ResizeMode rm = ResizeMode.forRect(x, y, hitDistance, rect);
                     if (rm != null) {
-                        setCursor(rm.cursor());
+                        setCursor(CursorSupport.cursor(rm));
                         cursorSet.set();
                         dragRectangleArmed = true;
                     }
@@ -1395,7 +1396,7 @@ public class PathTool2 extends ResponderTool {
 
                     @Override
                     protected void resign(Rectangle addTo) {
-                        setCursor(mode.cursor());
+                        setCursor(CursorSupport.cursor(mode));
                     }
 
                     @Override
@@ -1409,7 +1410,7 @@ public class PathTool2 extends ResponderTool {
                         repaint(rect, strk);
                         ResizeMode newMode = mode.apply(x, y, rect);
                         if (newMode != mode) {
-                            setCursor(newMode.cursor());
+                            setCursor(CursorSupport.cursor(newMode));
                         }
                         mode = newMode;
                         repaint(rect, strk);

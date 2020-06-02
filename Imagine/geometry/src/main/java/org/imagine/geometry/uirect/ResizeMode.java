@@ -1,11 +1,8 @@
-package org.netbeans.paint.tools.geom;
+package org.imagine.geometry.uirect;
 
-import java.awt.Cursor;
 import java.awt.geom.Point2D;
-import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.geometry.EqPointDouble;
-import org.netbeans.paint.api.cursor.Cursors;
-import org.netbeans.paint.tools.geom.MutableRectangle2D;
+import org.imagine.geometry.uirect.MutableRectangle2D;
 
 /**
  *
@@ -13,26 +10,6 @@ import org.netbeans.paint.tools.geom.MutableRectangle2D;
  */
 public enum ResizeMode {
     TOP_EDGE, LEFT_EDGE, RIGHT_EDGE, BOTTOM_EDGE, NORTHWEST, NORTHEAST, SOUTHEAST, SOUTHWEST;
-
-    public Cursor cursor() {
-        Cursors cur = ImageEditorBackground.getDefault().style().isBright()
-                ? Cursors.forBrightBackgrounds() : Cursors.forDarkBackgrounds();
-        switch (this) {
-            case NORTHEAST:
-                return cur.southWestNorthEast();
-            case SOUTHWEST:
-                return cur.southEastNorthWest();
-            case SOUTHEAST:
-                return cur.southWestNorthEast();
-            case NORTHWEST:
-                return cur.southEastNorthWest();
-            case BOTTOM_EDGE:
-            case TOP_EDGE:
-                return cur.vertical();
-            default:
-                return cur.horizontal();
-        }
-    }
 
     public static ResizeMode forCornerConst(int c) {
         switch (c) {

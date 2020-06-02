@@ -3,13 +3,17 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
-package org.imagine.help.api;
+package org.imagine.help.api.search;
 
 /**
  *
  * @author Tim Boudreau
  */
-public class HelpContext {
+public interface SearchControl {
 
+    boolean cancel();
+
+    boolean resume();
+
+    boolean isDone();
 }

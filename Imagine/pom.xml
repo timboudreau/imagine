@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.imagine</groupId>
     <artifactId>Imagine</artifactId>
@@ -121,6 +121,9 @@
         <module>svg-io</module>
         <module>nbutil</module>
         <module>help-system</module>
+        <module>markdown-grammar</module>
+        <module>help-annotation-processors</module>
+        <module>help-system-impl</module>
     </modules>
     <repositories>
         <repository>
@@ -161,8 +164,29 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>markdown-grammar</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>branding</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>help-system</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>help-system-impl</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>help-annotation-processors</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
@@ -351,6 +375,11 @@
             </dependency>
             <dependency>
                 <groupId>com.mastfrog</groupId>
+                <artifactId>java-vogon</artifactId>
+                <version>${mastfrog.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mastfrog</groupId>
                 <artifactId>util-collections</artifactId>
                 <version>${mastfrog.version}</version>
             </dependency>
@@ -377,7 +406,7 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.11</version>
+                <version>${junit.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.xmlgraphics</groupId>
@@ -472,17 +501,17 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
-                <version>5.6.2</version>
+                <version>${junit5.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>5.6.2</version>
+                <version>${junit5.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-params</artifactId>
-                <version>5.6.2</version>
+                <version>${junit5.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.netbeans.api</groupId>
@@ -609,16 +638,24 @@
                 <artifactId>swing-layout</artifactId>
                 <version>1.0.3</version>
             </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-runtime</artifactId>
+                <version>${antlr.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <properties>
+        <junit.version>4.11</junit.version>
+        <junit5.version>5.6.2</junit5.version>
         <batik.version>1.12</batik.version>
         <brandingToken>imagine</brandingToken>
-        <mastfrog.version>2.6.9</mastfrog.version>
+        <mastfrog.version>2.6.10</mastfrog.version>
         <nbcluster>imagine</nbcluster>
         <netbeans.run.params>${netbeans.run.params.ide}</netbeans.run.params>
         <netbeans.run.params.ide/>
         <netbeans.version>RELEASE113</netbeans.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <antlr.version>4.7.2</antlr.version>
     </properties>
 </project>
