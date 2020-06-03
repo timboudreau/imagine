@@ -34,7 +34,7 @@ class ErrorChecker {
         this.streamSupplier = supp;
     }
 
-    private static String readCharStream(CharStream chars) {
+    static String readCharStream(CharStream chars) {
         StringBuilder sb = new StringBuilder();
         int curr;
         while ((curr = chars.LA(1)) != CharStream.EOF) {

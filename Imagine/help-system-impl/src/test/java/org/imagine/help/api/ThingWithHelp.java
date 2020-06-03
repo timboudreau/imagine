@@ -7,11 +7,11 @@ import org.imagine.help.api.annotations.Help.HelpText;
  *
  * @author Tim Boudreau
  */
-@Help(id = "first", content = {
-    @HelpText(value = "This is some *help* and its neighbors", topic="What To Do When You Need Help", keywords={"help", "danger"}),
-    @HelpText(language = "en", country = "GB", value = "This is some help and its _neighbours_", topic="When You Need Assistance", keywords={"help", "danger"}),
+@Help(id = "first", makePublic = true, related = "second", content = {
+    @HelpText(value = "This is some *help* and its neighbors", topic = "What To Do When You Need Help", keywords = {"help", "danger"}),
+    @HelpText(language = "en", country = "GB", value = "This is some help and its _neighbours_", topic = "When You Need Assistance", keywords = {"help", "danger"}),
     @HelpText(language = "cs", value = "Tohle je nějaká ~~pomoc~~ a její sousedé", keywords = {"pomoc", "bezpečnost"},
-            topic="Co Dělat, Když Potřebujete Pomoc")
+            topic = "Co Dělat, Když Potřebujete Pomoc")
 })
 public class ThingWithHelp {
 

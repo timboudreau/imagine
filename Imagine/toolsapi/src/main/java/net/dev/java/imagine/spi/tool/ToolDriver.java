@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.dev.java.imagine.api.tool.aspects.Attachable;
 import net.dev.java.imagine.api.tool.aspects.LookupContentsContributor;
+import org.imagine.help.api.HelpItem;
 import org.openide.filesystems.FileObject;
 import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
@@ -173,6 +174,12 @@ public class ToolDriver<T, R> {
             }
             addTo.add(delegate);
             addTo.add(this);
+            if (delegate instanceof HelpItem.Provider) {
+                HelpItem item = ((HelpItem.Provider) delegate).getHelpItem();
+                if (item != null) {
+                    addTo.add(item);
+                }
+            }
         }
 
         @Override

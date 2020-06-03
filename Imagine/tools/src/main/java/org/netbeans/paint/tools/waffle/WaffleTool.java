@@ -50,7 +50,7 @@ import org.openide.util.NbBundle.Messages;
 @ToolDef(name = "Waffle", iconPath = "org/netbeans/paint/tools/resources/waffle2.svg",
         category = "vector")
 @Tool(value = Surface.class, toolbarPosition = 2200)
-@Messages("waffle=Waffle")
+@Messages({"waffle=Waffle", "Waffle=Waffle"})
 @Help(id = "Overview", content = {
     @HelpText(value = "# Waffle Tool\n\nThe waffle tool lets"
             + "you create a shape out of points, with repeating curve or other path "

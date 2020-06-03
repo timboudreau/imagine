@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -12,7 +13,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
 import javax.lang.model.element.Element;
-import org.imagine.help.annotation.processors.OneLocaleInfo;
 
 // Make these sortable, so generation order is consistent for repeatable builds
 
@@ -22,9 +22,23 @@ class HelpInfo implements Comparable<HelpInfo>, Iterable<OneLocaleInfo> {
     final List<OneLocaleInfo> locales = new ArrayList<>();
     final Map<String, Set<OneLocaleInfo>> infosByLanguage = CollectionUtils.supplierMap(TreeSet::new);
     final Set<Element> elements = new HashSet<>();
+    private final boolean noIndex;
+    final Set<String> related;
+    private final boolean publyc;
 
-    public HelpInfo(String id) {
+    public HelpInfo(String id, boolean noIndex, List<String> related, boolean publyc) {
         this.id = id;
+        this.noIndex = noIndex;
+        this.related = new LinkedHashSet<>(related);
+        this.publyc = publyc;
+    }
+
+    public boolean generatePublicClass() {
+        return publyc;
+    }
+
+    public boolean isIndexable() {
+        return !noIndex;
     }
 
     public Iterator<OneLocaleInfo> iterator() {
@@ -52,12 +66,12 @@ class HelpInfo implements Comparable<HelpInfo>, Iterable<OneLocaleInfo> {
             }
         }
         for (OneLocaleInfo ifo : locales) {
-            if ("en".equals(ifo.language)) {
+            if ("".equals(ifo.country)) {
                 return ifo;
             }
         }
         for (OneLocaleInfo ifo : locales) {
-            if ("".equals(ifo.language)) {
+            if ("en".equals(ifo.language)) {
                 return ifo;
             }
         }
@@ -65,6 +79,7 @@ class HelpInfo implements Comparable<HelpInfo>, Iterable<OneLocaleInfo> {
     }
 
     OneLocaleInfo add(Element element, String locale, String variant, String text, String topic, List<String> keywords) {
+        elements.add(element);
         for (OneLocaleInfo info : locales) {
             if (info.language.equals(locale) && info.country.equals(variant)) {
                 return null;
@@ -102,6 +117,4 @@ class HelpInfo implements Comparable<HelpInfo>, Iterable<OneLocaleInfo> {
         final HelpInfo other = (HelpInfo) obj;
         return Objects.equals(this.id, other.id);
     }
-
-
 }

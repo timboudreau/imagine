@@ -167,20 +167,13 @@ public final class DefaultTools extends Tools {
                 if (!pth.isEmpty() && pth.charAt(0) == '/') {
                     pth = pth.substring(1);
                 }
-                System.out.println("try load icon " + pth);
                 Icon result = ImageUtilities.loadImageIcon(url.getPath(), false);
-//                if (result != null && result.getIconWidth() > 0 && result.getIconHeight() > 0) {
-//                    return result;
-//                } else {
-//                    System.out.println("Got bad icon: " + result);
-//                }
                 if (result != null) {
                     return result;
                 } else {
                     System.out.println("No icon for " + fld.getName());
                 }
             }
-
             Image ic = fld.getNodeDelegate().getIcon(BeanInfo.ICON_COLOR_16x16);
             try {
                 return ImageUtilities.image2Icon(ic);

@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
 import javax.swing.WindowConstants;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -25,7 +26,7 @@ import org.imagine.markdown.grammar.MarkdownParser;
 public final class Markdown {
 
     private final Supplier<CharStream> streamSupplier;
-    private Set<Consumer<Link>> linkListeners = new HashSet<>();
+    private final Set<Consumer<Link>> linkListeners = new HashSet<>();
 
     public Markdown(String text) {
         this.streamSupplier = () -> CharStreams.fromString(text);
@@ -54,13 +55,20 @@ public final class Markdown {
         return this;
     }
 
+    public String rawMarkup() {
+        return ErrorChecker.readCharStream(streamSupplier.get());
+    }
+
     public String probableHeadingLine() {
-        String result = extractPlainText().trim();
-        int ix = result.indexOf('\n');
-        if (ix < 0) {
-            return result;
-        }
-        return result.substring(0, ix);
+        TextExtractionVisitor tev = new TextExtractionVisitor(true);
+        return parser().document().accept(tev).toString().trim();
+
+//        String result = extractPlainText().trim();
+//        int ix = result.indexOf('\n');
+//        if (ix < 0) {
+//            return result;
+//        }
+//        return result.substring(0, ix);
     }
 
     private MarkdownParser parser() {
@@ -76,7 +84,6 @@ public final class Markdown {
         RenderVisitor rv = new RenderVisitor(ctx, props, new Rectangle2D.Float(bounds.x, bounds.y, bounds.width, bounds.height));
         parser().document().accept(rv);
         sendLinks(rv);
-        System.out.println("USED " + rv.usedBounds());
         return rv.usedBounds();
     }
 
@@ -100,25 +107,23 @@ public final class Markdown {
     }
 
     public String extractPlainText() {
-        TextExtractionVisitor tev = new TextExtractionVisitor();
-        return parser().document().accept(tev).toString();
+        TextExtractionVisitor tev = new TextExtractionVisitor(false);
+        return parser().document().accept(tev).toString().trim();
     }
 
     public static void main(String[] args) {
         JFrame jf = new JFrame();
         jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        Markdown md = new Markdown(TEST_BLOCKQUOTE_SIMPLE);
+        Markdown md = new Markdown(RADIAL_GRADIENT);
         MarkdownComponent c = new MarkdownComponent(md, false);
         c.setLinkListener(link -> {
             JOptionPane.showMessageDialog(c, link, "Link Clicked", JOptionPane.INFORMATION_MESSAGE);
         });
         c.setUIProperties(c.getUIProperties().withFont(new Font("Times New Roman", Font.PLAIN, 26)));
-        jf.setContentPane(c);
+        jf.setContentPane(new JScrollPane(c));
         jf.pack();
         jf.setVisible(true);
         jf.pack();
-
-        System.out.println("AD:\n" + c.getAccessibleContext().getAccessibleDescription());
     }
 
     private static final String TEST_SIMPLE_WITH_MARKUP = "This is a simple paragraph that has"
@@ -180,4 +185,22 @@ public final class Markdown {
             + "----------\n\n"
             + "And _a final_ paragraph with some ~~strikethrough~~.\n\n"
             + "That's *all* folks!";
+
+    private static final String RADIAL_GRADIENT = "# Radial Gradient Customizer\n\nA radial gradient is a "
+            + "sequence of multiple colors which is (optionally) repeated in concentric circles radianting out "
+            + "from a central point, with a defined radius and focus point.\n\nThe customizer shows point-selector "
+            + "control which mirrors the aspect ratio of the picture being edited.  Press and drag with the mouse "
+            + "to draw the initial point andfocus point (creating an effect as if you were viewing the colored "
+            + "circles at an angle).\n\nRadial gradients can be used to produce complex, interesting fill patters "
+            + "simply and in a way that is well supported by SVG rendering engines.\n\n## Adding Points\n\nDouble "
+            + "click in the gradient designer to add a new color-stop, or drag existing stops to move them; each has "
+            + "a color-chooser below it which can be used to change the color.\n\nInternally, a radial gradient is defined "
+            + "by a collection of colors and frationalvalues between zero and one - percentages of the spread between "
+            + "the start and end  points of the gradient at which colors change.\n\nThe *Adjust Colors* button allows "
+            + "you to change the palette of all colors in the gradient at once, adjusting all of their hue, saturation "
+            + "or brightness at once.";
+
+    private static final String PATH_TOOL = "# Path Tool\n\nClick to create the first point of the shape.  "
+            + "For subsequent points, holding down *CTRL* will create a _quadratic_ curve, and *SHIFT* will "
+            + "create a _cubic_curve.";
 }

@@ -17,7 +17,7 @@
                 <artifactId>nbm-maven-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
-                    <moduleType>regular</moduleType>
+                    <moduleType>normal</moduleType>
                     <publicPackages>
                         <publicPackage>org.imagine.inspectors.spi</publicPackage>
                     </publicPackages>

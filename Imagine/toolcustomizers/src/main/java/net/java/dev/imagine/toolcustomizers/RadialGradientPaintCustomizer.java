@@ -25,6 +25,8 @@ import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import static net.java.dev.imagine.toolcustomizers.LinearGradientPaintCustomizer.listenForAspectRatio;
 import org.imagine.editor.api.AspectRatio;
 import org.imagine.geometry.util.PooledTransform;
+import org.imagine.help.api.annotations.Help;
+import org.imagine.help.api.annotations.Help.HelpText;
 import org.netbeans.paint.api.components.PopupSliderUI;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.netbeans.paint.api.components.SharedLayoutRootPanel;
@@ -44,6 +46,21 @@ import org.openide.util.Utilities;
  *
  * @author Tim Boudreau
  */
+@Help(id="RadialGradient", content = @HelpText(value = "# Radial Gradient Customizer\n\n"
+        + "A radial gradient is a sequence of multiple colors which is (optionally) repeated in concentric"
+        + " circles radianting out from a central point, with a defined radius and focus point.\n\n"
+        + "The customizer shows point-selector control which mirrors the aspect ratio of "
+        + "the picture being edited.  Press and drag with the mouse to draw the initial point and"
+        + "focus point (creating an effect as if you were viewing the colored circles at an angle).\n\n"
+        + "Radial gradients can be used to produce complex, interesting fill patters simply and in "
+        + "a way that is well supported by SVG rendering engines.\n\n## Adding Points\n\n"
+        + "Double click in the gradient designer to add a new color-stop, or drag existing stops "
+        + "to move them; each has a color-chooser below it which can be used to change the color."
+        + "\n\nInternally, a radial gradient is defined by a collection of colors and frational"
+        + "values between zero and one - percentages of the spread between the start and end  "
+        + "points of the gradient at which colors change.\n\nThe *Adjust Colors* button allows you "
+        + "to change the palette of all colors in the gradient at once, adjusting all of their "
+        + "hue, saturation or brightness at once.", keywords={"gradient", "radial", "fill", "color"}))
 public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<RadialGradientPaint>
         implements Customizer<RadialGradientPaint>, PointSelectorBackgroundPainter,
         ListenableCustomizer<RadialGradientPaint> {

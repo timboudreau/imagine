@@ -24,7 +24,14 @@ public final class HeadingComparator implements Comparator<HelpItem> {
 
     @Override
     public int compare(HelpItem o1, HelpItem o2) {
-        return o1.heading(locale).compareToIgnoreCase(o2.heading(locale));
+        String h1 = o1.heading(locale);
+        String h2 = o2.heading(locale);
+        if (h1 == null) {
+            h1 = "zzz";
+        }
+        if (h2 == null) {
+            h2 = "zzz";
+        }
+        return h1.compareToIgnoreCase(h2);
     }
-
 }

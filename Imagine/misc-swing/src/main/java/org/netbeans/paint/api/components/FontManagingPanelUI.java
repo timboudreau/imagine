@@ -3,8 +3,13 @@ package org.netbeans.paint.api.components;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Rectangle;
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -23,6 +28,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTree;
 import javax.swing.JViewport;
 import javax.swing.ListCellRenderer;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.plaf.basic.BasicArrowButton;
 import javax.swing.plaf.basic.BasicPanelUI;
@@ -87,14 +93,73 @@ public class FontManagingPanelUI extends BasicPanelUI {
             c.putClientProperty(KEY, listener);
             listener.attach(c);
         }
+        c.addMouseWheelListener(MouseWheel.INSTANCE);
     }
 
     @Override
     public void uninstallUI(JComponent c) {
-        super.uninstallUI(c);
+        c.removeMouseWheelListener(MouseWheel.INSTANCE);
         ContainerFontAdjuster cfa = (ContainerFontAdjuster) c.getClientProperty(KEY);
         if (cfa != null) {
             cfa.detach(c);
+        }
+        super.uninstallUI(c);
+    }
+
+    /**
+     * JPanels by default get a 1-pixel scroll, which is not desirable; this
+     * method attaches a listener which translates wheel scroll events into
+     * a scroll by a number of pixels matching the component's current font's
+     * line-height.
+     *
+     * @param comp A component
+     * @return A runnable which detaches the listener
+     */
+    public static Runnable manageWheelScrollEvents(JComponent comp) {
+        comp.addMouseWheelListener(MouseWheel.INSTANCE);
+        return () -> {
+            comp.removeMouseWheelListener(MouseWheel.INSTANCE);
+        };
+    }
+
+    private static class MouseWheel extends MouseAdapter implements MouseWheelListener {
+
+        static MouseWheel INSTANCE = new MouseWheel();
+
+        @Override
+        public void mouseWheelMoved(MouseWheelEvent e) {
+            if (!(e.getComponent() instanceof JComponent)) {
+                return;
+            }
+            JComponent comp = (JComponent) e.getComponent();
+            Container vp = SwingUtilities.getAncestorOfClass(JViewport.class, comp);
+            if (vp != null) {
+                int units;
+                switch (e.getScrollType()) {
+                    case MouseWheelEvent.WHEEL_UNIT_SCROLL:
+                        units = e.getUnitsToScroll();
+                        break;
+                    case MouseWheelEvent.WHEEL_BLOCK_SCROLL:
+                        units = e.getWheelRotation();
+                        break;
+                    default:
+                        return;
+                }
+                FontMetrics fm = comp.getFontMetrics(comp.getFont());
+                int lineHeight = fm.getHeight() + fm.getMaxDescent() + fm.getLeading();
+                Rectangle visBounds = comp.getVisibleRect();
+                Rectangle fullBounds = comp.getBounds();
+                int amount = units * lineHeight;
+                if (units < 0 && visBounds.y > 0) {
+                    Rectangle scrollTo = new Rectangle(visBounds.x, visBounds.y + amount, visBounds.width, amount);
+                    comp.scrollRectToVisible(scrollTo);
+                    e.consume();
+                } else if (units > 0 && visBounds.y + visBounds.height < fullBounds.y + fullBounds.height) {
+                    Rectangle scrollTo = new Rectangle(visBounds.x, visBounds.y + visBounds.height + lineHeight, visBounds.width, lineHeight);
+                    comp.scrollRectToVisible(scrollTo);
+                    e.consume();
+                }
+            }
         }
     }
 

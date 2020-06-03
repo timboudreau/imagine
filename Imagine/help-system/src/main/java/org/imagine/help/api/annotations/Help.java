@@ -13,7 +13,7 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
  * @author Tim Boudreau
  */
 @Retention(SOURCE)
-@Target({TYPE, METHOD, FIELD})
+@Target({TYPE, METHOD, FIELD, CONSTRUCTOR, ANNOTATION_TYPE, LOCAL_VARIABLE})
 public @interface Help {
 
     /**
@@ -37,6 +37,42 @@ public @interface Help {
      * @return If true, this hint will not be indexed
      */
     boolean noIndex() default false;
+
+    /**
+     * List of related help topics. These can be:
+     * <ul>
+     * <li>Simple, unqualified id-strings if they are defined the same package
+     * as this topic (because it would be a compile-time error for them not to
+     * be unique)</li>
+     * <li>Simple, unqualified id-strings if they are defined within the same
+     * project as this one <i>and the ID is unique within all IDs within the
+     * project), or</li>
+     * <li>The ID is a fully qualified, dot-delimited class name <i>and</i>
+     * id</li>
+     * <li>Not the same ID as this annotation is defining</li>
+     * </ul>
+     * So, if we are defining help items Foo and Bar, in package
+     * <code>com.example</code>, the <code>&#064;Help</code> annotation for
+     * <code>Foo</code> can reference  <code>Bar</code> as <code>Bar</code> (as
+     * long as, say, com.example.whatever does not also contain a help item
+     * named <code>Bar</code>), or can reference it fully qualified as
+     * <code>com.example.Bar</code>.
+     *
+     * @return An array of strings for related help items
+     */
+    String[] related() default {};
+
+    /**
+     * If true, make the generated HelpItem enum class public so it can be used
+     * by classes outside of the package where it is defined. If any
+     * <code>&#064;Help</code> annotation in the same package sets this to true,
+     * the generated class will be a public class. In general this is only
+     * useful for components that recur in a lot of places, but which cannot
+     * practically be subclassed.
+     *
+     * @return True if the generated class should be public
+     */
+    boolean makePublic() default false;
 
     /**
      * Localized contents of a help item specifying its language and text.
@@ -80,7 +116,7 @@ public @interface Help {
 
         /**
          * Get any terms that should be included in any help index for this help
-         * item.
+         * item when searching by keyword.
          *
          * @return A list of index terms
          */

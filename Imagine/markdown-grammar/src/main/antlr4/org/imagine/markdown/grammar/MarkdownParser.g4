@@ -7,12 +7,15 @@ document
     : ( heading | blockquote | unorderedList | paragraphs | horizontalRule |
         whitespace )+ EOF?;
 
+//    : ( heading | blockquote | unorderedList | paragraphs | horizontalRule |
+//        whitespace )+ EOF?;
 horizontalRule
-    : (HorizontalRule HorizontalRuleTail)
+    : ( HorizontalRule HorizontalRuleTail )
     | HorizontalRuleTail+;
 
 heading
-    : head=OpenHeading HeadingPrologue body=headingContent;
+    : head=OpenHeading HeadingPrologue body=headingContent whitespace?
+        HeadingClose;
 
 headingContent
     : HeadingContent;
@@ -44,8 +47,9 @@ paragraphs
     : paragraph+;
 
 paragraph
-    : ParaNewLine?? ParaInlineWhitespace?? innerContent+? paraBreak?;
+    : whitespace?? innerContent+? paraBreak?;
 
+//    : ParaNewLine?? ParaInlineWhitespace?? innerContent+? paraBreak?;
 paraBreak
     : ParaBreak;
 
@@ -68,14 +72,16 @@ innerContent
     : content+ ( whitespace content )*;
 
 text
-    : phrase (( ParaInlineWhitespace | ParaNewline )? ( phrase ))*
-        whitespace?;
+    : phrase (( whitespace )? ( phrase ))* whitespace?;
 
+//    : phrase (( ParaInlineWhitespace | ParaNewline )? ( phrase ))*
+//        whitespace?;
 phrase
-    : ( ParaWords ParaInlineWhitespace? )( ParaWords ParaInlineWhitespace? )*;
+    : ( ParaWords whitespace? )( ParaWords whitespace? )*;
 
 whitespace
-    : ParaInlineWhitespace;
+    : ParaInlineWhitespace
+    | Whitespace;
 
 linkTarget
     : ParaOpenParen href=ParaLink ParaCloseParen;

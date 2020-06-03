@@ -19,7 +19,6 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.imagine.markdown.grammar.MarkdownParser;
 import org.imagine.markdown.grammar.MarkdownParserBaseVisitor;
-import static org.imagine.markdown.uiapi.ErrorChecker.escape;
 
 /**
  *
@@ -46,7 +45,6 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
         this.renderer = ctx;
         this.props = props;
         this.bounds = bounds;
-        System.out.println("CREATE RV " + bounds);
     }
 
     Rectangle2D.Float usedBounds() {
@@ -166,9 +164,7 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
                     x = bounds.x;
                 }
                 float oldY = y;
-                System.out.println("\n-------------- bq -----------------");
                 Void result = super.visitBlockquote(ctx);
-                System.out.println("\n-----------------------------------");
                 float newY = maxY;
                 return withColor(props.blockquoteSidebarColor(), () -> {
                     Rectangle2D.Float r = new Rectangle2D.Float();
@@ -537,11 +533,16 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
         }
     }
 
+    private boolean justDrewSpace = false;
     private void moveOneSpace() {
+        if (justDrewSpace) {
+            return;
+        }
         x += spaceSpacing();
         if (x >= bounds.getMaxX()) {
             toLineStart();
         }
+        justDrewSpace = true;
     }
 
     private static final Line2D.Float line = new Line2D.Float();
@@ -577,8 +578,9 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
 //        addToBounds(oldX, y, width, mx.getHeight() + mx.getDescent() + mx.getLeading() + baselineAdjust);
         lastTextBottom = y + mx.getHeight() + mx.getDescent() + mx.getLeading() + baselineAdjust;
         addToBounds(oldX, y, width, (textY + mx.getDescent()));
-        System.out.println("ATB " + oldX + ", " + " width  " + width + " endX " + (oldX + width)
-                + " for '" + escape(text) + "' -> " + usedBounds().width);
+        justDrewSpace = false;
+//        System.out.println("ATB " + oldX + ", " + " width  " + width + " endX " + (oldX + width)
+//                + " for '" + escape(text) + "' -> " + usedBounds().width);
 //        System.out.println("ATB " + oldX + ", " + y + "   " + width + " * "
 //                + (mx.getHeight() + mx.getDescent() + mx.getLeading())
 //                + " for '" + escape(text) + "' -> " + usedBounds().width + " x " + usedBounds().height);
@@ -595,18 +597,17 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
 //        System.out.println("minX " + minX + " maxX " + maxX
 //                + " for " + x + " " + w + " x "
 //                + " used width now " + (maxX - minX) + " of " + bounds.width);
-        System.out.println("minX " + minX + " minY " + minY + " maxX " + maxX
-                + " maxY " + maxY + " for " + x + ", " + y + " " + w + " x "
-                + h + " used size now " + (maxX - minX) + " x " + (maxY - minY));
+//        System.out.println("minX " + minX + " minY " + minY + " maxX " + maxX
+//                + " maxY " + maxY + " for " + x + ", " + y + " " + w + " x "
+//                + h + " used size now " + (maxX - minX) + " x " + (maxY - minY));
     }
 
     private void addToBounds(Rectangle2D r) {
 //        addToBounds((float) r.getX(), (float) r.getY(), (float) r.getWidth(), (float) r.getHeight());
-//        minX = (float) Math.min(minX, r.getMinX());
-//        maxX = (float) Math.max(maxX, r.getMaxX());
-//        minY = (float) Math.min(minY, r.getMinY());
-//        maxY = (float) Math.max(maxY, r.getMaxY());
-
+        minX = (float) Math.min(minX, r.getMinX());
+        maxX = (float) Math.max(maxX, r.getMaxX());
+        minY = (float) Math.min(minY, r.getMinY());
+        maxY = (float) Math.max(maxY, r.getMaxY());
     }
 
     private void addToBounds(float x, float y) {

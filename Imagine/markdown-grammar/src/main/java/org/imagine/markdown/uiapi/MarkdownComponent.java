@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.IllegalComponentStateException;
@@ -13,6 +14,8 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeListener;
@@ -36,6 +39,8 @@ import javax.accessibility.AccessibleText;
 import javax.accessibility.AccessibleValue;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 
@@ -63,6 +68,7 @@ public final class MarkdownComponent extends JComponent {
         setBackground(uiColor("text", Color.WHITE));
         setForeground(uiColor("textText", Color.BLACK));
         setFont(uiFont("TextArea.font", () -> new Font("Times New Roman", Font.PLAIN, fontSize())));
+        addMouseWheelListener(MouseWheel.INSTANCE);
     }
 
     public void setUIProperties(MarkdownUIProperties props) {
@@ -105,6 +111,43 @@ public final class MarkdownComponent extends JComponent {
                 }
             }
             mouseExited(e);
+        }
+    }
+
+    static class MouseWheel extends MouseAdapter implements MouseWheelListener {
+
+        static final MouseWheel INSTANCE = new MouseWheel();
+
+        @Override
+        public void mouseWheelMoved(MouseWheelEvent e) {
+            MarkdownComponent comp = (MarkdownComponent) e.getComponent();
+            if (SwingUtilities.getAncestorOfClass(JViewport.class, comp) != null) {
+                int units;
+                switch (e.getScrollType()) {
+                    case MouseWheelEvent.WHEEL_UNIT_SCROLL:
+                        units = e.getUnitsToScroll();
+                        break;
+                    case MouseWheelEvent.WHEEL_BLOCK_SCROLL:
+                        units = e.getWheelRotation();
+                        break;
+                    default:
+                        return;
+                }
+                FontMetrics fm = comp.getFontMetrics(comp.props.getFont());
+                int lineHeight = fm.getHeight() + fm.getMaxDescent() + fm.getLeading();
+                Rectangle visBounds = comp.getVisibleRect();
+                Rectangle fullBounds = comp.getBounds();
+                int amount = units * lineHeight;
+                if (units < 0 && visBounds.y > 0) {
+                    Rectangle scrollTo = new Rectangle(visBounds.x, visBounds.y + amount, visBounds.width, amount);
+                    comp.scrollRectToVisible(scrollTo);
+                    e.consume();
+                } else if (units > 0 && visBounds.y + visBounds.height < fullBounds.y + fullBounds.height) {
+                    Rectangle scrollTo = new Rectangle(visBounds.x, visBounds.y + visBounds.height + lineHeight, visBounds.width, lineHeight);
+                    comp.scrollRectToVisible(scrollTo);
+                    e.consume();
+                }
+            }
         }
     }
 
@@ -230,8 +273,9 @@ public final class MarkdownComponent extends JComponent {
         MarkdownRenderingContext ctx = MarkdownRenderingContext.prerenderContext(this);
         Rectangle2D r = md.render(ctx, props, within.getBounds());
         Insets ins = getInsets();
-        r.setFrame(r.getX(), r.getY(), r.getWidth() + ins.left + ins.right + margin, 
-                r.getHeight() + ins.top + ins.bottom + margin);
+        r.setFrame(r.getX(), r.getY(),
+                r.getWidth() + ins.left + ins.right + (margin * 2),
+                r.getHeight() + ins.top + ins.bottom + (margin * 2));
         return r;
     }
 
@@ -245,15 +289,25 @@ public final class MarkdownComponent extends JComponent {
         if (isPreferredSizeSet()) {
             return super.getPreferredSize();
         }
-        Rectangle bds = getBounds();
-        if (bds.isEmpty()) {
-            bds = getGraphicsConfiguration().getBounds();
+        Rectangle bds = null;
+        if (getParent() instanceof JViewport && getParent().isShowing()) {
+            JViewport vp = (JViewport) getParent();
+            bds = vp.getVisibleRect();
+        } else {
+            bds = getBounds();
+            if (bds.isEmpty()) {
+                bds = getGraphicsConfiguration().getBounds();
+            }
         }
+        Insets ins = getInsets();
+        bds.x += ins.left + margin;
+        bds.y += ins.top + margin;
+        bds.height -= (ins.top + ins.bottom) + (margin * 2);
+        bds.width -= (ins.left + ins.right) + (margin * 2);
+
         MarkdownRenderingContext ctx = MarkdownRenderingContext.prerenderContext(this);
         Rectangle2D r2d = doRender(ctx, bds);
-        System.out.println("Render size " + r2d);
         Dimension dim = r2d.getBounds().getSize();
-        Insets ins = getInsets();
         dim.width += margin + ins.left + ins.right;
         dim.height += margin + ins.top + ins.bottom;
         return dim;

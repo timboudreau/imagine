@@ -58,7 +58,8 @@ ParaNextBullet
     : ( ParaDoubleNewline | NEWLINE ) INLINE_WHITESPACE+ ASTERISK -> more,
         popMode, mode ( LIST );
 
-ParaNewline : NEWLINE -> more, popMode;
+ParaNewline
+    : NEWLINE -> more, popMode;
 
 ParaBlockquoteHead
     : ( NEWLINE GT ) -> mode ( BLOCKQUOTE );
@@ -120,8 +121,9 @@ BlockquoteDoubleNewline
 mode LIST;
 
 ListPrologue
-    : (DOUBLE_NEWLINE? INLINE_WHITESPACE)
-    | ( ParaDoubleNewline | NEWLINE )? INLINE_WHITESPACE+ ASTERISK INLINE_WHITESPACE;
+    : ( DOUBLE_NEWLINE? INLINE_WHITESPACE )
+    | ( ParaDoubleNewline | NEWLINE )? INLINE_WHITESPACE+ ASTERISK
+        INLINE_WHITESPACE;
 
 ListItem
     : ( LETTER | DIGIT ) -> more, pushMode ( PARAGRAPH );
@@ -144,16 +146,18 @@ CloseList2
 
 mode HEADING;
 
-HeadingPrologue : INLINE_WHITESPACE;
+HeadingPrologue
+    : INLINE_WHITESPACE;
 
 HeadingContent
     : WORD_LIKE PUNCTUATION? ( INLINE_WHITESPACE*? WORD_LIKE PUNC2? )+;
 
 HeadingClose
-    : NEWLINE NEWLINE*? ->  more, mode ( DEFAULT_MODE );
+    : NEWLINE NEWLINE* -> mode ( DEFAULT_MODE );
+//    : NEWLINE NEWLINE*? -> mode ( DEFAULT_MODE );
 
 HeadingWordLike
-    : ( LETTER | DIGIT )( LETTER | DIGIT )+;
+    : ( LETTER | DIGIT | PUNCTUATION )( LETTER | DIGIT | PUNCTUATION )*;
 
 fragment WORDS
     : INLINE_WHITESPACE? WORD_LIKE PUNC2? INLINE_WHITESPACE??;

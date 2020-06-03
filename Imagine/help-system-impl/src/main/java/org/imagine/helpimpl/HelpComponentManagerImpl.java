@@ -61,7 +61,7 @@ public class HelpComponentManagerImpl extends HelpComponentManager {
 
     @Override
     protected void open(HelpItem item) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        HelpTopComponent.open(item);
     }
 
     @Override

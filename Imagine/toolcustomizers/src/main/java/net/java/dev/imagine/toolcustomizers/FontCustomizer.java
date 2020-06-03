@@ -21,6 +21,8 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
+import org.imagine.help.api.annotations.Help;
+import org.imagine.help.api.annotations.Help.HelpText;
 import org.netbeans.paint.api.components.EnumComboBoxModel;
 import org.netbeans.paint.api.components.FontComboBoxModel;
 import org.netbeans.paint.api.components.PopupSliderUI;
@@ -34,6 +36,11 @@ import org.openide.util.NbPreferences;
  *
  * @author Tim Boudreau
  */
+@Help(id = "FontCustomizer", content = @HelpText(value = "# Font Customizer\n\n"
+        + "The font customizer lets you choose the font to use for creating text, and "
+        + "its size and style, using fonts installed in the system.\n\nNote:  If you install "
+        + "a new font while the application is running, you will need to it for the new font "
+        + "to be detected.", keywords = {"font", "customizer"}))
 public final class FontCustomizer extends ListenableCustomizerSupport<Font>
         implements ListenableCustomizer<Font> {
 
@@ -120,7 +127,7 @@ public final class FontCustomizer extends ListenableCustomizerSupport<Font>
         sizePanel.add(sizeLabel);
         sizePanel.add(slider);
         result.add(sizePanel);
-
+        HelpItems.FontCustomizer.attach(result);
         return result;
     }
 

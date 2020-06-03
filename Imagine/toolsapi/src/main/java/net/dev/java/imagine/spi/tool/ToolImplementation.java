@@ -12,6 +12,7 @@ import java.util.Set;
 import net.dev.java.imagine.api.tool.aspects.Attachable;
 import net.dev.java.imagine.api.tool.aspects.LookupContentsContributor;
 import net.dev.java.imagine.api.tool.aspects.ScalingMouseListener;
+import org.imagine.help.api.HelpItem;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import org.openide.util.lookup.ProxyLookup;
@@ -76,6 +77,12 @@ public abstract class ToolImplementation<T> implements Attachable, LookupContent
             createLookupContents(s);
             synchronized (this) {
                 if (lkp == null) {
+                    if (this instanceof HelpItem.Provider) {
+                        HelpItem item = ((HelpItem.Provider) this).getHelpItem();
+                        if (item != null) {
+                            s.add(item);
+                        }
+                    }
                     if (this instanceof MouseListener) {
                         s.add(new MouseListenerProxy(this));
                     }

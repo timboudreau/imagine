@@ -15,9 +15,24 @@
                 <artifactId>nbm-maven-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
-                    <moduleType>regular</moduleType>
+                    <moduleType>normal</moduleType>
                 </configuration>
             </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M4</version>
+                <configuration>
+                    <parallel>none</parallel>
+                    <parallelMavenExecution>false</parallelMavenExecution>
+                    <perCoreThreadCount>1</perCoreThreadCount>
+                    <threadCount>1</threadCount>
+                    <forkCount>1</forkCount>
+                    <reuseForks>false</reuseForks>
+                    <trimStackTrace>false</trimStackTrace>
+                    <argline>--illegal-access=permit</argline>
+                    <useFile>false</useFile>
+                </configuration>
+            </plugin>            
         </plugins>
     </build>
     <dependencies>
@@ -56,7 +71,15 @@
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-util-ui</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util-lookup</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-modules-settings</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -77,12 +100,6 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>help-annotation-processors</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.netbeans.api</groupId>
-            <artifactId>org-netbeans-modules-settings</artifactId>
-            <version>RELEASE113</version>
-            <type>jar</type>
         </dependency>
     </dependencies>
 </project>

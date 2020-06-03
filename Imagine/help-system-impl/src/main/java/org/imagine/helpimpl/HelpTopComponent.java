@@ -1,11 +1,13 @@
 package org.imagine.helpimpl;
 
 import java.awt.BorderLayout;
+import org.imagine.help.api.HelpItem;
 import org.netbeans.api.settings.ConvertAsProperties;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.util.NbBundle.Messages;
 import org.openide.windows.TopComponent;
+import org.openide.windows.WindowManager;
 
 /**
  *
@@ -25,7 +27,7 @@ import org.openide.windows.TopComponent;
 @ActionReference(path = "Menu/Window" /*, position = 333 */)
 @TopComponent.OpenActionRegistration(
         displayName = "#CTL_HelpAction",
-        preferredID = "inspectors"
+        preferredID = "help"
 )
 @Messages({
     "help=Help",
@@ -53,6 +55,23 @@ public final class HelpTopComponent extends TopComponent {
     @Override
     protected String preferredID() {
         return "help";
+    }
+    
+    private void doOpen(HelpItem item) {
+        if (helpWindowComponent == null) {
+            helpWindowComponent = new HelpWindowComponent();
+            add(helpWindowComponent, BorderLayout.CENTER);
+        }
+        helpWindowComponent.open(item);
+    }
+
+    public static void open(HelpItem item) {
+        HelpTopComponent tc = (HelpTopComponent) WindowManager.getDefault().findTopComponent("help");
+        if (!tc.isOpened()) {
+            tc.open();
+        }
+        tc.doOpen(item);
+        tc.requestVisible();
     }
 
     public static HelpTopComponent getInstance() {

@@ -16,18 +16,36 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import org.imagine.help.api.HelpItem;
 import org.imagine.help.impl.HelpComponentManagerTrampoline;
+import org.openide.util.Lookup;
 
 /**
  *
  * @author Tim Boudreau
  */
-public abstract class HelpIndex {
+public abstract class HelpIndex implements Comparable<HelpIndex> {
 
     private static Collection<? extends HelpIndex> allIndices() {
         // So tests can create their own supply of indexes
-        return HelpComponentManagerTrampoline.INDEXES.get();
+        return withGlobalClassloader(() -> HelpComponentManagerTrampoline.INDEXES.get());
+//        return withGlobalClassloader(() -> {
+//            Collection<? extends HelpIndex> result = Lookups.metaInfServices(Thread.currentThread().getContextClassLoader()).lookupAll(HelpIndex.class);
+//            System.out.println("Found " + result.size() + " help indices: " + result);
+//            return result;
+//        });
+    }
+
+    private static <T> T withGlobalClassloader(Supplier<T> supp) {
+        ClassLoader old = Thread.currentThread().getContextClassLoader();
+        try {
+            ClassLoader ldr = Lookup.getDefault().lookup(ClassLoader.class);
+            Thread.currentThread().setContextClassLoader(ldr);
+            return supp.get();
+        } finally {
+            Thread.currentThread().setContextClassLoader(old);
+        }
     }
 
     public static SearchControl search(String searchTerm, int maxResults, HelpSearchCallback callback, HelpSearchConstraint... constraints) {
@@ -37,6 +55,39 @@ public abstract class HelpIndex {
     public static Map<String, List<HelpItem>> allItemsByTopic() {
         return allItemsByTopic(Locale.getDefault());
     }
+
+    /**
+     * Resolve a help item by name; if using the default implementation of the
+     * help system, this should be the package name of the generated enum, plus
+     * the enum constant name of the help item, <i>omitting the generated enum's
+     * class name</i>.
+     *
+     * @param qualifiedName A name such as <code>com.foo.Overview</code>
+     * @return A help item
+     */
+    static HelpItem resolve(String qualifiedName) {
+        int ix = qualifiedName.lastIndexOf('.');
+        if (ix < 0 || ix == qualifiedName.length() - 1) {
+            return null;
+        }
+        String pkg = qualifiedName.substring(0, ix);
+        String item = qualifiedName.substring(ix + 1);
+        for (HelpIndex index : allIndices()) {
+            HelpItem result = index.resolve(pkg, item);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    static {
+        HelpComponentManagerTrampoline.INDEX_TRAMPOLINE = (String qId) -> {
+            return resolve(qId);
+        };
+    }
+
+    protected abstract HelpItem resolve(String pkg, String id);
 
     public static Map<String, List<HelpItem>> allItemsByTopic(Locale locale) {
         Map<String, List<HelpItem>> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -82,4 +133,8 @@ public abstract class HelpIndex {
         }
     }
 
+    @Override
+    public int compareTo(HelpIndex o) {
+        return o == null ? 0 : getClass().getName().compareTo(o.getClass().getName());
+    }
 }

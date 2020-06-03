@@ -12,13 +12,17 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CodePointCharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
+import org.imagine.markdown.uiapi.Markdown;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -48,8 +52,8 @@ public class MarkdownTest {
     private static final String TEST_BLOCKQUOTE = "# Heading Before Blockquote\n\n"
             + "> This is a blockquote. Let's see how much stuff ends up in it.\n\n"
             + "And a regular paragraph here.\n\n"
-            + " * And then a list"
-            + " * Or something like that";
+            + " * And then a list\n"
+            + " * Or something like that\n";
 
     private static final String TEST_BLOCKQUOTE_SIMPLE = "# A heading! Head head!\nPara para para\n\n"
             + "Let's para some more\n with random\n line breaks that should not affect formatting.\n"
@@ -111,30 +115,115 @@ public class MarkdownTest {
             + " But we [have links](http://timboudreau.com) and that's cool.\n\n\n"
             + "Woogle *the _hoogle booble_ and* plood\n\n\n";
 
+    private static final String RADIAL_GRADIENT = "# Radial Gradient Customizer\n\nA radial gradient is a "
+            + "sequence of multiple colors which is (optionally) repeated in concentric circles radianting out "
+            + "from a central point, with a defined radius and focus point.\n\nThe customizer shows point-selector "
+            + "control which mirrors the aspect ratio of the picture being edited.  Press and drag with the mouse "
+            + "to draw the initial point andfocus point (creating an effect as if you were viewing the colored "
+            + "circles at an angle).\n\nRadial gradients can be used to produce complex, interesting fill patters "
+            + "simply and in a way that is well supported by SVG rendering engines.\n\n## Adding Points\n\nDouble "
+            + "click in the gradient designer to add a new color-stop, or drag existing stops to move them; each has "
+            + "a color-chooser below it which can be used to change the color.\n\nInternally, a radial gradient is defined "
+            + "by a collection of colors and frationalvalues between zero and one - percentages of the spread between "
+            + "the start and end  points of the gradient at which colors change.\n\nThe *Adjust Colors* button allows "
+            + "you to change the palette of all colors in the gradient at once, adjusting all of their hue, saturation "
+            + "or brightness at once.";
+    private static final String PATH_TOOL = "# Path Tool\n\nClick to create the first point of the shape.  "
+            + "For subsequent points, holding down *CTRL* will create a _quadratic_ curve, and *SHIFT* will "
+            + "create a _cubic_curve.";
+
+    @Test
+    public void testTextExtraction() {
+        Markdown md = new Markdown(RADIAL_GRADIENT);
+        String hl = md.probableHeadingLine();
+        assertEquals("Radial Gradient Customizer", hl);
+        String extracted = md.extractPlainText();
+        String expectedExtracted = "Radial Gradient Customizer\n"
+                + "A radial gradient is a sequence of multiple colors which is optionally repeated in concentric circles radianting out from a central point, with a defined radius and focus point.\n"
+                + "The customizer shows point-selector control which mirrors the aspect ratio of the picture being edited.  Press and drag with the mouse to draw the initial point andfocus point creating an effect as if you were viewing the colored circles at an angle\n"
+                + "Radial gradients can be used to produce complex, interesting fill patters simply and in a way that is well supported by SVG rendering engines.\n"
+                + "Adding Points\n"
+                + "Double click in the gradient designer to add a new color-stop, or drag existing stops to move them; each has a color-chooser below it which can be used to change the color.\n"
+                + "Internally, a radial gradient is defined by a collection of colors and frationalvalues between zero and one - percentages of the spread between the start and end  points of the gradient at which colors change.\n"
+                + "The Adjust Colors button allows you to change the palette of all colors in the gradient at once, adjusting all of their hue, saturation or brightness at once.";
+        assertEquals(expectedExtracted, extracted);
+    }
+
     @Test
     public void testSomeMethod() {
-//        testBoth(TEST_MUCH);
-//        testBoth(TEST_SIMPLE_WITH_NESTED_MARKUP);
-//        testBoth(TEST_SIMPLE_WITH_NESTED_MARKUP);
-//        testBoth(TEST_NESTED_MARKUP);
-//        testBoth(TEST_BLOCKQUOTE);
+        testBoth(RADIAL_GRADIENT, true);
         testBoth(TEST_BLOCKQUOTE_SIMPLE);
-//        testBoth(TEST_ONE);
-//        testBoth(TEST_LINK_AFTER_TEXT);
-//        testBoth(TEST_LINK);
-//        testBoth(TEST_LIST);
-//        testBoth(TEST_BLOCKQUOTE);
+        testBoth(TEST_SIMPLE_WITH_NESTED_MARKUP);
+        testBoth(TEST_NESTED_MARKUP);
+        testBoth(TEST_MUCH);
+        testBoth(TEST_ONE);
+        testBoth(TEST_LINK_AFTER_TEXT);
+        testBoth(TEST_LINK);
+        testBoth(TEST_LIST);
+        testBoth(TEST_BLOCKQUOTE);
+        testBoth(PATH_TOOL, true);
+    }
+
+//    @Test
+    public void testStuff() {
+        String text = RADIAL_GRADIENT;
+        AL[] als = new AL[1];
+        MarkdownLexer lex = lexer(text, al -> als[0] = al);
+        CTS cts = new CTS(lex);
+        MarkdownParser parser = new MarkdownParser(cts);
+        parser.dumpDFA();
+        parser.removeErrorListeners();
+        parser.addErrorListener(als[0]);
+        parser.addParseListener(new MarkdownParserBaseListener() {
+            @Override
+            public void enterEveryRule(ParserRuleContext ctx) {
+                log("ENTER RULE " + ctx.invokingState + " " + ctx.getClass().getSimpleName());
+                super.enterEveryRule(ctx); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            @Override
+            public void exitDocument(MarkdownParser.DocumentContext ctx) {
+                super.exitDocument(ctx); //To change body of generated methods, choose Tools | Templates.
+                log("exit document");
+            }
+
+        });
+        List<ParseTree> docChildren = parser.document().children;
+        log("DocChildren: " + docChildren.size());
+        for (ParseTree pt : docChildren) {
+            log(" - " + pt.getClass().getName() + ": " + escape(pt.getText() + " kids " + pt.getChildCount()));
+        }
+        als[0].rethrow();
+    }
+
+    private static ThreadLocal<Boolean> log = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    static void log(String what) {
+        if (log.get()) {
+            System.out.println(what);
+        }
     }
 
     private void testBoth(String text) {
-        System.out.println("\n*************************");
-        System.out.println(text);
-        System.out.println("--------------------------------");
+        testBoth(text, false);
+    }
+
+    private void testBoth(String text, boolean log) {
+        boolean wasLog = this.log.get();
+        if (log) {
+            this.log.set(true);
+        }
+        log("\n*************************");
+        log(text);
+        log("--------------------------------");
         testTokens(text, (ix, tok) -> {
-            System.out.println(ix + ". " + MarkdownLexer.VOCABULARY.getDisplayName(tok.getType()) + ": '" + escape(tok.getText()) + "'");
+            log(ix + ". " + MarkdownLexer.VOCABULARY.getDisplayName(tok.getType()) + ": '" + escape(tok.getText()) + "'");
         });
-        System.out.println("\n------------- PARSE ---------------\n");
+        log("\n------------- PARSE ---------------\n");
         testParse(text);
+        if (log) {
+            this.log.set(wasLog);
+        }
     }
 
     private static String escape(String txt) {
@@ -171,7 +260,7 @@ public class MarkdownTest {
             if (oldMode != newMode) {
                 String msg = modeName(oldMode) + " -> " + modeName(newMode) + " @ "
                         + tok.getLine() + ":" + tok.getCharPositionInLine();
-                System.out.println(" --- " + msg + "\n");
+                log(" --- " + msg + "\n");
             }
             oldMode = newMode;
             al[0].rethrow();
@@ -188,6 +277,7 @@ public class MarkdownTest {
         V v = new V(text);
         parser.document().accept(v);
         v.rethrow();
+        als[0].rethrow();
     }
 
     private MarkdownLexer lexer(String text) {
@@ -235,7 +325,7 @@ public class MarkdownTest {
                     "Error node '" + escape(node.getText()) + "' at source interval "
                     + node.getSourceInterval().a + ":" + node.getSourceInterval().b
                     + " " + node.toStringTree());
-            System.out.println(msg);
+            log(msg);
             errors.add(new AssertionError(msg));
             return super.visitErrorNode(node);
         }
@@ -244,7 +334,7 @@ public class MarkdownTest {
         public Void visitChildren(RuleNode node) {
             char[] c = new char[depth * 2];
             Arrays.fill(c, ' ');
-            System.out.println(new String(c) + node.getClass().getSimpleName() + "\t'" + escape(node.getText()) + "'");
+            log(new String(c) + node.getClass().getSimpleName() + "\t'" + escape(node.getText()) + "'");
             depth++;
             super.visitChildren(node);
             depth--;
@@ -335,7 +425,7 @@ public class MarkdownTest {
                 }
                 alternatives.append(MarkdownParser.ruleNames[bit]);
             }
-            System.out.println("ambiguity at " + startIndex + ":" + stopIndex + " '" + escape(text.substring(startIndex, stopIndex + 1))
+            log("ambiguity at " + startIndex + ":" + stopIndex + " '" + escape(text.substring(startIndex, stopIndex + 1))
                     + "' alternatives " + alternatives + " - exact? " + exact);
 
         }
@@ -370,14 +460,14 @@ public class MarkdownTest {
                 }
                 alternatives.append(MarkdownParser.ruleNames[bit]);
             }
-            System.out.println("\nAttemptFullCtx with " + alternatives + " at " + startIndex + ":"
+            log("\nAttemptFullCtx with " + alternatives + " at " + startIndex + ":"
                     + stopIndex + " '" + escape(text.substring(startIndex, stopIndex + 1)) + "'\n"
                     + contextLine(startIndex));
         }
 
         @Override
         public void reportContextSensitivity(Parser parser, DFA dfa, int startIndex, int stopIndex, int prediction, ATNConfigSet configs) {
-            System.out.println("\nContext Sens at " + startIndex + ":" + stopIndex + " prediction "
+            log("\nContext Sens at " + startIndex + ":" + stopIndex + " prediction "
                     + MarkdownParser.ruleNames[prediction] + " (" + prediction + ") " + " uniqueAlt " + configs.uniqueAlt
                     + "\n" + contextLine(startIndex));
         }
@@ -404,7 +494,7 @@ public class MarkdownTest {
             int newMode = lex()._mode;
             if (oldMode != newMode) {
                 String msg = modeName(oldMode) + " -> " + modeName(newMode) + " @ " + index();
-                System.out.println(" * " + msg);
+                log(" * " + msg);
             }
         }
     }

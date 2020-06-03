@@ -76,7 +76,7 @@ import org.openide.util.Utilities;
         + "which determine the shape of the curve\n\n"
         + "These three elements are the basis of most two-dimensional shape drawing in "
         + "SVG, truetype fonts and many other areas of computer graphics."))
-public class PathTool2 extends ResponderTool {
+public class PathTool2 extends ResponderTool implements HelpItem.Provider {
 
     PathModel model = new PathModel();
 
@@ -144,6 +144,10 @@ public class PathTool2 extends ResponderTool {
         return HelpItems.InitialStateTip;
     }
 
+    @Override
+    public HelpItem getHelpItem() {
+        return HelpItems.Using;
+    }
 
     @Override
     protected Responder firstResponder() {
