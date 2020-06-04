@@ -24,11 +24,11 @@ import org.imagine.help.api.annotations.Help;
  * @author Tim Boudreau
  */
 @Help(id = "Slider", related={"InheritTopic1", "Text", "org.imagine.help.api.first", "Tree"}, content = @Help.HelpText(
-        value="This is a slider.\n\nYou can *_slide_* it!\n\nHow 'bout that?",
+        value="# This is a slider.\n\nYou can *_slide_* it!\n\nHow 'bout that?",
         topic = "Doing Things That Slide", keywords = {"slide", "shimmy", "shake"}))
 public class Demo {
 
-    @Help(id="Text", related={"Slider", "second"}, content=@Help.HelpText(value="A Text Component\n\nYou can type text here, like\n\n * Things you *dream* of\n"
+    @Help(id="Text", related={"Slider", "second"}, content=@Help.HelpText(value="# A Text Component\n\nYou can type text here, like\n\n * Things you *dream* of\n"
             + " * Things you ~~_don't_ dream of~~\n * Things it would be _nice_ to dream of if you could, but can't\n\n"
             + "-------\nAnd other stuff like that, ya know, things with antidisestablishmentarianism and stuff?\n\nThat's all.",
             topic = "Writing Things", keywords = {"text", "stuff"}))

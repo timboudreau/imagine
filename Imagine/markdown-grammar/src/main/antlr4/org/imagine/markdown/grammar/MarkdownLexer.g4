@@ -125,6 +125,11 @@ ListPrologue
     | ( ParaDoubleNewline | NEWLINE )? INLINE_WHITESPACE+ ASTERISK
         INLINE_WHITESPACE;
 
+OrderedListPrologue
+    : ( DOUBLE_NEWLINE? INLINE_WHITESPACE )
+    | ( ParaDoubleNewline | NEWLINE )? INLINE_WHITESPACE+ DIGIT DOT
+        INLINE_WHITESPACE;
+
 ListItem
     : ( LETTER | DIGIT ) -> more, pushMode ( PARAGRAPH );
 

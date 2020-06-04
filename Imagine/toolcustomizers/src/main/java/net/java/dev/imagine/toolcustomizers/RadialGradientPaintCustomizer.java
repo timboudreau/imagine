@@ -46,7 +46,7 @@ import org.openide.util.Utilities;
  *
  * @author Tim Boudreau
  */
-@Help(id="RadialGradient", content = @HelpText(value = "# Radial Gradient Customizer\n\n"
+@Help(id = "RadialGradient", content = @HelpText(value = "# Radial Gradient Customizer\n\n"
         + "A radial gradient is a sequence of multiple colors which is (optionally) repeated in concentric"
         + " circles radianting out from a central point, with a defined radius and focus point.\n\n"
         + "The customizer shows point-selector control which mirrors the aspect ratio of "
@@ -60,7 +60,7 @@ import org.openide.util.Utilities;
         + "values between zero and one - percentages of the spread between the start and end  "
         + "points of the gradient at which colors change.\n\nThe *Adjust Colors* button allows you "
         + "to change the palette of all colors in the gradient at once, adjusting all of their "
-        + "hue, saturation or brightness at once.", keywords={"gradient", "radial", "fill", "color"}))
+        + "hue, saturation or brightness at once.", keywords = {"gradient", "radial", "fill", "color"}))
 public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<RadialGradientPaint>
         implements Customizer<RadialGradientPaint>, PointSelectorBackgroundPainter,
         ListenableCustomizer<RadialGradientPaint> {
@@ -68,14 +68,47 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
     private final String name;
     private final PaintParams params = new PaintParams();
 
+    @Help(id = "FractionsAndColors", related = {"ColorChooser"}, content = {
+        @Help.HelpText(language = "en", country = "US",
+                value = "# Fractions and Colors Editor\n\nLinear and radial gradients are composed of _color stops_ - points "
+                + "at which the gradient shifts from transitioning smoothly between one "
+                + "pair of colors and a new pair formed from the previous destination color "
+                + "and the color assigned to the next _color stop_.\n\n"
+                + "These stops are defined as _percentages_ of the visible space the "
+                + "gradient takes up in a picture, rather than as concrete positions.\n\n"
+                + "The Fractions and Colors Editor lets you add, remove and adjust these "
+                + "color stops:  Double click to create a new one; drag them to change their "
+                + "relative position;  select and use the DELETE key to delete; use the "
+                + "Color Chooser below each stop-line to adjust that stop's color.",
+                keywords = {"gradient", "fraction", "stops", "color"})})
     public RadialGradientPaintCustomizer() {
         this(null, null);
     }
 
+    @Help(id = "FractionsAndColorsPopup", related = {"FractionsAndColors"},
+            content = {
+                @Help.HelpText(language = "en", country = "US",
+                        value = " * Drag lines to position color-stops within the gradient\n"
+                        + " * Select a line by clicking and press _DELETE_ to delete a color stop "
+                        + "(other than the first and last which are mandatory)\n"
+                        + " * Double-click to create a new color stop\n"
+                        + " * Use the color chooser for each stop to fine-tune the color\n"
+                        + " * Drag stops (or create additional ones) closer together to create more"
+                        + " abrupt color transitions, or further apart to create more gradiual ones.\n\n"
+                        + "The arrow keys can also be used to adjust the points (hold down ALT to "
+                        + "adjust the focus point instead of the initial point).",
+                        keywords = {"gradient", "fraction"})})
     public RadialGradientPaintCustomizer(String name) {
         this(name, null);
     }
 
+    @Help(id = "PointSelector", related = {"FractionsAndColors"}, content
+            = {
+                @Help.HelpText(language = "en", country = "US", value = "# Points Selector\n\n"
+                        + "The Points Selector allows you to choose the start and end points "
+                        + "of a radial or linear gradient by drawing them (click-and-drag) on "
+                        + "the preview image (which shows a preview of the gradient you're designing,"
+                        + "scaled to the aspect ratio of the currently edited picture).", keywords = {"focus", "initial", "aspect", "ratio"})})
     public RadialGradientPaintCustomizer(String name, RadialGradientPaint paint) {
         this.name = name;
         if (paint != null) {
@@ -91,12 +124,23 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
         }
     }
 
+    @Help(id = "PointSelectorPopup", related = {"FractionsAndColors"}, noIndex = true,
+            content = {
+                @Help.HelpText(language = "en", country = "US", value = "Click and drag to define the "
+                        + "the distance between the start and end points of the gradient.  These are "
+                        + "defined here as percentages of the aspect ratio of the picture being edited;"
+                        + "the control's preview will update to show approximately how the gradient would "
+                        + "appear if applied to a shape spanning the entire picture.")})
     private void load() {
         Preferences prefs = NbPreferences.forModule(RadialGradientPaintCustomizer.class);
         String nm = name == null ? "rgpDefault" : name;
         params.load(nm, prefs);
     }
 
+    @Help(id="AdjustColorsPopup", related = {"FractionsAndColors"}, noIndex = true,
+            content = {@Help.HelpText(language="en", country="US",
+                    value="Click here to open a dialog that lets you adjust the hue/saturation/brightness "
+                            + "of the entire palette of colors in this gradient at once.\n\n")})
     private void store() {
         Preferences prefs = NbPreferences.forModule(RadialGradientPaintCustomizer.class);
         String nm = name == null ? "rgpDefault" : name;
@@ -175,7 +219,9 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
         Mnemonics.setLocalizedText(adjustButton, Bundle.adjustColors());
         adjustButton.addActionListener(ae -> {
             DialogBuilder.forName("adjustColors")
-                    .forComponent(() -> {return new AdjustColorsPanel(fAndC.getColors());}, (AdjustColorsPanel pnl, ButtonMeaning update) -> {
+                    .forComponent(() -> {
+                        return new AdjustColorsPanel(fAndC.getColors());
+                    }, (AdjustColorsPanel pnl, ButtonMeaning update) -> {
                         if (update.isAffirmitive()) {
                             fAndC.setColors(pnl.colors());
                         }
@@ -240,6 +286,12 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
         });
 
         panel.setBorder(BorderFactory.createEmptyBorder());
+        panel.onShow(() -> {
+            HelpItems.FractionsAndColorsPopup.enqueueInSeries(fAndC);
+            HelpItems.PointSelectorPopup.enqueueInSeries(ps);
+            HelpItems.AdjustColorsPopup.enqueueInSeries(adjustButton);
+        });
+
         return panel;
     }
 

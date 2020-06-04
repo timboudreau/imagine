@@ -20,6 +20,8 @@ import org.imagine.geometry.EnhRectangle2D;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.Triangle2D;
 import org.imagine.geometry.util.PooledTransform;
+import org.imagine.help.api.HelpItem;
+import org.imagine.help.api.annotations.Help;
 import org.openide.util.NbBundle;
 
 /**
@@ -27,13 +29,25 @@ import org.openide.util.NbBundle;
  * @author Tim Boudreau
  */
 @ToolDef(name = "Triangle", iconPath = "org/netbeans/paint/tools/resources/triangle.svg")
-@Tool(value=Surface.class, toolbarPosition=300)
+@Tool(value = Surface.class, toolbarPosition = 300)
+@Help(id = "TriangleTool", related = {"OvalTool", "RectangleTool", "CircleTool", "RhombusTool", "RoundRectangleTool"}, content = {
+    @Help.HelpText(language = "en", country = "US",
+            value = "# Triangle Tool\n\n"
+            + "The rectangle tool allows you to draw triangles;  its customizer lets you "
+            + "configure the fill and outline painting style, and the line stroke the outline"
+            + "is drawn with (if any).\n\n"
+            + "Holding down Shift while dragging rotates the created triangle.")})
 public class TriangleTool extends RectangleTool {
 
     private double rotation;
 
     public TriangleTool(Surface surf) {
         super(surf);
+    }
+
+    @Override
+    public HelpItem getHelpItem() {
+        return HelpItems.TriangleTool;
     }
 
     @Override

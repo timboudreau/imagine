@@ -3,6 +3,8 @@ package org.imagine.helpimpl;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -10,6 +12,7 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
@@ -27,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ForkJoinPool;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -192,7 +196,7 @@ public class HelpWindowComponent extends JPanel {
         });
         goAction.setEnabled(false);
 
-        indexContentsPanel.model.setContents(HelpIndex.allItemsByTopic());
+//        indexContentsPanel.model.setContents(HelpIndex.allItemsByTopic());
         searchTextField.setAction(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -229,6 +233,23 @@ public class HelpWindowComponent extends JPanel {
         ActionMap act = getActionMap();
         in.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancelSearch");
         act.put("cancelSearch", cancelAction);
+    }
+
+    @Override
+    public void addNotify() {
+        super.addNotify();
+//                indexContentsPanel.model.setContents(HelpIndex.allItemsByTopic());
+        if (indexContentsPanel.model.getSize() == 0) {
+            ForkJoinPool.commonPool().submit(() -> {
+                long then = System.currentTimeMillis();
+//                        indexContentsPanel.model.setContents(HelpIndex.allItemsByTopic());
+                Map<String, List<HelpItem>> allItems = HelpIndex.allItemsByTopic();
+                System.out.println("time to load all help items: " + (System.currentTimeMillis() - then + "ms"));
+                EventQueue.invokeLater(() -> {
+                    indexContentsPanel.model.setContents(allItems);
+                });
+            });
+        }
     }
 
     public boolean isSearchSelected() {
@@ -270,7 +291,6 @@ public class HelpWindowComponent extends JPanel {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            System.out.println("Go action go");
             boolean exact = exactMatch.isSelected();
             boolean kwds = keywords.isSelected();
             EnumSet<HelpSearchConstraint> constraints = EnumSet.noneOf(HelpSearchConstraint.class);
@@ -355,7 +375,7 @@ public class HelpWindowComponent extends JPanel {
     static final class HelpTopicsPanel extends JPanel implements ListSelectionListener {
 
         private final HelpItemsModel model = new HelpItemsModel();
-        private final JList<HelpModelItem> items = new JList<>(model);
+        private final FastList<HelpModelItem> items = new FastList<HelpModelItem>(model);
         private final MarkdownComponent detail = new MarkdownComponent(new Markdown(Bundle.noResults()));
         private final JScrollPane itemsScroll = cleanupScrollPane(new JScrollPane(items));
         private final JScrollPane detailScroll = cleanupScrollPane(new JScrollPane(detail));
@@ -510,7 +530,49 @@ public class HelpWindowComponent extends JPanel {
             } else {
                 result.setFont(plainFont());
             }
+            Rectangle r = ((FastList<?>) list).visRect;
+            if (r == null) {
+                r = list.getVisibleRect();
+            }
+            Dimension d = delegate.getPreferredSize();
+            if (d.width > list.getVisibleRect().width) {
+                FontMetrics fm = result.getFontMetrics(result.getFont());
+                int w = fm.charWidth('W');
+                int inChars = r.width / w;
+                val = val.substring(0, inChars) + "\u2026";
+                delegate.setText(val);
+            }
             return result;
+        }
+    }
+
+    static final class FastList<T> extends JList<T> {
+
+        private boolean firstPaint = true;
+        Rectangle visRect;
+
+        public FastList(ListModel<T> dataModel) {
+            super(dataModel);
+            this.visRect = visRect;
+        }
+
+        @Override
+        public void setFont(Font font) {
+            if (!Objects.equals(getFont(), font)) {
+                firstPaint = true;
+                super.setFont(font);
+            }
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            visRect = getVisibleRect();
+            if (firstPaint) {
+                FontMetrics fm = g.getFontMetrics(getFont());
+                int h = fm.getMaxAscent() + fm.getMaxDescent();
+                setFixedCellHeight(h);
+            }
+            super.paintComponent(g);
         }
     }
 

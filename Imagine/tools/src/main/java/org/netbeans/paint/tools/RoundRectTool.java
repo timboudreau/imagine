@@ -20,6 +20,8 @@ import net.java.dev.imagine.api.toolcustomizers.Constants;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.geometry.EnhRectangle2D;
+import org.imagine.help.api.HelpItem;
+import org.imagine.help.api.annotations.Help;
 import org.openide.util.NbBundle;
 
 /**
@@ -27,11 +29,26 @@ import org.openide.util.NbBundle;
  * @author Tim Boudreau
  */
 @ToolDef(name = "Rounded_Rectangle", iconPath = "org/netbeans/paint/tools/resources/roundrect.svg")
-@Tool(value=Surface.class, toolbarPosition=400)
+@Tool(value = Surface.class, toolbarPosition = 400)
+@Help(id = "RoundRectangleTool", related = {"RectangleTool", "OvalTool", "CircleTool", "TriangleTool", "RhombusTool"}, content = {
+    @Help.HelpText(language = "en", country = "US",
+            value = "# Rounded RectangleTool\n\n"
+            + "The Rounded Rectangle Tool allows you to draw rectangles with rounded corners, consisting"
+            + "of an upper-left-corner position, a width and height, and two arc values which determine"
+            + "the degree of rounding.  Its customizer lets you "
+            + "configure the fill and outline painting style, and the line stroke the outline"
+            + "is drawn with (if any).\n\n"
+            + "Holding down Shift results in a shape which is a square.")})
 public class RoundRectTool extends RectangleTool {
 
     public RoundRectTool(Surface surface) {
         super(surface);
+    }
+
+
+    @Override
+    public HelpItem getHelpItem() {
+        return HelpItems.RoundRectangleTool;
     }
 
     static final RoundRectangle2D.Double scratchRR = new RoundRectangle2D.Double();

@@ -72,10 +72,10 @@ public class RelatedTest {
 
     @BeforeAll
     public static void beforeClass() throws ClassNotFoundException {
-        HelpComponentManagerTrampoline.INDEXES = () -> {
+        HelpComponentManagerTrampoline.setIndices(() -> {
             return Arrays.asList(new org.imagine.help.api.HIndex(), new org.imagine.helpimpl.HIndex(),
                     new org.imagine.help.api.demo.HIndex());
-        };
+        });
         System.setProperty("help-search-threads", "2");
         System.setProperty("java.util.logging.config.file",
                 ClassLoader.getSystemResource("logging.properties").getPath());

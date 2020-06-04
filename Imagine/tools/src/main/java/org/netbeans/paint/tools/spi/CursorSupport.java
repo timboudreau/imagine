@@ -21,19 +21,20 @@ public class CursorSupport {
         Cursors cur = ImageEditorBackground.getDefault().style().isBright()
                 ? Cursors.forBrightBackgrounds() : Cursors.forDarkBackgrounds();
         switch (mode) {
+            case LEFT_EDGE :
+            case RIGHT_EDGE :
+                return cur.horizontal();
             case NORTHEAST:
-                return cur.southWestNorthEast();
             case SOUTHWEST:
-                return cur.southEastNorthWest();
-            case SOUTHEAST:
                 return cur.southWestNorthEast();
+            case SOUTHEAST:
             case NORTHWEST:
                 return cur.southEastNorthWest();
             case BOTTOM_EDGE:
             case TOP_EDGE:
                 return cur.vertical();
             default:
-                return cur.horizontal();
+                return Cursor.getDefaultCursor();
         }
     }
 }

@@ -26,6 +26,7 @@ import org.openide.awt.Mnemonics;
 class NestingPanel extends JPanel implements SharedLayoutData {
     
     private SharedLayoutData data;
+    private Runnable onShow;
 
     NestingPanel() {
         super(new VerticalFlowLayout());
@@ -42,6 +43,11 @@ class NestingPanel extends JPanel implements SharedLayoutData {
         return label;
     }
 
+    NestingPanel onShow(Runnable run) {
+        onShow = run;
+        return this;
+    }
+
     @Override
     public void addNotify() {
         super.addNotify();
@@ -51,8 +57,9 @@ class NestingPanel extends JPanel implements SharedLayoutData {
             for (LayoutDataProvider p : preregistered) {
                 data.register(p);
             }
-        } else {
-            System.out.println("no sld");
+        }
+        if (onShow != null) {
+            onShow.run();
         }
     }
 

@@ -16,6 +16,6 @@ final class HelpItemFocusListener extends FocusAdapter {
     @Override
     public void focusGained(FocusEvent e) {
         JComponent comp = (JComponent) e.getComponent();
-        HelpComponentManagerTrampoline.INSTANCE.activate(comp);
+        HelpComponentManagerTrampoline.getInstance().activate(comp);
     }
 }

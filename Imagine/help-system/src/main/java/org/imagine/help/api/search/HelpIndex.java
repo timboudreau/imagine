@@ -27,14 +27,12 @@ import org.openide.util.Lookup;
  */
 public abstract class HelpIndex implements Comparable<HelpIndex> {
 
+    static {
+        HelpComponentManagerTrampoline.setIndexTrampline(HelpIndex::resolve);
+    }
+
     private static Collection<? extends HelpIndex> allIndices() {
-        // So tests can create their own supply of indexes
-        return withGlobalClassloader(() -> HelpComponentManagerTrampoline.INDEXES.get());
-//        return withGlobalClassloader(() -> {
-//            Collection<? extends HelpIndex> result = Lookups.metaInfServices(Thread.currentThread().getContextClassLoader()).lookupAll(HelpIndex.class);
-//            System.out.println("Found " + result.size() + " help indices: " + result);
-//            return result;
-//        });
+        return withGlobalClassloader(() -> HelpComponentManagerTrampoline.getIndices().get());
     }
 
     private static <T> T withGlobalClassloader(Supplier<T> supp) {
@@ -79,12 +77,6 @@ public abstract class HelpIndex implements Comparable<HelpIndex> {
             }
         }
         return null;
-    }
-
-    static {
-        HelpComponentManagerTrampoline.INDEX_TRAMPOLINE = (String qId) -> {
-            return resolve(qId);
-        };
     }
 
     protected abstract HelpItem resolve(String pkg, String id);

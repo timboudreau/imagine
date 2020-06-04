@@ -536,7 +536,7 @@ public class PathTool2 extends ResponderTool implements HelpItem.Provider {
                     break;
                 case KeyEvent.VK_A:
                     if (mac ? e.isMetaDown() : e.isControlDown()) {
-                        MutableRectangle2D rect = new MutableRectangle2D(0, 0, 0, 0);
+                        MutableRectangle2D rect = new MutableRectangle2D();
                         model.visitPoints(rect::add);
                         rect.grow(get().hitRadius() * 2);
                         return new SelectionResponder(rect).with();
@@ -852,7 +852,7 @@ public class PathTool2 extends ResponderTool implements HelpItem.Provider {
             }
 
             SelectionResponder(EqPointDouble startPoint, EqPointDouble initialDragPoint) {
-                rect = new MutableRectangle2D(startPoint, initialDragPoint);
+                rect = MutableRectangle2D.ofDiagonal(startPoint, initialDragPoint);
             }
 
             SelectionResponder(Point2D point) {
@@ -861,7 +861,7 @@ public class PathTool2 extends ResponderTool implements HelpItem.Provider {
 
             SelectionResponder(double x, double y) {
                 double pr = get().pointRadius() * 2;
-                rect = new MutableRectangle2D(x - (pr / 2), y - (pr / 2), pr, pr);
+                rect = MutableRectangle2D.of(x - (pr / 2), y - (pr / 2), pr, pr);
             }
 
             WithSelectionResponder with() {
@@ -947,7 +947,7 @@ public class PathTool2 extends ResponderTool implements HelpItem.Provider {
 
                 WithSelectionResponder(double x, double y) {
                     double pr = get().pointRadius() + (2 * ctx().zoom().inverseScale(2));
-                    rect = new MutableRectangle2D(x - (pr / 2), y - (pr / 2), pr, pr);
+                    rect = MutableRectangle2D.ofDiagonal(x - (pr / 2), y - (pr / 2), pr, pr);
                 }
 
                 private boolean moveSelection(double dx, double dy) {

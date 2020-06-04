@@ -18,6 +18,7 @@ import javax.swing.JPanel;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import net.java.dev.colorchooser.ColorChooser;
+import org.imagine.help.api.annotations.Help;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.openide.util.NbPreferences;
 
@@ -25,6 +26,21 @@ import org.openide.util.NbPreferences;
  *
  * @author Tim Boudreau
  */
+@Help(id = "ColorChooser", content = {
+    @Help.HelpText(language = "en", country = "US",
+            value = "# Color Chooser\n\n"
+            + "Allows you to quickly select colors by clicking and dragging on "
+            + "the palette that pops up.  Holding down different control keys "
+            + " and using different mouse buttons changes the palette:\n\n"
+            + " * Shift - Desaturated Colors\n"
+            + " * Ctrl - Horizontal Brightness (more brightness values vs. color values)\n"
+            + " * Alt - SVG / X11 Color Constants\n"
+            + " * Ctrl-Alt - Recently Selected Color History\n"
+            + " * Alt-Shift - System Colors\n\n"
+            + " * Right-Drag - Transparency palette (click-and-drag with the secondary mouse button)\n\n"
+            + " * Right-Click - Pops up a detailed color chooser dialog for setting colors with precision",
+            keywords = {
+                "color", "transparency", "alpha"})})
 public class ColorCustomizer extends ListenableCustomizerSupport<Color>
         implements ActionListener, ListenableCustomizer<Color> {
 
@@ -60,6 +76,7 @@ public class ColorCustomizer extends ListenableCustomizerSupport<Color>
         JLabel lbl = new JLabel(getName());
         Color color = new Color(red, green, blue, alpha);
         ColorChooser chooser = new ColorChooser(color);
+        net.java.dev.imagine.toolcustomizers.HelpItems.ColorChooser.enqueueInSeries(chooser);
         lbl.setLabelFor(chooser);
         JPanel slp = new SharedLayoutPanel(lbl, chooser);
         chooser.addActionListener(this);

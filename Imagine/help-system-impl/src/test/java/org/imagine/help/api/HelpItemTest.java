@@ -115,9 +115,9 @@ public class HelpItemTest {
 
     @BeforeAll
     public static void beforeClass() {
-        HelpComponentManagerTrampoline.INDEXES = () -> {
+        HelpComponentManagerTrampoline.setIndices(() -> {
             return Arrays.asList(new HIndex(), new org.imagine.helpimpl.HIndex());
-        };
+        });
         System.setProperty("help-search-threads", "2");
         System.setProperty("java.util.logging.config.file",
                 ClassLoader.getSystemResource("logging.properties").getPath());

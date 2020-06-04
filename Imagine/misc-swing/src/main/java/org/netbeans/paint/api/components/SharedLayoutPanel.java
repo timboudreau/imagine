@@ -58,6 +58,7 @@ public class SharedLayoutPanel extends JPanel implements LayoutDataProvider {
 
     private boolean initialized;
     private SharedLayoutData data;
+    private Runnable onShow;
 
     public SharedLayoutPanel() {
         super(new LDPLayout());
@@ -157,6 +158,11 @@ public class SharedLayoutPanel extends JPanel implements LayoutDataProvider {
         }
     }
 
+    public SharedLayoutPanel onShow(Runnable onShow) {
+        this.onShow = onShow;
+        return this;
+    }
+
     /**
      * Overridden to prevent abuse.
      *
@@ -216,6 +222,9 @@ public class SharedLayoutPanel extends JPanel implements LayoutDataProvider {
         data = SharedLayoutData.find(this);
         if (data != null) {
             data.register(this);
+        }
+        if (onShow != null) {
+            onShow.run();
         }
     }
 

@@ -20,8 +20,9 @@ public abstract class HelpComponentManager {
         if (INSTANCE == null) {
             INSTANCE = Lookup.getDefault().lookup(HelpComponentManager.class);
             if (INSTANCE == null) {
-                throw new Error("No implementation of HelpComponentManager "
+                System.err.println("No implementation of HelpComponentManager "
                         + "in the default lookup");
+                INSTANCE = new DummyImpl();
             }
         }
         return INSTANCE;
@@ -80,7 +81,44 @@ public abstract class HelpComponentManager {
     }
 
     static {
-        HelpComponentManagerTrampoline.INSTANCE = new Impl();
+        HelpComponentManagerTrampoline.setInstance(new Impl());
     }
 
+    static final class DummyImpl extends HelpComponentManager {
+
+        @Override
+        protected void popup(HelpItem item, MouseEvent evt) {
+            // do nothing
+        }
+
+        @Override
+        protected void popup(HelpItem item, Component target) {
+            // do nothing
+        }
+
+        @Override
+        protected void popup(JComponent target) {
+            // do nothing
+        }
+
+        @Override
+        protected void removePopup() {
+            // do nothing
+        }
+
+        @Override
+        protected void dismissPopupGesturePerformed(JRootPane root) {
+            // do nothing
+        }
+
+        @Override
+        protected void enqueueNextPopup(HelpItem item, Component target) {
+            // do nothing
+        }
+
+        @Override
+        protected void open(HelpItem item) {
+            // do nothing
+        }
+    }
 }

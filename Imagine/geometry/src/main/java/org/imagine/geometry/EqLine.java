@@ -27,6 +27,7 @@ import com.mastfrog.function.DoubleQuadConsumer;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import org.imagine.geometry.util.GeometryStrings;
 import org.imagine.geometry.util.GeometryUtils;
 
@@ -224,7 +225,10 @@ public final class EqLine extends Line2D.Double implements Intersectable {
      * @param firstPoint Whether to change the first or second point
      */
     public void setLength(double newLength, boolean firstPoint) {
-        if (newLength == 0) {
+        if (!java.lang.Double.isFinite(newLength)) {
+            throw new IllegalArgumentException("Non-finite length " + newLength);
+        }
+        if (newLength == 0.0D || newLength == -0.0D) {
             if (firstPoint) {
                 x1 = x2;
                 y1 = y2;
@@ -233,19 +237,49 @@ public final class EqLine extends Line2D.Double implements Intersectable {
                 y2 = y1;
             }
         } else {
-            double ang = angle(!firstPoint);
-            if (newLength < 0) {
-                ang = Angle.opposite(ang);
-                newLength = -newLength;
-            }
-            Circle circle = new Circle(firstPoint ? x1 : x2, firstPoint ? y1 : y2, newLength);
-            double[] newPos = circle.positionOf(ang);
-            if (firstPoint) {
-                x1 = newPos[0];
-                y1 = newPos[1];
+            // Avoid some rounding errors  and overhead in the case
+            // of simple addition or subtraction for horizontal and vertical
+            // lines
+            if (isHorizontal()) {
+                if (firstPoint) {
+                    if (x1 > x2) {
+                        x1 = x2 + newLength;
+                    } else {
+                        x1 = x2 - newLength;
+                    }
+                } else {
+                    if (x2 > x1) {
+                        x2 = x1 + newLength;
+                    } else {
+                        x2 = x1 - newLength;
+                    }
+                }
+            } else if (isVertical()) {
+                if (firstPoint) {
+                    if (y1 > y2) {
+                        y1 = y2 + newLength;
+                    } else {
+                        y1 = y2 - newLength;
+                    }
+                } else {
+                    if (y2 > y1) {
+                        y2 = y1 + newLength;
+                    } else {
+                        y2 = y1 - newLength;
+                    }
+                }
             } else {
-                x2 = newPos[0];
-                y2 = newPos[1];
+                double ang = angle(firstPoint);
+                boolean fp = firstPoint;
+                Circle.positionOf(ang, firstPoint ? x2 : x1, firstPoint ? y2 : y1, newLength, (x, y) -> {
+                    if (fp) {
+                        x1 = x;
+                        y1 = y;
+                    } else {
+                        x2 = x;
+                        y2 = y;
+                    }
+                });
             }
         }
     }
@@ -637,6 +671,49 @@ public final class EqLine extends Line2D.Double implements Intersectable {
         double ang2 = o.angleNormalized();
         return GeometryUtils.isSameCoordinate(len1, len2, tolerance)
                 && GeometryUtils.isSameCoordinate(ang1, ang2);
+    }
+
+    @Override
+    public boolean intersects(Rectangle2D r) {
+        if (r.isEmpty()) {
+            return false;
+        }
+        return intersects(r.getX(), r.getY(), r.getWidth(), r.getHeight());
+    }
+
+    @Override
+    public boolean intersects(double x, double y, double w, double h) {
+        if (isEmpty()) {
+            return false;
+        }
+        boolean result = intersectsLine(x, y, x + w, y)
+                || intersectsLine(x + w, y, x + w, y + h)
+                || intersectsLine(x, y + h, x + w, y + h)
+                || intersectsLine(x, y, x, +h);
+        if (!result) {
+            result = ((x1 > x && x1 < x + w) && (y1 > y && y1 < y + h))
+                    || ((x2 > x && x2 < x + w) && (y2 > y && y2 < y + h));
+        }
+        return result;
+    }
+
+    public EnhRectangle2D getBounds2D() {
+        double x, y, w, h;
+        if (x1 < x2) {
+            x = x1;
+            w = x2 - x1;
+        } else {
+            x = x2;
+            w = x1 - x2;
+        }
+        if (y1 < y2) {
+            y = y1;
+            h = y2 - y1;
+        } else {
+            y = y2;
+            h = y1 - y2;
+        }
+        return new EnhRectangle2D(x, y, w, h);
     }
 
     @Override

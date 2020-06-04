@@ -132,6 +132,24 @@ public class MarkdownTest {
             + "For subsequent points, holding down *CTRL* will create a _quadratic_ curve, and *SHIFT* will "
             + "create a _cubic_curve.";
 
+    private static final String TEST_ORDERED_LIST = "# Some Ordered Lists\n\nThis is an ordered list:\n\n"
+            + " 1. Turn off the alarm clock\n"
+            + " 2. Read email on phone in bed\n"
+            + " 3. Do morning ablutions:\n"
+            + "    1. Toilet\n"
+            + "    2. Wash face\n"
+            + "    3. Shave\n"
+            + " 4. Go downstairs\n"
+            + " 5. Make coffee\n"
+            + " 6. Mindlessly watch news while coffee works\n\n"
+            + "And that's how we do it, eh?\n\n";
+
+
+    @Test
+    public void testOrderedList() {
+        testBoth(TEST_ORDERED_LIST, true);
+    }
+
     @Test
     public void testTextExtraction() {
         Markdown md = new Markdown(RADIAL_GRADIENT);
@@ -151,7 +169,7 @@ public class MarkdownTest {
 
     @Test
     public void testSomeMethod() {
-        testBoth(RADIAL_GRADIENT, true);
+        testBoth(RADIAL_GRADIENT);
         testBoth(TEST_BLOCKQUOTE_SIMPLE);
         testBoth(TEST_SIMPLE_WITH_NESTED_MARKUP);
         testBoth(TEST_NESTED_MARKUP);

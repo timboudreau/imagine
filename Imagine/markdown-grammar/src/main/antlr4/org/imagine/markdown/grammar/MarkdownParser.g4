@@ -4,7 +4,7 @@ options{tokenVocab=MarkdownLexer; }
 
 // Example rules
 document
-    : ( heading | blockquote | unorderedList | paragraphs | horizontalRule |
+    : ( heading | blockquote | unorderedList | orderedList | paragraphs | horizontalRule |
         whitespace )+ EOF?;
 
 //    : ( heading | blockquote | unorderedList | paragraphs | horizontalRule |
@@ -33,6 +33,15 @@ content
 blockquote
     : ( OpenBlockQuote | ParaBlockquoteHead ) BlockQuotePrologue whitespace?
         paragraph;
+
+orderedList
+    : head=orderedListItemHead orderedListItem;
+
+orderedListItemHead
+    : head=NestedListItemHead? OrderedListPrologue;
+
+orderedListItem
+    : head=orderedListItemHead? paragraph;
 
 unorderedList
     : head=unorderedListItemHead unorderedListItem+;

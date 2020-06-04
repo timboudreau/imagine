@@ -114,7 +114,7 @@ public final class Markdown {
     public static void main(String[] args) {
         JFrame jf = new JFrame();
         jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        Markdown md = new Markdown(RADIAL_GRADIENT);
+        Markdown md = new Markdown(TEST_ORDERED_LIST);
         MarkdownComponent c = new MarkdownComponent(md, false);
         c.setLinkListener(link -> {
             JOptionPane.showMessageDialog(c, link, "Link Clicked", JOptionPane.INFORMATION_MESSAGE);
@@ -203,4 +203,16 @@ public final class Markdown {
     private static final String PATH_TOOL = "# Path Tool\n\nClick to create the first point of the shape.  "
             + "For subsequent points, holding down *CTRL* will create a _quadratic_ curve, and *SHIFT* will "
             + "create a _cubic_curve.";
+
+    private static final String TEST_ORDERED_LIST = "# Some Ordered Lists\n\nThis is an ordered list:\n\n"
+            + " 1. Turn off the alarm clock\n"
+            + " 2. Read email on phone in bed\n"
+            + " 3. Do morning ablutions:\n"
+            + "    1. Toilet\n"
+            + "    2. Wash face\n"
+            + "    3. Shave\n"
+            + " 4. Go downstairs\n"
+            + " 5. Make coffee\n"
+            + " 6. Mindlessly watch news while coffee works\n\n"
+            + "And that's how we do it, eh?\n\n";
 }

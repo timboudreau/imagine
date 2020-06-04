@@ -11,8 +11,6 @@ package org.netbeans.paint.tools;
 import org.imagine.geometry.uirect.MutableRectangle2D;
 import java.awt.BasicStroke;
 import net.dev.java.imagine.api.tool.aspects.Attachable;
-import net.dev.java.imagine.spi.tool.Tool;
-import net.dev.java.imagine.spi.tool.ToolDef;
 import static org.imagine.geometry.uirect.MutableRectangle2D.*;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -29,6 +27,8 @@ import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.api.tool.aspects.ScalingMouseListener;
+import net.dev.java.imagine.spi.tool.Tool;
+import net.dev.java.imagine.spi.tool.ToolDef;
 import net.dev.java.imagine.spi.tool.ToolUIContext;
 import org.imagine.editor.api.snap.SnapPoints;
 import org.imagine.editor.api.snap.SnapPointsConsumer;
@@ -47,14 +47,25 @@ import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.grid.SnapSettings;
 import org.imagine.geometry.EnhRectangle2D;
 import org.imagine.geometry.EqPointDouble;
+import org.imagine.help.api.HelpItem;
+import org.imagine.help.api.annotations.Help;
 
 /**
  *
  * @author Tim Boudreau
  */
 @ToolDef(name = "Rectangle", iconPath = "org/netbeans/paint/tools/resources/rect.svg")
-@Tool(value=Surface.class, toolbarPosition=100)
-public class RectangleTool implements PaintParticipant, ScalingMouseListener, KeyListener, CustomizerProvider, Attachable, SnapPointsConsumer, ChangeListener {
+@Tool(value = Surface.class, toolbarPosition = 100)
+@Help(id = "RectangleTool", related={"OvalTool", "CircleTool", "TriangleTool", "RhombusTool",
+    "RoundRectangleTool", "TriangleTool"}, content = {
+    @Help.HelpText(language = "en", country = "US",
+            value = "# Rectangle Tool\n\n"
+            + "The Rectangle Tool allows you to draw rectangles;  its customizer lets you "
+            + "configure the fill and outline painting style, and the line stroke the outline"
+            + "is drawn with (if any).\n\n"
+            + "Holding down Shift results in a shape which is a square.")})
+public class RectangleTool implements PaintParticipant, ScalingMouseListener, KeyListener,
+        CustomizerProvider, Attachable, SnapPointsConsumer, ChangeListener, HelpItem.Provider {
 
     private EnhRectangle2D lastPaintedRectangle = new EnhRectangle2D();
     private static final int NO_ANCHOR_SIZE = 18;
@@ -69,7 +80,11 @@ public class RectangleTool implements PaintParticipant, ScalingMouseListener, Ke
 
     public RectangleTool(Surface surface) {
         this.surface = surface;
-//        new Exception("Create "  + System.identityHashCode(this) ).printStackTrace(); //XXX
+    }
+
+    @Override
+    public HelpItem getHelpItem() {
+        return HelpItems.RectangleTool;
     }
 
     public EnhRectangle2D getRectangle() {
@@ -203,7 +218,7 @@ public class RectangleTool implements PaintParticipant, ScalingMouseListener, Ke
         EqPointDouble p = new EqPointDouble(x, y);
         TEMPLATE_RECTANGLE.setLocation(p);
         if (rect == null) {
-            rect = new MutableRectangle2D(x, y, x + 1, y + 1);
+            rect = MutableRectangle2D.ofDiagonal(x, y, x + 1, y + 1);
             draggingCorner = rect.nearestCorner(p);
         }
     }

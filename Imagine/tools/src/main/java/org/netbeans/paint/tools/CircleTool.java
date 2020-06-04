@@ -16,6 +16,8 @@ import org.imagine.geometry.Circle;
 import static org.netbeans.paint.tools.RectangleTool.strokeC;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.geometry.EnhRectangle2D;
+import org.imagine.help.api.HelpItem;
+import org.imagine.help.api.annotations.Help;
 import org.openide.util.NbBundle;
 
 /**
@@ -23,12 +25,26 @@ import org.openide.util.NbBundle;
  * @author Tim Boudreau
  */
 @ToolDef(name = "Circle", iconPath = "org/netbeans/paint/tools/resources/circle.svg")
-@Tool(value=Surface.class, toolbarPosition=200)
+@Tool(value = Surface.class, toolbarPosition = 200)
+@Help(id = "CircleTool", related = {"TriangleTool", "OvalTool", "RectangleTool", "RoundRectangleTool"}, content = {
+    @Help.HelpText(language = "en", country = "US",
+            value = "# Circle Tool\n\n"
+            + "The Circle Tool allows you to perfectly circular circles, defined by a center"
+            + "point and a radius (unlke the Oval Tool);  its customizer lets you "
+            + "configure the fill and outline painting style, and the line stroke the outline"
+            + "is drawn with (if any)."
+            )})
 public class CircleTool extends RectangleTool {
 
     public CircleTool(Surface surf) {
         super(surf);
     }
+
+    @Override
+    public HelpItem getHelpItem() {
+        return HelpItems.CircleTool;
+    }
+
 
     @Override
     public String toString() {

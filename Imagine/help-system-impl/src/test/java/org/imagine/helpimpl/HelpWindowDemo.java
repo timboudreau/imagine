@@ -30,10 +30,10 @@ public class HelpWindowDemo {
         UIManager.put("TabbedPane.font", f);
         UIManager.put("TextArea.font", f);
 
-        HelpComponentManagerTrampoline.INDEXES = () -> {
+        HelpComponentManagerTrampoline.setIndices(() -> {
             return Arrays.asList(new org.imagine.help.api.HIndex(), new org.imagine.helpimpl.HIndex(),
                     new org.imagine.help.api.demo.HIndex());
-        };
+        });
 
         HelpWindowComponent win = new HelpWindowComponent();
         JFrame jf = new JFrame();

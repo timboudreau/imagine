@@ -39,6 +39,12 @@ public class EnhRectangle2D extends Rectangle2D.Double implements EnhancedShape,
         super(other.getX(), other.getY(), other.getWidth(), other.getHeight());
     }
 
+    public EnhRectangle2D translate(double dx, double dy) {
+        x += dx;
+        y += dy;
+        return this;
+    }
+
     public EnhRectangle2D copy() {
         return new EnhRectangle2D(this);
     }

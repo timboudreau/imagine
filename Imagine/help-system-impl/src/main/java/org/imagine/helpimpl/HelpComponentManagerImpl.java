@@ -193,7 +193,7 @@ public class HelpComponentManagerImpl extends HelpComponentManager {
         if (oldEscapeMapping != null) {
             root.putClientProperty("oldEscapeMapping", oldEscapeMapping);
         }
-        Toolkit.getDefaultToolkit().addAWTEventListener(dismiss, MouseEvent.MOUSE_EVENT_MASK);
+        attachAwtEventListener(dismiss);
     }
 
     private void deconfigureDismissMonitoring(JRootPane root) {
@@ -214,7 +214,26 @@ public class HelpComponentManagerImpl extends HelpComponentManager {
             im.put(ESCAPE, oldEscapeMapping);
         }
         DismissAction action = (DismissAction) root.getClientProperty("dismiss-help");
-        Toolkit.getDefaultToolkit().removeAWTEventListener(action);
+        detachAwtEventListener(action);
+    }
+
+    private AWTEventListener lastListener;
+
+    private void detachAwtEventListener(AWTEventListener l) {
+        Toolkit.getDefaultToolkit().removeAWTEventListener(l);
+        if (l == lastListener) {
+            lastListener = null;
+        }
+    }
+
+    private void attachAwtEventListener(AWTEventListener l) {
+        if (lastListener == l) {
+            return;
+        } else if (lastListener != null) {
+            Toolkit.getDefaultToolkit().removeAWTEventListener(lastListener);
+        }
+        lastListener = l;
+        Toolkit.getDefaultToolkit().addAWTEventListener(l, MouseEvent.MOUSE_EVENT_MASK);
     }
 
     DismissAction dismissAction(JRootPane pane) {

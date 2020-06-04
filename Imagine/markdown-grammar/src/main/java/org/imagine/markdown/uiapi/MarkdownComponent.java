@@ -271,7 +271,8 @@ public final class MarkdownComponent extends JComponent {
 
     public Rectangle2D neededBounds(Rectangle2D within) {
         MarkdownRenderingContext ctx = MarkdownRenderingContext.prerenderContext(this);
-        Rectangle2D r = md.render(ctx, props, within.getBounds());
+        Rectangle2D r = md.render(ctx, props, new Rectangle (0, 0, (int) Math.floor(within.getWidth()), (int) Math.floor(within.getHeight())));
+        r.setRect(within.getX(), within.getY(), r.getWidth(), r.getHeight());
         Insets ins = getInsets();
         r.setFrame(r.getX(), r.getY(),
                 r.getWidth() + ins.left + ins.right + (margin * 2),

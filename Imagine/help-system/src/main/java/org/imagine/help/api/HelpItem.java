@@ -189,7 +189,7 @@ public interface HelpItem {
      * in some other fashion.
      */
     default void open() {
-        HelpComponentManagerTrampoline.INSTANCE.open(this);
+        HelpComponentManagerTrampoline.getInstance().open(this);
     }
 
     /**
@@ -200,7 +200,7 @@ public interface HelpItem {
      * @param evt A mouse event
      */
     default void activate(MouseEvent evt) {
-        HelpComponentManagerTrampoline.INSTANCE.activate(this, evt);
+        HelpComponentManagerTrampoline.getInstance().activate(this, evt);
     }
 
     /**
@@ -211,7 +211,7 @@ public interface HelpItem {
      * @param evt A mouse event
      */
     default void activate(Component target) {
-        HelpComponentManagerTrampoline.INSTANCE.activate(this, target);
+        HelpComponentManagerTrampoline.getInstance().activate(this, target);
     }
 
     /**
@@ -277,7 +277,7 @@ public interface HelpItem {
      * @param associateWith A component
      */
     default void enqueueInSeries(JComponent associateWith) {
-        HelpComponentManagerTrampoline.INSTANCE.enqueue(this, associateWith);
+        HelpComponentManagerTrampoline.getInstance().enqueue(this, associateWith);
     }
 
     /**
@@ -324,7 +324,7 @@ public interface HelpItem {
      * @return A help item or null if no such ID is registered
      */
     static HelpItem find(String qualifiedId) {
-        return HelpComponentManagerTrampoline.INDEX_TRAMPOLINE.resolve(qualifiedId);
+        return HelpComponentManagerTrampoline.getIndexTrampoline().resolve(qualifiedId);
     }
 
     public interface Provider {

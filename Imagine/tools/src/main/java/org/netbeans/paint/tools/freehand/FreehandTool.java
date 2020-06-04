@@ -22,6 +22,8 @@ import net.java.dev.imagine.api.image.Surface;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import org.imagine.editor.api.PaintingStyle;
+import org.imagine.help.api.HelpItem;
+import org.imagine.help.api.annotations.Help;
 import org.netbeans.paint.tools.responder.PaintingResponder;
 import org.netbeans.paint.tools.responder.Responder;
 import org.netbeans.paint.tools.responder.ResponderTool;
@@ -34,8 +36,17 @@ import org.openide.util.NbBundle;
  */
 @ToolDef(name = "Freehand", iconPath = "org/netbeans/paint/tools/resources/freehand.svg",
         category = "vector")
-@Tool(value=Surface.class, toolbarPosition=2100)
-public class FreehandTool extends ResponderTool {
+@Tool(value = Surface.class, toolbarPosition = 2100)
+@Help(id = "FreehandTool", content = {
+    @Help.HelpText(language = "en",
+            country = "US", value = "# Freehand Tool\n\n"
+                    + "The freehand tool allows you to simply draw a shape with the mouse, "
+                    + "which will be interpreted as as set of curves.  The customizer "
+                    + "determines the tolerances and therefore the degree of complexity "
+                    + "of the resulting shape, and the accuracy with which it traces the "
+                    + "motions made with the mouse.",
+            keywords = {"draw", "freehand"})})
+public class FreehandTool extends ResponderTool implements HelpItem.Provider {
 
     private BasicMouseSmoothing smoothing;
     private int pointCount;
@@ -43,7 +54,7 @@ public class FreehandTool extends ResponderTool {
             = Customizers.getCustomizer(Float.class, NbBundle.getMessage(FreehandTool.class,
                     "ERROR_TOLERANCE"), 0F, 1F, 1F / 3F);
     private static final Customizer<Float> STRENGTH
-            = Customizers.getCustomizer(Float.class, NbBundle.getMessage(FreehandTool.class, 
+            = Customizers.getCustomizer(Float.class, NbBundle.getMessage(FreehandTool.class,
                     "STRENGTH"), 0F, 1F, 0.2F);
     private static final Customizer<Boolean> CLOSED
             = Customizers.getCustomizer(Boolean.class, NbBundle.getMessage(FreehandTool.class,
@@ -51,6 +62,11 @@ public class FreehandTool extends ResponderTool {
 
     public FreehandTool(Surface obj) {
         super(obj);
+    }
+
+    @Override
+    public HelpItem getHelpItem() {
+        return HelpItems.FreehandTool;
     }
 
     @Override
@@ -81,7 +97,7 @@ public class FreehandTool extends ResponderTool {
     protected Responder firstResponder() {
         reset();
         return new MouseSmoothingResponder(smoothing = new BasicMouseSmoothing(
-            ERROR_TOLERANCE.get(), STRENGTH.get()));
+                ERROR_TOLERANCE.get(), STRENGTH.get()));
     }
 
     @Override

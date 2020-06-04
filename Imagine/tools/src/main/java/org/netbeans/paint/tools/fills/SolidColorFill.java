@@ -39,6 +39,8 @@ public final class SolidColorFill implements Fill {
 
     @Override
     public Component getCustomizer() {
+        Component result = customizer.getComponent();
+        
         return customizer.getComponent();
     }
 }

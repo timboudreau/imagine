@@ -32,6 +32,14 @@ public final class MutableRectangle2D extends EnhRectangle2D {
         super();
     }
 
+    /**
+     * This is NOT a width + height constructor!
+     *
+     * @param x1 The first diagonal x coordinate
+     * @param y1 The first diagonal y coordinate
+     * @param x2 The second diagonal x coordinate
+     * @param y2 The seconddiagonal y coordinate
+     */
     public MutableRectangle2D(double x1, double y1, double x2, double y2) {
         super(genRectangle(new Point2D.Double(x1, y1), new Point2D.Double(x2, y2)));
     }
@@ -41,9 +49,43 @@ public final class MutableRectangle2D extends EnhRectangle2D {
     }
 
     public MutableRectangle2D(RectangularShape shape) {
-        this(shape.getX(), shape.getY(), shape.getX() + shape.getWidth(), shape.getY() + shape.getHeight());
+        this(shape.getMinX(), shape.getMinY(), shape.getMaxX(), shape.getMaxY());
     }
 
+    private MutableRectangle2D(boolean reg, double x, double y, double w, double h) {
+        super(x, y, w, h);
+    }
+
+    /**
+     * Create a MutableRectangle2D using traditional x/y/width/height.
+     *
+     * @param x The x coordinate
+     * @param y The y coordinate
+     * @param w The width
+     * @param h The height
+     * @return A rectangle
+     */
+    public static MutableRectangle2D of(double x, double y, double w, double h) {
+        return new MutableRectangle2D(true, x, y, w, h);
+    }
+
+    public static MutableRectangle2D ofDiagonal(double x1, double y1, double x2, double y2) {
+        return new MutableRectangle2D(x1, y1, x2, y2);
+    }
+
+    public static MutableRectangle2D ofDiagonal(Point2D a, Point2D b) {
+        return new MutableRectangle2D(a, b);
+    }
+
+    /**
+     * Grow the bounds of this rectangle outward from the center by the
+     * specified amount, making each edge the passed value / 2 for that axis
+     * more distant from the center point than it was.
+     *
+     * @param xOff
+     * @param yOff
+     * @return
+     */
     public MutableRectangle2D growBy(double xOff, double yOff) {
         double halfX = xOff / 2;
         double halfY = yOff / 2;
@@ -51,7 +93,26 @@ public final class MutableRectangle2D extends EnhRectangle2D {
         width += xOff;
         y -= halfY;
         height += yOff;
+        if (xOff < 0 || yOff < 0) {
+            renormalize();
+        }
         return this;
+    }
+
+    private void renormalize() {
+        if (width < 0) {
+            x += width;
+            width = -width;
+        }
+        if (height < 0) {
+            y += height;
+            height = -height;
+        }
+    }
+
+    public boolean isEmpty() {
+        renormalize();
+        return super.isEmpty();
     }
 
     /**
@@ -61,6 +122,42 @@ public final class MutableRectangle2D extends EnhRectangle2D {
      * @return The constant signifying the nearest edge
      */
     public int nearestEdge(Point2D pt) {
+        EqLine ln = new EqLine();
+        int best = NONE;
+        double bestDist = java.lang.Double.MAX_VALUE;
+        for (int edge : new int[]{NORTH, SOUTH, EAST, WEST}) {
+            getEdge(edge, ln);
+            double coord, testCoord;
+            switch (edge) {
+                case NORTH:
+                    coord = y;
+                    testCoord = pt.getY();
+                    break;
+                case SOUTH:
+                    coord = y + height;
+                    testCoord = pt.getY();
+                    break;
+                case EAST:
+                    coord = x + width;
+                    testCoord = pt.getX();
+                    break;
+                case WEST:
+                    coord = x;
+                    testCoord = pt.getX();
+                    break;
+                default:
+                    throw new AssertionError(edge);
+            }
+            double dist = Math.abs(coord - testCoord);
+            if (dist < bestDist) {
+                best = edge;
+                bestDist = dist;
+            }
+        }
+        return best;
+    }
+
+    public int nearestEdgeMidpoint(Point2D pt) {
         EqLine ln = new EqLine();
         int best = NONE;
         double bestDist = java.lang.Double.MAX_VALUE;
@@ -76,8 +173,7 @@ public final class MutableRectangle2D extends EnhRectangle2D {
     }
 
     /**
-     * Get the edge or corner nearest to the passed point,
-     * whichever is nearer.
+     * Get the edge or corner nearest to the passed point, whichever is nearer.
      *
      * @param pt A point
      * @return A constant signifying an edge or a corner
@@ -167,10 +263,6 @@ public final class MutableRectangle2D extends EnhRectangle2D {
     private static EnhRectangle2D genRectangle(Point2D nw, Point2D se) {
         EqPointDouble a = new EqPointDouble();
         EqPointDouble b = new EqPointDouble();
-
-        if (nw.getX() == se.getX() || nw.getY() == se.getY()) {
-//            throw new IllegalArgumentException("" + nw + se);
-        }
         if (nw.getX() < se.getX()) {
             a.x = nw.getX();
             b.x = se.getX();
@@ -205,8 +297,8 @@ public final class MutableRectangle2D extends EnhRectangle2D {
      * location as one of its corners.
      *
      * @param corner A corner constant
-     * @param max Use the maximum, rather than minimum, dimension size for
-     * the resulting square
+     * @param max Use the maximum, rather than minimum, dimension size for the
+     * resulting square
      */
     public void makeSquare(int corner, boolean max) {
         double n = max ? Math.max(width, height) : Math.min(width, height);
@@ -247,7 +339,7 @@ public final class MutableRectangle2D extends EnhRectangle2D {
                 height = n;
 
                 break;
-            default :
+            default:
                 throw new IllegalArgumentException("Not a corner constant: " + corner);
         }
     }
@@ -267,12 +359,12 @@ public final class MutableRectangle2D extends EnhRectangle2D {
                 result.x += width;
 
                 break;
-            case SE:
+            case SW:
 
                 result.y += height;
 
                 break;
-            case SW:
+            case SE:
 
                 result.x += width;
 
@@ -379,7 +471,7 @@ public final class MutableRectangle2D extends EnhRectangle2D {
                 }
 
                 break;
-            case SW:
+            case SE:
 
                 newW = p.getX() - x;
 
@@ -398,7 +490,7 @@ public final class MutableRectangle2D extends EnhRectangle2D {
                 }
 
                 break;
-            case SE:
+            case SW:
 
                 newX = p.getX();
 

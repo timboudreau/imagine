@@ -20,13 +20,16 @@ import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
 
 /**
+ * Separates API from SPI using the
+ * s<a href="http://java.cz/dwn/1003/5802_apidesign-jug-praha-2007.pdf">trampoline
+ * patttern</a>.
  *
  * @author Tim Boudreau
  */
 public abstract class HelpComponentManagerTrampoline {
 
-    public static HelpComponentManagerTrampoline INSTANCE;
-    public static IndexTrampoline INDEX_TRAMPOLINE;
+    private static HelpComponentManagerTrampoline INSTANCE;
+    private static IndexTrampoline INDEX_TRAMPOLINE;
 
     public interface IndexTrampoline {
 
@@ -36,7 +39,7 @@ public abstract class HelpComponentManagerTrampoline {
      * Allows tests to supply their own set of help indices without having to
      * use MockServices.
      */
-    public static Supplier<Collection<? extends HelpIndex>> INDEXES
+    private static Supplier<Collection<? extends HelpIndex>> INDICES
             = new IndexSupplier();
 
     /*() -> {
@@ -82,26 +85,84 @@ public abstract class HelpComponentManagerTrampoline {
         }
     }
 
-    static {
-        try {
-            // Ensure the trampoline instance is initialized
-            Class<?> type = Class.forName(HelpComponentManager.class.getName());
-        } catch (ClassNotFoundException ex) {
-            Exceptions.printStackTrace(ex);
-        }
+    /**
+     * Get the default instance, initialized in a static block on
+     * HelpComponentManager.
+     *
+     * @return the INSTANCE
+     */
+    public static HelpComponentManagerTrampoline getInstance() {
         if (INSTANCE == null) {
-            throw new Error("HelpComponentManagerTrampoline default instance not initialized");
+            try {
+                // Ensure the trampoline instance is initialized
+                Class.forName(HelpComponentManager.class.getName(), true, HelpComponentManager.class.getClassLoader());
+            } catch (ClassNotFoundException ex) {
+                Exceptions.printStackTrace(ex);
+            }
+            if (INSTANCE == null) {
+                throw new Error("HelpComponentManagerTrampoline default instance not initialized");
+            }
         }
-        try {
-            // Ensure the trampoline instance is initialized
-            Class<?> type = Class.forName(HelpIndex.class.getName());
-        } catch (ClassNotFoundException ex) {
-            Exceptions.printStackTrace(ex);
-        }
-        if (INDEX_TRAMPOLINE == null) {
-            throw new Error("HelpComponentManagerTrampoline default instance not initialized");
-        }
+        return INSTANCE;
+    }
 
+    /**
+     * Set the default instance.
+     *
+     * @param instance the INSTANCE to set
+     */
+    public static void setInstance(HelpComponentManagerTrampoline instance) {
+        if (INSTANCE != null) {
+            throw new Error("setInstance called with " + instance + " when we already have " + INSTANCE);
+        }
+        INSTANCE = instance;
+    }
+
+    /**
+     * @return the INDEX_TRAMPOLINE
+     */
+    public static IndexTrampoline getIndexTrampoline() {
+        if (INDEX_TRAMPOLINE == null) {
+            try {
+                // Ensure the trampoline instance is initialized
+                Class.forName(HelpIndex.class.getName(), true, HelpIndex.class.getClassLoader());
+            } catch (ClassNotFoundException ex) {
+                Exceptions.printStackTrace(ex);
+            }
+            if (INDEX_TRAMPOLINE == null) {
+                throw new Error("IndexTrampoline default instance not initialized");
+            }
+        }
+        return INDEX_TRAMPOLINE;
+    }
+
+    /**
+     * Set the index trampoline that allows HelpId.find() to call into the
+     * protected resolve method on HelpIndex.
+     *
+     * @param aINDEX_TRAMPOLINE the INDEX_TRAMPOLINE to set
+     */
+    public static void setIndexTrampline(IndexTrampoline trampoline) {
+        INDEX_TRAMPOLINE = trampoline;
+    }
+
+    /**
+     * Get the collection of available help indices.
+     *
+     * @return the indices
+     */
+    public static Supplier<Collection<? extends HelpIndex>> getIndices() {
+        return INDICES;
+    }
+
+    /**
+     * For unit tests, allow the set of indices to be overridden without
+     * exposing a public API for that outside this module.
+     *
+     * @param indices the INDEXES to set
+     */
+    public static void setIndices(Supplier<Collection<? extends HelpIndex>> indices) {
+        INDICES = indices;
     }
 
     public abstract void activate(HelpItem item, MouseEvent evt);

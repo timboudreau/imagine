@@ -19,6 +19,8 @@ import static org.netbeans.paint.tools.RectangleTool.strokeC;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.geometry.EnhRectangle2D;
 import org.imagine.geometry.EqPointDouble;
+import org.imagine.help.api.HelpItem;
+import org.imagine.help.api.annotations.Help;
 import org.openide.util.NbBundle;
 
 /**
@@ -26,13 +28,27 @@ import org.openide.util.NbBundle;
  * @author Tim Boudreau
  */
 @ToolDef(name = "Rhombus", iconPath = "org/netbeans/paint/tools/resources/rhombus.svg")
-@Tool(value=Surface.class, toolbarPosition=600)
+@Tool(value = Surface.class, toolbarPosition = 600)
+@Help(id = "RhombusTool", related = {"OvalTool", "CircleTool", "TriangleTool", "RectangleTool"}, content = {
+    @Help.HelpText(language = "en", country = "US",
+            value = "# Rhombus Tool\n\n"
+            + "The Rhombus Tool allows you to draw rhombii, defined by a center point, radii for the "
+            + "width and height, and a rotation value;  its customizer lets you "
+            + "configure the fill and outline painting style, and the line stroke the outline"
+            + "is drawn with (if any).\n\n"
+            + "Holding down Shift results in a shape which is a square.")})
+
 public class RhombusTool extends RectangleTool {
 
     private double rotation;
 
     public RhombusTool(Surface surf) {
         super(surf);
+    }
+
+    @Override
+    public HelpItem getHelpItem() {
+        return HelpItems.RhombusTool;
     }
 
     @Override

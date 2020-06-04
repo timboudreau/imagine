@@ -298,7 +298,7 @@ final class PointEditTool extends ResponderTool implements ChangeListener, Looku
             private final MutableRectangle2D rect;
 
             SelectionResponder(EqPointDouble startPoint, EqPointDouble initialDragPoint) {
-                rect = new MutableRectangle2D(startPoint, initialDragPoint);
+                rect = MutableRectangle2D.ofDiagonal(startPoint, initialDragPoint);
             }
 
             @Override

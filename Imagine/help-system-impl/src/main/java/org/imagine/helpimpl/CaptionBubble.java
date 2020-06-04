@@ -17,9 +17,11 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
+import org.imagine.geometry.Axis;
 import org.imagine.geometry.Circle;
 import org.imagine.geometry.EqLine;
 import org.imagine.geometry.EqPointDouble;
+import org.imagine.geometry.Hemisphere;
 import org.imagine.geometry.uirect.MutableRectangle2D;
 import static org.imagine.geometry.uirect.MutableRectangle2D.*;
 
@@ -55,20 +57,83 @@ public class CaptionBubble {
         }
     }
 
+    EqLine ILINE = new EqLine();
+    EqLine EDLINE = new EqLine();
+    EqPointDouble CORN = new EqPointDouble();
+
     private Shape computeShape() {
         Path2D.Float path = new Path2D.Float(Path2D.WIND_NON_ZERO);
         float pxPer = 64;
         float pxOff = 24;
-        MutableRectangle2D rect = new MutableRectangle2D(targetBounds);
+        MutableRectangle2D rect = MutableRectangle2D.of(targetBounds.x, targetBounds.y, targetBounds.width, targetBounds.height);
         if (rect.isEmpty()) {
             return rect;
         }
         float numCyclesX = (int) Math.floor(rect.width / pxPer);
         float numCyclesY = (int) Math.floor(rect.height / pxPer);
-        float pxPerX = (float) rect.width / Math.max( 1, numCyclesX);
+        float pxPerX = (float) rect.width / Math.max(1, numCyclesX);
         float pxPerY = (float) rect.height / Math.max(1, numCyclesY);
 
         int nearestEdge = rect.nearestEdge(locusPoint);
+        EqLine edge = new EqLine();
+        rect.getEdge(nearestEdge, edge);
+        EDLINE.setLine(edge);
+
+        EqPointDouble edgeMid = edge.midPoint();
+        edge.setLine(edgeMid, locusPoint);
+//        System.out.println("was " + edge + " length " + edge.length());
+        edge.setLength(edge.length() - 0.1, true);
+
+        ILINE.setLine(edge);
+
+//        System.out.println("NOW " + edge + " len " + edge.length());
+//        System.out.println("EDGE " + edge + " intersects " + rect + " " + edge.intersects(rect));
+        int corn = rect.nearestCorner(locusPoint);
+        CORN.setLocation(rect.getPoint(corn));
+//        if (edge.intersects(rect)) {
+//            System.out.println("Intersect - " + MutableRectangle2D.cornerOrEdgeString(corn) + " and " + MutableRectangle2D.cornerOrEdgeString(nearestEdge) + " " + edge + " and " + CORN);
+//        } else {
+//            System.out.println("Regular: " + MutableRectangle2D.cornerOrEdgeString(corn) + " and " + MutableRectangle2D.cornerOrEdgeString(nearestEdge) + edge + " and " + CORN);
+//        }
+        if (edge.intersects(rect)) {
+            switch (corn) {
+                case NE:
+                    if (nearestEdge == NORTH) {
+//                        System.out.println("switch to use east");
+                        nearestEdge = EAST;
+                    } else if (nearestEdge == EAST) {
+//                        System.out.println("switch to use north");
+                        nearestEdge = NORTH;
+                    }
+                    break;
+                case NW:
+                    if (nearestEdge == NORTH) {
+//                        System.out.println("switch to use west");
+                        nearestEdge = WEST;
+                    } else if (nearestEdge == WEST) {
+//                        System.out.println("switch to use north");
+                        nearestEdge = NORTH;
+                    }
+                    break;
+                case SE:
+                    if (nearestEdge == SOUTH) {
+//                        System.out.println("switch to use east");
+                        nearestEdge = EAST;
+                    } else if (nearestEdge == EAST) {
+//                        System.out.println("switch to use south");
+                        nearestEdge = SOUTH;
+                    }
+                    break;
+                case SW:
+                    if (nearestEdge == SOUTH) {
+//                        System.out.println("switch to use west");
+                        nearestEdge = WEST;
+                    } else if (nearestEdge == WEST) {
+//                        System.out.println("switch to use south");
+                        nearestEdge = SOUTH;
+                    }
+            }
+        }
 
         float bestCoordinate;
         switch (nearestEdge) {
@@ -98,12 +163,25 @@ public class CaptionBubble {
 
         path.moveTo(rect.x, rect.y);
         int cyc = 0;
-        System.out.println("pxPerX " + pxPerX + " pxPerY " + pxPerY);
+        boolean calloutHandled = false;
         // North edge
         for (float x = (float) rect.x + pxPerX; x <= rect.x + rect.width + (pxPerX / 2); x += pxPerX, cyc++) {
-            if (nearestEdge == NORTH && (x - pxPerX <= bestCoordinate) && x >= bestCoordinate) {
-                path.lineTo(locusPoint.getX(), locusPoint.getY());
-                path.lineTo(x, rect.y);
+            if (!calloutHandled && nearestEdge == NORTH && (x - pxPerX <= bestCoordinate) && x >= bestCoordinate) {
+                EqLine ln = new EqLine(locusPoint, new EqPointDouble(x, rect.y));
+                EqLine pt1 = ln.copy();
+                EqLine toCenter = new EqLine(rect.center(), locusPoint);
+                double ang = toCenter.angle();
+                Hemisphere hemi = Hemisphere.forAngle(ang, Axis.VERTICAL);
+//                System.out.println("HEMI " + hemi + " for " + GeometryStrings.toDegreesString(ang));
+                if (hemi != Hemisphere.EAST) {
+                    pt1.shiftPerpendicular(-pxPerX);
+                } else {
+                    pt1.shiftPerpendicular(pxPerX);
+                }
+                path.quadTo(pt1.midPoint().x, pt1.midPoint().y, locusPoint.getX(), locusPoint.getY());
+                path.quadTo(pt1.midPoint().x, pt1.midPoint().y, x, rect.y);
+
+                calloutHandled = true;
                 continue;
             }
             float midX = x - (pxPerX / 2);
@@ -111,9 +189,23 @@ public class CaptionBubble {
         }
         // East edge
         for (float y = (float) rect.y + pxPerY; y < rect.y + rect.height + (pxPerY / 2); y += pxPerY, cyc++) {
-            if (nearestEdge == EAST && (y - pxPerY) <= bestCoordinate && y >= bestCoordinate) {
-                path.lineTo(locusPoint.getX(), locusPoint.getY());
-                path.lineTo(rect.x + rect.width, y);
+            if (!calloutHandled && nearestEdge == EAST && (y - pxPerY) <= bestCoordinate && y >= bestCoordinate) {
+//                path.lineTo(locusPoint.getX(), locusPoint.getY());
+//                path.lineTo(rect.x + rect.width, y);
+                EqLine ln = new EqLine(locusPoint, new EqPointDouble(rect.x + rect.width, y));
+                EqLine pt1 = ln.copy();
+                EqLine toCenter = new EqLine(rect.center(), locusPoint);
+                double ang = toCenter.angle();
+                Hemisphere hemi = Hemisphere.forAngle(ang, Axis.HORIZONTAL);
+//                System.out.println("HEMI " + hemi + " for " + GeometryStrings.toDegreesString(ang));
+                if (hemi != Hemisphere.SOUTH) {
+                    pt1.shiftPerpendicular(-pxPerX);
+                } else {
+                    pt1.shiftPerpendicular(pxPerX);
+                }
+                path.quadTo(pt1.midPoint().x, pt1.midPoint().y, locusPoint.getX(), locusPoint.getY());
+                path.quadTo(pt1.midPoint().x, pt1.midPoint().y, rect.x + rect.width, y);
+                calloutHandled = true;
                 continue;
             }
             float midY = y - (pxPerY / 2);
@@ -122,24 +214,58 @@ public class CaptionBubble {
                     rect.x + rect.width, y);
         }
         // South edge
-        for (float x = (float) (rect.width + rect.x); x >= rect.x - (pxPerX / 2); x -= pxPerX, cyc++) {
-            if (nearestEdge == SOUTH && (x - pxPerX <= bestCoordinate && x >= bestCoordinate)) {
-                path.lineTo(locusPoint.getX(), locusPoint.getY());
-                path.lineTo(x, rect.y + rect.height);
+        for (float x = (float) (rect.width + rect.x) - pxPerX; x >= rect.x - (pxPerX / 2); x -= pxPerX, cyc++) {
+            if (!calloutHandled && nearestEdge == SOUTH && (x - pxPerX <= bestCoordinate && x >= bestCoordinate)) {
+                EqLine ln = new EqLine(locusPoint, new EqPointDouble(x, rect.y + rect.height));
+                EqLine pt1 = ln.copy();
+
+                EqLine toCenter = new EqLine(rect.center(), locusPoint);
+                double ang = toCenter.angle();
+                Hemisphere hemi = Hemisphere.forAngle(ang, Axis.VERTICAL);
+//                System.out.println("HEMI " + hemi + " for " + GeometryStrings.toDegreesString(ang));
+                if (hemi != Hemisphere.WEST) {
+                    pt1.shiftPerpendicular(-pxPerX);
+                } else {
+                    pt1.shiftPerpendicular(pxPerX);
+                }
+                path.quadTo(pt1.midPoint().x, pt1.midPoint().y, locusPoint.getX(), locusPoint.getY());
+                path.quadTo(pt1.midPoint().x, pt1.midPoint().y, x, rect.y + rect.height);
+//                path.lineTo(locusPoint.getX(), locusPoint.getY());
+//                path.lineTo(x, rect.y + rect.height);
+                calloutHandled = true;
                 continue;
             }
             float midX = x + (pxPerX / 2);
             path.curveTo(midX, (rect.y + rect.height + pxOff), midX, (rect.y + rect.height - pxOff), x, rect.y + rect.height);
         }
         // West edge
-        for (float y = (float) (rect.y + rect.height - pxPerY); y >= rect.y - pxPerY / 2; y -= pxPerY, cyc++) {
-            if (nearestEdge == WEST && (y - pxPerY < bestCoordinate) && y >= bestCoordinate) {
-                path.lineTo(locusPoint.getX(), locusPoint.getY());
-                path.lineTo(rect.x, y);
+        for (float y = (float) (rect.y + rect.height) - pxPerY; y >= rect.y - (pxPerY / 2); y -= pxPerY, cyc++) {
+            if (!calloutHandled && nearestEdge == WEST && (y + pxPerY >= bestCoordinate && y <= bestCoordinate)) {
+                EqLine ln = new EqLine(locusPoint, new EqPointDouble(rect.x, y));
+                EqLine pt1 = ln.copy();
+                EqLine toCenter = new EqLine(rect.center(), locusPoint);
+                double ang = toCenter.angle();
+                Hemisphere hemi = Hemisphere.forAngle(ang, Axis.HORIZONTAL);
+//                System.out.println("HEMI " + hemi + " for " + GeometryStrings.toDegreesString(ang));
+                if (hemi != Hemisphere.NORTH) {
+                    pt1.shiftPerpendicular(-pxPerX);
+                } else {
+                    pt1.shiftPerpendicular(pxPerX);
+                }
+                path.quadTo(pt1.midPoint().x, pt1.midPoint().y, locusPoint.getX(), locusPoint.getY());
+                path.quadTo(pt1.midPoint().x, pt1.midPoint().y, rect.x, y);
+                calloutHandled = true;
                 continue;
             }
+//            if (!calloutHandled) {
+//                System.out.println("not yet need y " + y + " <= " + bestCoordinate + " && y - " + pxPerY + " = " + (y - pxPerY) + " >= " + bestCoordinate);
+//            }
             float midY = y + (pxPerY / 2);
             path.curveTo(rect.x - pxOff, midY, rect.x + pxOff, midY, rect.x, y);
+        }
+        if (!calloutHandled) {
+//            System.out.println("not handled for " + MutableRectangle2D.cornerOrEdgeString(nearestEdge)
+//                    + " bestCoordinate " + bestCoordinate);
         }
         path.closePath();
 
@@ -155,7 +281,7 @@ public class CaptionBubble {
         // control point toward the center of the target bounding rect the same distance
 
         Path2D.Double path = new Path2D.Double(Path2D.WIND_NON_ZERO);
-        MutableRectangle2D rect = new MutableRectangle2D(targetBounds);
+        MutableRectangle2D rect = MutableRectangle2D.of(targetBounds.x, targetBounds.y, targetBounds.width, targetBounds.height);
         rect.x = targetBounds.x;
         rect.y = targetBounds.y;
         rect.width = targetBounds.width;
@@ -288,11 +414,15 @@ public class CaptionBubble {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             CaptionBubble cap = new CaptionBubble(new Rectangle(0, 0, getWidth(), getHeight()), base(), targetPoint());
             Shape s = cap.toShape();
+
             g.setStroke(new BasicStroke(2));
             g.setColor(Color.ORANGE);
             g.fill(s);
             g.setColor(Color.WHITE);
             g.draw(s);
+
+            g.setColor(Color.MAGENTA);
+            g.draw(base());
 
             circ.setCenter(rectBase());
             circ.setRadius(rad);
@@ -305,6 +435,15 @@ public class CaptionBubble {
             g.setColor(Color.PINK);
             g.fill(circ);
             g.setColor(Color.DARK_GRAY);
+            g.draw(circ);
+
+            g.setColor(Color.GREEN);
+            g.draw(cap.EDLINE);
+            g.setColor(Color.RED);
+            g.draw(cap.ILINE);
+            circ.setRadius(9);
+            g.setColor(Color.BLACK);
+            circ.setCenter(cap.CORN);
             g.draw(circ);
 
 //            circ.setRadius(7);
@@ -326,7 +465,6 @@ public class CaptionBubble {
 //                g.draw(circ);
 //            }
 //            g.setColor(Color.BLACK);
-            g.draw(base());
         }
 
         public Dimension getPreferredSize() {
@@ -335,7 +473,7 @@ public class CaptionBubble {
 
         public Rectangle base() {
             Point2D base = rectBase();
-            MutableRectangle2D bdsRect = new MutableRectangle2D(0, 0, getWidth(), getHeight());
+            MutableRectangle2D bdsRect = MutableRectangle2D.of(0, 0, getWidth(), getHeight());
             Rectangle rect = new Rectangle();
             int thirdX = getWidth() / 2;
             int thirdY = getHeight() / 4;

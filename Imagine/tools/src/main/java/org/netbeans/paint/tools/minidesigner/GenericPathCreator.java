@@ -30,6 +30,7 @@ import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.spi.tool.ToolElement;
 import net.java.dev.imagine.api.image.Surface;
 import org.imagine.geometry.EqPointDouble;
+import org.imagine.help.api.annotations.Help;
 import org.imagine.nbutil.SingleUseWindow;
 import org.netbeans.paint.api.components.VerticalFlowLayout;
 import org.netbeans.paint.api.components.explorer.Customizable;
@@ -45,6 +46,18 @@ import org.openide.util.RequestProcessor;
  * @author Tim Boudreau
  */
 @ToolElement(folder = REGISTRATION_PATH, name = "Path Segment Designer", position = 200)
+@Help(id = "GenericPathCreator", content = {
+    @Help.HelpText(language = "en", country = "US",
+            value = "# Generic Path Creator\n\n"
+            + "This control allows you to design a pattern of curves that is "
+            + "repeated some number of times between the points of a shape you "
+            + "design such that the pattern repeats the same number of times "
+            + "over a given distance - for example, allowing the edges of a rectangle "
+            + "to be given the appearance of a postage stamp torn from a book.\n\n"
+            + "What you are designing is a _single repetition_ of a pattern - the "
+            + "distances and angles here are relative, and the pattern will be rotated "
+            + "as needed to connect the points in the shape.",
+            keywords = {"waffle", "path", "interpolate", "pattern"})})
 public class GenericPathCreator implements PathCreator, Customizable {
 
     private PathSegmentModel mdl = new PathSegmentModel();
@@ -109,7 +122,7 @@ public class GenericPathCreator implements PathCreator, Customizable {
         mdl.clear();
         initDefaults(mdl);
     }
-    
+
     private static void initDefaults(PathSegmentModel mdl) {
         mdl.addQuadTo(new EqPointDouble(0, 0), new EqPointDouble(100, 0), 25, 10, 50, 0);
         mdl.addQuadTo(new EqPointDouble(0, 0), new EqPointDouble(100, 0), 75, -10, 100, 0);
@@ -141,7 +154,8 @@ public class GenericPathCreator implements PathCreator, Customizable {
 
     @Override
     public JComponent getCustomizer() {
-        return c.getComponent();
+        JComponent comp = c.getComponent();
+        return comp;
     }
 
     private final C c = new C();
@@ -198,6 +212,7 @@ public class GenericPathCreator implements PathCreator, Customizable {
                 }
             }
             GenericDesignCustomizer cus = new GenericDesignCustomizer(mdl);
+            HelpItems.GenericPathCreator.attach(cus);
             cus.setMinimumSize(new Dimension(400, 300));
             cus.onEdit(mdl -> {
                 JPanel panel = new JPanel(new VerticalFlowLayout());
@@ -206,6 +221,7 @@ public class GenericPathCreator implements PathCreator, Customizable {
                 JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, popoutCustomizer,
                         pane);
                 panel.add(split);
+                HelpItems.GenericPathCreator.associateWith(panel);
                 SingleUseWindow.popOut(Bundle.PathSegment(), panel);
             });
             cus.onHide(GenericPathCreator.this::enqueueSave);

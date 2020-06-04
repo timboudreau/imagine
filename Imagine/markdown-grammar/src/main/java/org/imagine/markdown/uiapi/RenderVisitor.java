@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.imagine.markdown.grammar.MarkdownParser;
@@ -307,7 +308,7 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
 
     private int currIndentLevel;
 
-    private void setupListIndentFromHead(MarkdownParser.UnorderedListItemHeadContext head) {
+    private void setupListIndentFromHead(ParserRuleContext head) {
         if (head != null) {
             int leadingSpaces = countLeadingSpaces(head.getText());
             currIndentLevel = Math.max(1, leadingSpaces / 2);
@@ -330,9 +331,43 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
         });
     }
 
+    private final ListItemCounter orderedListItems = ListItemCounter.create();
+
+    @Override
+    public Void visitOrderedList(MarkdownParser.OrderedListContext ctx) {
+        setupListIndentFromHead(ctx.head);
+        return usingListItemIndent(() -> {
+            return orderedListItems.enterList(() -> super.visitOrderedList(ctx));
+        });
+    }
+
+    @Override
+    public Void visitOrderedListItemHead(MarkdownParser.OrderedListItemHeadContext ctx) {
+        return usingListItemIndent(() -> {
+//            orderedListItems.enterI
+            String headText = orderedListItems.currentItemText();
+            System.out.println("oli " + headText);
+            FontMetrics fm = renderer.getFontMetrics();
+            drawWord(headText);
+            moveOneSpace();
+//            return super.visitOrderedListItemHead(ctx);
+            return null;
+        });
+    }
+
+    @Override
+    public Void visitOrderedListItem(MarkdownParser.OrderedListItemContext ctx) {
+        return orderedListItems.enterItem(() -> {
+            setupListIndentFromHead(ctx.head);
+            return usingListItemIndent(() -> {
+                toLineStart();
+                return super.visitOrderedListItem(ctx);
+            });
+        });
+    }
+
     @Override
     public Void visitUnorderedListItem(MarkdownParser.UnorderedListItemContext ctx) {
-        MarkdownParser.UnorderedListItemHeadContext head = ctx.head;
         setupListIndentFromHead(ctx.head);
         return usingListItemIndent(() -> {
             toLineStart();
@@ -534,6 +569,7 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
     }
 
     private boolean justDrewSpace = false;
+
     private void moveOneSpace() {
         if (justDrewSpace) {
             return;
@@ -571,13 +607,14 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
                 g.setStroke(new BasicStroke(strikeSize));
                 g.draw(line);
             });
-            addToBounds(line.x1, line.y1);
-            addToBounds(line.x2, line.y2);
+//            addToBounds(line.x1, line.y1);
+//            addToBounds(line.x2, line.y2);
         }
         x += width;
 //        addToBounds(oldX, y, width, mx.getHeight() + mx.getDescent() + mx.getLeading() + baselineAdjust);
         lastTextBottom = y + mx.getHeight() + mx.getDescent() + mx.getLeading() + baselineAdjust;
-        addToBounds(oldX, y, width, (textY + mx.getDescent()));
+//        addToBounds(oldX, y, width, (textY + mx.getDescent()));
+        addToBounds(oldX, y, width, lastTextBottom - y);
         justDrewSpace = false;
 //        System.out.println("ATB " + oldX + ", " + " width  " + width + " endX " + (oldX + width)
 //                + " for '" + escape(text) + "' -> " + usedBounds().width);
@@ -604,10 +641,10 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
 
     private void addToBounds(Rectangle2D r) {
 //        addToBounds((float) r.getX(), (float) r.getY(), (float) r.getWidth(), (float) r.getHeight());
-        minX = (float) Math.min(minX, r.getMinX());
-        maxX = (float) Math.max(maxX, r.getMaxX());
-        minY = (float) Math.min(minY, r.getMinY());
-        maxY = (float) Math.max(maxY, r.getMaxY());
+//        minX = (float) Math.min(minX, r.getMinX());
+//        maxX = (float) Math.max(maxX, r.getMaxX());
+//        minY = (float) Math.min(minY, r.getMinY());
+//        maxY = (float) Math.max(maxY, r.getMaxY());
     }
 
     private void addToBounds(float x, float y) {

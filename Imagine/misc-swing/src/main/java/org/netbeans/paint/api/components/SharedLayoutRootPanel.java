@@ -24,6 +24,7 @@ import javax.swing.JPanel;
 public class SharedLayoutRootPanel extends JPanel implements SharedLayoutData {
 
     private SharedLayoutData data;
+    private Runnable onShow;
 
     public SharedLayoutRootPanel() {
         super(new VerticalFlowLayout());
@@ -75,6 +76,11 @@ public class SharedLayoutRootPanel extends JPanel implements SharedLayoutData {
         return sb.toString();
     }
 
+    public SharedLayoutRootPanel onShow(Runnable onShow) {
+        this.onShow = onShow;
+        return this;
+    }
+
     @Override
     public void addNotify() {
         super.addNotify();
@@ -86,6 +92,9 @@ public class SharedLayoutRootPanel extends JPanel implements SharedLayoutData {
             data.register(p);
         }
         registered.clear();
+        if (onShow != null) {
+            onShow.run();
+        }
     }
 
     @Override
