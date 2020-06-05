@@ -50,4 +50,8 @@ final class RenderContext implements MarkdownRenderingContext {
         return getFontMetrics().getLineMetrics(s, graphics);
     }
 
+    @Override
+    public boolean isPaintingContext() {
+        return true;
+    }
 }

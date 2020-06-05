@@ -1,5 +1,6 @@
 package org.imagine.markdown.uiapi;
 
+import java.util.LinkedList;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
@@ -24,12 +25,59 @@ abstract class ListItemCounter {
         return new Outer();
     }
 
+    public void pop() {
+        // do nothing
+    }
+
+    public void popToDepth(int depth) {
+        // do nothing
+    }
+
+    public abstract int depth();
+
     static class Outer extends ListItemCounter {
 
-        private Delegate delegate;
+        private final LinkedList<Delegate> delegateStack = new LinkedList<>();
+
+        public void popToDepth(int depth) {
+            boolean popped = false;
+            while (depth() > depth) {
+                pop();
+                popped = true;
+            }
+            if (popped && !delegateStack.isEmpty()) {
+                delegate().counter++;
+            }
+        }
+
+        @Override
+        public void pop() {
+            if (!delegateStack.isEmpty()) {
+                delegateStack.pop();
+            }
+        }
+
+        public int depth() {
+            Delegate delegate = delegate();
+            return delegate == null ? 0 : delegate.depth();
+        }
+
+        Delegate delegate() {
+            return delegateStack.isEmpty() ? null : delegateStack.peek();
+        }
+
+        @Override
+        public <T> T enterItem(Supplier<T> run) {
+            Delegate delegate = delegate();
+            if (delegate == null) {
+                throw new IllegalStateException("Not in a list");
+            }
+            return delegate.enterItem(run);
+        }
 
         @Override
         public String currentItemText() {
+            Delegate delegate = delegate();
             if (delegate == null) {
                 throw new IllegalStateException("Not in a list");
             }
@@ -38,13 +86,15 @@ abstract class ListItemCounter {
 
         @Override
         public <T> T enterList(Supplier<T> supp) {
-            Delegate old = delegate;
+            Delegate old = delegate();
             int depth = old == null ? 0 : old.depth() + 1;
             try {
-                delegate = new Delegate(depth);
+                delegateStack.push(new Delegate(depth));
                 return supp.get();
             } finally {
-                delegate = old;
+                if (!delegateStack.isEmpty()) {
+                    delegateStack.pop();
+                }
             }
         }
     }
@@ -57,7 +107,7 @@ abstract class ListItemCounter {
             this.depth = depth;
         }
 
-        int depth() {
+        public int depth() {
             return depth;
         }
 
@@ -74,12 +124,14 @@ abstract class ListItemCounter {
     }
 
     static IntFunction<String> counterForDepth(int depth) {
-        switch (depth % 3) {
+        switch (depth % 4) {
             case 0:
                 return ListItemCounter::numerals;
             case 1:
                 return ListItemCounter::upperCaseLetters;
             case 2:
+                return ListItemCounter::lowerCaseLetters;
+            case 3:
                 return ListItemCounter::lowerCaseLetters;
             default:
                 throw new AssertionError(depth % 3);
@@ -92,12 +144,17 @@ abstract class ListItemCounter {
 
     static String upperCaseLetters(int val) {
         // XXX could repeat, AA, BB, CC if > 26
-        char c = (char) (('A' - 1) + (val - 1));
+        char c = (char) (('A' - 1) + val);
         return Character.toString(c) + '.';
     }
 
     static String lowerCaseLetters(int val) {
-        char c = (char) (('a' - 1) + (val - 1));
+        char c = (char) (('a' - 1) + val);
         return Character.toString(c) + ".";
+    }
+
+    static String doubleLowerCaseLetters(int val) {
+        char c = (char) (('a' - 1) + val);
+        return Character.toString(c) + Character.toString(c) + ".";
     }
 }

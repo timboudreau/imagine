@@ -78,6 +78,7 @@ import org.openide.util.Exceptions;
 import org.openide.util.Lookup;
 import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
+import org.openide.util.Mutex;
 import org.openide.util.NbBundle;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.Utilities;
@@ -243,7 +244,9 @@ public final class PaintTopComponent extends TopComponent implements
         FileObject fob = FileUtil.toFileObject(FileUtil.normalizeFile(origin));
         if (fob != null) {
             DataObject dob = DataObject.find(fob);
-            setActivatedNodes(new Node[]{dob.getNodeDelegate()});
+            Mutex.EVENT.readAccess(() -> {
+                setActivatedNodes(new Node[]{dob.getNodeDelegate()});
+            });
         }
     }
 

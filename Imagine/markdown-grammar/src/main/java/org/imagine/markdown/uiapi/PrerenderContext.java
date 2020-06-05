@@ -53,6 +53,11 @@ final class PrerenderContext implements MarkdownRenderingContext {
         return false;
     }
 
+    @Override
+    public boolean isPaintingContext() {
+        return false;
+    }
+
     class FakeLineMetrics extends LineMetrics {
 
         private final String txt;

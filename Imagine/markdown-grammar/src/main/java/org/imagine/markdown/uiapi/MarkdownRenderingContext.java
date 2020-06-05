@@ -5,6 +5,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.font.LineMetrics;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import javax.swing.JComponent;
 
 /**
@@ -26,6 +27,15 @@ public interface MarkdownRenderingContext {
     LineMetrics getLineMetrics(String s);
 
     boolean withGraphics(Consumer<Graphics2D> graphics);
+
+    boolean isPaintingContext();
+
+    default boolean withGraphics(Predicate<Graphics2D> graphics) {
+        boolean[] result = new boolean[1];
+        return withGraphics(g -> {
+            result[0] = graphics.test(g);
+        }) && result[0];
+    }
 
     static MarkdownRenderingContext prerenderContext(JComponent comp) {
         return new PrerenderContext(comp);

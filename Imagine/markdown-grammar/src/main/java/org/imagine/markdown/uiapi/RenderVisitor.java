@@ -8,18 +8,27 @@ import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.font.LineMetrics;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Dimension2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.imagine.markdown.grammar.MarkdownParser;
+import org.imagine.markdown.grammar.MarkdownParser.DocumentContext;
+import org.imagine.markdown.grammar.MarkdownParser.EmbeddedImageContext;
 import org.imagine.markdown.grammar.MarkdownParserBaseVisitor;
+import static org.imagine.markdown.uiapi.ErrorChecker.escape;
 
 /**
  *
@@ -41,11 +50,17 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
     private boolean inNestedContent;
     private RectangleCollection currentLinkBounds;
     private boolean pristine;
+    private final EmbeddedImageLoader imageLoader;
+    private final EmbeddedImageCache cache;
+    private boolean inEmbeddedImage;
+    private boolean inLink;
 
-    RenderVisitor(MarkdownRenderingContext ctx, MarkdownUIProperties props, Rectangle2D.Float bounds) {
+    RenderVisitor(MarkdownRenderingContext ctx, MarkdownUIProperties props, Rectangle2D.Float bounds, EmbeddedImageLoader imageLoader, EmbeddedImageCache cache) {
         this.renderer = ctx;
         this.props = props;
         this.bounds = bounds;
+        this.imageLoader = imageLoader == null ? EmbeddedImageLoader.EMPTY : imageLoader;
+        this.cache = cache;
     }
 
     Rectangle2D.Float usedBounds() {
@@ -58,6 +73,138 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
 
     private boolean withGraphics(Consumer<Graphics2D> c) {
         return renderer.withGraphics(c);
+    }
+
+    private boolean withGraphics(Predicate<Graphics2D> c) {
+        return renderer.withGraphics(c);
+    }
+
+    private String trimUrl(MarkdownParser.EmbeddedImageContext ctx) {
+        if (ctx.href == null || ctx.href.href == null) {
+            return null;
+        }
+        String url = ctx.href.href.getText();
+        if (url.startsWith("(") && url.endsWith(")")) {
+            url = url.substring(1, url.length() - 1);
+        }
+        return url;
+    }
+
+    private String linkText(MarkdownParser.EmbeddedImageContext ctx) {
+        if (ctx.linkText != null) {
+            String txt = ctx.linkText.getText();
+            if (txt != null && !txt.trim().isEmpty()) {
+                return txt.trim();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitEmbeddedImage(MarkdownParser.EmbeddedImageContext ctx) {
+        return inEmbeddedImage(() -> {
+            String url = trimUrl(ctx);
+            if (url == null) {
+                return null;
+            }
+            if (imageLoader.canLoad(url)) {
+                Dimension2D size = imageLoader.getImageSize(x, y, url, bounds, cache);
+                if (size.getWidth() > 0 && size.getHeight() > 0) {
+                    float max = props.maximumInlineImageDimension();
+                    float origY = y;
+                    FontMetrics fm = renderer.getFontMetrics();
+                    if (max < 0) {
+                        max = fm.getHeight() + fm.getDescent() + fm.getLeading();
+                    }
+                    boolean notInline = size.getWidth() > max || size.getHeight() > max;
+                    double maxX = x + size.getWidth();
+                    if (maxX > bounds.x + bounds.width || notInline) {
+                        toLineStart();
+                    }
+                    float imageX;
+                    if (x == bounds.x && size.getWidth() < bounds.width) {
+                        imageX = (float) (bounds.x + ((bounds.width / 2) - (size.getWidth() / 2)));
+                    } else {
+                        imageX = x;
+                    }
+                    boolean rendered = withGraphics(g -> {
+                        return imageLoader.render(url, g, imageX, y, size, cache);
+                    });
+                    addToBounds(imageX + size.getWidth(), y + size.getHeight());
+                    String linkText = linkText(ctx);
+                    if (linkText != null) {
+                        links.add(new LinkImpl(new Rectangle2D.Float(imageX, y, (float) size.getWidth(), (float) size.getHeight()), linkText, RegionOfInterest.Kind.IMAGE_ALTERNATIVE_TEXT));
+                    }
+                    y += size.getHeight();
+                    if (notInline && linkText != null && props.paintImageCaptions()) {
+                        withFont(renderer.getFont().deriveFont(Font.ITALIC), () -> {
+
+                            // XXX this is quick and dirty and won't behave nicely with
+                            // large inline images
+                            Rectangle2D oldBounds = (Rectangle2D) bounds.clone();
+                            float w = fm.stringWidth(linkText);
+                            float imageCenter = (float) (imageX + (size.getWidth() / 2F));
+                            float captionX = imageCenter - (w / 2);
+                            bounds.x = captionX;
+                            x = captionX;
+                            y += fm.getLeading() + fm.getDescent(); //+ (fm.getHeight() * 0.5F);
+//                            bounds.width = w + 2;
+//                            toLineStart();
+                            drawWords(linkText);
+                            bounds.setFrame(oldBounds);
+                            toLineStart();
+                            return null;
+                        });
+                    } else if (notInline) {
+                        toLineStart();
+                    } else {
+                        if (x + size.getWidth() < bounds.width) {
+                            y = origY;
+                            x += size.getWidth();
+                        } else {
+
+                        }
+                    }
+                } else {
+                    Logger.getLogger(RenderVisitor.class.getName()).log(Level.INFO, "No loader can load URL '" + url + "'");
+                }
+            }
+            return null;
+        });
+    }
+
+    @Override
+    public Void visitInnerContent(MarkdownParser.InnerContentContext ctx) {
+        if (ctx.getParent() instanceof EmbeddedImageContext) {
+            return null;
+        }
+        return super.visitInnerContent(ctx);
+    }
+
+    @Override
+    public Void visitLinkTarget(MarkdownParser.LinkTargetContext ctx) {
+        // don't render raw urls
+        return null;
+    }
+
+    private <T> T inEmbeddedImage(Supplier<T> supp) {
+        boolean old = inEmbeddedImage;
+        inEmbeddedImage = true;
+        try {
+            return supp.get();
+        } finally {
+            inEmbeddedImage = old;
+        }
+    }
+
+    private <T> T inLink(Supplier<T> supp) {
+        boolean old = inLink;
+        inLink = true;
+        try {
+            return supp.get();
+        } finally {
+            inLink = old;
+        }
     }
 
     @Override
@@ -312,6 +459,11 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
         if (head != null) {
             int leadingSpaces = countLeadingSpaces(head.getText());
             currIndentLevel = Math.max(1, leadingSpaces / 2);
+            if (orderedListItems != null) {
+                if (orderedListItems.depth() > currIndentLevel - 1) {
+                    orderedListItems.popToDepth(currIndentLevel - 1);
+                }
+            }
             int indentPosition = currIndentLevel * 2;
             int indentBy = Math.max(1, indentPosition);
             float indentPx = indentPixels(indentBy);
@@ -335,35 +487,72 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
 
     @Override
     public Void visitOrderedList(MarkdownParser.OrderedListContext ctx) {
-        setupListIndentFromHead(ctx.head);
-        return usingListItemIndent(() -> {
+        return withIndent(() -> {
             return orderedListItems.enterList(() -> super.visitOrderedList(ctx));
         });
     }
 
     @Override
-    public Void visitOrderedListItemHead(MarkdownParser.OrderedListItemHeadContext ctx) {
+    public Void visitFirstOrderedListItemHead(MarkdownParser.FirstOrderedListItemHeadContext ctx) {
+        return orderedListItemHead(ctx);
+    }
+
+    @Override
+    public Void visitFirstOrderedListItem(MarkdownParser.FirstOrderedListItemContext ctx) {
+        return orderedListItem(ctx.head, () -> {
+            return super.visitFirstOrderedListItem(ctx);
+        });
+    }
+
+    @Override
+    public Void visitReturningOrderedListItem(MarkdownParser.ReturningOrderedListItemContext ctx) {
+        return orderedListItem(ctx.head, () -> {
+            return super.visitReturningOrderedListItem(ctx);
+        });
+    }
+
+    @Override
+    public Void visitReturningOrderedListItemHead(MarkdownParser.ReturningOrderedListItemHeadContext ctx) {
+        return orderedListItemHead(ctx);
+    }
+
+    private Void orderedListItemHead(ParserRuleContext ctx) {
         return usingListItemIndent(() -> {
-//            orderedListItems.enterI
             String headText = orderedListItems.currentItemText();
-            System.out.println("oli " + headText);
-            FontMetrics fm = renderer.getFontMetrics();
             drawWord(headText);
             moveOneSpace();
-//            return super.visitOrderedListItemHead(ctx);
             return null;
         });
     }
 
     @Override
-    public Void visitOrderedListItem(MarkdownParser.OrderedListItemContext ctx) {
+    public Void visitOrderedListItemHead(MarkdownParser.OrderedListItemHeadContext ctx) {
+        return orderedListItemHead(ctx);
+    }
+
+    private <T> T orderedListItem(ParserRuleContext head, Supplier<T> supp) {
         return orderedListItems.enterItem(() -> {
-            setupListIndentFromHead(ctx.head);
+            setupListIndentFromHead(head);
             return usingListItemIndent(() -> {
                 toLineStart();
-                return super.visitOrderedListItem(ctx);
+                return supp.get();
             });
         });
+
+    }
+
+    @Override
+    public Void visitOrderedListItem(MarkdownParser.OrderedListItemContext ctx) {
+        return orderedListItem(ctx.head, () -> {
+            return super.visitOrderedListItem(ctx);
+        });
+//        return orderedListItems.enterItem(() -> {
+//            setupListIndentFromHead(ctx.head);
+//            return usingListItemIndent(() -> {
+//                toLineStart();
+//                return super.visitOrderedListItem(ctx);
+//            });
+//        });
     }
 
     @Override
@@ -453,6 +642,38 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
         return super.visitWhitespace(ctx);
     }
 
+    private void debugDumpTree(ParseTree ctx, int depth, StringBuilder into) {
+        if (ctx.getChildCount() > 0) {
+            char[] c = new char[depth * 2];
+            Arrays.fill(c, ' ');
+            for (int i = 0; i < ctx.getChildCount(); i++) {
+                ParseTree pt = ctx.getChild(i);
+                into.append(c).append(pt.getClass().getSimpleName()).append(" '").append(escape(pt.getText())).append("'\n");
+                debugDumpTree(pt, depth + 1, into);
+            }
+        }
+    }
+
+    private void debugFindCulprit(String lookFor, ParseTree ctx) {
+        if (ctx.getText().contains(lookFor)) {
+            StringBuilder sb = new StringBuilder();
+            ParseTree c = ctx;
+            int ix = 0;
+            while (c != null && !(c instanceof DocumentContext)) {
+                char[] ind = new char[ix * 2];
+                Arrays.fill(ind, ' ');
+                sb.append(ind).append(c.getClass().getSimpleName()).append(" '").append(escape(ctx.getText()))
+                        .append("'\n");
+                c = c.getParent();
+                ix++;
+            }
+            if (c.getChildCount() > 0) {
+                sb.append("\nKids:\n");
+            }
+            debugDumpTree(c, 0, sb);
+        }
+    }
+
     @Override
     public Void visitText(MarkdownParser.TextContext ctx) {
         drawWords(ctx.getText());
@@ -470,13 +691,60 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
     @Override
     public Void visitCode(MarkdownParser.CodeContext ctx) {
         Font f = renderer.getFont();
-        Font nue = new Font("Courier New", f.getStyle(), f.getSize());
+        Font nue = props.fixedWidthFont();
         AffineTransform xf = f.getTransform();
         if (xf != null && !xf.isIdentity()) {
             nue = nue.deriveFont(xf);
         }
         return withFont(nue, () -> {
             return super.visitCode(ctx);
+        });
+    }
+
+    @Override
+    public Void visitPreformatted(MarkdownParser.PreformattedContext ctx) {
+        TerminalNode content = ctx.PreformattedContent();
+        toLineStart();
+        String text = content.getText();
+        StringBuilder sb = new StringBuilder();
+        Consumer<String> drawer = txt -> {
+            FontMetrics fm = renderer.getFontMetrics(renderer.getFont());
+            float w = fm.stringWidth(txt);
+
+            float textY = y + baselineAdjust + fm.getHeight();
+            withGraphics(g -> {
+                g.drawString(txt, x, textY);
+            });
+
+            addToBounds(x, textY);
+            addToBounds(x + w, textY + fm.getDescent());
+        };
+        return withFont(props.fixedWidthFont(), () -> {
+            boolean anyPrinted = false;
+            for (int i = 0; i < text.length(); i++) {
+                char c = text.charAt(i);
+                switch (c) {
+                    case '\t':
+                        sb.append("    ");
+                        break;
+                    case '\n':
+                        if (sb.length() > 0) {
+                            drawer.accept(sb.toString());
+                            sb.setLength(0);
+                            anyPrinted = true;
+                        }
+                        forceToLineStart();
+                        break;
+                    default:
+                        sb.append(c);
+                }
+            }
+            if (anyPrinted) {
+                toLineStart();
+                y += renderer.getFontMetrics().getDescent() + renderer.getFontMetrics().getLeading()
+                        + (renderer.getFontMetrics().getHeight() * 0.5F);
+            }
+            return null;
         });
     }
 
@@ -496,14 +764,16 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
 
     @Override
     public Void visitLink(MarkdownParser.LinkContext ctx) {
-        return withColor(props.linkColor(), () -> {
-            currentLinkBounds = new RectangleCollection();
-            Void result = super.visitLink(ctx);
-            if (!currentLinkBounds.isEmpty()) {
-                links.add(new LinkImpl(currentLinkBounds, ctx.href.href.getText()));
-            }
-            currentLinkBounds = null;
-            return result;
+        return inLink(() -> {
+            return withColor(props.linkColor(), () -> {
+                currentLinkBounds = new RectangleCollection();
+                Void result = super.visitLink(ctx);
+                if (!currentLinkBounds.isEmpty()) {
+                    links.add(new LinkImpl(currentLinkBounds, ctx.href.href.getText(), RegionOfInterest.Kind.LINK));
+                }
+                currentLinkBounds = null;
+                return result;
+            });
         });
     }
 
@@ -631,9 +901,12 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
         minY = Math.min(minY, y);
         maxX = Math.max(maxX, x + w);
         maxY = Math.max(maxY, y + h);
+        if (maxX > 4000) {
+            throw new IllegalArgumentException(x + ", " + y + " - huh?");
+        }
 //        System.out.println("minX " + minX + " maxX " + maxX
 //                + " for " + x + " " + w + " x "
-//                + " used width now " + (maxX - minX) + " of " + bounds.width);
+//                + " used width now " + (maxX - minX) + " of " + region.width);
 //        System.out.println("minX " + minX + " minY " + minY + " maxX " + maxX
 //                + " maxY " + maxY + " for " + x + ", " + y + " " + w + " x "
 //                + h + " used size now " + (maxX - minX) + " x " + (maxY - minY));
@@ -647,11 +920,18 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
 //        maxY = (float) Math.max(maxY, r.getMaxY());
     }
 
+    private void addToBounds(double x, double y) {
+        addToBounds((float) x, (float) y);
+    }
+
     private void addToBounds(float x, float y) {
         minX = Math.min(minX, x);
         maxX = Math.max(maxX, x);
         minY = Math.min(minY, y);
         maxY = Math.max(maxY, y);
+        if (maxX > 4000) {
+            throw new IllegalArgumentException(x + ", " + y + " - huh?");
+        }
     }
 
     private float width(String s) {
@@ -663,15 +943,19 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
         return fm.charWidth(' ');
     }
 
+    private void forceToLineStart() {
+        x = bounds.x;
+        FontMetrics fm = renderer.getFontMetrics();
+        y += fm.getHeight() + fm.getDescent() + fm.getLeading();
+    }
+
     private boolean toLineStart() {
         if (pristine) {
             // no leading newlines
             return false;
         }
         if (x != bounds.x) {
-            x = bounds.x;
-            FontMetrics fm = renderer.getFontMetrics();
-            y += fm.getHeight() + fm.getDescent() + fm.getLeading();
+            forceToLineStart();
             return true;
         }
         return false;

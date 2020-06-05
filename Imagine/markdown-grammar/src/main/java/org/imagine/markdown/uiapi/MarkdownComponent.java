@@ -54,9 +54,10 @@ public final class MarkdownComponent extends JComponent {
     private MarkdownUIProperties props = MarkdownUIProperties.forComponent(this);
     private int margin = 0;
     private Consumer<String> linkListener;
-    private final Consumer<Link> addLink = this::addLink;
-    private final List<Link> links = new ArrayList<>();
+    private final Consumer<RegionOfInterest> addLink = this::addLink;
+    private final List<RegionOfInterest> links = new ArrayList<>();
     private static int fallbackSize;
+    private EmbeddedImageLoader imageLoader;
 
     public MarkdownComponent(Markdown md) {
         this(md, true);
@@ -78,6 +79,13 @@ public final class MarkdownComponent extends JComponent {
         repaint();
     }
 
+    private EmbeddedImageLoader imageLoader() {
+        if (imageLoader == null) {
+            return EmbeddedImageLoader.classRelative(Markdown.class);
+        }
+        return imageLoader;
+    }
+
     public MarkdownUIProperties getUIProperties() {
         return props;
     }
@@ -88,9 +96,12 @@ public final class MarkdownComponent extends JComponent {
         public void mouseClicked(MouseEvent e) {
             if (e.getClickCount() == 1 && !e.isPopupTrigger()) {
                 Point2D pt = e.getPoint();
-                for (Link link : links) {
-                    if (link.bounds().contains(pt)) {
-                        linkListener.accept(link.destination());
+                for (RegionOfInterest link : links) {
+                    switch (link.kind()) {
+                        case LINK:
+                            if (link.region().contains(pt)) {
+                                linkListener.accept(link.content());
+                            }
                     }
                 }
             }
@@ -104,10 +115,13 @@ public final class MarkdownComponent extends JComponent {
         @Override
         public void mouseMoved(MouseEvent e) {
             Point2D pt = e.getPoint();
-            for (Link link : links) {
-                if (link.bounds().contains(pt)) {
-                    setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                    return;
+            for (RegionOfInterest link : links) {
+                switch (link.kind()) {
+                    case LINK:
+                        if (link.region().contains(pt)) {
+                            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                            return;
+                        }
                 }
             }
             mouseExited(e);
@@ -116,6 +130,8 @@ public final class MarkdownComponent extends JComponent {
 
     static class MouseWheel extends MouseAdapter implements MouseWheelListener {
 
+        // JComponents by default use a 1-pixel wheel-scroll increment, which is
+        // wrong for text displaying comonents.
         static final MouseWheel INSTANCE = new MouseWheel();
 
         @Override
@@ -195,9 +211,9 @@ public final class MarkdownComponent extends JComponent {
     @Override
     public String getToolTipText(MouseEvent event) {
         Point2D pt = event.getPoint();
-        for (Link link : links) {
-            if (link.bounds().contains(pt)) {
-                return link.destination();
+        for (RegionOfInterest link : links) {
+            if (link.region().contains(pt)) {
+                return link.content();
             }
         }
         return super.getToolTipText(event);
@@ -222,7 +238,7 @@ public final class MarkdownComponent extends JComponent {
         return md;
     }
 
-    private void addLink(Link link) {
+    private void addLink(RegionOfInterest link) {
         links.add(link);
     }
 
@@ -271,7 +287,7 @@ public final class MarkdownComponent extends JComponent {
 
     public Rectangle2D neededBounds(Rectangle2D within) {
         MarkdownRenderingContext ctx = MarkdownRenderingContext.prerenderContext(this);
-        Rectangle2D r = md.render(ctx, props, new Rectangle (0, 0, (int) Math.floor(within.getWidth()), (int) Math.floor(within.getHeight())));
+        Rectangle2D r = md.render(ctx, props, new Rectangle(0, 0, (int) Math.floor(within.getWidth()), (int) Math.floor(within.getHeight())), imageLoader());
         r.setRect(within.getX(), within.getY(), r.getWidth(), r.getHeight());
         Insets ins = getInsets();
         r.setFrame(r.getX(), r.getY(),
@@ -282,7 +298,7 @@ public final class MarkdownComponent extends JComponent {
 
     private Rectangle2D doRender(MarkdownRenderingContext ctx, Rectangle bds) {
         links.clear();
-        return md.render(ctx, props, bds);
+        return md.render(ctx, props, bds, imageLoader());
     }
 
     @Override
@@ -339,8 +355,8 @@ public final class MarkdownComponent extends JComponent {
 //        g.setColor(Color.BLUE);
 //                    g.setColor(new Color(255, 220, 0, 90));
         //            g.fill(rect);
-//        for (Link l : links) {
-//            g.fill(l.bounds());
+//        for (RegionOfInterest l : links) {
+//            g.fill(l.region());
 //        }
     }
 

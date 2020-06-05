@@ -1,4 +1,4 @@
-package org.imagine.markdown.grammar;
+package org.imagine.markdown.uiapi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,11 +17,15 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.ATNConfigSet;
+import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
-import org.imagine.markdown.uiapi.Markdown;
+import org.imagine.markdown.grammar.MarkdownLexer;
+import org.imagine.markdown.grammar.MarkdownParser;
+import org.imagine.markdown.grammar.MarkdownParserBaseListener;
+import org.imagine.markdown.grammar.MarkdownParserBaseVisitor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
@@ -128,9 +132,10 @@ public class MarkdownTest {
             + "the start and end  points of the gradient at which colors change.\n\nThe *Adjust Colors* button allows "
             + "you to change the palette of all colors in the gradient at once, adjusting all of their hue, saturation "
             + "or brightness at once.";
+
     private static final String PATH_TOOL = "# Path Tool\n\nClick to create the first point of the shape.  "
             + "For subsequent points, holding down *CTRL* will create a _quadratic_ curve, and *SHIFT* will "
-            + "create a _cubic_curve.";
+            + "create a _cubic_curve.  \n\nNow an image ![embedded 1](lres:/testit.png) or so";
 
     private static final String TEST_ORDERED_LIST = "# Some Ordered Lists\n\nThis is an ordered list:\n\n"
             + " 1. Turn off the alarm clock\n"
@@ -139,15 +144,92 @@ public class MarkdownTest {
             + "    1. Toilet\n"
             + "    2. Wash face\n"
             + "    3. Shave\n"
-            + " 4. Go downstairs\n"
-            + " 5. Make coffee\n"
-            + " 6. Mindlessly watch news while coffee works\n\n"
+            + "      4. Get out razor\n"
+            + "      5. Wet it\n"
+            + "      6. Don't use shaving cream\n"
+            + "      7. Scrape face\n"
+            + "    4. Shower\n"
+            + " 5. Go downstairs\n"
+            + " 6. Make coffee\n"
+            + " 7. Mindlessly watch news while coffee works\n\n"
             + "And that's how we do it, eh?\n\n";
 
+    private static final String TEST_UNORDERED_LIST = "# An Unordered List\n\nThis is an unordered list\n\n"
+            + " * Thing One\n"
+            + " * Thing Two\n"
+            + "   * Nested Thing One\n"
+            + "   * Nested Thing Two\n"
+            + "     * Nested Nested Thing One\n"
+            + "     * Nested Nested Thing Two\n"
+            + "   * Thing Three\n"
+            + "   * Thing Four\n"
+            + "     * Another Nested Thing One\n"
+            + " * Thing Last\n";
+    private static final String TEST_UNORDERED_LIST_2 = "# An Unordered List\n\nThis is an unordered list\n\n"
+            + " * Thing 1\n"
+            + " * Thing 2\n"
+            + "   * Nested Thing 1\n"
+            + "   * Nested Thing 2\n"
+            + "     * Nested Nested Thing 1\n"
+            + "     * Nested Nested Thing 2\n"
+            + "   * Thing 3\n"
+            + "   * Thing 4\n"
+            + "     * Another Nested Thing 1\n"
+            + " * Thing Last";
+
+    private static final String TEST_LEAD_WITH_ORDERED_LIST = " 1. Hello\n 2. There\n    1. Nested One\n";
+    private static final String TEST_LEAD_WITH_UNORDERED_LIST = " * Hello\n * There\n    * Nested One\n";
+
+    private static final String TEST_IMAGE_LINK = "This is a paragraph with some content. "
+            + "![and an image](http://foo.example/img.png) stuck in there.";
+
+    private static final String TEST_PREFORMATTED = "This will be some preformatted text.\n\n"
+            + "```And here we go.\n\n"
+            + "    private <T> T inEmbeddedImage(Supplier<T> supp) {\n"
+            + "        boolean old = inEmbeddedImage;\n"
+            + "        inEmbeddedImage = true;\n"
+            + "        try {\n"
+            + "            return supp.get();\n"
+            + "        } finally {\n"
+            + "            inEmbeddedImage = old;\n"
+            + "        }\n"
+            + "    }"
+            + "This should render exactly.```\n\n"
+            + "And now back to our regularly scheduled programming.";
+
+    @Test
+    public void testPreformatted() {
+        testBoth(TEST_PREFORMATTED, true);
+    }
+
+    @Test
+    public void testImageLink() {
+        testBoth(PATH_TOOL);
+    }
 
     @Test
     public void testOrderedList() {
-        testBoth(TEST_ORDERED_LIST, true);
+        testBoth(TEST_ORDERED_LIST);
+    }
+
+    @Test
+    public void testUnorderedList() {
+        testBoth(TEST_UNORDERED_LIST, true);
+    }
+
+    @Test
+    public void testUnorderedList2() {
+        testBoth(TEST_UNORDERED_LIST_2, true);
+    }
+
+    @Test
+    public void testLeadWithOrderedList() {
+        testBoth(TEST_LEAD_WITH_ORDERED_LIST, true);
+    }
+
+    @Test
+    public void testLeadWithUnorderedList() {
+        testBoth(TEST_LEAD_WITH_UNORDERED_LIST, true);
     }
 
     @Test
@@ -168,8 +250,14 @@ public class MarkdownTest {
     }
 
     @Test
+    public void testRadialGradientWithEmbeddedImages() {
+        System.out.println("\n---------- RAD-G -----------");
+        testBoth(RADIAL_GRADIENT, true);
+        System.out.println("\n---------- - -----------");
+    }
+
+    @Test
     public void testSomeMethod() {
-        testBoth(RADIAL_GRADIENT);
         testBoth(TEST_BLOCKQUOTE_SIMPLE);
         testBoth(TEST_SIMPLE_WITH_NESTED_MARKUP);
         testBoth(TEST_NESTED_MARKUP);
@@ -179,17 +267,16 @@ public class MarkdownTest {
         testBoth(TEST_LINK);
         testBoth(TEST_LIST);
         testBoth(TEST_BLOCKQUOTE);
-        testBoth(PATH_TOOL, true);
+        testBoth(PATH_TOOL);
     }
 
-//    @Test
+    @Test
     public void testStuff() {
         String text = RADIAL_GRADIENT;
         AL[] als = new AL[1];
         MarkdownLexer lex = lexer(text, al -> als[0] = al);
         CTS cts = new CTS(lex);
         MarkdownParser parser = new MarkdownParser(cts);
-        parser.dumpDFA();
         parser.removeErrorListeners();
         parser.addErrorListener(als[0]);
         parser.addParseListener(new MarkdownParserBaseListener() {
@@ -291,8 +378,11 @@ public class MarkdownTest {
         CTS cts = new CTS(lex);
         MarkdownParser parser = new MarkdownParser(cts);
         parser.removeErrorListeners();
+//        parser.addErrorListener(new DiagnosticErrorListener());
         parser.addErrorListener(als[0]);
+        parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
         V v = new V(text);
+//        parser.document().accept(new ListItemFixer());
         parser.document().accept(v);
         v.rethrow();
         als[0].rethrow();

@@ -4,8 +4,8 @@ options{tokenVocab=MarkdownLexer; }
 
 // Example rules
 document
-    : ( heading | blockquote | unorderedList | orderedList | paragraphs | horizontalRule |
-        whitespace )+ EOF?;
+    : ( heading | blockquote | unorderedList | orderedList | paragraphs |
+        horizontalRule | whitespace | embeddedImage | preformatted )+ EOF?;
 
 //    : ( heading | blockquote | unorderedList | paragraphs | horizontalRule |
 //        whitespace )+ EOF?;
@@ -35,13 +35,30 @@ blockquote
         paragraph;
 
 orderedList
-    : head=orderedListItemHead orderedListItem;
+    : ( firstOrderedListItem orderedListItem* ( orderedList ( returningOrderedListItem
+        orderedListItem* )* ))
+    | ( firstOrderedListItem orderedListItem* )
+    | orderedListItem ( firstOrderedListItem orderedListItem* ( orderedList ( returningOrderedListItem
+        orderedListItem* )* ));
 
+//    : firstOrderedListItem (orderedList | orderedListItem)*? (firstOrderedListItem (orderedList | orderedListItem)*)*;
 orderedListItemHead
     : head=NestedListItemHead? OrderedListPrologue;
 
+firstOrderedListItem
+    : head=firstOrderedListItemHead paragraph;
+
+firstOrderedListItemHead
+    : NestedOrderedListPrologue;
+
+returningOrderedListItem
+    : head=returningOrderedListItemHead paragraph;
+
+returningOrderedListItemHead
+    : ReturningOrderedListPrologue;
+
 orderedListItem
-    : head=orderedListItemHead? paragraph;
+    : head=orderedListItemHead paragraph;
 
 unorderedList
     : head=unorderedListItemHead unorderedListItem+;
@@ -51,6 +68,9 @@ unorderedListItemHead
 
 unorderedListItem
     : head=unorderedListItemHead? paragraph;
+
+preformatted
+    : OpenPreformattedText body=PreformattedContent ClosePreformattedContent;
 
 paragraphs
     : paragraph+;
@@ -65,6 +85,9 @@ paraBreak
 link
     : linkText=bracketed href=linkTarget;
 
+embeddedImage
+    : ParaBangBracket linkText=innerContent ParaBracketClose whitespace? href=linkTarget;
+
 bold
     : ParaBold innerContent ParaBold;
 
@@ -78,7 +101,7 @@ strikethrough
     : ParaStrikethrough innerContent ParaStrikethrough;
 
 innerContent
-    : content+ ( whitespace content )*;
+    : ( content | embeddedImage )+ ( whitespace ( content | embeddedImage ))*;
 
 text
     : phrase (( whitespace )? ( phrase ))* whitespace?;
@@ -96,7 +119,7 @@ linkTarget
     : ParaOpenParen href=ParaLink ParaCloseParen;
 
 bracketed
-    : ParaBracketOpen innerContent ParaBracketClose;
+    : ParaBracketOpen innerContent? ParaBracketClose;
 
 parenthesized
-    : ParaOpenParen innerContent ParaCloseParen;
+    : ParaOpenParen innerContent? ParaCloseParen;
