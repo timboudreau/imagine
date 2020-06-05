@@ -1,14 +1,9 @@
 parser grammar MarkdownParser;
 
-options{tokenVocab=MarkdownLexer; }
-
-// Example rules
-document
+options{tokenVocab=MarkdownLexer; } document
     : ( heading | blockquote | unorderedList | orderedList | paragraphs |
         horizontalRule | whitespace | embeddedImage | preformatted )+ EOF?;
 
-//    : ( heading | blockquote | unorderedList | paragraphs | horizontalRule |
-//        whitespace )+ EOF?;
 horizontalRule
     : ( HorizontalRule HorizontalRuleTail )
     | HorizontalRuleTail+;
@@ -106,8 +101,6 @@ innerContent
 text
     : phrase (( whitespace )? ( phrase ))* whitespace?;
 
-//    : phrase (( ParaInlineWhitespace | ParaNewline )? ( phrase ))*
-//        whitespace?;
 phrase
     : ( ParaWords whitespace? )( ParaWords whitespace? )*;
 
