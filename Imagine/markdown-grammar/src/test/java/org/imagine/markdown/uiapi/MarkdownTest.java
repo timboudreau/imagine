@@ -135,7 +135,7 @@ public class MarkdownTest {
 
     private static final String PATH_TOOL = "# Path Tool\n\nClick to create the first point of the shape.  "
             + "For subsequent points, holding down *CTRL* will create a _quadratic_ curve, and *SHIFT* will "
-            + "create a _cubic_curve.  \n\nNow an image ![embedded 1](lres:/testit.png) or so";
+            + "create a _cubic_curve_.  \n\nNow an image ![embedded 1](lres:/testit.png) or so";
 
     private static final String TEST_ORDERED_LIST = "# Some Ordered Lists\n\nThis is an ordered list:\n\n"
             + " 1. Turn off the alarm clock\n"
@@ -197,24 +197,207 @@ public class MarkdownTest {
             + "This should render exactly.```\n\n"
             + "And now back to our regularly scheduled programming.";
 
-    @Test
-    public void testPreformatted() {
-        testBoth(TEST_PREFORMATTED, true);
+    private static final String CAPS_ITA = "So, in our grammar, almost _nothing_ is handled in the default mode.  Any lexer rule in another\n"
+            + "mode that hands control back to the default mode must do so at the end of a line of text, so the\n"
+            + "default mode _only_ deals with the first characters on a line, and only to decide what mode\n"
+            + "to enter - it just hands off control to the appropriate mode - a leading `POUND WHITESPACE`\n"
+            + "means go into heading mode, a leading `WHITESPACE ASTRISK WHITESPACE` means go into _LIST_\n"
+            + "list mode, a leading `WHITESPACE+ DIGIT DOT WHITESPACE` means go into _ORDERED_LIST_ mode,\n"
+            + "and other text means go into _PARAGRAPH_ mode (where almost all text is processed).\n"
+            + "\n";
+
+    private static final String THE_README_DRAFT = "# Markdown Grammar\n"
+            + "\n"
+            + "This is a simple Antlr grammar and supporting classes for parsing \n"
+            + "[Markdown](https://daringfireball.net/projects/markdown/syntax), which is used\n"
+            + "to generate help content from Java annotations.  \n"
+            + "\n"
+            + "This project does not pretend or even attempt to support the\n"
+            + "full Markdown syntax, just those features that are needed for creating help files for this\n"
+            + "project, as they become needed.\n"
+            + "\n"
+            + "Having done a review of available Markdown Antlr grammars available, everything\n"
+            + "I found was either, slow, awful or both.  So, when in doubt, make the wheel _rounder_.\n"
+            + "\n"
+            + "While it's not the end-all and be-all of Markdown parsers, it is sufficient for its\n"
+            + "current uses, and perhaps the bones of what could become a really _good_ Markdown parser.\n"
+            + "\n"
+            + "## Currently supported:\n"
+            + "\n"
+            + " * Paragraphs\n"
+            + " * Unordered Lists, with nesting\n"
+            + " * Ordered Lists, with nesting\n"
+            + " * Boldface / strong (asterisk)\n"
+            + " * Strikethrough\n"
+            + " * Italic / emphasis (underscore)\n"
+            + " * Code blocks\n"
+            + " * Preformatted text\n"
+            + " * Hyperlinks\n"
+            + " * Embedded Images\n"
+            + "\n"
+            + "## Currently unsupported:\n"
+            + "\n"
+            + " * H1 and H2 headings using the underline style\n"
+            + " * Nested blockquotes\n"
+            + " * Unusual mixes of text and uncommon punctuation, particularly punctuation that has semantic meaning in Markdown used as the leading character in a word\n"
+            + " * Multi-paragraph list items\n"
+            + " * Tables\n"
+            + " * Code blocks within list items\n"
+            + " * Reference style links\n"
+            + " * Link definitions\n"
+            + " * Escaping (asterisks, backticks, etc.)\n"
+            + "\n"
+            + "Some of these would likely be trivial to implement.\n"
+            + "\n"
+            + "## Never to be supported:\n"
+            + "\n"
+            + " * Inline HTML - we're not writing a browser here\n"
+            + "\n"
+            + "\n"
+            + "\n"
+            + "# UI Support\n"
+            + "\n"
+            + "The project include UI components for parsing and rendering markdown content\n"
+            + "_directly to the screen_, with no intervening heavyweight browser or other technologies - \n"
+            + "just parse and give painting instructions to a `Graphics2D`.  There's a bit of flexibility\n"
+            + "around colors and fonts via `MarkdownUIProperties`.  `MarkdownComponent` encapsulates all\n"
+            + "of this as a simple Swing component.  Under the hood, computing preferred sizes means\n"
+            + "rendering a `Markdown` instance once passing a `PrerenderContext` which doesn't really\n"
+            + "write to a `Graphics2D`, just computes the bounds it wants to paint, constrained by a\n"
+            + "rectangle you provide, or the `GraphicsEnvironment`'s screen bounds.\n"
+            + "\n"
+            + "# Lexer and Grammar Design\n"
+            + "\n"
+            + "Markdown, as with many formats for human, not computer languages, is hard for \n"
+            + "machines to parse, and subject to ambiguity.\n"
+            + "\n"
+            + "The grammar here takes advantage of Antlr's *lexical modes* - these are typically used for\n"
+            + "what the Terence Parr's book calls _island grammars_ - nested languages within a language.\n"
+            + "\n"
+            + "Here, we are using them a little bit differently.  The `mode`, `pushMode` and `popMode` lexer\n"
+            + "rule directives allow one to switch out what set of rules the lexer is using to recognize\n"
+            + "text. In general, the things that Markdown does involve one of two patterns: `$DELIMITER some lines of text`\n"
+            + "(such as a heading or list item) or `$DELIMITER some text $DELIMITER` (such as boldface).\n"
+            + "\n"
+            + "Lexers don't do nesting, they just tokenize.  Parsers do do nesting.\n"
+            + "\n"
+            + "For the second category, bi-delimited stuff, we can handle that easily in the parser - just\n"
+            + "have a token for the delimiter and a rule that nests anything between those delimiters.\n"
+            + "\n"
+            + "For the first category, that's where lexical modes come in handy.\n"
+            + "\n"
+            + "So, in our grammar, almost _nothing_ is handled in the default mode.  Any lexer rule in another\n"
+            + "mode that hands control back to the default mode must do so at the end of a line of text, so the\n"
+            + "default mode _only_ deals with the first characters on a line, and only to decide what mode\n"
+            + "to enter - it just hands off control to the appropriate mode - a leading `POUND WHITESPACE`\n"
+            + "means go into heading mode, a leading `WHITESPACE ASTRISK WHITESPACE` means go into _LIST_\n"
+            + "list mode, a leading `WHITESPACE+ DIGIT DOT WHITESPACE` means go into _ORDERED_LIST_ mode,\n"
+            + "and other text means go into _PARAGRAPH_ mode (where almost all text is processed).\n"
+            + "\n"
+            + "The `more` directive for lexer rules is the key here:  You can parse some text in lexer rule\n"
+            + "_A_, realize you need to go into a different mode, and _hand the text you already parsed into\n"
+            + "the first rule in that mode_. Now, the only caveat to this is that you can get some surprises - \n"
+            + "like characters in your whitespace tokens, because you passed those characters into a mode,\n"
+            + "and it just blindly prepended them to the whitespace that was the first thing recognized.  So\n"
+            + "that's something to be aware of when making modifications.\n"
+            + "\n"
+            + "But modes mean we can have unique named lexer rules that say \"this is the beginning of a list\"\n"
+            + "which the parser grammar can recognize as the start of a rule.\n"
+            + "\n"
+            + "So a lot of this involves flipping between modes, often using the `more` keyword to pass in everything\n"
+            + "that got recognized.  This allows us to have token rules that are essentially identical, but have\n"
+            + "different names which the parser can use to identify what parser rule should be activated.\n"
+            + "\n"
+            + "For a simple example:\n"
+            + "\n"
+            + "```\n"
+            + "OpenBulletList\n"
+            + "    : INLINE_WHITESPACE+ ASTERISK -> more, pushMode ( LIST );\n"
+            + "```\n"
+            + "\n"
+            + "in the default mode, tells the lexer it is seeing the opening of a bullet list.  In fact, this\n"
+            + "rule will _only ever be used if the document starts with a bullet list_.\n"
+            + "\n"
+            + "In the `PARAGRAPH` mode (which does the textual heavy lifting for everything except headings and\n"
+            + "preformatted text), is a very simiilar rule - and since most things land in paragraph mode after\n"
+            + "processing some sort of prefix, this will almost always be the rule that initiates a list:\n"
+            + "\n"
+            + "```\n"
+            + "ParaTransitionToBulletListItem\n"
+            + "    : ( ParaDoubleNewline | NEWLINE ) INLINE_WHITESPACE+ ASTERISK -> more,\n"
+            + "        mode ( LIST );\n"
+            + "```\n"
+            + "\n"
+            + "Using `more` allows the leading spaces-asterisk sequence get re-processed in list mode as two\n"
+            + "tokens:\n"
+            + "\n"
+            + "```\n"
+            + "ListPrologue\n"
+            + "    : ( DOUBLE_NEWLINE? INLINE_WHITESPACE )\n"
+            + "    | ( ParaDoubleNewline | NEWLINE )? INLINE_WHITESPACE+ ASTERISK\n"
+            + "        INLINE_WHITESPACE;\n"
+            + "\n"
+            + "ListItem\n"
+            + "    : ( LETTER | DIGIT ) -> more, pushMode ( PARAGRAPH );\n"
+            + "```\n"
+            + "\n"
+            + "and the parser recognizes the `ListPrologue` token as introducing another list item.  So the \n"
+            + "entirety of the parser rule for lists is:\n"
+            + "\n"
+            + "```\n"
+            + "unorderedList\n"
+            + "    : head=unorderedListItemHead unorderedListItem+;\n"
+            + "\n"
+            + "unorderedListItemHead\n"
+            + "    : head=NestedListItemHead? ListPrologue;\n"
+            + "\n"
+            + "unorderedListItem\n"
+            + "    : head=unorderedListItemHead? paragraph;\n"
+            + "```\n"
+            + "\n"
+            + "In general the pattern is:\n"
+            + "\n"
+            + " 1. Top level lexer rule matches a character pattern that begins a line and indicates a particular kind of markup\n"
+            + " 2. That rule dumps the lexer into a mode specific for that type of markup (horizontal rule, ordered list, unordered list, paragraph), usually using `more` to hand the matched text into the new lexer mode\n"
+            + " 3. The mode has a specific named prologue token that the parser can use for matching\n"
+            + " 4. In most cases, the mode matches the prologue, then dumps the lexer into `PARAGRAPH` mode which handles text, and is the main thing involved in rendering\n"
+            + " 5. For things that repeat, such as list items, `PARAGRAPH` mode has similar rules that dump the lexer back into the mode that spawned it, for repeating items\n"
+            + " 6. Terminating a paragraph where no other mode should be entered dumps the parser back out into default mode\n"
+            + "\n"
+            + "There's a little bit of lexical predicate black magic to facilitate ordered list items and detect changes \n"
+            + "in indent levels as signals to open or close a sublist.  But other than that, once you get the hang of thinking\n"
+            + "about Antlr grammars this way (using lexical modes not for island grammars, but as a way to have a bunch of tokens that\n"
+            + "match the same, or nearly the same thing, in ways the parser can differentiate without doing anything terribly exciting),\n"
+            + "it works pretty well - and far less torturously than some other grammars I've seen.\n";
+
+//    @Test
+    public void testCapsIta() {
+        testBoth(CAPS_ITA);
     }
 
-    @Test
+//    @Test
+    public void testReadme() {
+        testBoth(THE_README_DRAFT);
+    }
+
+//    @Test
+    public void testPreformatted() {
+        testBoth(TEST_PREFORMATTED);
+    }
+
+//    @Test
     public void testImageLink() {
         testBoth(PATH_TOOL);
     }
 
-    @Test
+//    @Test
     public void testOrderedList() {
         testBoth(TEST_ORDERED_LIST);
     }
 
-    @Test
+//    @Test
     public void testUnorderedList() {
-        testBoth(TEST_UNORDERED_LIST, true);
+        testBoth(TEST_UNORDERED_LIST);
     }
 
     @Test
@@ -222,17 +405,17 @@ public class MarkdownTest {
         testBoth(TEST_UNORDERED_LIST_2, true);
     }
 
-    @Test
+//    @Test
     public void testLeadWithOrderedList() {
-        testBoth(TEST_LEAD_WITH_ORDERED_LIST, true);
+        testBoth(TEST_LEAD_WITH_ORDERED_LIST);
     }
 
-    @Test
+//    @Test
     public void testLeadWithUnorderedList() {
-        testBoth(TEST_LEAD_WITH_UNORDERED_LIST, true);
+        testBoth(TEST_LEAD_WITH_UNORDERED_LIST);
     }
 
-    @Test
+//    @Test
     public void testTextExtraction() {
         Markdown md = new Markdown(RADIAL_GRADIENT);
         String hl = md.probableHeadingLine();
@@ -249,15 +432,13 @@ public class MarkdownTest {
         assertEquals(expectedExtracted, extracted);
     }
 
-    @Test
+//    @Test
     public void testRadialGradientWithEmbeddedImages() {
-        System.out.println("\n---------- RAD-G -----------");
-        testBoth(RADIAL_GRADIENT, true);
-        System.out.println("\n---------- - -----------");
+        testBoth(RADIAL_GRADIENT);
     }
 
-    @Test
-    public void testSomeMethod() {
+//    @Test
+    public void testOthers() {
         testBoth(TEST_BLOCKQUOTE_SIMPLE);
         testBoth(TEST_SIMPLE_WITH_NESTED_MARKUP);
         testBoth(TEST_NESTED_MARKUP);
@@ -270,7 +451,7 @@ public class MarkdownTest {
         testBoth(PATH_TOOL);
     }
 
-    @Test
+//    @Test
     public void testStuff() {
         String text = RADIAL_GRADIENT;
         AL[] als = new AL[1];
@@ -322,7 +503,7 @@ public class MarkdownTest {
         log(text);
         log("--------------------------------");
         testTokens(text, (ix, tok) -> {
-            log(ix + ". " + MarkdownLexer.VOCABULARY.getDisplayName(tok.getType()) + ": '" + escape(tok.getText()) + "'");
+            log("\nEMIT: " + ix + ". " + MarkdownLexer.VOCABULARY.getDisplayName(tok.getType()) + ": '" + escape(tok.getText()) + "'");
         });
         log("\n------------- PARSE ---------------\n");
         testParse(text);
@@ -451,7 +632,7 @@ public class MarkdownTest {
 
     }
 
-    private static String indicateError(String text, int line, int pos, String msg) {
+    static String indicateError(String text, int line, int pos, String msg) {
         StringBuilder sb = new StringBuilder("Error node:").append('\n');
         String[] lines = text.split("\n");
         for (int i = 0; i < lines.length; i++) {
@@ -482,7 +663,8 @@ public class MarkdownTest {
         }
 
         private String indicateError(int line, int pos, String msg) {
-            StringBuilder sb = new StringBuilder("Syntax Error in mode ").append(currentMode()).append('\n');
+            StringBuilder sb = new StringBuilder("Syntax Error in mode ").append(currentMode())
+                    .append(" at ").append(line).append(':').append(pos).append('\n');
             String[] lines = text.split("\n");
             for (int i = 0; i < lines.length; i++) {
                 sb.append(lines[i]).append('\n');
@@ -531,11 +713,122 @@ public class MarkdownTest {
                 if (alternatives.length() > 0) {
                     alternatives.append(", ");
                 }
-                alternatives.append(MarkdownParser.ruleNames[bit]);
+//                alternatives.append(MarkdownParser.ruleNames[bit]);
+                alternatives.append(bit);
             }
-            log("ambiguity at " + startIndex + ":" + stopIndex + " '" + escape(text.substring(startIndex, stopIndex + 1))
-                    + "' alternatives " + alternatives + " - exact? " + exact);
+            String desc = getDecisionDescription(parser, dfa);
+            Token firstToken = parser.getTokenStream().get(startIndex);
+            Token lastToken = parser.getTokenStream().get(stopIndex);
 
+            String tokenText;
+            if (firstToken == lastToken) {
+                tokenText = firstToken.getText();
+            } else {
+                tokenText = firstToken.getText() + "..." + lastToken.getText();
+            }
+            tokenText = escape(tokenText);
+
+            log("ambiguity " + desc + " line at " + firstToken.getLine() + ":" + firstToken.getCharPositionInLine()
+                    + "'" + tokenText + "'"
+                    + " (" + MarkdownLexer.VOCABULARY.getSymbolicName(firstToken.getType()) + ")"
+                    + "-'"
+                    + " " + " (" + MarkdownLexer.VOCABULARY.getSymbolicName(lastToken.getType())
+                    + ")"
+                    + " in rules " + invocationStack(parser)
+                    + " alternatives " + alternatives + " - exact? " + exact
+                    + ":\n"
+                    + context(firstToken, lastToken) + '\n');
+            ;
+        }
+
+        private String context(Token from, Token to) {
+            StringBuilder sb = new StringBuilder();
+            int startLineStartOffset = findLineStartOffset(from.getLine());
+            if (startLineStartOffset < 0) {
+                throw new IllegalArgumentException("Token '" + escape(from.getText()) + "' ix "
+                    + from.getTokenIndex() + " says it is from line " + from.getLine()
+                    + " of " + (text.split("\n").length) + " lines but did not find line start");
+            }
+            int endLineStartOffset;
+            if (to == from) {
+                endLineStartOffset = startLineStartOffset;
+            } else {
+                int ln = to.getLine();
+                if (ln == from.getLine()) {
+                    endLineStartOffset = startLineStartOffset;
+                } else {
+                    endLineStartOffset = findLineStartOffset(ln);
+                    if (endLineStartOffset < 0) {
+                        throw new IllegalStateException("Could not find line " + ln + " in "
+                            + text.split("\n").length + " lines");
+                    }
+                }
+            }
+            int endLineEndOffset = findLineEndOffset(endLineStartOffset);
+            String sub = text.substring(startLineStartOffset, endLineEndOffset);
+            int lineDiff = to.getLine() - from.getLine();
+            int localLine = 0;
+            int lineStart = 0;
+            sb.append(from.getLine()).append(". ");
+            for (int i = 0; i < sub.length(); i++) {
+                char c = sub.charAt(i);
+                int cpInLine = i - lineStart;
+                if (localLine == 0 && cpInLine == from.getCharPositionInLine()) {
+                    sb.append(">>");
+                }
+                switch (c) {
+                    case '\n':
+                        localLine++;
+                        lineStart = i;
+                        sb.append("\n");
+                        sb.append(from.getLine() + localLine).append(". ");
+                        break;
+                    case '\t':
+                        sb.append("\\t");
+                        break;
+                    case '\r':
+                        sb.append("\\r");
+                        break;
+                    default:
+                        sb.append(c);
+                }
+                if (localLine == lineDiff && cpInLine == to.getCharPositionInLine() + to.getText().length()) {
+                    sb.append("<<");
+                }
+            }
+            return sb.toString();
+        }
+
+        private int findLineEndOffset(int charOffset) {
+            if (charOffset > text.length()) {
+                return text.length();
+            }
+            for (int i = charOffset; i < text.length(); i++) {
+                switch (text.charAt(i)) {
+                    case '\n':
+                        return i;
+                }
+            }
+            return text.length();
+        }
+
+        private int findLineStartOffset(int line) {
+            int currentLine = 1;
+            if (line == currentLine) {
+                return 0;
+            }
+            for (int i = 0; i < text.length(); i++) {
+                char c = text.charAt(i);
+                switch (c) {
+                    case '\n':
+                        currentLine++;
+                        if (currentLine == line) {
+                            return i + 1;
+                        }
+                        break;
+                }
+            }
+            return -1;
         }
 
         private String contextLine(int pos) {
@@ -559,18 +852,84 @@ public class MarkdownTest {
             return sb.toString();
         }
 
+        protected String getDecisionDescription(Parser recognizer, DFA dfa) {
+            int decision = dfa.decision;
+            int ruleIndex = dfa.atnStartState.ruleIndex;
+
+            String[] ruleNames = recognizer.getRuleNames();
+            if (ruleIndex < 0 || ruleIndex >= ruleNames.length) {
+                return String.valueOf(decision);
+            }
+
+            String ruleName = ruleNames[ruleIndex];
+            if (ruleName == null || ruleName.isEmpty()) {
+                return String.valueOf(decision);
+            }
+
+            return String.format("rule '%s' (%d)", ruleName, decision);
+        }
+
+        private final String cl(int start, int stop) {
+            int lineStart = -1;
+            for (int i = Math.max(0, start); i >= 0; i--) {
+                if (text.charAt(i) == '\n') {
+                    lineStart = i;
+                    break;
+                }
+            }
+            if (lineStart == -1) {
+                lineStart = 0;
+            }
+            int lineStop = -1;
+            for (int i = stop - 1; i < text.length(); i++) {
+                if (text.charAt(i) == '\n') {
+                    lineStop = i;
+                    break;
+                }
+            }
+            if (lineStop == -1) {
+                lineStop = text.length();
+            }
+            StringBuilder sb = new StringBuilder();
+            for (int i = lineStart; i < lineStop; i++) {
+                if (i == start) {
+                    sb.append(">>");
+                }
+                sb.append(text.charAt(i));
+                if (i == stop) {
+                    sb.append("<<");
+                }
+            }
+            return escape(sb.toString());
+        }
+
+        private String invocationStack(Parser parser) {
+            List<String> stack = parser.getRuleInvocationStack();
+            StringBuilder sb = new StringBuilder();
+            for (String s : stack) {
+                if (sb.length() > 0) {
+                    sb.append("<--");
+                }
+                sb.append(s);
+            }
+            return sb.toString();
+        }
+
         @Override
         public void reportAttemptingFullContext(Parser parser, DFA dfa, int startIndex, int stopIndex, BitSet conflictingAlternatives, ATNConfigSet configs) {
-            StringBuilder alternatives = new StringBuilder();
-            for (int bit = conflictingAlternatives.nextSetBit(0); bit >= 0; bit = conflictingAlternatives.nextSetBit(bit + 1)) {
-                if (alternatives.length() > 0) {
-                    alternatives.append(", ");
-                }
-                alternatives.append(MarkdownParser.ruleNames[bit]);
-            }
-            log("\nAttemptFullCtx with " + alternatives + " at " + startIndex + ":"
-                    + stopIndex + " '" + escape(text.substring(startIndex, stopIndex + 1)) + "'\n"
-                    + contextLine(startIndex));
+//            StringBuilder alternatives = new StringBuilder();
+//            for (int bit = conflictingAlternatives.nextSetBit(0); bit >= 0; bit = conflictingAlternatives.nextSetBit(bit + 1)) {
+//                if (alternatives.length() > 0) {
+//                    alternatives.append(", ");
+//                }
+//                alternatives.append(bit);
+//            }
+//            String desc = getDecisionDescription(parser, dfa);
+//            log("\nAttemptFullCtx " + desc + " with " + alternatives + " at " + startIndex + ":"
+//                    + stopIndex + " '" + escape(text.substring(startIndex, stopIndex + 1))
+//                    + cl(startIndex, stopIndex)
+//                    + " in rules " + invocationStack(parser)
+//            );
         }
 
         @Override

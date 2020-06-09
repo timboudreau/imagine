@@ -42,6 +42,8 @@
                         <configuration>
                             <visitor>true</visitor>
                             <listener>true</listener>
+                            <!--<atn>true</atn>-->
+                            <!--<forceAtn>true</forceAtn>-->
                             <options>
                                 <language>Java</language>
                             </options>

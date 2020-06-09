@@ -37,7 +37,7 @@ private boolean updateIndentDepth() {
     return result;
 }
 
-private boolean lastIndentChangeWasNegative() {F
+private boolean lastIndentChangeWasNegative() {
     boolean result = lastIndentChange < 0;
     lastIndentChange = 0;
     return result;
@@ -46,6 +46,63 @@ private boolean lastIndentChangeWasNegative() {F
 private void clearIndentDepth() {
     indentDepth = 0;
 }
+/*
+// debug stuff
+private void logStatus(String msg) {
+    LexerATNSimulator iterp = getInterpreter();
+    String text = _input.getText(new Interval(_tokenStartCharIndex, _input.index()));
+    text = text.replaceAll("\n", "\\\\n").replaceAll("\r", "\\\\r").replaceAll("\t", "\\\\t");
+    System.out.println(msg + " in mode " + modeNames[_mode] + " line "
+            + iterp.getLine() + ":" + iterp.getCharPositionInLine() + ": '" 
+            + text + "' for token " + _type + " - " + VOCABULARY.getSymbolicName(_type));
+}
+
+@Override
+public int popMode() {
+    logStatus("popMode");
+    pushing = true;
+    int result = super.popMode();
+    pushing = false;
+    System.out.println("  modeStack: " + modeStackString());
+    return result;
+}
+
+boolean pushing = false;
+
+private String modeStackString() {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < _modeStack.size(); i++) {
+        sb.append(modeNames[_modeStack.get(i)]);
+        if (i != _modeStack.size()-1) {
+            sb.append(", ");
+        }
+    }
+    return sb.toString();
+}
+
+@Override
+public void pushMode(int m) {
+    pushing = true;
+    logStatus("pushMode " + modeNames[m]);
+    super.pushMode(m);
+    pushing = false;
+    System.out.println("  modeStack: " + modeStackString());
+}
+
+@Override
+public void mode(int m) {
+    if (!pushing) {
+        logStatus("mode(" + modeNames[m] + ")");
+    }
+    super.mode(m);
+}
+
+@Override
+public void more() {
+    logStatus("more");
+    super.more();
+}
+*/
 }
 
 OpenHeading
@@ -55,7 +112,8 @@ OpenPara
     : ( LETTER | DIGIT | OPEN_BRACE | OPEN_PAREN ) -> more, pushMode ( PARAGRAPH );
 
 OpenBulletList
-    : INLINE_WHITESPACE+ ASTERISK -> more, pushMode ( LIST );
+    : INLINE_WHITESPACE+ ASTERISK INLINE_WHITESPACE -> type ( ListPrologue ),
+        pushMode ( LIST );
 
 OpenNumberedList
     : INLINE_WHITESPACE+ DIGIT+ DOT { updateIndentDepth(); } -> more, pushMode ( ORDERED_LIST );
@@ -78,17 +136,13 @@ OpenHr
 mode PREFORMATTED;
 
 PreformattedContent
-    :~[`]+
-    | ( BACKTICK BACKTICK~[`]? )+;
+    : NON_BACKTICK+
+    | ( BACKTICK BACKTICK NON_BACKTICK? )+;
 
 ClosePreformattedContent
     : BACKTICK BACKTICK BACKTICK -> popMode;
 
-/**
 
-XXX word-like should be WORD_LIKE WORD_OR_NUMBER_LIKE which accepts any punctuation
-
-**/
 mode HR;
 
 HorizontalRule
@@ -104,6 +158,30 @@ HrExit
 
 
 mode PARAGRAPH;
+
+ParaItalic
+    : NEWLINE? UNDERSCORE SAFE_PUNCTUATION?;
+
+ParaBold
+    : NEWLINE? ASTERISK SAFE_PUNCTUATION?;
+
+ParaStrikethrough
+    : NEWLINE? STRIKE SAFE_PUNCTUATION?;
+
+ParaCode
+    : NEWLINE? BACKTICK SAFE_PUNCTUATION?;
+
+ParaBracketOpen
+    : NEWLINE? SAFE_PUNCTUATION? OPEN_BRACKET;
+
+ParaBracketClose
+    : NEWLINE? CLOSE_BRACKET SAFE_PUNCTUATION?;
+
+ParaOpenParen
+    : NEWLINE? SAFE_PUNCTUATION? OPEN_PAREN;
+
+ParaCloseParen
+    : NEWLINE? CLOSE_PAREN SAFE_PUNCTUATION?;
 
 ParaLink
     : LINK_TEXT+ COLON SLASH SLASH? LINK_TEXT+;
@@ -123,17 +201,19 @@ ParaWords
         SAFE_PUNCTUATION? )* )
     | ( WORD_LIKE SAFE_PUNCTUATION? ( NEWLINE*? WORD_LIKE SAFE_PUNCTUATION? )* )
     | ( SAFE_PUNCTUATION+? INLINE_WHITESPACE?? )
-    | ( INLINE_WHITESPACE DIGIT+? INLINE_WHITESPACE?? );
+    | ( INLINE_WHITESPACE DIGIT+? INLINE_WHITESPACE?? )
+    | ( DIGIT INLINE_WHITESPACE )
+    | ( LETTER INLINE_WHITESPACE );
 
 ParaTransitionToBulletListItem
-    : ( ParaDoubleNewline | NEWLINE ) INLINE_WHITESPACE+ ASTERISK -> more, mode ( LIST );
+    : ( ParaDoubleNewline | NEWLINE ) INLINE_WHITESPACE+ ASTERISK
+        INLINE_WHITESPACE -> type ( ListPrologue ), mode ( LIST );
+//        INLINE_WHITESPACE -> type ( ListPrologue ), mode ( LIST );
 
+//    : ( ParaDoubleNewline | NEWLINE ) INLINE_WHITESPACE+ ASTERISK { System.out.println("PTTBLI");}  -> type(ListPrologue), mode ( LIST );
 ParaTransitionToOrderedListItem
     : ( ParaDoubleNewline | NEWLINE ) INLINE_WHITESPACE+ DIGIT DOT -> more, mode
         ( ORDERED_LIST );
-
-ParaNewline
-    : NEWLINE -> more, popMode;
 
 ParaBlockquoteHead
     : ( NEWLINE GT ) -> mode ( BLOCKQUOTE );
@@ -142,41 +222,20 @@ ParaHeadingHead
     : ( NEWLINE POUND+ ) -> mode ( HEADING );
 
 ParaBreak
-    : ParaDoubleNewline -> mode ( DEFAULT_MODE );
+    : ParaDoubleNewline -> popMode;
 
 ParaDoubleNewline
-    : INLINE_WHITESPACE*? NEWLINE INLINE_WHITESPACE*? NEWLINE ( INLINE_WHITESPACE*?
+    : INLINE_WHITESPACE* NEWLINE INLINE_WHITESPACE* NEWLINE ( INLINE_WHITESPACE*?
         NEWLINE )*?;
 
 ParaInlineWhitespace
     : INLINE_WHITESPACE+;
 
-ParaItalic
-    : UNDERSCORE SAFE_PUNCTUATION?;
-
-ParaBold
-    : ASTERISK SAFE_PUNCTUATION?;
-
-ParaStrikethrough
-    : STRIKE SAFE_PUNCTUATION?;
-
-ParaCode
-    : BACKTICK SAFE_PUNCTUATION?;
-
-ParaBracketOpen
-    : SAFE_PUNCTUATION? OPEN_BRACKET;
-
-ParaBracketClose
-    : CLOSE_BRACKET SAFE_PUNCTUATION?;
-
-ParaOpenParen
-    : SAFE_PUNCTUATION? OPEN_PAREN;
-
-ParaCloseParen
-    : CLOSE_PAREN SAFE_PUNCTUATION?;
-
 ParaEof
     : EOF -> more, popMode;
+
+ParaNewline
+    : NEWLINE -> popMode;
 
 
 mode BLOCKQUOTE;
@@ -227,17 +286,24 @@ CloseOrderedListAndForward
 
 mode LIST;
 
+NestedListPrologue
+    : (( DOUBLE_NEWLINE? INLINE_WHITESPACE ) | ( ParaDoubleNewline | NEWLINE )?
+        INLINE_WHITESPACE+ ASTERISK INLINE_WHITESPACE ) { updateIndentDepth() }?;
+
+ReturningListPrologue
+    : (( DOUBLE_NEWLINE? INLINE_WHITESPACE ) | ( ParaDoubleNewline | NEWLINE )?
+        INLINE_WHITESPACE+ ASTERISK INLINE_WHITESPACE ) { lastIndentChangeWasNegative() }?;
+
 ListPrologue
-    : ( DOUBLE_NEWLINE? INLINE_WHITESPACE )
-    | ( ParaDoubleNewline | NEWLINE )? INLINE_WHITESPACE+ ASTERISK
+    : (( DOUBLE_NEWLINE? INLINE_WHITESPACE ) | ( ParaDoubleNewline | NEWLINE )?
+        INLINE_WHITESPACE+ ASTERISK INLINE_WHITESPACE );
+
+NestedListItemHead
+    : (( NEWLINE INLINE_WHITESPACE+ ASTERISK ) | ( INLINE_WHITESPACE+ DIGIT+ DOT ))
         INLINE_WHITESPACE;
 
 ListItem
-    : ( LETTER | DIGIT ) -> more, pushMode ( PARAGRAPH );
-
-NestedListItemHead
-    : (( INLINE_WHITESPACE+ ASTERISK ) | ( INLINE_WHITESPACE+ DIGIT+ DOT ))
-        INLINE_WHITESPACE;
+    : ( LETTER | DIGIT ) -> more, mode ( PARAGRAPH );
 
 ListHorizontalRule
     : NEWLINE? (( DASH DASH DASH+ ) | ( ASTERISK ASTERISK ASTERISK+ ) | ( DASH
@@ -245,10 +311,10 @@ ListHorizontalRule
         SPACE ( ASTERISK SPACE )+ SPACE* )) NEWLINE -> more, mode ( HR );
 
 CloseList
-    : DOUBLE_NEWLINE -> popMode;
+    : DOUBLE_NEWLINE { clearIndentDepth(); } -> mode ( DEFAULT_MODE );
 
 CloseList2
-    : NEWLINE NON_WHITESPACE -> more, popMode;
+    : NEWLINE NON_WHITESPACE -> more, mode ( DEFAULT_MODE );
 
 
 mode HEADING;
@@ -267,16 +333,33 @@ HeadingWordLike
     : ( LETTER | DIGIT | PUNCTUATION )( LETTER | DIGIT | PUNCTUATION )*;
 
 fragment WORDS
-    : INLINE_WHITESPACE? WORD_LIKE PUNC2? INLINE_WHITESPACE??;
+    : INLINE_WHITESPACE? ( WORD_LIKE | NUMBER_LIKE ) SAFE_PUNCTUATION?
+        INLINE_WHITESPACE??;
 
+// allow a single underscore or asterisk in a word, i.e. _FOO_BAR_ is "FOO_BAR" italicized, 
+// but "_FOO_BAR" is "FOO_BAR" with FOO italicized.
+// Note the first alternative must not allow trailing punctuation, or for example,
+// a sentence like "Make the wheel _rounder_." will get the first _ parsed as an
+// opending italic token, and then "rounder_." treated as a word.
 fragment WORD_LIKE
-    : ( LETTER )( LETTER | DIGIT | PUNC2 )*;
+    : (( LETTER )+ ( LETTER | DIGIT | SAFE_PUNCTUATION )* ( LETTER | DIGIT |
+        SAFE_PUNCTUATION | UNDERSCORE+ | ASTERISK+ )( LETTER | DIGIT )+ )
+    | ( LETTER DIGIT )
+    | ( LETTER )( LETTER | DIGIT | SAFE_PUNCTUATION )*;
 
 fragment WORD_OR_NUMBER_LIKE
     : ( LETTER | DIGIT | PUNCTUATION )+;
 
+fragment NUMBER_LIKE
+    : DIGIT+;
+
 fragment SAFE_PUNCTUATION
-    : [><{}/\\:;,+!@.,$%^&\-='"?¿¡];
+    : [><{}/\\:;,+!@.$%^&\-='"?¿¡]
+    | '\\`'
+    | '\\*';
+
+fragment NON_BACKTICK
+    :~[`]+;
 
 fragment PUNCTUATION
     : [\p{Punctuation}];
@@ -290,7 +373,6 @@ fragment DIGIT
 fragment NON_HR
     :~[ -*];
 
-//    : '0'..'9';
 fragment ALL_WS
     : INLINE_WHITESPACE
     | NEWLINE;
@@ -313,15 +395,13 @@ fragment NON_WHITESPACE
 
 //    :~[\p{White_Space}];
 fragment LINK_TEXT
-    : [a-zA-Z0-9\-_$/\\\\.!?+=&^%#];
+    : [a-zA-Z0-9\-_$/\\.!?+=&^%#];
 
 fragment PRE
     : '```';
 
 fragment INLINE_WHITESPACE
-    : SPACE
-    | TAB
-    | CARRIAGE_RETURN;
+    : [ \r\t];
 
 fragment SPACE
     : ' ';

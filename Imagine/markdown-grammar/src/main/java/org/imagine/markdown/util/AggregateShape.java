@@ -1,4 +1,4 @@
-package org.imagine.markdown.uiapi;
+package org.imagine.markdown.util;
 
 import java.awt.Rectangle;
 import java.awt.Shape;
@@ -19,7 +19,7 @@ import java.util.List;
  *
  * @author Tim Boudreau
  */
-final class AggregateShape implements Shape {
+public final class AggregateShape implements Shape {
 
     private final List<? extends Shape> shapes;
     private final Rectangle2D.Double bounds = new Rectangle2D.Double();

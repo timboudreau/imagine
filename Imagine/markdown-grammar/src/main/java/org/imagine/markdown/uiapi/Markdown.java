@@ -16,6 +16,8 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.imagine.markdown.grammar.MarkdownLexer;
 import org.imagine.markdown.grammar.MarkdownParser;
+import org.imagine.markdown.uiapi.graphics.MarkdownDetailsModel;
+import org.imagine.markdown.uiapi.graphics.MarkdownRenderingModel;
 
 /**
  * Can render markdown to a Graphics2D.
@@ -72,6 +74,27 @@ public final class Markdown {
         return parser;
     }
 
+    public MarkdownRenderingModel model(MarkdownRenderingContext ctx, MarkdownUIProperties props, Rectangle bounds, EmbeddedImageLoader ldr) {
+        return EmbeddedImageCache.open(this, cache -> {
+            ModelWrapperRenderingContext mwrc = new ModelWrapperRenderingContext(ctx);
+            RenderVisitor rv = new RenderVisitor(mwrc, props, new Rectangle2D.Float(bounds.x, bounds.y, bounds.width, bounds.height), ldr, cache);
+            parser().document().accept(rv);
+            sendLinks(rv);
+            return mwrc.createModel(rv.usedBounds());
+        });
+    }
+
+    public MarkdownDetailsModel detailsModel(MarkdownRenderingContext ctx, MarkdownUIProperties props, Rectangle bounds, EmbeddedImageLoader ldr) {
+        return EmbeddedImageCache.open(this, cache -> {
+            ModelWrapperRenderingContext mwrc = new ModelWrapperRenderingContext(ctx);
+            RenderVisitor rv = new RenderVisitor(mwrc, props, new Rectangle2D.Float(bounds.x, bounds.y, bounds.width, bounds.height), ldr, cache);
+            mwrc.setDetailsSupplier(rv);
+            parser().document().accept(rv);
+            sendLinks(rv);
+            return mwrc.toDetailsModel(rv.usedBounds());
+        });
+    }
+
     public Rectangle2D.Float render(MarkdownRenderingContext ctx, MarkdownUIProperties props, Rectangle bounds) {
         return render(ctx, props, bounds, EmbeddedImageLoader.EMPTY);
     }
@@ -105,12 +128,12 @@ public final class Markdown {
         jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         Markdown md = new Markdown(THE_README_DRAFT);
         MarkdownComponent c = new MarkdownComponent(md, false);
+        c.setSelectable(true);
         c.setMargin(18);
         c.setLinkListener(link -> {
             JOptionPane.showMessageDialog(c, link, "Link Clicked", JOptionPane.INFORMATION_MESSAGE);
         });
-        c.setUIProperties(c.getUIProperties().withFont(new Font("Times New Roman", Font.PLAIN, 26)).paintingCaptions()
-                .withMaximumInlineImageDimension(300));
+        c.setUIProperties(c.getUIProperties().withFont(new Font("Times New Roman", Font.PLAIN, 26)).paintingCaptions());
         jf.setContentPane(new JScrollPane(c));
         jf.pack();
         jf.setVisible(true);
@@ -229,6 +252,17 @@ public final class Markdown {
             + "   * Thing Four\n"
             + "     * Another Nested Thing One\n"
             + " * Thing Last\n";
+    private static final String TEST_UNORDERED_LIST_2 = "# An Unordered List\n\nThis is an unordered list\n\n"
+            + " * Thing 1\n"
+            + " * Thing 2\n"
+            + "   * Nested Thing 1\n"
+            + "   * Nested Thing 2\n"
+            + "     * Nested Nested Thing 1\n"
+            + "     * Nested Nested Thing 2\n"
+            + "   * Thing 3\n"
+            + "   * Thing 4\n"
+            + "     * Another Nested Thing 1\n"
+            + " * Thing 999\n";
 
     private static final String TEST_PREFORMATTED = "This will be some preformatted text.\n\n"
             + "```And here we go.\n\n"
@@ -246,18 +280,21 @@ public final class Markdown {
 
     private static final String THE_README_DRAFT = "# Markdown Grammar\n"
             + "\n"
-            + "This is a simple Antlr grammar and supporting classes for parsing Markdown, which is used\n"
-            + "to generate help files from annotations.  It does not pretend or even attempt to support the\n"
+            + "This is a simple Antlr grammar and supporting classes for parsing \n"
+            + "[Markdown](https://daringfireball.net/projects/markdown/syntax), which is used\n"
+            + "to generate help content from Java annotations.  \n"
+            + "\n"
+            + "This project does not pretend or even attempt to support the\n"
             + "full Markdown syntax, just those features that are needed for creating help files for this\n"
             + "project, as they become needed.\n"
             + "\n"
             + "Having done a review of available Markdown Antlr grammars available, everything\n"
-            + "I found was either, slow, awful or both.  So, when in doubt, make the wheel _rounder_.\n"
+            + "I found was either slow, awful or both.  So, when in doubt, make the wheel _rounder_.\n"
             + "\n"
             + "While it's not the end-all and be-all of Markdown parsers, it is sufficient for its\n"
             + "current uses, and perhaps the bones of what could become a really _good_ Markdown parser.\n"
             + "\n"
-            + "Currently supported:\n"
+            + "## Currently supported:\n"
             + "\n"
             + " * Paragraphs\n"
             + " * Unordered Lists, with nesting\n"
@@ -265,13 +302,35 @@ public final class Markdown {
             + " * Boldface / strong (asterisk)\n"
             + " * Strikethrough\n"
             + " * Italic / emphasis (underscore)\n"
-            + " * Links\n"
+            + " * Code blocks\n"
+            + " * Preformatted text\n"
+            + " * Hyperlinks\n"
             + " * Embedded Images\n"
+            + "\n"
+            + "## Currently unsupported:\n"
+            + "\n"
+            + " * H1 and H2 headings using the underline style\n"
+            + " * Nested blockquotes\n"
+            + " * Unusual mixes of text and uncommon punctuation, particularly punctuation that has semantic meaning in Markdown used as the leading character in a word\n"
+            + " * Multi-paragraph list items\n"
+            + " * Tables\n"
+            + " * Code blocks within list items\n"
+            + " * Reference style links\n"
+            + " * Link definitions\n"
+            + " * Escaping (asterisks, backticks, etc.)\n"
+            + "\n"
+            + "Some of these would likely be trivial to implement.\n"
+            + "\n"
+            + "## Never to be supported:\n"
+            + "\n"
+            + " * Inline HTML - we're not writing a browser here\n"
+            + "\n"
+            + "\n"
             + "\n"
             + "# UI Support\n"
             + "\n"
-            + "The project include UI components for parsing and rendering markdown content "
-            + "_directly to the screen_ with no intervening heavyweight browser or other technologies - \n"
+            + "The project include UI components for parsing and rendering markdown content\n"
+            + "_directly to the screen_, with no intervening heavyweight browser or other technologies - \n"
             + "just parse and give painting instructions to a `Graphics2D`.  There's a bit of flexibility\n"
             + "around colors and fonts via `MarkdownUIProperties`.  `MarkdownComponent` encapsulates all\n"
             + "of this as a simple Swing component.  Under the hood, computing preferred sizes means\n"
@@ -367,5 +426,19 @@ public final class Markdown {
             + "unorderedListItem\n"
             + "    : head=unorderedListItemHead? paragraph;\n"
             + "```\n"
-            + "";
+            + "\n"
+            + "In general the pattern is:\n"
+            + "\n"
+            + " 1. Top level lexer rule matches a character pattern that begins a line and indicates a particular kind of markup\n"
+            + " 2. That rule dumps the lexer into a mode specific for that type of markup (horizontal rule, ordered list, unordered list, paragraph), usually using `more` to hand the matched text into the new lexer mode\n"
+            + " 3. The mode has a specific named prologue token that the parser can use for matching\n"
+            + " 4. In most cases, the mode matches the prologue, then dumps the lexer into `PARAGRAPH` mode which handles text, and is the main thing involved in rendering\n"
+            + " 5. For things that repeat, such as list items, `PARAGRAPH` mode has similar rules that dump the lexer back into the mode that spawned it, for repeating items\n"
+            + " 6. Terminating a paragraph where no other mode should be entered dumps the parser back out into default mode\n"
+            + "\n"
+            + "There's a little bit of lexical predicate black magic to facilitate ordered list items and detect changes \n"
+            + "in indent levels as signals to open or close a sublist.  But other than that, once you get the hang of thinking\n"
+            + "about Antlr grammars this way (using lexical modes not for island grammars, but as a way to have a bunch of tokens that\n"
+            + "match the same, or nearly the same thing, in ways the parser can differentiate without doing anything terribly exciting),\n"
+            + "it works pretty well - and far less torturously than some other grammars I've seen.\n";
 }

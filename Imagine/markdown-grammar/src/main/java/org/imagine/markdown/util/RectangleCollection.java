@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.imagine.markdown.uiapi;
+package org.imagine.markdown.util;
 
 import java.awt.Rectangle;
 import java.awt.Shape;
@@ -18,11 +18,11 @@ import java.util.List;
  *
  * @author Tim Boudreau
  */
-class RectangleCollection implements Shape {
+public class RectangleCollection implements Shape {
 
     private List<Rectangle2D.Float> rects = new ArrayList<>();
 
-    private Rectangle2D.Float copy(Rectangle2D.Float rect) {
+    public static Rectangle2D.Float copy(Rectangle2D.Float rect) {
         return new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
     }
 
@@ -46,7 +46,11 @@ class RectangleCollection implements Shape {
         return false;
     }
 
-    void add(Rectangle2D.Float rect) {
+    public void addCopy(Rectangle2D.Float rect) {
+        add(copy(rect));
+    }
+
+    public void add(Rectangle2D.Float rect) {
         replaceLastIfMatches(rect);
     }
 
@@ -109,6 +113,10 @@ class RectangleCollection implements Shape {
     @Override
     public boolean contains(Rectangle2D r) {
         return contains(r.getX(), r.getY(), r.getWidth(), r.getHeight());
+    }
+
+    public Shape toShape() {
+        return new AggregateShape(rects);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.imagine.markdown.uiapi;
 
+import org.imagine.markdown.util.RectangleCollection;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -20,21 +21,24 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.imagine.markdown.grammar.MarkdownParser;
 import org.imagine.markdown.grammar.MarkdownParser.DocumentContext;
 import org.imagine.markdown.grammar.MarkdownParser.EmbeddedImageContext;
 import org.imagine.markdown.grammar.MarkdownParserBaseVisitor;
 import static org.imagine.markdown.uiapi.ErrorChecker.escape;
+import org.imagine.markdown.uiapi.graphics.StringDetailsSupplier;
 
 /**
  *
  * @author Tim Boudreau
  */
-final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
+final class RenderVisitor extends MarkdownParserBaseVisitor<Void> implements StringDetailsSupplier {
 
     private final MarkdownRenderingContext renderer;
     private int strikeCount;
@@ -54,6 +58,7 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
     private final EmbeddedImageCache cache;
     private boolean inEmbeddedImage;
     private boolean inLink;
+    private RuleNode currentRuleNode;
 
     RenderVisitor(MarkdownRenderingContext ctx, MarkdownUIProperties props, Rectangle2D.Float bounds, EmbeddedImageLoader imageLoader, EmbeddedImageCache cache) {
         this.renderer = ctx;
@@ -61,6 +66,29 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
         this.bounds = bounds;
         this.imageLoader = imageLoader == null ? EmbeddedImageLoader.EMPTY : imageLoader;
         this.cache = cache;
+    }
+
+    @Override
+    public int[] currentDetails(String string) {
+        if (currentRuleNode == null) {
+            throw new IllegalArgumentException("Not currently parsing");
+        }
+        CommonToken startToken = (CommonToken) ((ParserRuleContext) currentRuleNode).start;
+        int[] result = new int[]{
+            startToken.getStartIndex(),
+            startToken.getLine(),
+            startToken.getCharPositionInLine()
+        };
+        return result;
+    }
+
+    @Override
+    public Void visitChildren(RuleNode node) {
+        RuleNode old = currentRuleNode;
+        currentRuleNode = node;
+        Void result = super.visitChildren(node);
+        currentRuleNode = old;
+        return result;
     }
 
     Rectangle2D.Float usedBounds() {
@@ -447,7 +475,7 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
                 // The first list items head is the indication to the parser that
                 // we are starting a list, so it belongs to the list itself, not
                 // to the list item.  Weird but necessary.
-                setupListIndentFromHead(ctx.head);
+//                setupListIndentFromHead(ctx.head);
                 return super.visitUnorderedList(ctx);
             });
         });
@@ -473,14 +501,18 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
         }
     }
 
-    @Override
-    public Void visitUnorderedListItemHead(MarkdownParser.UnorderedListItemHeadContext ctx) {
+    private <T> T unorderedListItemHead(ParserRuleContext ctx, Supplier<T> supp) {
         return usingListItemIndent(() -> {
             toLineStart();
             float outdent = indentPixels(1.5F);
             drawBullet(x - outdent);
-            return null;
+            return supp.get();
         });
+    }
+
+    @Override
+    public Void visitUnorderedListItemHead(MarkdownParser.UnorderedListItemHeadContext ctx) {
+        return unorderedListItemHead(ctx, () -> null);
     }
 
     private final ListItemCounter orderedListItems = ListItemCounter.create();
@@ -546,24 +578,41 @@ final class RenderVisitor extends MarkdownParserBaseVisitor<Void> {
         return orderedListItem(ctx.head, () -> {
             return super.visitOrderedListItem(ctx);
         });
-//        return orderedListItems.enterItem(() -> {
-//            setupListIndentFromHead(ctx.head);
-//            return usingListItemIndent(() -> {
-//                toLineStart();
-//                return super.visitOrderedListItem(ctx);
-//            });
-//        });
+    }
+
+    <T> T unorderedListItem(ParserRuleContext head, Supplier<T> supp) {
+        setupListIndentFromHead(head);
+        return usingListItemIndent(() -> {
+            toLineStart();
+            return supp.get();
+        });
     }
 
     @Override
     public Void visitUnorderedListItem(MarkdownParser.UnorderedListItemContext ctx) {
-        setupListIndentFromHead(ctx.head);
-        return usingListItemIndent(() -> {
-            toLineStart();
-            return super.visitUnorderedListItem(ctx);
-        });
-        //            return super.visitUnorderedListItem(ctx);
+        return unorderedListItem(ctx.head, () -> super.visitUnorderedListItem(ctx));
     }
+
+    @Override
+    public Void visitFirstUnorderedListItem(MarkdownParser.FirstUnorderedListItemContext ctx) {
+        return unorderedListItem(ctx.head, () -> super.visitFirstUnorderedListItem(ctx));
+    }
+
+    @Override
+    public Void visitReturningUnorderedListItem(MarkdownParser.ReturningUnorderedListItemContext ctx) {
+        return unorderedListItem(ctx.head, () -> super.visitReturningUnorderedListItem(ctx));
+    }
+
+    @Override
+    public Void visitFirstUnorderedListItemHead(MarkdownParser.FirstUnorderedListItemHeadContext ctx) {
+        return unorderedListItemHead(ctx, () -> null);
+    }
+
+    @Override
+    public Void visitReturningUnorderedListItemHead(MarkdownParser.ReturningUnorderedListItemHeadContext ctx) {
+        return unorderedListItemHead(ctx, () -> null);
+    }
+
     private final Ellipse2D.Float ell = new Ellipse2D.Float();
 
     private void drawBullet(float x) {

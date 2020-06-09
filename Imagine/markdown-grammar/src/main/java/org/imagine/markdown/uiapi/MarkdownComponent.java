@@ -9,11 +9,13 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.IllegalComponentStateException;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.Point2D;
@@ -43,6 +45,8 @@ import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
+import org.imagine.markdown.uiapi.graphics.MarkdownDetailsModel;
+import org.imagine.markdown.uiapi.graphics.MarkdownRenderingModel;
 
 /**
  *
@@ -165,6 +169,78 @@ public final class MarkdownComponent extends JComponent {
                 }
             }
         }
+    }
+
+    private boolean selectable;
+
+    public MarkdownComponent setSelectable(boolean selectable) {
+        if (selectable != this.selectable) {
+            this.selectable = selectable;
+            if (selectable) {
+                if (selectionListener == null) {
+                    selectionListener = new SelectionListener();
+                }
+                addMouseListener(selectionListener);
+                addMouseMotionListener(selectionListener);
+                model = null;
+                invalidate();
+                revalidate();
+                repaint();
+            } else if (selectionListener != null) {
+                removeMouseListener(selectionListener);
+                removeMouseMotionListener(selectionListener);
+            }
+        }
+        return this;
+    }
+
+    private SelectionListener selectionListener;
+
+    public void clearSelection() {
+
+    }
+
+    private void updateSelection(Point a, Point b) {
+        if (model instanceof MarkdownDetailsModel) {
+            MarkdownDetailsModel mdm = (MarkdownDetailsModel) model;
+            int off1 = mdm.documentCharacterOffsetAt(a.x, a.y);
+            int off2 = mdm.documentCharacterOffsetAt(b.x, b.y);
+            System.out.println("Offsets: " + off1 + ":" + off2);
+        }
+    }
+
+    private class SelectionListener extends MouseAdapter implements MouseMotionListener {
+
+        private boolean armed;
+        private boolean dragged;
+        private Point pressPoint;
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            super.mouseClicked(e);
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            pressPoint = e.getPoint();
+            armed = true;
+        }
+
+        @Override
+        public void mouseDragged(MouseEvent e) {
+            if (pressPoint != null) {
+                Point p = e.getPoint();
+                updateSelection(pressPoint, p);
+                System.out.println("dragged " + pressPoint.x + ", " + pressPoint.y + " to " + p.x + "," + p.y);
+            }
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            armed = false;
+            pressPoint = null;
+        }
+
     }
 
     public void setLinkListener(Consumer<String> linkListener) {
@@ -296,9 +372,26 @@ public final class MarkdownComponent extends JComponent {
         return r;
     }
 
+    MarkdownRenderingModel model;
+    Rectangle bdsForModel;
+
     private Rectangle2D doRender(MarkdownRenderingContext ctx, Rectangle bds) {
+        if (model != null && bds.equals(bdsForModel)) {
+            ctx.withGraphics(g -> {
+                System.out.println("repaint using model");
+                model.paint(g);
+            });
+            return model.bounds();
+        }
         links.clear();
-        return md.render(ctx, props, bds, imageLoader());
+        if (selectable) {
+            model = md.detailsModel(ctx, props, bds, imageLoader());
+        } else {
+            model = md.model(ctx, props, bds, imageLoader());
+        }
+        bdsForModel = new Rectangle(bds);
+        return model.bounds();
+//        return md.render(ctx, props, bds, imageLoader());
     }
 
     @Override

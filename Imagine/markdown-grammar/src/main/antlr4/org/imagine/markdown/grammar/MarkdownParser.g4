@@ -1,6 +1,8 @@
 parser grammar MarkdownParser;
 
-options{tokenVocab=MarkdownLexer; } document
+options { tokenVocab = MarkdownLexer; }
+
+ document
     : ( heading | blockquote | unorderedList | orderedList | paragraphs |
         horizontalRule | whitespace | embeddedImage | preformatted )+ EOF?;
 
@@ -56,7 +58,23 @@ orderedListItem
     : head=orderedListItemHead paragraph;
 
 unorderedList
-    : head=unorderedListItemHead unorderedListItem+;
+    : ( firstUnorderedListItem unorderedListItem* ( unorderedList ( returningUnorderedListItem
+        unorderedListItem* )* ))
+    | ( firstUnorderedListItem unorderedListItem* )
+    | unorderedListItem ( firstUnorderedListItem unorderedListItem* ( unorderedList
+        ( returningUnorderedListItem unorderedListItem* )* ));
+
+firstUnorderedListItem
+    : head=firstUnorderedListItemHead paragraph;
+
+firstUnorderedListItemHead
+    : NestedListPrologue | ListPrologue;
+
+returningUnorderedListItem
+    : head=returningUnorderedListItemHead paragraph;
+
+returningUnorderedListItemHead
+    : ReturningListPrologue;
 
 unorderedListItemHead
     : head=NestedListItemHead? ListPrologue;
@@ -71,9 +89,8 @@ paragraphs
     : paragraph+;
 
 paragraph
-    : whitespace?? innerContent+? paraBreak?;
+    : whitespace?? innerContent+ ( whitespace innerContent )*? paraBreak?;
 
-//    : ParaNewLine?? ParaInlineWhitespace?? innerContent+? paraBreak?;
 paraBreak
     : ParaBreak;
 
@@ -96,16 +113,18 @@ strikethrough
     : ParaStrikethrough innerContent ParaStrikethrough;
 
 innerContent
-    : ( content | embeddedImage )+ ( whitespace ( content | embeddedImage ))*;
+    : ( content | embeddedImage )+? ( whitespace ( content | embeddedImage ))*? whitespace?;
 
 text
-    : phrase (( whitespace )? ( phrase ))* whitespace?;
+    : ( words+ whitespace* )+?;
 
-phrase
-    : ( ParaWords whitespace? )( ParaWords whitespace? )*;
+//    : ( words whitespace? )+ (whitespace? ( ( words whitespace? )+ ))*? whitespace?;
+words
+    : ParaWords;
 
 whitespace
     : ParaInlineWhitespace
+    | ParaNewline
     | Whitespace;
 
 linkTarget
