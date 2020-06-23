@@ -33,7 +33,7 @@ import org.openide.util.NbBundle;
 @Help(id = "TriangleTool", related = {"OvalTool", "RectangleTool", "CircleTool", "RhombusTool", "RoundRectangleTool"}, content = {
     @Help.HelpText(language = "en", country = "US",
             value = "# Triangle Tool\n\n"
-            + "The rectangle tool allows you to draw triangles;  its customizer lets you "
+            + "The triangle tool allows you to draw triangles;  its customizer lets you "
             + "configure the fill and outline painting style, and the line stroke the outline"
             + "is drawn with (if any).\n\n"
             + "Holding down Shift while dragging rotates the created triangle.")})

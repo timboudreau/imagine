@@ -8,7 +8,7 @@ options { tokenVocab = MarkdownLexer; }
 
 horizontalRule
     : ( HorizontalRule HorizontalRuleTail )
-    | HorizontalRuleTail+;
+    | HorizontalRuleTail;
 
 heading
     : head=OpenHeading HeadingPrologue body=headingContent whitespace?

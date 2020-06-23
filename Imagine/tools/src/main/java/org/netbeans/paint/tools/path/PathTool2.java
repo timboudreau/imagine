@@ -92,7 +92,7 @@ public class PathTool2 extends ResponderTool implements HelpItem.Provider {
             + "what _kind of path segment_ to create to the next point.  Simply clicking will "
             + "create a straight line.\n\nTo create a _quadratic curve_, hold down the *CTRL* "
             + "key when you click - you will then place the control point which changes the"
-            + "shape of the curve visibly as you move the mouse.\n\nTo create a _cubic curve_,"
+            + "shape of the curve visibly as you move the mouse.\n\nTo create a _cubic curve_ "
             + "hold down the *SHIFT* key when you click - you will then place the two control "
             + "points.\n\n"
             + "When placing a destination (not control) point, if you move the mouse cursor over "
@@ -133,7 +133,7 @@ public class PathTool2 extends ResponderTool implements HelpItem.Provider {
     @Help(id="InitialStateTip", noIndex = true, content = {@HelpText(value="# Path Tool\n\n"
             + "Click to create the first point of the shape.  For subsequent points, "
             + "holding down *CTRL* will create a _quadratic_ curve, and *SHIFT* will "
-            + "create a _cubic_curve.")})
+            + "create a _cubic curve_")})
     @Override
     protected void onAttachRepainter(PaintParticipant.Repainter rep) {
         rep.requestRepaint();

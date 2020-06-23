@@ -151,7 +151,6 @@ public class HelpAnnotationProcessor extends AbstractProcessor {
                     }).build();
         }).whereAnnotationType(TOPIC_ANNO, b -> {
             b.testMemberAsAnnotation("value", amtb -> {
-                System.out.println("test one topic anno " + amtb);
                 amtb.testMember("language").stringValueMustMatch((language, onError) -> {
                     if (language == null) {
                         // default en
@@ -196,7 +195,6 @@ public class HelpAnnotationProcessor extends AbstractProcessor {
                 lastElement = el;
                 Set<AnnotationMirror> mirrors = utils.findAnnotationMirrors(el, HELP_ANNO, TOPIC_ANNO);
                 for (AnnotationMirror mir : mirrors) {
-                    System.out.println("MIR " + mir);
                     if (test.test(mir, el)) {
                         if (mir.getAnnotationType().toString().equals(HELP_ANNO)) {
                             handleHelpAnnotation(el, mir, roundEnv);
@@ -241,12 +239,10 @@ public class HelpAnnotationProcessor extends AbstractProcessor {
             info = new TopicInfo(el);
             topicForElement.put(typeOrPackageName, info);
         }
-        System.out.println("Handle topic anno " + mir);
         for (AnnotationMirror am : items) {
             String language = utils.annotationValue(am, "language", String.class, "en");
             String country = utils.annotationValue(am, "country", String.class, "en".equals(language) ? "US" : "");
             String text = utils.annotationValue(am, "value", String.class);
-            System.out.println("  add " + language + "-" + country + ": '" + text + "'");
             info.add(language, country, text);
         }
     }
@@ -376,7 +372,6 @@ public class HelpAnnotationProcessor extends AbstractProcessor {
         if (all.isEmpty()) {
             return null;
         }
-        System.out.println("ALL IDS: " + all);
         LevenshteinDistance.sortByDistance(id, all);
         StringBuilder sb = new StringBuilder();
         for (String top : all) {
@@ -651,6 +646,10 @@ public class HelpAnnotationProcessor extends AbstractProcessor {
                                         ifo.elements.iterator().hasNext() ? ifo.elements.iterator().next() : null);
                                 ok = false;
                             } else {
+                                // XXX this fails for incremental compilation in an IDE.
+                                // Need to generate a file listing the items in meta-inf or something
+                                // to have an index to check to make this work incrementally
+                                /*
                                 if (!idsInThisPackage.contains(rel) && !isFullyQualifiedId(rel)) {
                                     try {
                                         String q = this.qualify(rel);
@@ -665,7 +664,7 @@ public class HelpAnnotationProcessor extends AbstractProcessor {
                                                 utils.fail("Unresolvable related help item '" + rel + "' on '" + ifo.id + "'",
                                                         ifo.elements.iterator().hasNext() ? ifo.elements.iterator().next() : null);
                                             }
-                                            ok = false;
+//                                            ok = false;
                                         }
                                     } catch (AmbiguousIdException ex) {
                                         ok = false;
@@ -689,6 +688,7 @@ public class HelpAnnotationProcessor extends AbstractProcessor {
 
                                     }
                                 }
+                                */
                             }
                         }
                         if (ok) {
@@ -988,7 +988,6 @@ public class HelpAnnotationProcessor extends AbstractProcessor {
     public Iterable<? extends Completion> getCompletions(Element element, AnnotationMirror annotation, ExecutableElement member, String userText) {
         String annoType = annotation.getAnnotationType().toString();
         boolean noText = userText == null || userText.trim().isEmpty();
-        System.out.println("USER TEXT: '" + userText + "' for " + annoType + " member " + member.getSimpleName());
         if (HELP_ANNO.equals(annoType)) {
             if (member != null && member.getSimpleName() != null) {
                 switch (member.getSimpleName().toString()) {
@@ -996,7 +995,6 @@ public class HelpAnnotationProcessor extends AbstractProcessor {
                         userText = stripQuotes(userText);
                         noText = userText == null || userText.trim().isEmpty();
                         Set<Completion> idcs = idCompletions(userText);
-                        System.out.println("ID COMPLETIONS: " + idcs);
                         return idcs;
                     case "content":
                         Locale loc = Locale.getDefault();
@@ -1059,7 +1057,6 @@ public class HelpAnnotationProcessor extends AbstractProcessor {
                                 languageCompletions.add(new GenericCompletion(dispLanguage,
                                         lang + (hadTrailingQuote ? "" : '"')));
                             }
-                            System.out.println("ret completions " + languageCompletions);
                             return languageCompletions;
                         }
                         break;

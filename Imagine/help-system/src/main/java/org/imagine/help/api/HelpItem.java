@@ -294,7 +294,8 @@ public interface HelpItem {
      * @return
      */
     default String identifier() {
-        return getClass().getPackageName() + '.' + name();
+
+        return getClass().getPackage().getName() + '.' + name();
     }
 
     /**

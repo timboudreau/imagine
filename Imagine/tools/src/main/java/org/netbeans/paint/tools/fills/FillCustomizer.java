@@ -48,7 +48,7 @@ import org.openide.util.NbBundle;
                     + "Gradient fills can all be set in repeating, reflecting or non-repeating"
                     + "modes.\n\n"
                     + "Each of these has a customizer which allows you to design and save the fills "
-                    + "you design for later reuse; they can also be saved to the *Fills Palette*"
+                    + "you design for later reuse; they can also be saved to the *Fills Palette* "
                     + "for reuse across pictures or projects.")})
 public class FillCustomizer implements Customizer<Fill> {
 
