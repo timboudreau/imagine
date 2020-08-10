@@ -28,12 +28,12 @@ public final class PaletteSaver<T> implements BiConsumer<T, BiConsumer<Throwable
 
     @Override
     public void accept(T t, BiConsumer<Throwable, String> c) {
-        saver.apply(null, t, c);
+        saver.accept(null, t, c);
     }
 
     @Override
-    public void apply(String name, T t, BiConsumer<Throwable, String> c) {
-        saver.apply(name, t, c);
+    public void accept(String name, T t, BiConsumer<Throwable, String> c) {
+        saver.accept(name, t, c);
     }
 
 }

@@ -2,12 +2,12 @@ parser grammar MarkdownParser;
 
 options { tokenVocab = MarkdownLexer; }
 
- document
+document
     : ( heading | blockquote | unorderedList | orderedList | paragraphs |
-        horizontalRule | whitespace | embeddedImage | preformatted )+ EOF?;
+        horizontalRule | whitespace | embeddedImage | preformatted )+ EOF;
 
 horizontalRule
-    : ( HorizontalRule HorizontalRuleTail )
+    : HorizontalRule HorizontalRuleTail
     | HorizontalRuleTail;
 
 heading

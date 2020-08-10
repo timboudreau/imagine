@@ -200,7 +200,7 @@ public enum ShapeCharacteristics {
         return get(shape, (Set<ShapeCharacteristics> ch, List<EqPointDouble> pts) -> {
             Shape res = bestShapeFor(ch, pts);
             if (c != null) {
-                c.apply(ch, pts, res);
+                c.accept(ch, pts, res);
             }
             return res;
         });

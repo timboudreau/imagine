@@ -46,6 +46,7 @@ import static org.imagine.help.annotation.processors.HelpAnnotationProcessor.TOP
 import org.imagine.markdown.uiapi.ErrorConsumer;
 import org.imagine.markdown.uiapi.ErrorConsumer.ProblemKind;
 import org.imagine.markdown.uiapi.Markdown;
+import com.mastfrog.util.strings.LevenshteinDistance;
 
 /**
  * Generates an enum constant for each &#064;Help annotation found, an an enum

@@ -1106,7 +1106,7 @@ public class DesignWidgetManager implements DesignerControl {
             assert el != null : "No shape";
 
             ManyControlPointsWidget cpw = (ManyControlPointsWidget) w;
-            c.apply(e, cpw, shapeWidget);
+            c.accept(e, cpw, shapeWidget);
             shapeWidget.onRotated();
         }
 
@@ -1257,7 +1257,7 @@ public class DesignWidgetManager implements DesignerControl {
                     + " owner id " + Long.toString(e.owner().id(), 36)
                     + "(" + e.owner().id() + ")";
             ManyControlPointsWidget cpw = (ManyControlPointsWidget) w;
-            c.apply(e, cpw, shapeWidget);
+            c.accept(e, cpw, shapeWidget);
             shapeWidget.onControlPointMove(e);
         }
 

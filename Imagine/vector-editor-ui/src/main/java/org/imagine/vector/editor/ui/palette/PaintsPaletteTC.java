@@ -30,7 +30,6 @@ public final class PaintsPaletteTC extends AbstractPaletteTC {
         setDisplayName(Bundle.PAINTS_PALETTE());
         setName(preferredID());
         setIcon(ImageUtilities.loadImage("org/imagine/inspectors/fills.svg", false));
-
     }
 
     @Override

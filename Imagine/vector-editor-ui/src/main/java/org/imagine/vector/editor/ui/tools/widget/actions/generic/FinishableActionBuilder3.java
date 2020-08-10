@@ -39,14 +39,14 @@ public final class FinishableActionBuilder3<T, R, S> extends ActionBuilder<Finis
 
     public ActionsBuilder finish(TriConsumer<? super T, ? super R, ? super S> performer) {
         this.performer = (Sense<T> a, Sense<R> b, Sense<S> c) -> {
-            performer.apply(a.get(), b.get(), c.get());
+            performer.accept(a.get(), b.get(), c.get());
         };
         return factory.add(this);
     }
 
     public ActionsBuilder finishMultiple(TriConsumer<? super Collection<? extends T>, ? super Collection<? extends R>, ? super Collection<? extends S>> performer) {
         this.performer = (Sense<T> a, Sense<R> b, Sense<S> c) -> {
-            performer.apply(a.all(), b.all(), c.all());
+            performer.accept(a.all(), b.all(), c.all());
         };
         return factory.add(this);
     }

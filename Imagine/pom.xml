@@ -651,7 +651,7 @@
         <junit5.version>5.6.2</junit5.version>
         <batik.version>1.12</batik.version>
         <brandingToken>imagine</brandingToken>
-        <mastfrog.version>2.6.10</mastfrog.version>
+        <mastfrog.version>2.7.0</mastfrog.version>
         <nbcluster>imagine</nbcluster>
         <netbeans.run.params>${netbeans.run.params.ide}</netbeans.run.params>
         <netbeans.run.params.ide/>

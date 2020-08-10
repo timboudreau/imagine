@@ -124,12 +124,12 @@ public final class InspectorTopComponent extends TopComponent implements TriCons
     @Override
     public void componentClosed() {
         active = false;
-        apply(Lookup.EMPTY, Collections.emptyList(), Collections.emptyList());
+        accept(Lookup.EMPTY, Collections.emptyList(), Collections.emptyList());
         fontManagingPanel.removeAll();
     }
 
     @Override
-    public void apply(Lookup lkp, List<? extends InspectorFactory<?>> removed, List<? extends InspectorFactory<?>> added) {
+    public void accept(Lookup lkp, List<? extends InspectorFactory<?>> removed, List<? extends InspectorFactory<?>> added) {
         if (active) {
             // Otherwise, changing focus to this component will clobber
             // its contents

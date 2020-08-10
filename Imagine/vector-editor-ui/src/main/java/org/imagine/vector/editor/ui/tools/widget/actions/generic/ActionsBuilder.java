@@ -415,7 +415,7 @@ public class ActionsBuilder {
             Sense<S> sense3 = senseFactory3.senseForLookup(lookup);
             return () -> {
                 if (test1.test(sense1)) {
-                    performer.apply(sense1, sense2, sense3);
+                    performer.accept(sense1, sense2, sense3);
                 }
             };
         }

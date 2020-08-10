@@ -168,6 +168,7 @@ public class ShapeActions {
         "# {0} - name",
         "opMoveDown=Move {0} Down",
         "actionArbitraryScale=Arbt&rary Scale",
+        "# {0} - name",
         "opArbitraryScale=Change Scale on {0}",
         "opArbitraryScaleMultiple=Change Scale on Multiple Shapes",
         "dlgAdjustScale=Scale & Transform",})

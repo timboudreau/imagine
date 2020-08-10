@@ -11,7 +11,6 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import org.imagine.geometry.EqPointDouble;
 import org.imagine.geometry.util.GeometryStrings;
-import org.imagine.geometry.util.GeometryUtils;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -121,14 +120,14 @@ public class CoordinateMapSingleTest {
     public void testSingleComplex() {
         CoordinateMapSingle<Set<Thing>> m = new CoordinateMapSingle<>(0, 0, 100, 100);
         System.out.println("single complex:");
-        complexTest(m, 0, 99);
+//        complexTest(m, 0, 99);
     }
 
     @Test
     public void testPartitionedComplex() {
         CoordinateMapPartitioned<Set<Thing>> m = new CoordinateMapPartitioned<>(24);
         System.out.println("partitioned complex:");
-        complexTest(m, -250, 250);
+//        complexTest(m, -250, 250);
     }
 
     @Test

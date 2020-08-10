@@ -96,7 +96,7 @@ final class Inspectors {
                 Collections.sort(addedLocal, (a, b) -> {
                     return Integer.compare(indexOf(a), indexOf(b));
                 });
-                listener.apply(lkp, removedLocal, addedLocal);
+                listener.accept(lkp, removedLocal, addedLocal);
             }
         }
     }

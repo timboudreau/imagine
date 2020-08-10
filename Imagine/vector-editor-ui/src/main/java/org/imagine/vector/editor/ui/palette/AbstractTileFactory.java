@@ -353,7 +353,9 @@ abstract class AbstractTileFactory<T, X extends TransferHandler> implements Tile
         }
     }
 
-    @Messages("edit=Edit {0}")
+    @Messages({
+        "# {0} - what",
+        "edit=Edit {0}"})
     protected boolean onTileDoubleClick(MouseEvent e, Tile<T> tile) {
         PaletteItemEditorSupplier<T> supp = PaletteItemEditorSupplier.find(type);
         if (supp != null) {

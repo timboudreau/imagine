@@ -1,6 +1,8 @@
 package org.imagine.vector.editor.ui.io;
 
 import com.mastfrog.function.throwing.io.IOConsumer;
+import com.mastfrog.util.collections.CollectionUtils;
+import com.mastfrog.util.strings.Strings;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -53,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -232,9 +235,44 @@ public class VectorIOTest {
                 l.add(e);
             }
 
+            assertPrimitiveListEqual(Arrays.asList(primitives), CollectionUtils.reversed(all));
             assertEquals(l, got);
-            assertEquals(Arrays.asList(primitives), all);
         });
+    }
+
+    private static void assertPrimitiveListEqual(List<Primitive> a, List<Primitive> b) {
+        Set<Primitive> expectedSet = new HashSet<>(a);
+        Set<Primitive> gotSet = new HashSet<>(b);
+        Set<Primitive> unexpected = new HashSet<>(gotSet);
+        unexpected.removeAll(expectedSet);
+        Set<Primitive> absent = new HashSet<>(expectedSet);
+        absent.removeAll(gotSet);
+        if (!unexpected.isEmpty() || !absent.isEmpty()) {
+            StringBuilder sb = new StringBuilder("Sets do not match:");
+            if (!unexpected.isEmpty()) {
+                sb.append("\nSet contains unexpected elements: \n")
+                        .append(Strings.join("\n * ", unexpected));
+            }
+            if (!absent.isEmpty()) {
+                sb.append("\nSet is missing elements: \n")
+                        .append(Strings.join("\n * ", unexpected));
+            }
+            fail(sb.toString());
+        }
+        if (!a.equals(b)) {
+            StringBuilder sb = new StringBuilder("Lists contain same content, but not in the same order. Expected:");
+            for (int i = 0; i < a.size(); i++) {
+                Primitive p = a.get(i);
+                sb.append("\n  ").append(i + 1).append(". ").append(p);
+            }
+            sb.append("\nGot:\n");
+            for (int i = 0; i < a.size(); i++) {
+                Primitive p = b.get(i);
+                sb.append("\n  ").append(i + 1).append(". ").append(p);
+            }
+            fail(sb.toString());
+        }
+        assertEquals(a, b);
     }
 
     @Test

@@ -183,7 +183,7 @@ public class CoordinateMapSingle<T> implements CoordinateMap<T> {
 
     @Override
     public boolean contains(double x, double y) {
-        assert noDuplicates();
+//        assert noDuplicates();
         if (containsCoordinate(x, y)) {
             int addr = mapAddressFrom(x, y);
             boolean result = map.containsKey(addr);
