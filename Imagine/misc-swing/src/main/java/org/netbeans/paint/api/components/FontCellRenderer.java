@@ -26,7 +26,7 @@ import javax.swing.JComponent;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.UIManager;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.PooledTransform;
 
 /**
  *

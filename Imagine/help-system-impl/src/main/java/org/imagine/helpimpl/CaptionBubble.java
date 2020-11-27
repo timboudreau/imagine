@@ -17,13 +17,13 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
-import org.imagine.geometry.Axis;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.Hemisphere;
-import org.imagine.geometry.uirect.MutableRectangle2D;
-import static org.imagine.geometry.uirect.MutableRectangle2D.*;
+import com.mastfrog.geometry.Axis;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.Hemisphere;
+import com.mastfrog.geometry.uirect.MutableRectangle2D;
+import static com.mastfrog.geometry.uirect.MutableRectangle2D.*;
 
 /**
  *
@@ -60,12 +60,15 @@ public class CaptionBubble {
     EqLine ILINE = new EqLine();
     EqLine EDLINE = new EqLine();
     EqPointDouble CORN = new EqPointDouble();
+    static final float WAFFLE_OFFSET = 16;
+    static final float PATTERN_INTERVAL = 36;
 
     private Shape computeShape() {
         Path2D.Float path = new Path2D.Float(Path2D.WIND_NON_ZERO);
-        float pxPer = 64;
-        float pxOff = 24;
+        float pxPer = PATTERN_INTERVAL;
+        float pxOff = WAFFLE_OFFSET;
         MutableRectangle2D rect = MutableRectangle2D.of(targetBounds.x, targetBounds.y, targetBounds.width, targetBounds.height);
+
         if (rect.isEmpty()) {
             return rect;
         }

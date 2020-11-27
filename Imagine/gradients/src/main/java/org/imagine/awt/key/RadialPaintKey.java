@@ -9,7 +9,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import static java.lang.Float.floatToIntBits;
 import static java.lang.Float.intBitsToFloat;
-import org.imagine.geometry.EnhRectangle2D;
+import com.mastfrog.geometry.EnhRectangle2D;
 import org.imagine.io.KeyWriter;
 
 /**

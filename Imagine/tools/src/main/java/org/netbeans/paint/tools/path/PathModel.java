@@ -12,11 +12,11 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
-import org.imagine.geometry.EnhRectangle2D;
-import org.imagine.geometry.path.PathElement;
-import org.imagine.geometry.path.PathElementKind;
-import static org.imagine.geometry.path.PathElementKind.LINE;
-import static org.imagine.geometry.path.PathElementKind.MOVE;
+import com.mastfrog.geometry.EnhRectangle2D;
+import com.mastfrog.geometry.path.PathElement;
+import com.mastfrog.geometry.path.PathElementKind;
+import static com.mastfrog.geometry.path.PathElementKind.LINE;
+import static com.mastfrog.geometry.path.PathElementKind.MOVE;
 
 /**
  *

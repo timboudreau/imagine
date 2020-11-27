@@ -11,20 +11,22 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import net.java.dev.imagine.api.vector.elements.ImageWrapper;
 import net.java.dev.imagine.api.vector.elements.PathText;
-import org.imagine.geometry.PieWedge;
-import org.imagine.geometry.Polygon2D;
-import org.imagine.geometry.RotationDirection;
-import org.imagine.geometry.util.GeometryStrings;
+import com.mastfrog.geometry.PieWedge;
+import com.mastfrog.geometry.Polygon2D;
+import com.mastfrog.geometry.RotationDirection;
+import com.mastfrog.geometry.util.GeometryStrings;
 import com.mastfrog.function.state.Int;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.java.dev.imagine.api.vector.Textual;
 import org.imagine.editor.api.AspectRatio;
-import org.imagine.geometry.CornerAngle;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.LineVector;
-import org.imagine.geometry.analysis.VectorVisitor;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.CornerAngle;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.LineVector;
+import com.mastfrog.geometry.analysis.VectorVisitor;
+import com.mastfrog.geometry.util.PooledTransform;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
@@ -209,8 +211,14 @@ public class OneShapeWidget extends Widget {
 
     private ShapeElement setControlPointDragInProgress(boolean value) {
         if (value && draggingShape) {
-            throw new IllegalStateException("Dragging control point and "
-                    + "dragging shape simultaneously is impossible");
+            // XXX nasty workaround - somehow we are sometimes losing
+            // the end-drag event
+            onEndDrag(true);
+            Logger.getLogger(OneShapeWidget.class.getName())
+                    .log(Level.INFO, toString(),
+                            new IllegalStateException("Dragging control point and "
+                                    + "dragging shape simultaneously is impossible"
+                                    + " but appears to be happening"));
         }
 
         if (value != this.draggingControlPoint) {

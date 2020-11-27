@@ -40,8 +40,8 @@ import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.Timer;
 import org.imagine.awt.counters.Ring;
-import org.imagine.geometry.Angle;
-import org.imagine.geometry.Circle;
+import com.mastfrog.geometry.Angle;
+import com.mastfrog.geometry.Circle;
 
 /**
  *

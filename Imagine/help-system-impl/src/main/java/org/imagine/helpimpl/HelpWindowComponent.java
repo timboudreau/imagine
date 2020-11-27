@@ -65,7 +65,7 @@ import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import org.imagine.geometry.Circle;
+import com.mastfrog.geometry.Circle;
 import org.imagine.help.api.HelpItem;
 import org.imagine.help.api.search.HelpIndex;
 import org.imagine.help.api.search.HelpSearchCallback;
@@ -461,6 +461,9 @@ public class HelpWindowComponent extends JPanel {
                 selectedHelpItem = itemItem;
                 Markdown md = itemItem.getContent(Markdown.class);
                 detail.setMarkdown(md);
+                detail.invalidate();
+                detail.revalidate();
+                detail.repaint();
             }
         }
     }

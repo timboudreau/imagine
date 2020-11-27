@@ -40,7 +40,7 @@ import net.java.dev.imagine.effects.spi.ImageSource;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.Zoom;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.PooledTransform;
 import org.imagine.utils.painting.RepaintHandle;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.imagine.utils.java2d.GraphicsUtils;

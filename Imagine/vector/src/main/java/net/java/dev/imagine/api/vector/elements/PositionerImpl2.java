@@ -8,10 +8,10 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.List;
 import net.java.dev.imagine.api.vector.util.plot.Positioner;
-import org.imagine.geometry.Angle;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.Angle;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.util.PooledTransform;
 
 /**
  *

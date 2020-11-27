@@ -114,7 +114,6 @@
         <module>image-editor-api</module>
         <module>utils</module>
         <module>mastfrog-utils</module>
-        <module>geometry</module>
         <module>inspectors</module>
         <module>gradients</module>
         <module>borrowed</module>
@@ -212,11 +211,6 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>fx</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>geometry</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -372,6 +366,11 @@
             <dependency>
                 <groupId>com.mastfrog</groupId>
                 <artifactId>function</artifactId>
+                <version>${mastfrog.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mastfrog</groupId>
+                <artifactId>geometry</artifactId>
                 <version>${mastfrog.version}</version>
             </dependency>
             <dependency>
@@ -651,7 +650,7 @@
         <junit5.version>5.6.2</junit5.version>
         <batik.version>1.12</batik.version>
         <brandingToken>imagine</brandingToken>
-        <mastfrog.version>2.7.0</mastfrog.version>
+        <mastfrog.version>2.7.1</mastfrog.version>
         <nbcluster>imagine</nbcluster>
         <netbeans.run.params>${netbeans.run.params.ide}</netbeans.run.params>
         <netbeans.run.params.ide/>

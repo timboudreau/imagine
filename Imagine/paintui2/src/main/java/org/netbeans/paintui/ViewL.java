@@ -6,7 +6,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Point2D;
 import javax.swing.JComponent;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqPointDouble;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Scene.SceneListener;
 import org.netbeans.api.visual.widget.Widget;

@@ -18,7 +18,7 @@ import net.dev.java.imagine.api.tool.aspects.ScalingMouseListener;
 import net.java.dev.imagine.spi.image.LayerImplementation;
 import net.java.dev.imagine.ui.common.PositionStatusLineElementProvider;
 import org.imagine.editor.api.ContextLog;
-import org.imagine.geometry.util.GeometryStrings;
+import com.mastfrog.geometry.util.GeometryStrings;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.widget.Widget;
 import org.openide.util.Lookup;

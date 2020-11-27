@@ -8,10 +8,10 @@
  */
 package org.netbeans.paint.tools;
 
-import org.imagine.geometry.uirect.MutableRectangle2D;
+import com.mastfrog.geometry.uirect.MutableRectangle2D;
 import java.awt.BasicStroke;
 import net.dev.java.imagine.api.tool.aspects.Attachable;
-import static org.imagine.geometry.uirect.MutableRectangle2D.*;
+import static com.mastfrog.geometry.uirect.MutableRectangle2D.*;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
@@ -45,8 +45,8 @@ import static net.java.dev.imagine.api.toolcustomizers.Constants.*;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.grid.SnapSettings;
-import org.imagine.geometry.EnhRectangle2D;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EnhRectangle2D;
+import com.mastfrog.geometry.EqPointDouble;
 import org.imagine.help.api.HelpItem;
 import org.imagine.help.api.annotations.Help;
 

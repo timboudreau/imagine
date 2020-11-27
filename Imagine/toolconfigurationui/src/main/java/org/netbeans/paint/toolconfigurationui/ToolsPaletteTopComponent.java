@@ -1,27 +1,38 @@
 package org.netbeans.paint.toolconfigurationui;
 
+import com.mastfrog.util.strings.Strings;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.swing.Action;
 import static javax.swing.Action.NAME;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.Icon;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JToggleButton;
-import javax.swing.plaf.basic.BasicToggleButtonUI;
+import javax.swing.UIManager;
 import net.dev.java.imagine.api.tool.Category;
 import net.dev.java.imagine.api.tool.SelectedTool;
 import net.dev.java.imagine.api.tool.Tool;
 import net.dev.java.imagine.spi.tool.Tools;
+import com.mastfrog.geometry.util.PooledTransform;
+import org.netbeans.paint.api.components.FlexEmptyBorder;
 import org.netbeans.paint.api.components.OneComponentLayout;
 import org.netbeans.paint.api.components.TilingLayout;
+import org.netbeans.paint.api.components.VerticalFlowLayout;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.util.ContextAwareAction;
@@ -49,7 +60,7 @@ public final class ToolsPaletteTopComponent extends TopComponent {
     private static ToolsPaletteTopComponent instance;
     private final JScrollPane pane = new JScrollPane();
     private final JPanel panel = new JPanel(new TilingLayout(ToolsPaletteTopComponent::toolsIconSize,
-            TilingLayout.TilingPolicy.BEST_FIT));
+            TilingLayout.TilingPolicy.FIXED_SIZE));
 
     public ToolsPaletteTopComponent() {
         setDisplayName(NbBundle.getMessage(ToolsPaletteTopComponent.class,
@@ -61,8 +72,9 @@ public final class ToolsPaletteTopComponent extends TopComponent {
         pane.setViewportView(panel);
     }
 
+    static int tiSize = 26;
     static int toolsIconSize() {
-        return 32;
+        return tiSize;
     }
 
     @Override
@@ -82,41 +94,59 @@ public final class ToolsPaletteTopComponent extends TopComponent {
     @Override
     protected void componentOpened() {
         super.componentOpened();
-        populateOrig();
+//        populateOrig();
+        populate();
         invalidate();
     }
 
     private void populate() {
-        JTabbedPane tabs = new JTabbedPane();
-        Map<Category, JScrollPane> pnlForCategory = new HashMap<>();
+//        JPanel tabs = new JPanel(new VerticalFlowLayout(3));
+        JPanel tabs = new JPanel(new VerticalFlowLayout(3, true));
+        tabs.setBorder(new FlexEmptyBorder());
+
+        Map<Category, JPanel> pnlForCategory = new HashMap<>();
         ButtonGroup grp = new ButtonGroup();
-        for (Category cat : Tools.getDefault()) {
-            JScrollPane pane = pnlForCategory.get(cat);
-            JPanel panel;
+        Iterator<Category> it = Tools.getDefault().iterator();
+        List<Category> l = new ArrayList<>();
+        while (it.hasNext()) {
+            l.add(it.next());
+        }
+        l.sort((a, b) -> {
+            return -a.name().compareToIgnoreCase(b.name());
+        });
+        for (Category cat : l) {
+            JPanel pane = pnlForCategory.get(cat);
             if (pane == null) {
-                panel = new JPanel(new TilingLayout(ToolsPaletteTopComponent::toolsIconSize,
+                JLabel lbl = new JLabel(Strings.capitalize(cat.name()));
+                pane = new JPanel(new TilingLayout(ToolsPaletteTopComponent::toolsIconSize,
                         TilingLayout.TilingPolicy.BEST_FIT));
-                pane = new JScrollPane(panel);
                 pane.setName(cat.toString());
+                lbl.setLabelFor(pane);
+                lbl.setFont(lbl.getFont().deriveFont(AffineTransform.getScaleInstance(0.875, 0.875)));
+                tabs.add(lbl);
                 tabs.add(pane);
-            } else {
-                panel = (JPanel) pane.getViewport().getView();
             }
             for (Tool tool : Tools.getDefault().forCategory(cat)) {
-                panel.add(createButton(cat, tool, grp));
+                pane.add(createButton(cat, tool, grp));
             }
         }
-        remove(this.pane);
-        add(tabs);
+        this.pane.setViewportView(tabs);
     }
 
     private JToggleButton createButton(Category cat, Tool tool, ButtonGroup grp) {
         JToggleButton b = new JToggleButton();
-        b.setUI(new BasicToggleButtonUI());
+//        b.setUI(new BasicToggleButtonUI());
         b.setToolTipText(tool.getDisplayName());
-        b.setIcon(tool.getIcon());
+
+        Icon icon = new ScaledIcon(tool.getIcon());
+        tiSize = Math.max(icon.getIconHeight(), Math.max(tiSize, icon.getIconWidth()));
+        b.setIcon(icon);
         b.setRolloverEnabled(true);
-        b.setBorder(BorderFactory.createEmptyBorder());
+        b.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3),
+                BorderFactory.createLineBorder(UIManager.getColor("controlDkShadow"))));
+//        b.setContentAreaFilled(false);
+        b.setText("");
+        b.setMinimumSize(new Dimension(toolsIconSize(), toolsIconSize()));
         b.setSelected(SelectedTool.getDefault().isToolSelected(tool.getName()));
         b.addActionListener(ae -> {
             SelectedTool.getDefault().setSelectedTool(tool);
@@ -130,6 +160,40 @@ public final class ToolsPaletteTopComponent extends TopComponent {
         b.putClientProperty("obs", obs);
         grp.add(b);
         return b;
+    }
+
+    static final class ScaledIcon implements Icon {
+
+        private final Icon orig;
+
+        public ScaledIcon(Icon orig) {
+            this.orig = orig;
+        }
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            PooledTransform.withScaleInstance(2, 2, xform -> {
+                Graphics2D gx = ((Graphics2D) g.create());
+                gx.translate(-x, -y);
+                gx.transform(xform);
+                try {
+                    orig.paintIcon(c, gx, x, y);
+                } finally {
+                    gx.dispose();
+                }
+            });
+        }
+
+        @Override
+        public int getIconWidth() {
+            return orig.getIconWidth() * 2;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return orig.getIconHeight() * 2;
+        }
+
     }
 
     private void populateOrig() {
@@ -149,6 +213,7 @@ public final class ToolsPaletteTopComponent extends TopComponent {
             btn.setRolloverEnabled(true);
             btn.setToolTipText((String) a.getValue(NAME));
             btn.setText("");
+
             panel.add(btn);
         }
     }

@@ -15,7 +15,7 @@ import net.java.dev.imagine.api.vector.design.ControlPointController;
 import net.java.dev.imagine.api.vector.design.ControlPointFactory;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Size;
-import org.imagine.geometry.Triangle2D;
+import com.mastfrog.geometry.Triangle2D;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

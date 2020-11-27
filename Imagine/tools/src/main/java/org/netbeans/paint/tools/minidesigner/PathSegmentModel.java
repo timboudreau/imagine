@@ -14,11 +14,11 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import javax.swing.event.ChangeListener;
-import org.imagine.geometry.Angle;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.path.PathElementKind;
-import org.imagine.geometry.path.PointKind;
+import com.mastfrog.geometry.Angle;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.path.PathElementKind;
+import com.mastfrog.geometry.path.PointKind;
 import org.openide.util.ChangeSupport;
 
 /**

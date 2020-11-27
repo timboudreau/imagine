@@ -8,12 +8,12 @@ import java.awt.geom.Point2D;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
-import org.imagine.geometry.Angle;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.CornerAngle;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.LineVector;
+import com.mastfrog.geometry.Angle;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.CornerAngle;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.LineVector;
 
 /**
  *

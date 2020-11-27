@@ -7,8 +7,8 @@
 package org.netbeans.paint.tools.path;
 
 import java.awt.geom.Point2D;
-import org.imagine.geometry.path.PathElement;
-import org.imagine.geometry.path.PointKind;
+import com.mastfrog.geometry.path.PathElement;
+import com.mastfrog.geometry.path.PointKind;
 
 /**
  *

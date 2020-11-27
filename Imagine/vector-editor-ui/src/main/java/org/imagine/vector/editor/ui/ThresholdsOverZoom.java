@@ -4,7 +4,7 @@ import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.grid.Grid;
 import org.imagine.editor.api.snap.SnapKind;
 import org.imagine.editor.api.snap.Thresholds;
-import static org.imagine.geometry.CornerAngle.ENCODING_MULTIPLIER;
+import static com.mastfrog.geometry.CornerAngle.ENCODING_MULTIPLIER;
 
 /**
  *

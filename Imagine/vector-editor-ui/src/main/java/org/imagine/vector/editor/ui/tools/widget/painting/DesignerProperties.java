@@ -10,9 +10,9 @@ import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.Rhombus;
-import org.imagine.geometry.Triangle2D;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.Rhombus;
+import com.mastfrog.geometry.Triangle2D;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.netbeans.api.visual.model.ObjectState;
 

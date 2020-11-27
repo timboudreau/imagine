@@ -27,10 +27,9 @@ import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.design.ShapeNames;
 import net.java.dev.imagine.api.vector.elements.CircleWrapper;
 import net.java.dev.imagine.api.vector.elements.RhombusWrapper;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.util.GeometryStrings;
-import org.imagine.utils.java2d.GraphicsUtils;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.util.GeometryStrings;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
@@ -1033,7 +1032,7 @@ public class ManyControlPointsWidget extends Widget {
     @Override
     protected Graphics2D getGraphics() {
         Graphics2D result = super.getGraphics();
-        GraphicsUtils.setHighQualityRenderingHints(result);
+//        GraphicsUtils.setHighQualityRenderingHints(result);
         return result;
     }
 

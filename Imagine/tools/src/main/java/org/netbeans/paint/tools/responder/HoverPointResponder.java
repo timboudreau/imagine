@@ -8,7 +8,7 @@ package org.netbeans.paint.tools.responder;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.util.function.Consumer;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqPointDouble;
 
 /**
  * Many responder implementations need to keep track of the point the last mouse

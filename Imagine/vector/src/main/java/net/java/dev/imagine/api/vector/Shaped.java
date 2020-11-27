@@ -3,12 +3,12 @@ package net.java.dev.imagine.api.vector;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
-import org.imagine.geometry.CornerAngle;
-import org.imagine.geometry.LineVector;
-import org.imagine.geometry.Polygon2D;
-import org.imagine.geometry.RotationDirection;
-import org.imagine.geometry.analysis.VectorVisitor;
-import org.imagine.geometry.util.GeometryUtils;
+import com.mastfrog.geometry.CornerAngle;
+import com.mastfrog.geometry.LineVector;
+import com.mastfrog.geometry.Polygon2D;
+import com.mastfrog.geometry.RotationDirection;
+import com.mastfrog.geometry.analysis.VectorVisitor;
+import com.mastfrog.geometry.util.GeometryUtils;
 
 /**
  * A vector primitive which can be converted into leading shape, and has bounds.

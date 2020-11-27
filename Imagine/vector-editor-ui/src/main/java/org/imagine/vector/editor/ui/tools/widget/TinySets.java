@@ -27,19 +27,20 @@ import java.util.Set;
  */
 public class TinySets {
 
+    private static boolean disabled = Boolean.getBoolean("TinySets.disabled");
     private TinySets() {
         throw new AssertionError();
     }
 
     public static <T> Set<T> empty() {
-        if (false) {
+        if (disabled) {
             return new HashSet<>(1);
         }
         return new TinySet<>();
     }
 
     public static <T> Set<T> of(T a) {
-        if (false) {
+        if (disabled) {
             Set<T> result = new HashSet<>(1);
             result.add(a);
             return result;
@@ -48,7 +49,7 @@ public class TinySets {
     }
 
     public static <T> Set<T> of(T a, T b) {
-        if (false) {
+        if (disabled) {
             Set<T> result = new HashSet<>(2);
             result.add(a);
             result.add(b);
@@ -633,11 +634,11 @@ public class TinySets {
                             delegate = emptyInstance();
                             break;
                         case 1:
-                            delegate = new SingleSet<T>(delegate.iterator().next());
+                            delegate = new SingleSet<>(delegate.iterator().next());
                             break;
                         case 2:
                             Iterator<T> iter = delegate.iterator();
-                            delegate = new BiSet<T>(iter.next(), iter.next());
+                            delegate = new BiSet<>(iter.next(), iter.next());
                             break;
                     }
                 }
@@ -710,7 +711,6 @@ public class TinySets {
                 }
                 delegate = delegate.removing(last);
             }
-
         }
     }
 }

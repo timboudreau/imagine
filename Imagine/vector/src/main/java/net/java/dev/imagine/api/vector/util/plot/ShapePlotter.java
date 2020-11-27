@@ -23,8 +23,8 @@
  */
 package net.java.dev.imagine.api.vector.util.plot;
 
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.Triangle2D;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.Triangle2D;
 import java.awt.Shape;
 import java.awt.geom.PathIterator;
 import static java.awt.geom.PathIterator.*;
@@ -32,11 +32,11 @@ import java.awt.geom.Point2D;
 import static java.lang.Math.pow;
 import java.util.LinkedList;
 import java.util.function.Consumer;
-import org.imagine.geometry.Angle;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.util.DoubleList;
-import org.imagine.geometry.util.GeometryUtils;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.Angle;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.util.DoubleList;
+import com.mastfrog.geometry.util.GeometryUtils;
+import com.mastfrog.geometry.util.PooledTransform;
 
 /**
  * Basically, a recapitulation of the shape rasterizers in the JDK, so we can

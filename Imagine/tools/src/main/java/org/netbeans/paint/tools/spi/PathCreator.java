@@ -3,7 +3,7 @@ package org.netbeans.paint.tools.spi;
 import java.awt.Shape;
 import java.util.List;
 import net.java.dev.imagine.api.image.Surface;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqPointDouble;
 
 /**
  * Pluggable shape creator that is passed a set of points and can interpolate

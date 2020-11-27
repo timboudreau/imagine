@@ -16,14 +16,14 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.Supplier;
-import org.imagine.geometry.Angle;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.path.PathElementKind;
-import org.imagine.geometry.path.PointKind;
-import org.imagine.geometry.util.GeometryStrings;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.Angle;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.path.PathElementKind;
+import com.mastfrog.geometry.path.PointKind;
+import com.mastfrog.geometry.util.GeometryStrings;
+import com.mastfrog.geometry.util.PooledTransform;
 
 /**
  *

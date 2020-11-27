@@ -35,7 +35,7 @@ import static net.java.dev.imagine.spi.image.PictureImplementation.POSITION_BOTT
 import static net.java.dev.imagine.spi.image.PictureImplementation.POSITION_TOP;
 import net.java.dev.imagine.spi.image.SurfaceImplementation;
 import org.imagine.editor.api.Zoom;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.PooledTransform;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paint.api.util.RasterConverter;

@@ -27,7 +27,7 @@ import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.border.Border;
-import static org.imagine.geometry.util.GeometryUtils.greatestCommonDivisor;
+import static com.mastfrog.geometry.util.GeometryUtils.greatestCommonDivisor;
 
 /**
  *
@@ -307,6 +307,9 @@ public class TilingLayout implements LayoutManager2 {
             }
             int targetWidth = targetDimension * columns;
             int targetHeight = targetDimension * rows;
+
+            targetWidth = Math.max(targetDimension * 2, targetWidth);
+            targetHeight = Math.max(targetDimension * 2, targetHeight);
 
             int realWidth = targetDimension;
             int remX = 0;

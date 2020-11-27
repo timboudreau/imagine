@@ -17,7 +17,7 @@ import java.awt.geom.AffineTransform;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import javax.swing.event.ChangeListener;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.PooledTransform;
 
 /**
  *

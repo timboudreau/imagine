@@ -3,8 +3,8 @@ package net.java.dev.imagine.api.vector.design;
 import java.awt.geom.Point2D;
 import java.util.Arrays;
 import net.java.dev.imagine.api.vector.elements.PathIteratorWrapper;
-import org.imagine.geometry.Angle;
-import org.imagine.geometry.Circle;
+import com.mastfrog.geometry.Angle;
+import com.mastfrog.geometry.Circle;
 import org.openide.util.NbBundle.Messages;
 
 /**

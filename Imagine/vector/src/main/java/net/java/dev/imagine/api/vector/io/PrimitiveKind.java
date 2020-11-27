@@ -11,7 +11,7 @@ import java.util.function.Function;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.elements.Arc;
 import net.java.dev.imagine.api.vector.elements.CircleWrapper;
-import org.imagine.geometry.Circle;
+import com.mastfrog.geometry.Circle;
 
 /**
  *

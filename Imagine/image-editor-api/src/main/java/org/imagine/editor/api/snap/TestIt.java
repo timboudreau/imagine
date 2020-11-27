@@ -26,14 +26,14 @@ import javax.swing.JFrame;
 import javax.swing.JSlider;
 import javax.swing.KeyStroke;
 import javax.swing.WindowConstants;
-import org.imagine.geometry.Angle;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.EqPoint;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.LineVector;
-import org.imagine.geometry.Quadrant;
-import org.imagine.geometry.util.GeometryStrings;
+import com.mastfrog.geometry.Angle;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.EqPoint;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.LineVector;
+import com.mastfrog.geometry.Quadrant;
+import com.mastfrog.geometry.util.GeometryStrings;
 
 /**
  *

@@ -15,7 +15,7 @@ import java.awt.RenderingHints;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.UIManager;
-import org.imagine.geometry.Triangle2D;
+import com.mastfrog.geometry.Triangle2D;
 
 /**
  *

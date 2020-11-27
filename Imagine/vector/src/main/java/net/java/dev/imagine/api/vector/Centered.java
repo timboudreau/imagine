@@ -1,6 +1,6 @@
 package net.java.dev.imagine.api.vector;
 
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqPointDouble;
 
 /**
  * Shape-like elements that have a center-point.

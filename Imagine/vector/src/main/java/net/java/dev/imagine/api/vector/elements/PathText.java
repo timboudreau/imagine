@@ -41,16 +41,16 @@ import static net.java.dev.imagine.api.vector.elements.Text.trimTail;
 import net.java.dev.imagine.api.vector.graphics.FontWrapper;
 import net.java.dev.imagine.api.vector.util.Pt;
 import net.java.dev.imagine.api.vector.util.plot.ShapePlotter;
-import org.imagine.geometry.Triangle2D;
-import org.imagine.geometry.util.DoubleList;
-import org.imagine.geometry.util.GeometryUtils;
+import com.mastfrog.geometry.Triangle2D;
+import com.mastfrog.geometry.util.DoubleList;
+import com.mastfrog.geometry.util.GeometryUtils;
 import org.imagine.utils.java2d.GraphicsUtils;
 import static org.imagine.utils.java2d.GraphicsUtils.transformHashCode;
 import static org.imagine.utils.java2d.GraphicsUtils.transformsEqual;
 import org.openide.util.Exceptions;
 import net.java.dev.imagine.api.vector.Vectors;
-import static org.imagine.geometry.util.GeometryStrings.transformToString;
-import org.imagine.geometry.util.PooledTransform;
+import static com.mastfrog.geometry.util.GeometryStrings.transformToString;
+import com.mastfrog.geometry.util.PooledTransform;
 
 /**
  * Wraps a string and the font used to render it so it can be turned into a

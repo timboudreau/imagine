@@ -19,7 +19,7 @@ import net.java.dev.imagine.api.vector.elements.RhombusWrapper;
 import net.java.dev.imagine.api.vector.elements.RoundRect;
 import net.java.dev.imagine.api.vector.elements.Text;
 import net.java.dev.imagine.api.vector.elements.TriangleWrapper;
-import org.imagine.geometry.Triangle2D;
+import com.mastfrog.geometry.Triangle2D;
 import org.openide.util.NbBundle.Messages;
 
 /**

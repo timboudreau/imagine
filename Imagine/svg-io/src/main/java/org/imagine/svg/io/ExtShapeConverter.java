@@ -4,10 +4,10 @@ import java.awt.Shape;
 import java.awt.geom.Point2D;
 import org.apache.batik.svggen.SVGGeneratorContext;
 import org.apache.batik.svggen.SVGShape;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.Polygon2D;
-import org.imagine.geometry.Rhombus;
-import org.imagine.geometry.Triangle2D;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.Polygon2D;
+import com.mastfrog.geometry.Rhombus;
+import com.mastfrog.geometry.Triangle2D;
 import org.w3c.dom.Element;
 
 /**

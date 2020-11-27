@@ -5,7 +5,7 @@ import java.awt.Font;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.java.dev.imagine.api.vector.design.ShapeNames;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.PooledTransform;
 import org.imagine.inspectors.spi.InspectorFactory;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.netbeans.paint.api.components.VerticalFlowLayout;

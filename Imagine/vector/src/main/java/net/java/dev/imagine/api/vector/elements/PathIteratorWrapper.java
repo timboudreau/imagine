@@ -49,12 +49,12 @@ import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import static net.java.dev.imagine.api.vector.design.ControlPointKind.CUBIC_CURVE_DESTINATION;
 import net.java.dev.imagine.api.vector.util.Pt;
-import org.imagine.geometry.Angle;
-import org.imagine.geometry.Axis;
-import org.imagine.geometry.EnhancedShape;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.util.GeometryUtils;
+import com.mastfrog.geometry.Angle;
+import com.mastfrog.geometry.Axis;
+import com.mastfrog.geometry.EnhancedShape;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.util.GeometryUtils;
 import net.java.dev.imagine.api.vector.Vectors;
 
 /**
@@ -225,6 +225,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         }
         this.segments = segments.toArray(new Segment[segments.size()]);
         change();
+        discardCachedVirtualControlPointIndices();
     }
 
     @Override
@@ -364,7 +365,8 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             }
         }
     }
-/*
+
+    /*
     private static int ANGLE_STATE_NOT_STARTED = -1;
     private static int ANGLE_STATE_READY = 1;
     private static int ANGLE_STATE_USED = 0;
@@ -405,7 +407,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     }
-*/
+     */
 
     private static final class Segment implements Serializable {
 
@@ -434,12 +436,12 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         }
 
         boolean isSpline() {
-            switch(type) {
-                case SEG_CLOSE :
-                case SEG_MOVETO :
-                case SEG_LINETO :
+            switch (type) {
+                case SEG_CLOSE:
+                case SEG_MOVETO:
+                case SEG_LINETO:
                     return false;
-                default :
+                default:
                     return true;
             }
         }
@@ -1013,6 +1015,9 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             }
             PathIteratorWrapper result = new PathIteratorWrapper(nue, fill);
             result.rev = rev;
+            synchronized (this) {
+                result.virtualControlPointIndices = virtualControlPointIndices;
+            }
             return result;
         } else {
             Segment[] nue = new Segment[segments.length];
@@ -1021,6 +1026,9 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
                 nue[i].applyTransform(xform);
             }
             PathIteratorWrapper w = new PathIteratorWrapper(nue, fill);
+            synchronized (this) {
+                w.virtualControlPointIndices = virtualControlPointIndices;
+            }
             w.rev = rev + 1;
             return w;
         }
@@ -1041,7 +1049,11 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         for (int i = 0; i < segs.length; i++) {
             segs[i] = segments[i].copy();
         }
-        return new PathIteratorWrapper(segs, fill);
+        PathIteratorWrapper result = new PathIteratorWrapper(segs, fill);
+        synchronized (this) {
+            result.virtualControlPointIndices = virtualControlPointIndices;
+        }
+        return result;
     }
 
     @Override
@@ -1164,13 +1176,16 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
 
     @Override
     public synchronized int getControlPointCount() {
+        if (cachedControlPointCount != -1) {
+            return cachedControlPointCount;
+        }
         int result = 0;
         for (Segment segment : segments) {
             int ct = segment.getPointCount();
             //            System.err.println(segments[i] + ": " + ct);
             result += ct;
         }
-        return result;
+        return cachedControlPointCount = result;
     }
 
     @Override
@@ -1182,6 +1197,9 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
     }
 
     public synchronized int[] getConcretePointIndices() {
+        if (concreteControlPointIndices != null) {
+            return concreteControlPointIndices;
+        }
         IntList ints = null;
         int ct = 0;
         for (Segment seg : segments) {
@@ -1212,32 +1230,49 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             }
             ct += seg.getPointCount();
         }
-        return ints == null ? EMPTY_INTS : ints.toIntArray();
+        return concreteControlPointIndices =  (ints == null ? EMPTY_INTS : ints.toIntArray());
+    }
+
+    private int[] virtualControlPointIndices = null;
+    private int[] concreteControlPointIndices = null;
+    private int cachedControlPointCount = -1;
+
+    private void discardCachedVirtualControlPointIndices() {
+        // We need this caching for extremely large point-count
+        // paths
+        synchronized (this) {
+            virtualControlPointIndices = null;
+            cachedControlPointCount = -1;
+            concreteControlPointIndices = null;
+        }
     }
 
     @Override
     public synchronized int[] getVirtualControlPointIndices() {
+        if (virtualControlPointIndices != null) {
+            return virtualControlPointIndices;
+        }
         IntList ints = null;
         int ct = 0;
         for (Segment seg : segments) {
             switch (seg.type) {
                 case SEG_CUBICTO:
                     if (ints == null) {
-                        ints = IntList.create(8);
+                        ints = IntList.create(segments.length - 2);
                     }
                     ints.add(ct);
                     ints.add(ct + 1);
                     break;
                 case SEG_QUADTO:
                     if (ints == null) {
-                        ints = IntList.create(8);
+                        ints = IntList.create(segments.length - 2);
                     }
                     ints.add(ct);
                     break;
             }
             ct += seg.getPointCount();
         }
-        return ints == null ? EMPTY_INTS : ints.toIntArray();
+        return virtualControlPointIndices = (ints == null ? EMPTY_INTS : ints.toIntArray());
     }
 
     @Override
@@ -1369,6 +1404,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         synchronized (this) {
             segments[pointIndex] = nue;
         }
+        discardCachedVirtualControlPointIndices();
         change();
         return this;
     }
@@ -1379,6 +1415,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         synchronized (this) {
             segments[pointIndex] = nue;
         }
+        discardCachedVirtualControlPointIndices();
         change();
         return this;
     }
@@ -1389,6 +1426,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         synchronized (this) {
             segments[pointIndex] = nue;
         }
+        discardCachedVirtualControlPointIndices();
         change();
         return this;
     }
@@ -1399,6 +1437,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         synchronized (this) {
             segments[pointIndex] = nue;
         }
+        discardCachedVirtualControlPointIndices();
         change();
         return this;
     }
@@ -1418,6 +1457,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
                 }
             }
             segments = nue;
+            discardCachedVirtualControlPointIndices();
             change();
         }
         return result;
@@ -1487,6 +1527,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             curr.data[2] = newPoint[0];
             curr.data[3] = newPoint[1];
         }
+        discardCachedVirtualControlPointIndices();
         change();
     }
 
@@ -1497,18 +1538,21 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
     public synchronized PathIteratorWrapper addQuadTo(double ctrlX1, double ctrlY1, double x, double y, boolean nearest) {
         Segment seg = new Segment(new double[]{ctrlX1, ctrlY1, x, y}, (byte) SEG_QUADTO);
         appendOrInsert(seg, x, y, nearest);
+        discardCachedVirtualControlPointIndices();
         return this;
     }
 
     public synchronized PathIteratorWrapper addCubicTo(double ctrlX1, double ctrlY1, double ctrlX2, double ctrlY2, double x, double y, boolean nearest) {
         Segment seg = new Segment(new double[]{ctrlX1, ctrlY1, ctrlX2, ctrlY2, x, y}, (byte) SEG_CUBICTO);
         appendOrInsert(seg, x, y, nearest);
+        discardCachedVirtualControlPointIndices();
         return this;
     }
 
     private synchronized PathIteratorWrapper addLineToOrMoveTo(double x, double y, boolean line, boolean nearest) {
         Segment seg = new Segment(new double[]{x, y}, (byte) (line ? SEG_LINETO : SEG_MOVETO));
         appendOrInsert(seg, x, y, nearest);
+        discardCachedVirtualControlPointIndices();
         return this;
     }
 
@@ -1563,6 +1607,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             }
             nue[targetIx] = seg;
             this.segments = nue;
+            discardCachedVirtualControlPointIndices();
             change();
         }
         return this;
@@ -1597,6 +1642,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         }
         segments = nue;
         change();
+        discardCachedVirtualControlPointIndices();
         return true;
     }
 
@@ -1645,6 +1691,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             }
         }
         if (result) {
+            discardCachedVirtualControlPointIndices();
             change();
         }
         return result;
@@ -1663,6 +1710,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
             }
         }
         if (result) {
+            discardCachedVirtualControlPointIndices();
             change();
         }
         return result;
@@ -1767,6 +1815,7 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
         }
         if (elided > 0) {
             unpack(result.getPathIterator(null));
+            discardCachedVirtualControlPointIndices();
             change();
         }
         return elided;

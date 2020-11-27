@@ -1,8 +1,10 @@
 package org.imagine.helpimpl;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -15,11 +17,10 @@ import java.awt.geom.Rectangle2D;
 import java.util.concurrent.ThreadLocalRandom;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.EnhRectangle2D;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.uirect.MutableRectangle2D;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.EnhRectangle2D;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.uirect.MutableRectangle2D;
 import org.imagine.markdown.uiapi.Markdown;
 import org.imagine.markdown.uiapi.MarkdownComponent;
 
@@ -39,6 +40,53 @@ public class HelpBubbleComponent extends JComponent {
         setFocusable(false);
     }
 
+    @Override
+    public Cursor getCursor() {
+        return super.getCursor();
+    }
+
+    @Override
+    public Rectangle getVisibleRect() {
+        Rectangle r = new Rectangle();
+        computeVisibleRect(r);
+        return r;
+    }
+
+    @Override
+    public void computeVisibleRect(Rectangle rctngl) {
+        if (bubble != null) {
+            rctngl.setBounds(bubble.toShape().getBounds());
+        }
+    }
+
+    @Override
+    public boolean contains(int x, int y) {
+        if (bubble != null) {
+            return bubble.toShape().contains(x, y);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isFocusOwner() {
+        return false;
+    }
+
+    @Override
+    public boolean isFocusable() {
+        return false;
+    }
+
+    @Override
+    public boolean contains(Point point) {
+        return contains(point.x, point.y);
+    }
+
+    @Override
+    public boolean isCursorSet() {
+        return false;
+    }
+
     public boolean isEventOnBubble(MouseEvent evt) {
         if (bubble != null) {
             Component comp = (Component) evt.getSource();
@@ -54,8 +102,9 @@ public class HelpBubbleComponent extends JComponent {
             comp = new MarkdownComponent(markdown, false);
             comp.setFocusable(false);
             comp.setRequestFocusEnabled(false);
+
 //            comp.setMargin(12);
-            comp.setUIProperties(comp.getUIProperties().withFont(new Font("Times New Roman", Font.PLAIN, 20)));
+            comp.setUIProperties(comp.getUIProperties().withFont(new Font("Verdana", Font.PLAIN, 24)));
             add(comp);
         } else {
             comp.setMarkdown(markdown);
@@ -71,9 +120,10 @@ public class HelpBubbleComponent extends JComponent {
             if (bubble != null) {
                 Shape shape = bubble.toShape();
                 Graphics2D gg = (Graphics2D) g;
-                g.setColor(new Color(240, 220, 120, 225));
+                g.setColor(new Color(245, 215, 60, 225));
                 gg.fill(shape);
-                g.setColor(UIManager.getColor("controlShadow"));
+                g.setColor(Color.DARK_GRAY);
+                gg.setStroke(new BasicStroke(2));
                 gg.draw(shape);
             }
         }
@@ -161,16 +211,16 @@ public class HelpBubbleComponent extends JComponent {
         System.out.println("bestBounds constrained to " + needed);
         Rectangle2D redone = comp.neededBounds(needed);
         System.out.println("   reconstrain would get " + new EnhRectangle2D(redone));
-        needed.height = Math.min(redone.getHeight(), needed.height);
+        needed.height = Math.max(redone.getHeight(), needed.height);
         needed.width = Math.max (300, Math.min(redone.getWidth(), needed.width));
         double randomAngle = ThreadLocalRandom.current().nextDouble() * 360;
         Circle.positionOf(randomAngle, needed.x, needed.y, needed.width /2, (x, y) -> {
             needed.translate(x, y);
         });
+        overallBounds.grow(-(CaptionBubble.WAFFLE_OFFSET + 12) * 2);
         constrain(needed, overallBounds);
         return needed;
     }
-
 
     private void constrain(EnhRectangle2D rect, MutableRectangle2D within) {
         if (rect.getMaxY() > within.getMaxY()) {
@@ -186,7 +236,8 @@ public class HelpBubbleComponent extends JComponent {
             rect.x += within.getMinX() - rect.getMinX();
         }
         if (rect.contains(locusPoint)) {
-            
+            // PENDING, find the centers of the two rectangles, and move one
+            // constrained
         }
     }
 }

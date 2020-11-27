@@ -17,9 +17,9 @@ import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import static net.java.dev.imagine.api.vector.design.ControlPointKind.PHYSICAL_POINT;
 import static net.java.dev.imagine.api.vector.design.ControlPointKind.RADIUS;
 import net.java.dev.imagine.api.vector.util.Pt;
-import org.imagine.geometry.Circle;
+import com.mastfrog.geometry.Circle;
 import net.java.dev.imagine.api.vector.Vectors;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqPointDouble;
 
 /**
  *

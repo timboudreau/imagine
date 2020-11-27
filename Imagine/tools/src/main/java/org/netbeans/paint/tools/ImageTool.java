@@ -52,7 +52,7 @@ import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant;
 import net.dev.java.imagine.api.tool.aspects.PaintParticipant.Repainter;
 import net.java.dev.imagine.api.image.Surface;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.PooledTransform;
 import org.imagine.nbutil.filechooser.FileChooserBuilder;
 import org.imagine.nbutil.filechooser.FileKinds;
 import org.openide.util.Exceptions;

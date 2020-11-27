@@ -5,7 +5,7 @@ import java.awt.Rectangle;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqPointDouble;
 import org.imagine.utils.Holder;
 
 /**

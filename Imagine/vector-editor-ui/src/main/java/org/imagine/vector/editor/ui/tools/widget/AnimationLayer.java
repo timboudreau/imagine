@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Shape;
-import org.imagine.geometry.Circle;
+import com.mastfrog.geometry.Circle;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.api.visual.animator.AnimatorEvent;
 import org.netbeans.api.visual.animator.AnimatorListener;

@@ -23,10 +23,10 @@ import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.Rhombus;
-import org.imagine.geometry.util.GeometryUtils;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.Rhombus;
+import com.mastfrog.geometry.util.GeometryUtils;
 
 /**
  *

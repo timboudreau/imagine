@@ -14,7 +14,7 @@ import java.util.Arrays;
 import net.java.dev.imagine.api.vector.Attribute;
 import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.Transformable;
-import org.imagine.geometry.util.FloatList;
+import com.mastfrog.geometry.util.FloatList;
 import org.imagine.utils.java2d.GraphicsUtils;
 
 /**

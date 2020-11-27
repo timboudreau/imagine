@@ -32,7 +32,7 @@ import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.PaintingStyle;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.OnSnap;
-import org.imagine.geometry.EnhRectangle2D;
+import com.mastfrog.geometry.EnhRectangle2D;
 import org.imagine.utils.Holder;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;

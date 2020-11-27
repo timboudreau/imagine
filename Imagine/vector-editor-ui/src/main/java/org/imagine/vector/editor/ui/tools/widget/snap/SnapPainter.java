@@ -12,7 +12,7 @@ import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.OnSnap;
 import org.imagine.editor.api.snap.SnapKind;
 import org.imagine.editor.api.snap.SnapCoordinate;
-import org.imagine.geometry.util.GeometryStrings;
+import com.mastfrog.geometry.util.GeometryStrings;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.ShapeEntry;
 import org.imagine.vector.editor.ui.ShapeSnapPointEntry;

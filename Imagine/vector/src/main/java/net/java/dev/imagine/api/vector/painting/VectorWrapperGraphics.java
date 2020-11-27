@@ -72,10 +72,10 @@ import net.java.dev.imagine.api.vector.graphics.LinearPaintWrapper;
 import net.java.dev.imagine.api.vector.graphics.RadialPaintWrapper;
 import net.java.dev.imagine.api.vector.graphics.TexturePaintWrapper;
 import net.java.dev.imagine.api.vector.util.ShapeCharacteristics;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.Polygon2D;
-import org.imagine.geometry.Rhombus;
-import org.imagine.geometry.Triangle2D;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.Polygon2D;
+import com.mastfrog.geometry.Rhombus;
+import com.mastfrog.geometry.Triangle2D;
 import org.imagine.utils.java2d.GraphicsUtils;
 
 /**

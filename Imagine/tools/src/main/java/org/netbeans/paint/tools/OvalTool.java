@@ -15,7 +15,7 @@ import net.dev.java.imagine.spi.tool.ToolDef;
 import net.java.dev.imagine.api.image.Surface;
 import static org.netbeans.paint.tools.RectangleTool.strokeC;
 import org.imagine.editor.api.PaintingStyle;
-import org.imagine.geometry.EnhRectangle2D;
+import com.mastfrog.geometry.EnhRectangle2D;
 import org.imagine.help.api.HelpItem;
 import org.imagine.help.api.annotations.Help;
 import org.openide.util.NbBundle;

@@ -4,7 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Shape;
-import org.imagine.geometry.Circle;
+import com.mastfrog.geometry.Circle;
 
 /**
  *

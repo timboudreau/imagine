@@ -14,7 +14,7 @@ import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.PooledTransform;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.Exceptions;
 

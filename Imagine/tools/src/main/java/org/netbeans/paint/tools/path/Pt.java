@@ -1,8 +1,8 @@
 package org.netbeans.paint.tools.path;
 
 import java.awt.geom.Rectangle2D;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.path.PointKind;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.path.PointKind;
 
 /**
  *

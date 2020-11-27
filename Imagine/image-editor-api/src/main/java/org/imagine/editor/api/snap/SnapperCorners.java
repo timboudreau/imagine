@@ -4,9 +4,9 @@ import com.mastfrog.util.collections.DoubleMap;
 import com.mastfrog.util.collections.DoubleMapPredicate;
 import java.util.function.BiPredicate;
 import java.util.function.DoublePredicate;
-import org.imagine.geometry.CornerAngle;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.LineVector;
+import com.mastfrog.geometry.CornerAngle;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.LineVector;
 
 /**
  *

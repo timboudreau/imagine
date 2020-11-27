@@ -14,10 +14,10 @@ import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.OnSnap;
 import org.imagine.editor.api.snap.SnapKind;
 import static org.imagine.editor.api.snap.SnapKind.CORNER;
-import org.imagine.geometry.Arrow;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.CornerAngle;
-import org.imagine.geometry.PieWedge;
+import com.mastfrog.geometry.Arrow;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.CornerAngle;
+import com.mastfrog.geometry.PieWedge;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.spi.ShapeControlPoint;
 

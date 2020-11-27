@@ -22,8 +22,8 @@ import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
 import net.java.dev.imagine.api.vector.Vectors;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.EqPointDouble;
 
 /**
  *

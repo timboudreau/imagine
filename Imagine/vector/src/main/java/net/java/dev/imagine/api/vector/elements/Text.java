@@ -1,7 +1,7 @@
 package net.java.dev.imagine.api.vector.elements;
 
 import com.mastfrog.util.collections.IntSet;
-import org.imagine.geometry.MinimalAggregateShapeFloat;
+import com.mastfrog.geometry.MinimalAggregateShapeFloat;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
@@ -26,13 +26,13 @@ import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.graphics.FontWrapper;
 import net.java.dev.imagine.api.vector.util.Pt;
-import org.imagine.geometry.util.DoubleList;
-import org.imagine.geometry.util.GeometryUtils;
+import com.mastfrog.geometry.util.DoubleList;
+import com.mastfrog.geometry.util.GeometryUtils;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.Exceptions;
 import net.java.dev.imagine.api.vector.Vectors;
-import org.imagine.geometry.util.GeometryStrings;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.GeometryStrings;
+import com.mastfrog.geometry.util.PooledTransform;
 
 /**
  * Wraps a string and the font used to render it so it can be turned into a

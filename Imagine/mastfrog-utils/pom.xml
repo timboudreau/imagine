@@ -24,6 +24,11 @@
                         <publicPackage>com.mastfrog.function.state</publicPackage>
                         <publicPackage>com.mastfrog.function.throwing</publicPackage>
                         <publicPackage>com.mastfrog.function.throwing.io</publicPackage>
+                        <publicPackage>com.mastfrog.geometry</publicPackage>
+                        <publicPackage>com.mastfrog.geometry.analysis</publicPackage>
+                        <publicPackage>com.mastfrog.geometry.path</publicPackage>
+                        <publicPackage>com.mastfrog.geometry.uirect</publicPackage>
+                        <publicPackage>com.mastfrog.geometry.util</publicPackage>
                         <publicPackage>com.mastfrog.util.cache</publicPackage>
                         <publicPackage>com.mastfrog.util.collections</publicPackage>
                         <publicPackage>com.mastfrog.util.search</publicPackage>
@@ -47,6 +52,10 @@
             <groupId>com.mastfrog</groupId>
             <artifactId>abstractions</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.mastfrog</groupId>
+            <artifactId>geometry</artifactId>
+        </dependency>        
         <dependency>
             <groupId>com.mastfrog</groupId>
             <artifactId>util-collections</artifactId>

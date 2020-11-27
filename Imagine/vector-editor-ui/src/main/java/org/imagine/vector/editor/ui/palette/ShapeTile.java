@@ -13,7 +13,7 @@ import java.awt.geom.Rectangle2D;
 import javax.swing.BorderFactory;
 import net.java.dev.imagine.api.image.RenderingGoal;
 import org.imagine.editor.api.AspectRatio;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.PooledTransform;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 
 /**

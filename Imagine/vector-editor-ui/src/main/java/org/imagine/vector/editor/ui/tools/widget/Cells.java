@@ -9,8 +9,8 @@ import com.mastfrog.util.collections.IntSet;
 import java.awt.Rectangle;
 import static java.lang.Math.floor;
 import java.util.function.IntPredicate;
-import org.imagine.geometry.util.GeometryStrings;
-import org.imagine.geometry.util.GeometryUtils;
+import com.mastfrog.geometry.util.GeometryStrings;
+import com.mastfrog.geometry.util.GeometryUtils;
 
 /**
  * During painting, we use a BitSet-based IntSet to keep track of which

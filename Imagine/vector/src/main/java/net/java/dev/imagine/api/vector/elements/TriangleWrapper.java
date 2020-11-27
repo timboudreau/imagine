@@ -14,14 +14,14 @@ import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
-import org.imagine.geometry.Angle;
-import org.imagine.geometry.EnhancedShape;
-import org.imagine.geometry.Triangle2D;
+import com.mastfrog.geometry.Angle;
+import com.mastfrog.geometry.EnhancedShape;
+import com.mastfrog.geometry.Triangle2D;
 import net.java.dev.imagine.api.vector.Vectors;
-import org.imagine.geometry.Axis;
-import org.imagine.geometry.EqLine;
+import com.mastfrog.geometry.Axis;
+import com.mastfrog.geometry.EqLine;
 import com.mastfrog.function.state.Int;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqPointDouble;
 
 /**
  *

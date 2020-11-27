@@ -31,7 +31,7 @@ import static java.lang.Math.min;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.swing.JComponent;
-import static org.imagine.geometry.util.PooledTransform.withQuadrantRotateInstance;
+import static com.mastfrog.geometry.util.PooledTransform.withQuadrantRotateInstance;
 
 /**
  *

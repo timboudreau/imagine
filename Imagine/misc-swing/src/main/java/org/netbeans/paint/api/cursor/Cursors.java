@@ -2,7 +2,7 @@ package org.netbeans.paint.api.cursor;
 
 import java.awt.Cursor;
 import javax.swing.JComponent;
-import org.imagine.geometry.Quadrant;
+import com.mastfrog.geometry.Quadrant;
 
 /**
  * Provides the set of custom cursors used in the application.

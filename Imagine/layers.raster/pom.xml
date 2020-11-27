@@ -25,7 +25,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>geometry</artifactId>
+            <artifactId>mastfrog-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>

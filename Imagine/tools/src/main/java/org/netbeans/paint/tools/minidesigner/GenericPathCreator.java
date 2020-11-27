@@ -29,7 +29,7 @@ import javax.swing.JSplitPane;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.spi.tool.ToolElement;
 import net.java.dev.imagine.api.image.Surface;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqPointDouble;
 import org.imagine.help.api.annotations.Help;
 import org.imagine.nbutil.SingleUseWindow;
 import org.netbeans.paint.api.components.VerticalFlowLayout;

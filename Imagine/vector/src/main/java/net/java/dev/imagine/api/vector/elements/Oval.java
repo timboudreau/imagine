@@ -23,8 +23,8 @@ import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.util.GeometryUtils;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.util.GeometryUtils;
 import net.java.dev.imagine.api.vector.Vectors;
 
 /**

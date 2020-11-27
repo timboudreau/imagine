@@ -17,8 +17,8 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.util.GeometryStrings;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.util.GeometryStrings;
 import org.imagine.utils.Holder;
 
 /**

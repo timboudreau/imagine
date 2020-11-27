@@ -9,7 +9,7 @@ import java.awt.Cursor;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.JComponent;
-import org.imagine.geometry.Quadrant;
+import com.mastfrog.geometry.Quadrant;
 
 /**
  *

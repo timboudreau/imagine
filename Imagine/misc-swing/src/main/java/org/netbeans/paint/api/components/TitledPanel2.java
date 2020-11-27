@@ -37,7 +37,7 @@ import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
-import org.imagine.geometry.EqLine;
+import com.mastfrog.geometry.EqLine;
 import org.openide.awt.Mnemonics;
 import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;

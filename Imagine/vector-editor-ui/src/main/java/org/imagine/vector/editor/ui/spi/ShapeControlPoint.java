@@ -1,8 +1,8 @@
 package org.imagine.vector.editor.ui.spi;
 
 import net.java.dev.imagine.api.vector.design.ControlPoint;
-import org.imagine.geometry.Angle;
-import org.imagine.geometry.EqLine;
+import com.mastfrog.geometry.Angle;
+import com.mastfrog.geometry.EqLine;
 
 /**
  * Extension to the ControlPoint interface defined for shapes, to allow them to

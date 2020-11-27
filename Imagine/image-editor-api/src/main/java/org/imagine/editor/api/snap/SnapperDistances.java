@@ -5,7 +5,7 @@ import java.awt.geom.Point2D;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import org.imagine.editor.api.snap.Snapper.BasicSnapper;
-import org.imagine.geometry.LineVector;
+import com.mastfrog.geometry.LineVector;
 
 /**
  *

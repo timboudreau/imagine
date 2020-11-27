@@ -16,11 +16,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.MinimalAggregateShapeDouble;
-import org.imagine.geometry.Polygon2D;
-import org.imagine.geometry.Triangle2D;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.MinimalAggregateShapeDouble;
+import com.mastfrog.geometry.Polygon2D;
+import com.mastfrog.geometry.Triangle2D;
 
 /**
  *

@@ -3,7 +3,7 @@ package org.netbeans.paintui;
 import java.awt.geom.AffineTransform;
 import javax.swing.event.ChangeListener;
 import org.imagine.editor.api.Zoom;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.PooledTransform;
 import org.openide.util.ChangeSupport;
 
 /**

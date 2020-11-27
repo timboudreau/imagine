@@ -2,13 +2,13 @@ package org.netbeans.paint.tools.spi;
 
 import java.awt.Cursor;
 import org.imagine.editor.api.ImageEditorBackground;
-import org.imagine.geometry.uirect.ResizeMode;
-import static org.imagine.geometry.uirect.ResizeMode.BOTTOM_EDGE;
-import static org.imagine.geometry.uirect.ResizeMode.NORTHEAST;
-import static org.imagine.geometry.uirect.ResizeMode.NORTHWEST;
-import static org.imagine.geometry.uirect.ResizeMode.SOUTHEAST;
-import static org.imagine.geometry.uirect.ResizeMode.SOUTHWEST;
-import static org.imagine.geometry.uirect.ResizeMode.TOP_EDGE;
+import com.mastfrog.geometry.uirect.ResizeMode;
+import static com.mastfrog.geometry.uirect.ResizeMode.BOTTOM_EDGE;
+import static com.mastfrog.geometry.uirect.ResizeMode.NORTHEAST;
+import static com.mastfrog.geometry.uirect.ResizeMode.NORTHWEST;
+import static com.mastfrog.geometry.uirect.ResizeMode.SOUTHEAST;
+import static com.mastfrog.geometry.uirect.ResizeMode.SOUTHWEST;
+import static com.mastfrog.geometry.uirect.ResizeMode.TOP_EDGE;
 import org.netbeans.paint.api.cursor.Cursors;
 
 /**

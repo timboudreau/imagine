@@ -9,9 +9,9 @@ import com.mastfrog.util.collections.DoubleMap;
 import java.awt.geom.Point2D;
 import java.util.Set;
 import java.util.function.BiPredicate;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.LineVector;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.LineVector;
 
 /**
  *

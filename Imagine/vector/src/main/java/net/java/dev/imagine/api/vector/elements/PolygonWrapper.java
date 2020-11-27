@@ -25,12 +25,12 @@ import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
-import org.imagine.geometry.EnhancedShape;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.Polygon2D;
-import org.imagine.geometry.path.PathElementKind;
-import org.imagine.geometry.util.GeometryStrings;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.EnhancedShape;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.Polygon2D;
+import com.mastfrog.geometry.path.PathElementKind;
+import com.mastfrog.geometry.util.GeometryStrings;
+import com.mastfrog.geometry.util.PooledTransform;
 
 /**
  *

@@ -15,7 +15,7 @@ import java.util.Map;
 import javax.swing.JLabel;
 import javax.swing.UIManager;
 import org.imagine.editor.api.Zoom;
-import org.imagine.geometry.Circle;
+import com.mastfrog.geometry.Circle;
 
 /**
  *

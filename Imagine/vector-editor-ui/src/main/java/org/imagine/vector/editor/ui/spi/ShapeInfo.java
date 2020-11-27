@@ -9,11 +9,11 @@ import com.mastfrog.util.collections.DoubleMap;
 import com.mastfrog.util.collections.IntMap;
 import java.awt.Shape;
 import java.util.function.Consumer;
-import org.imagine.geometry.CornerAngle;
-import org.imagine.geometry.LineVector;
-import org.imagine.geometry.Polygon2D;
-import org.imagine.geometry.RotationDirection;
-import org.imagine.geometry.analysis.VectorVisitor;
+import com.mastfrog.geometry.CornerAngle;
+import com.mastfrog.geometry.LineVector;
+import com.mastfrog.geometry.Polygon2D;
+import com.mastfrog.geometry.RotationDirection;
+import com.mastfrog.geometry.analysis.VectorVisitor;
 
 /**
  * Caches info derived from a shape about its interior angles and other

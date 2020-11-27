@@ -13,7 +13,7 @@ import net.java.dev.imagine.api.vector.Adjustable;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.SnapKind;
 import org.imagine.editor.api.snap.SnapCoordinate;
-import org.imagine.geometry.Arrow;
+import com.mastfrog.geometry.Arrow;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.ShapeSnapPointEntry;
 import org.imagine.vector.editor.ui.spi.ShapeElement;

@@ -8,7 +8,7 @@ import javax.swing.UIManager;
 import org.imagine.awt.GradientManager;
 import org.imagine.awt.key.ColorKey;
 import org.imagine.awt.key.PaintKey;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.PooledTransform;
 import org.openide.util.Exceptions;
 
 /**

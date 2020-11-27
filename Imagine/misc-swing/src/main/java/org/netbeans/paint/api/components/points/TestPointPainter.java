@@ -11,8 +11,8 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import javax.swing.JComponent;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.Triangle2D;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.Triangle2D;
 
 /**
  *

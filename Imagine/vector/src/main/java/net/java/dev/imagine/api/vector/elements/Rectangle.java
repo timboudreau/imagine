@@ -23,9 +23,9 @@ import net.java.dev.imagine.api.vector.Strokable;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
-import org.imagine.geometry.EnhRectangle2D;
-import org.imagine.geometry.EnhancedShape;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EnhRectangle2D;
+import com.mastfrog.geometry.EnhancedShape;
+import com.mastfrog.geometry.EqPointDouble;
 
 /**
  *

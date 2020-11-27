@@ -6,8 +6,8 @@ import java.awt.geom.Point2D;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.DoublePredicate;
-import org.imagine.geometry.LineVector;
-import org.imagine.geometry.util.GeometryUtils;
+import com.mastfrog.geometry.LineVector;
+import com.mastfrog.geometry.util.GeometryUtils;
 
 /**
  * A thing which snaps one type of point.

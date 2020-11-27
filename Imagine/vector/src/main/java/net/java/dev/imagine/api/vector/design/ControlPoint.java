@@ -11,7 +11,7 @@ package net.java.dev.imagine.api.vector.design;
 import java.awt.geom.Point2D;
 import java.util.Set;
 import net.java.dev.imagine.api.vector.Adjustable;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqPointDouble;
 
 /**
  * Provides a wrapper for one point in a shape, to allow for mutating it with

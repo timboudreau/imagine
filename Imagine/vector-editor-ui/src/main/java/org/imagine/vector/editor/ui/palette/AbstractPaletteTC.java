@@ -43,20 +43,20 @@ abstract class AbstractPaletteTC extends ActivationOrderTopComponent {
 
     @Override
     public Dimension getPreferredSize() {
-        return preferredSize(this);
+        return preferredSize(this, super.getPreferredSize());
     }
 
     @Override
     public Dimension getMaximumSize() {
-        return preferredSize(this);
+        return preferredSize(this, super.getPreferredSize());
     }
 
     @Override
     public Dimension getMinimumSize() {
-        return preferredSize(this);
+        return preferredSize(this, super.getMinimumSize());
     }
 
-    private static Dimension preferredSize(JComponent of) {
+    private Dimension preferredSize(JComponent of, Dimension superPref) {
         Container c = of.getTopLevelAncestor();
         Dimension size;
         if (c != null) {
@@ -80,7 +80,9 @@ abstract class AbstractPaletteTC extends ActivationOrderTopComponent {
             }
         }
         Dimension d = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().getBounds().getSize();
-        return adjustDimension(d);
+        d = adjustDimension(d);
+        d.height = superPref.height;
+        return d;
     }
 
     private static Dimension adjustDimension(Dimension size) {

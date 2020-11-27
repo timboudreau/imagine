@@ -10,6 +10,7 @@ import java.awt.AWTEvent;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.EventQueue;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
@@ -18,11 +19,17 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.prefs.Preferences;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -34,10 +41,11 @@ import javax.swing.JFrame;
 import javax.swing.JRootPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqPointDouble;
 import org.imagine.help.api.HelpItem;
 import org.imagine.markdown.uiapi.Markdown;
 import org.openide.util.NbPreferences;
+import org.openide.util.RequestProcessor;
 import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.WindowManager;
 
@@ -78,11 +86,20 @@ public class HelpComponentManagerImpl extends HelpComponentManager {
     private static final class HelpSeriesItem {
 
         final HelpItem item;
-        final Component component;
+        final Reference<Component> component;
 
         public HelpSeriesItem(HelpItem item, Component component) {
             this.item = item;
-            this.component = component;
+            this.component = new WeakReference<>(component);
+        }
+
+        public boolean isViable() {
+            Component c = component.get();
+            boolean result = c != null && c.isDisplayable() && c.isShowing();
+            if (result && c instanceof JComponent) {
+                result = !((JComponent) c).getVisibleRect().isEmpty();
+            }
+            return result;
         }
 
         @Override
@@ -115,6 +132,75 @@ public class HelpComponentManagerImpl extends HelpComponentManager {
         }
     }
 
+    private static final RequestProcessor HELPLOAD
+            = new RequestProcessor("async-help-load", 1);
+
+    private final AsyncHelpTask helper = new AsyncHelpTask();
+    static class AsyncHelpTask implements Runnable {
+
+        private final Map<HelpItem, Consumer<Markdown>> pending = new LinkedHashMap<>();
+        private final RequestProcessor.Task task = HELPLOAD.create(this);
+        private final Map<Markdown, Consumer<Markdown>> displayQueue = new LinkedHashMap<>();
+
+        void add(HelpItem item, Consumer<Markdown> consumer) {
+            if (pending.put(item, consumer) == null) {
+                task.schedule(100);
+            }
+        }
+
+        boolean touch() {
+            boolean result = false;
+            synchronized(displayQueue) {
+                if (!displayQueue.isEmpty()) {
+                    EventQueue.invokeLater(this);
+                    result = true;
+                }
+            }
+            synchronized(pending) {
+                if (!pending.isEmpty()) {
+                    task.schedule(100);
+                    result = true;
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public void run() {
+            if (!EventQueue.isDispatchThread()) {
+                HelpItem item = null;
+                Consumer<Markdown> consumer = null;
+                Markdown md = null;
+                synchronized (pending) {
+                    Iterator<Map.Entry<HelpItem, Consumer<Markdown>>> iter = pending.entrySet().iterator();
+                    if (iter.hasNext()) {
+                        Map.Entry<HelpItem, Consumer<Markdown>> e = iter.next();
+                        pending.remove(e.getKey());
+                        item = e.getKey();
+                        consumer = e.getValue();
+                        md = e.getKey().getContent(Markdown.class);
+                    }
+                }
+                if (md != null && item != null && consumer != null) {
+                    synchronized (displayQueue) {
+                        if (displayQueue.put(md, consumer) == null) {
+                            EventQueue.invokeLater(this);
+                        }
+                    }
+                }
+            } else {
+                synchronized(displayQueue) {
+                    Iterator<Map.Entry<Markdown, Consumer<Markdown>>> iter = displayQueue.entrySet().iterator();
+                    if (iter.hasNext()) {
+                        Map.Entry<Markdown, Consumer<Markdown>> e = iter.next();
+                        displayQueue.remove(e.getKey());
+                        e.getValue().accept(e.getKey());
+                    }
+                }
+            }
+        }
+    }
+
     @Override
     protected void popup(HelpItem item, MouseEvent evt) {
         if (component != null && component.isShowing() && last == item) {
@@ -123,8 +209,7 @@ public class HelpComponentManagerImpl extends HelpComponentManager {
         if (!isEnabled(item)) {
             return;
         }
-        Markdown md = item.getContent(Markdown.class);
-        if (md != null) {
+        helper.add(item, md -> {
             last = item;
             JRootPane root = SwingUtilities.getRootPane(((Component) evt.getSource()));
             Component c = (Component) evt.getSource();
@@ -132,7 +217,7 @@ public class HelpComponentManagerImpl extends HelpComponentManager {
             HelpBubbleComponent comp = component();
             comp.setMarkdown(md, convertedPoint);
             configureWindow(root, comp);
-        }
+        });
     }
 
     @Override
@@ -143,8 +228,7 @@ public class HelpComponentManagerImpl extends HelpComponentManager {
         if (!isEnabled(item)) {
             return;
         }
-        Markdown md = item.getContent(Markdown.class);
-        if (md != null) {
+        helper.add(item, md -> {
             last = item;
             JRootPane root = SwingUtilities.getRootPane(target);
             System.out.println("activate really ");
@@ -154,7 +238,7 @@ public class HelpComponentManagerImpl extends HelpComponentManager {
             HelpBubbleComponent comp = component();
             comp.setMarkdown(md, center);
             configureWindow(root, comp);
-        }
+        });
     }
 
     private void configureWindow(JRootPane root, JComponent comp) {
@@ -304,14 +388,19 @@ public class HelpComponentManagerImpl extends HelpComponentManager {
     protected void dismissPopupGesturePerformed(JRootPane root) {
         if (component != null) {
             dismissForSession(last);
+            if (!helper.touch()) {
             while (!queue.isEmpty()) {
                 HelpSeriesItem next = queue.pop();
-                if (isEnabled(next.item) && next.component.isDisplayable()) {
-                    popup(next.item, next.component);
-                    return;
+                if (isEnabled(next.item) && next.isViable()) {
+                    Component c = next.component.get();
+                    if (c != null) {
+                        popup(next.item, c);
+                        return;
+                    }
                 }
             }
             deactivate(root);
+            }
         }
     }
 

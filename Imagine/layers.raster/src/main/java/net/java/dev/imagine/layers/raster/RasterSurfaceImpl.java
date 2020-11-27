@@ -45,7 +45,7 @@ import net.dev.java.imagine.api.tool.aspects.NonPaintingTool;
 import net.java.dev.imagine.api.image.RenderingGoal;
 import net.java.dev.imagine.effects.api.EffectReceiver;
 import org.imagine.editor.api.Zoom;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.PooledTransform;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.imagine.utils.java2d.TrackingGraphics;
 import org.netbeans.paint.misc.image.ByteNIOBufferedImage;

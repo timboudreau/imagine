@@ -1,6 +1,6 @@
 package org.netbeans.paint.tools.minidesigner;
 
-import org.imagine.geometry.uirect.ResizeMode;
+import com.mastfrog.geometry.uirect.ResizeMode;
 import com.mastfrog.function.state.Bool;
 import com.mastfrog.function.state.Dbl;
 import com.mastfrog.function.state.Obj;
@@ -27,13 +27,13 @@ import net.java.dev.imagine.api.image.Surface;
 import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.ImageEditorBackground;
 import org.imagine.editor.api.Zoom;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.EnhRectangle2D;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.EnhRectangle2D;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.util.PooledTransform;
 import org.netbeans.paint.api.cursor.Cursors;
-import org.imagine.geometry.uirect.MutableRectangle2D;
+import com.mastfrog.geometry.uirect.MutableRectangle2D;
 import org.netbeans.paint.tools.responder.PaintingResponder;
 import org.netbeans.paint.tools.responder.Responder;
 import org.netbeans.paint.tools.responder.ResponderTool;

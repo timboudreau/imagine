@@ -17,7 +17,7 @@ import net.java.dev.imagine.api.vector.elements.CircleWrapper;
 import net.java.dev.imagine.api.vector.elements.RhombusWrapper;
 import net.java.dev.imagine.api.vector.util.Pt;
 import net.java.dev.imagine.api.vector.util.Size;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqPointDouble;
 
 /**
  *

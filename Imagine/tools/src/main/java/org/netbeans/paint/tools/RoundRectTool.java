@@ -19,7 +19,7 @@ import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Constants;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
 import org.imagine.editor.api.PaintingStyle;
-import org.imagine.geometry.EnhRectangle2D;
+import com.mastfrog.geometry.EnhRectangle2D;
 import org.imagine.help.api.HelpItem;
 import org.imagine.help.api.annotations.Help;
 import org.openide.util.NbBundle;

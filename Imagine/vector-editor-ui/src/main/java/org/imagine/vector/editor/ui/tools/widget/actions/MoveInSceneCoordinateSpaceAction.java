@@ -6,7 +6,7 @@
 package org.imagine.vector.editor.ui.tools.widget.actions;
 
 import java.awt.geom.Point2D;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqPointDouble;
 import org.imagine.vector.editor.ui.tools.widget.util.ViewL;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.widget.Widget;

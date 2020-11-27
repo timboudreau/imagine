@@ -10,16 +10,16 @@ import java.text.DecimalFormat;
 import org.imagine.editor.api.Zoom;
 import org.imagine.editor.api.snap.SnapAxis;
 import org.imagine.editor.api.snap.SnapKind;
-import org.imagine.geometry.Angle;
-import org.imagine.geometry.Arrow;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.EqPoint;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.PieWedge;
-import org.imagine.geometry.Quadrant;
-import org.imagine.geometry.util.GeometryStrings;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.Angle;
+import com.mastfrog.geometry.Arrow;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.EqPoint;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.PieWedge;
+import com.mastfrog.geometry.Quadrant;
+import com.mastfrog.geometry.util.GeometryStrings;
+import com.mastfrog.geometry.util.PooledTransform;
 import org.imagine.utils.painting.RepaintHandle;
 
 /**

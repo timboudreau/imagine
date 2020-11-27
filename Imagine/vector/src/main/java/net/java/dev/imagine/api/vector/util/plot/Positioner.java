@@ -5,7 +5,7 @@
  */
 package net.java.dev.imagine.api.vector.util.plot;
 
-import org.imagine.geometry.EqLine;
+import com.mastfrog.geometry.EqLine;
 
 /**
  *

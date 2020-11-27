@@ -6,7 +6,7 @@
 package net.java.dev.imagine.api.vector;
 
 import java.awt.geom.AffineTransform;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.PooledTransform;
 
 /**
  *

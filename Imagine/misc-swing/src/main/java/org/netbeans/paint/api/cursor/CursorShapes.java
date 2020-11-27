@@ -23,13 +23,13 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import static java.lang.Math.min;
-import org.imagine.geometry.Arrow;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.EnhRectangle2D;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.Rhombus;
-import org.imagine.geometry.Triangle2D;
+import com.mastfrog.geometry.Arrow;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.EnhRectangle2D;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.Rhombus;
+import com.mastfrog.geometry.Triangle2D;
 import static org.netbeans.paint.api.cursor.CursorUtils.applyRenderingHints;
 
 /**

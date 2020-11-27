@@ -11,8 +11,8 @@ import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.spi.tool.ToolElement;
 import net.java.dev.imagine.api.toolcustomizers.AggregateCustomizer;
 import net.java.dev.imagine.api.toolcustomizers.Customizers;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.EqPointDouble;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import static org.netbeans.paint.tools.spi.PathCreator.REGISTRATION_PATH;
 

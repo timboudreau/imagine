@@ -29,8 +29,8 @@ import net.java.dev.imagine.api.vector.Primitive;
 import net.java.dev.imagine.api.vector.util.Pt;
 import org.imagine.utils.java2d.GraphicsUtils;
 import net.java.dev.imagine.api.vector.Vectors;
-import static org.imagine.geometry.util.GeometryStrings.transformToString;
-import org.imagine.geometry.util.PooledTransform;
+import static com.mastfrog.geometry.util.GeometryStrings.transformToString;
+import com.mastfrog.geometry.util.PooledTransform;
 
 /**
  *

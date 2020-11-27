@@ -43,11 +43,11 @@ import org.imagine.editor.api.grid.SnapSettings;
 import org.imagine.editor.api.snap.SnapKind;
 import org.imagine.editor.api.snap.SnapPoints;
 import org.imagine.editor.api.snap.Thresholds;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.EqPointDouble;
-import org.imagine.geometry.LineVector;
-import org.imagine.geometry.util.GeometryStrings;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.LineVector;
+import com.mastfrog.geometry.util.GeometryStrings;
+import com.mastfrog.geometry.util.PooledTransform;
 import org.imagine.utils.painting.RepaintHandle;
 import org.imagine.vector.editor.ui.ShapeEntry;
 import org.imagine.vector.editor.ui.ShapeSnapPointEntry;
@@ -1302,7 +1302,7 @@ public class DesignWidgetManager implements DesignerControl {
 
         private ShapeControlPoint clearProxy() {
             ShapeControlPoint proxy = currentProxyControlPoint;
-            assert proxy != null : "No proxy";
+//            assert proxy != null : "No proxy";
             currentProxyControlPoint = null;
             return proxy;
         }

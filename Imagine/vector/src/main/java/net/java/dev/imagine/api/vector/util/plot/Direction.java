@@ -28,7 +28,7 @@ import com.mastfrog.function.IntBiPredicate;
 import java.awt.geom.Rectangle2D;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import org.imagine.geometry.Quadrant;
+import com.mastfrog.geometry.Quadrant;
 
 /**
  * Pixel-relative directions.

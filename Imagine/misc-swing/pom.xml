@@ -58,10 +58,6 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>geometry</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
             <artifactId>mastfrog-utils</artifactId>
         </dependency>
         <dependency>

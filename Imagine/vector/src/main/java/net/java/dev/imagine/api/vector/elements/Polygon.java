@@ -22,8 +22,8 @@ import net.java.dev.imagine.api.vector.Versioned;
 import net.java.dev.imagine.api.vector.Volume;
 import net.java.dev.imagine.api.vector.design.ControlPointKind;
 import net.java.dev.imagine.api.vector.util.Pt;
-import org.imagine.geometry.EnhancedShape;
-import org.imagine.geometry.Polygon2D;
+import com.mastfrog.geometry.EnhancedShape;
+import com.mastfrog.geometry.Polygon2D;
 import net.java.dev.imagine.api.vector.Vectors;
 
 /**

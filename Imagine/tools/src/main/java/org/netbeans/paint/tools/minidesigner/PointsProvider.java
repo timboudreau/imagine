@@ -2,8 +2,8 @@ package org.netbeans.paint.tools.minidesigner;
 
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
-import org.imagine.geometry.EqLine;
-import org.imagine.geometry.EqPointDouble;
+import com.mastfrog.geometry.EqLine;
+import com.mastfrog.geometry.EqPointDouble;
 
 /**
  *

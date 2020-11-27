@@ -32,15 +32,15 @@ import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.BoundedRangeModel;
-import org.imagine.geometry.Circle;
-import org.imagine.geometry.Quadrant;
+import com.mastfrog.geometry.Circle;
+import com.mastfrog.geometry.Quadrant;
 import javax.swing.JComponent;
 import javax.swing.JSlider;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.SliderUI;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.PooledTransform;
 
 /**
  *
