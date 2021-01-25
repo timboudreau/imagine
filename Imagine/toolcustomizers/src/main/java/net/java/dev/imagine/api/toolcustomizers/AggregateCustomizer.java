@@ -12,7 +12,7 @@ package net.java.dev.imagine.api.toolcustomizers;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
 
 /**
  *

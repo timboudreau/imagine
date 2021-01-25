@@ -9,7 +9,7 @@ import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
 import static org.netbeans.paint.api.components.number.StandardNumericConstraints.DOUBLE;
 import static org.netbeans.paint.api.components.number.StandardNumericConstraints.DOUBLE_NON_NEGATIVE;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
 import org.netbeans.paint.api.components.number.NamedNumberEditor;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;

@@ -47,8 +47,8 @@ import com.mastfrog.geometry.Circle;
 import com.mastfrog.geometry.EqPointDouble;
 import com.mastfrog.geometry.Triangle2D;
 import com.mastfrog.geometry.util.PooledTransform;
-import org.netbeans.paint.api.cursor.Cursors;
-import org.netbeans.paint.api.components.RadialSliderUI;
+import com.mastfrog.swing.cursor.Cursors;
+import com.mastfrog.swing.slider.RadialSliderUI;
 import static org.netbeans.paint.api.components.points.PointSelectorMode.POINT_AND_LINE;
 import org.openide.util.Exceptions;
 

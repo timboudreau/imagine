@@ -17,7 +17,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.UIManager;
 import org.netbeans.paint.api.components.TitledPanel2;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
 import org.openide.cookies.InstanceCookie;
 import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.view.BeanTreeView;

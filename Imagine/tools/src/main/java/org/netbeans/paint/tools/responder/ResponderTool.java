@@ -29,7 +29,7 @@ import org.imagine.editor.api.PaintingStyle;
 import com.mastfrog.geometry.Circle;
 import com.mastfrog.geometry.EqPointDouble;
 import org.imagine.help.api.HelpItem;
-import org.netbeans.paint.api.cursor.Cursors;
+import com.mastfrog.swing.cursor.Cursors;
 import org.openide.util.Lookup;
 import org.openide.util.Utilities;
 

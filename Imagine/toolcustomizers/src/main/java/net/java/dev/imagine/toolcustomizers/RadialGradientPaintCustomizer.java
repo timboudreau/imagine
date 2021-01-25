@@ -27,7 +27,7 @@ import org.imagine.editor.api.AspectRatio;
 import com.mastfrog.geometry.util.PooledTransform;
 import org.imagine.help.api.annotations.Help;
 import org.imagine.help.api.annotations.Help.HelpText;
-import org.netbeans.paint.api.components.PopupSliderUI;
+import com.mastfrog.swing.slider.PopupSliderUI;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.netbeans.paint.api.components.SharedLayoutRootPanel;
 import org.netbeans.paint.api.components.TitledPanel2;

@@ -21,7 +21,7 @@ import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import net.java.dev.colorchooser.ColorChooser;
 import org.imagine.editor.api.AspectRatio;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
 import org.netbeans.paint.api.components.points.PointSelector;
 import org.netbeans.paint.api.components.points.PointSelectorMode;
 import org.openide.awt.Mnemonics;

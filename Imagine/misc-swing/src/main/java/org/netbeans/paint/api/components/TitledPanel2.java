@@ -5,7 +5,9 @@
  */
 package org.netbeans.paint.api.components;
 
-import org.netbeans.paint.api.cursor.Cursors;
+import com.mastfrog.swing.layout.OneComponentLayout;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
+import com.mastfrog.swing.cursor.Cursors;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;

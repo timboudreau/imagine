@@ -380,6 +380,11 @@
             </dependency>
             <dependency>
                 <groupId>com.mastfrog</groupId>
+                <artifactId>swing-miscellaneous</artifactId>
+                <version>${mastfrog.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mastfrog</groupId>
                 <artifactId>util-collections</artifactId>
                 <version>${mastfrog.version}</version>
             </dependency>

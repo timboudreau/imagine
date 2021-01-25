@@ -29,6 +29,11 @@
                         <publicPackage>com.mastfrog.geometry.path</publicPackage>
                         <publicPackage>com.mastfrog.geometry.uirect</publicPackage>
                         <publicPackage>com.mastfrog.geometry.util</publicPackage>
+                        <publicPackage>com.mastfrog.swing</publicPackage>
+                        <publicPackage>com.mastfrog.swing.cursor</publicPackage>
+                        <publicPackage>com.mastfrog.swing.label</publicPackage>
+                        <publicPackage>com.mastfrog.swing.layout</publicPackage>
+                        <publicPackage>com.mastfrog.swing.slider</publicPackage>
                         <publicPackage>com.mastfrog.util.cache</publicPackage>
                         <publicPackage>com.mastfrog.util.collections</publicPackage>
                         <publicPackage>com.mastfrog.util.search</publicPackage>
@@ -55,6 +60,10 @@
         <dependency>
             <groupId>com.mastfrog</groupId>
             <artifactId>geometry</artifactId>
+        </dependency>        
+        <dependency>
+            <groupId>com.mastfrog</groupId>
+            <artifactId>swing-miscellaneous</artifactId>
         </dependency>        
         <dependency>
             <groupId>com.mastfrog</groupId>

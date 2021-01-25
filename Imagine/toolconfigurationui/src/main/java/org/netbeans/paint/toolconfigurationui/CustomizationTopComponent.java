@@ -13,7 +13,7 @@ import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import org.imagine.editor.api.ContextLog;
 import org.netbeans.paint.api.components.FlexEmptyBorder;
-import org.netbeans.paint.api.components.OneComponentLayout;
+import com.mastfrog.swing.layout.OneComponentLayout;
 import org.netbeans.paint.api.components.SharedLayoutRootPanel;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;

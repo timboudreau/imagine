@@ -1,5 +1,6 @@
 package org.netbeans.paint.api.components;
 
+import com.mastfrog.swing.slider.PopupSliderUI;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;

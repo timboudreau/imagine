@@ -1,6 +1,6 @@
 package org.imagine.vector.editor.ui.palette;
 
-import org.netbeans.paint.api.components.TilingLayout;
+import com.mastfrog.swing.layout.TilingLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.LayoutManager;
@@ -12,7 +12,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.WindowConstants;
-import org.netbeans.paint.api.components.TilingLayout.TilingPolicy;
+import com.mastfrog.swing.TilingLayout.TilingPolicy;
 import org.openide.util.Exceptions;
 
 /**

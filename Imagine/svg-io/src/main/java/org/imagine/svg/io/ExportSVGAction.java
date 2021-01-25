@@ -24,7 +24,7 @@ import org.imagine.editor.api.Zoom;
 import org.imagine.nbutil.filechooser.FileChooserBuilder;
 import org.imagine.nbutil.filechooser.FileKinds;
 import org.netbeans.paint.api.components.FlexEmptyBorder;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionRegistration;

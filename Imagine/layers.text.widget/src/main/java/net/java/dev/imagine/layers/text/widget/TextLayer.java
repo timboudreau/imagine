@@ -47,7 +47,7 @@ import org.netbeans.api.visual.layout.Layout;
 import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.widget.Widget;
 import org.netbeans.paint.api.components.FontComboBoxModel;
-import org.netbeans.paint.api.components.PopupSliderUI;
+import com.mastfrog.swing.slider.PopupSliderUI;
 import org.netbeans.paint.api.components.Fonts;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.netbeans.paintui.widgetlayers.SetterResult;

@@ -22,8 +22,8 @@ import javax.swing.event.ChangeListener;
 import net.java.dev.colorchooser.ColorChooser;
 import org.imagine.editor.api.grid.Grid;
 import org.imagine.editor.api.grid.GridStyle;
-import org.netbeans.paint.api.components.EnumComboBoxModel;
-import org.netbeans.paint.api.components.PopupSliderUI;
+import com.mastfrog.swing.EnumComboBoxModel;
+import com.mastfrog.swing.slider.PopupSliderUI;
 import org.openide.awt.Mnemonics;
 import org.openide.util.NbBundle.Messages;
 

@@ -27,7 +27,7 @@ import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.action.WidgetAction.WidgetMouseEvent;
 import org.netbeans.api.visual.widget.LabelWidget;
 import org.netbeans.api.visual.widget.Widget;
-import org.netbeans.paint.api.components.TextWrapLabelUI;
+import com.mastfrog.swing.label.TextWrapLabelUI;
 import org.imagine.utils.java2d.GraphicsUtils;
 import org.openide.util.Lookup;
 import org.openide.util.LookupEvent;

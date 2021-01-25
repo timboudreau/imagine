@@ -58,10 +58,15 @@ public final class FlexEmptyBorder implements Border {
         this.vfactor = Math.abs(vfactor);
     }
 
+    private static boolean debug;
+    public static void setDebugLayout(boolean debug) {
+        FlexEmptyBorder.debug = debug;
+    }
+
     @Override
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
         // do nothing
-        if (TitledPanel2.isDebugLayout()) {
+        if (debug) {
             JComponent jc = (JComponent) c;
             Color color = (Color) jc.getClientProperty("randomBorderColor");
             if (color == null) {

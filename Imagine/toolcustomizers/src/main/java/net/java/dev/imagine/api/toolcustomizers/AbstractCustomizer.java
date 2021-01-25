@@ -13,7 +13,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
 import org.openide.util.ChangeSupport;
 
 /**

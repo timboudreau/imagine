@@ -61,7 +61,7 @@ import net.java.dev.imagine.spi.image.LayerImplementation;
 import org.imagine.editor.api.AspectRatio;
 import org.imagine.editor.api.Zoom;
 import org.netbeans.paint.api.components.FontManagingPanelUI;
-import org.netbeans.paint.api.components.PopupSliderUI;
+import com.mastfrog.swing.slider.PopupSliderUI;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;

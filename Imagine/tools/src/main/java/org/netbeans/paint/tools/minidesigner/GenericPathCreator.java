@@ -32,7 +32,7 @@ import net.java.dev.imagine.api.image.Surface;
 import com.mastfrog.geometry.EqPointDouble;
 import org.imagine.help.api.annotations.Help;
 import org.imagine.nbutil.SingleUseWindow;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
 import org.netbeans.paint.api.components.explorer.Customizable;
 import org.netbeans.paint.tools.spi.PathCreator;
 import static org.netbeans.paint.tools.spi.PathCreator.REGISTRATION_PATH;

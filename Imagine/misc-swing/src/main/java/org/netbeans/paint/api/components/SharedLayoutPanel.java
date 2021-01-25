@@ -1,5 +1,7 @@
 package org.netbeans.paint.api.components;
 
+import com.mastfrog.swing.slider.RadialSliderUI;
+import com.mastfrog.swing.slider.PopupSliderUI;
 import com.mastfrog.function.state.Dbl;
 import com.mastfrog.function.state.Int;
 import java.awt.Color;

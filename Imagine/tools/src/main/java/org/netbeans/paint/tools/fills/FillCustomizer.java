@@ -16,7 +16,7 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ChangeListener;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import org.imagine.help.api.annotations.Help;
-import org.netbeans.paint.api.components.OneComponentLayout;
+import com.mastfrog.swing.layout.OneComponentLayout;
 import org.netbeans.paint.api.components.explorer.FolderPanel;
 import org.netbeans.paint.tools.spi.Fill;
 import org.openide.util.NbBundle;

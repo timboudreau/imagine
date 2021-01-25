@@ -16,7 +16,7 @@ import javax.swing.UIManager;
 import org.netbeans.paint.api.components.FlexEmptyBorder;
 import org.netbeans.paint.api.components.LayoutDataProvider;
 import org.netbeans.paint.api.components.SharedLayoutData;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
 import org.openide.awt.Mnemonics;
 
 /**

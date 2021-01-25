@@ -16,7 +16,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.netbeans.paint.api.components.SharedLayoutRootPanel;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
 import org.netbeans.paint.api.components.number.NumberEditor;
 import org.netbeans.paint.api.components.number.NumberModel;
 import org.netbeans.paint.api.components.number.NumericConstraint;

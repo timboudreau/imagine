@@ -31,7 +31,7 @@ import com.mastfrog.geometry.EqPointDouble;
 import org.imagine.help.api.HelpItem;
 import org.imagine.help.api.annotations.Help;
 import org.imagine.help.api.annotations.Help.HelpText;
-import org.netbeans.paint.api.cursor.Cursors;
+import com.mastfrog.swing.cursor.Cursors;
 import org.netbeans.paint.api.components.explorer.FolderPanel;
 import static org.netbeans.paint.api.components.explorer.FolderPanel.PROP_SELECTION;
 import org.netbeans.paint.tools.minidesigner.GenericPathCreator;

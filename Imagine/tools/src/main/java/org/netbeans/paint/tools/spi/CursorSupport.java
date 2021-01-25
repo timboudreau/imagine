@@ -9,7 +9,7 @@ import static com.mastfrog.geometry.uirect.ResizeMode.NORTHWEST;
 import static com.mastfrog.geometry.uirect.ResizeMode.SOUTHEAST;
 import static com.mastfrog.geometry.uirect.ResizeMode.SOUTHWEST;
 import static com.mastfrog.geometry.uirect.ResizeMode.TOP_EDGE;
-import org.netbeans.paint.api.cursor.Cursors;
+import com.mastfrog.swing.cursor.Cursors;
 
 /**
  *

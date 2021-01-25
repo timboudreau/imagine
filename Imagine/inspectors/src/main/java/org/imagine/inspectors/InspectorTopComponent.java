@@ -21,7 +21,7 @@ import org.netbeans.paint.api.components.DefaultSharedLayoutData;
 import org.netbeans.paint.api.components.FontManagingPanelUI;
 import org.netbeans.paint.api.components.LayoutDataProvider;
 import org.netbeans.paint.api.components.SharedLayoutData;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.util.ImageUtilities;

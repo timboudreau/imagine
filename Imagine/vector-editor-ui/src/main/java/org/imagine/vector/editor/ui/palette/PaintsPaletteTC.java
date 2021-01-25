@@ -1,7 +1,7 @@
 package org.imagine.vector.editor.ui.palette;
 
 import static org.imagine.vector.editor.ui.palette.ShapesPaletteTC.PALETTES_MODE;
-import org.netbeans.paint.api.components.OneComponentLayout;
+import com.mastfrog.swing.layout.OneComponentLayout;
 import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle.Messages;
 import org.openide.windows.Mode;

@@ -15,7 +15,7 @@ import javax.swing.ListCellRenderer;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.java.dev.imagine.ui.common.BackgroundStyle;
-import org.netbeans.paint.api.components.EnumComboBoxModel;
+import com.mastfrog.swing.EnumComboBoxModel;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.netbeans.paint.api.components.SharedLayoutRootPanel;
 import org.netbeans.paint.api.components.dialog.DialogBuilder;

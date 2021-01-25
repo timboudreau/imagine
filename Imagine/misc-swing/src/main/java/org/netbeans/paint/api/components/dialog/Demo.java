@@ -21,7 +21,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 import javax.swing.border.TitledBorder;
-import org.netbeans.paint.api.components.EnumComboBoxModel;
+import com.mastfrog.swing.EnumComboBoxModel;
 
 /**
  *

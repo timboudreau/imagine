@@ -30,7 +30,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.plaf.SliderUI;
 import net.dev.java.imagine.spi.tool.Tool;
 import net.dev.java.imagine.spi.tool.ToolDef;
-import org.netbeans.paint.api.components.PopupSliderUI;
+import com.mastfrog.swing.slider.PopupSliderUI;
 import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import net.java.dev.imagine.api.image.Layer;
 import net.java.dev.imagine.api.image.Surface;

@@ -32,7 +32,7 @@ import com.mastfrog.geometry.EnhRectangle2D;
 import com.mastfrog.geometry.EqLine;
 import com.mastfrog.geometry.EqPointDouble;
 import com.mastfrog.geometry.util.PooledTransform;
-import org.netbeans.paint.api.cursor.Cursors;
+import com.mastfrog.swing.cursor.Cursors;
 import com.mastfrog.geometry.uirect.MutableRectangle2D;
 import org.netbeans.paint.tools.responder.PaintingResponder;
 import org.netbeans.paint.tools.responder.Responder;

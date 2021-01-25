@@ -8,7 +8,7 @@ import org.imagine.vector.editor.ui.Shapes;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
 import static org.netbeans.paint.api.components.number.StandardNumericConstraints.DOUBLE;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
 import org.netbeans.paint.api.components.number.NamedNumberEditor;
 import org.netbeans.paint.api.components.number.NumericConstraint;
 import org.openide.util.Lookup;
