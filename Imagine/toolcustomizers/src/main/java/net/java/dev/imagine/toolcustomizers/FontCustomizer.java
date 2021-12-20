@@ -8,6 +8,9 @@
  */
 package net.java.dev.imagine.toolcustomizers;
 
+import com.mastfrog.swing.EnumComboBoxModel;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
+import com.mastfrog.swing.slider.PopupSliderUI;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -23,11 +26,8 @@ import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import org.imagine.help.api.annotations.Help;
 import org.imagine.help.api.annotations.Help.HelpText;
-import org.netbeans.paint.api.components.EnumComboBoxModel;
 import org.netbeans.paint.api.components.FontComboBoxModel;
-import org.netbeans.paint.api.components.PopupSliderUI;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
 import org.openide.awt.Mnemonics;
 import org.openide.util.NbBundle;
 import org.openide.util.NbPreferences;

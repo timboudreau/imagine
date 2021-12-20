@@ -655,12 +655,12 @@
         <junit5.version>5.7.0</junit5.version>
         <batik.version>1.12</batik.version>
         <brandingToken>imagine</brandingToken>
-        <mastfrog.version>2.7.1</mastfrog.version>
+        <mastfrog.version>2.8.0</mastfrog.version>
         <nbcluster>imagine</nbcluster>
         <netbeans.run.params>${netbeans.run.params.ide}</netbeans.run.params>
         <netbeans.run.params.ide/>
         <netbeans.version>RELEASE113</netbeans.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <antlr.version>4.7.2</antlr.version>
+        <antlr.version>4.9.3</antlr.version>
     </properties>
 </project>

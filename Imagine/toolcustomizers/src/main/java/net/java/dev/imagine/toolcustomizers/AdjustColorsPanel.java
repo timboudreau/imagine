@@ -5,6 +5,9 @@
  */
 package net.java.dev.imagine.toolcustomizers;
 
+import com.mastfrog.swing.layout.TilingLayout;
+import com.mastfrog.swing.layout.TilingLayout.TilingPolicy;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,9 +22,6 @@ import javax.swing.event.ChangeListener;
 import net.java.dev.colorchooser.ColorChooser;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.netbeans.paint.api.components.SharedLayoutRootPanel;
-import org.netbeans.paint.api.components.TilingLayout;
-import org.netbeans.paint.api.components.TilingLayout.TilingPolicy;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
 import org.openide.awt.Mnemonics;
 import org.openide.util.NbBundle.Messages;
 

@@ -88,17 +88,17 @@ public class RadialGradientPaintCustomizer extends ListenableCustomizerSupport<R
     @Help(id = "FractionsAndColorsPopup", related = {"FractionsAndColors"},
             content = {
                 @Help.HelpText(language = "en", country = "US",
-                        value = "# Color Stops Editor\n\n "
-                        + "Linear and radial gradients are composed of *color stops* which "
-                        + "can be positioned relative to each other; the gradient then scales "
-                        + "those colors across the region it occupies."
-                        + "\n\n* Drag lines to position color-stops within the gradient\n"
-                        + " * Select a line by clicking and press _DELETE_ to delete a color stop "
-                        + "(other than the first and last which are mandatory)\n"
-                        + " * Double-click to create a new color stop\n"
-                        + " * Use the color chooser for each stop to fine-tune the color\n"
-                        + " * Drag stops (or create additional ones) closer together to create more"
-                        + " abrupt color transitions, or further apart to create more gradiual ones.\n\n",
+                        value = "# Color Stops Editor\n\nBlah blah",
+//                        + "Linear and radial gradients are composed of *color stops* which "
+//                        + "can be positioned relative to each other; the gradient then scales "
+//                        + "those colors across the region it occupies."
+//                        + "\n\n* Drag lines to position color-stops within the gradient\n"
+//                        + " * Select a line by clicking and press _DELETE_ to delete a color stop "
+//                        + "(other than the first and last which are mandatory)\n"
+//                        + " * Double-click to create a new color stop\n"
+//                        + " * Use the color chooser for each stop to fine-tune the color\n"
+//                        + " * Drag stops (or create additional ones) closer together to create more"
+//                        + " abrupt color transitions, or further apart to create more gradiual ones.\n\n",
                         keywords = {"gradient", "fraction"})})
     public RadialGradientPaintCustomizer(String name) {
         this(name, null);

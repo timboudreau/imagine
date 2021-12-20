@@ -19,7 +19,7 @@ import org.imagine.editor.api.PaintingStyle;
 import com.mastfrog.geometry.EnhRectangle2D;
 import com.mastfrog.geometry.EqPointDouble;
 import com.mastfrog.geometry.Triangle2D;
-import org.imagine.geometry.util.PooledTransform;
+import com.mastfrog.geometry.util.PooledTransform;
 import org.imagine.help.api.HelpItem;
 import org.imagine.help.api.annotations.Help;
 import org.openide.util.NbBundle;

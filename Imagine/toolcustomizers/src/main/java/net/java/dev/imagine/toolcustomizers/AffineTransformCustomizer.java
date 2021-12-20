@@ -1,5 +1,6 @@
 package net.java.dev.imagine.toolcustomizers;
 
+import com.mastfrog.swing.layout.VerticalFlowLayout;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -43,9 +44,8 @@ import org.netbeans.paint.api.components.FlexEmptyBorder;
 import org.netbeans.paint.api.components.FlexEmptyBorder.Side;
 import com.mastfrog.swing.slider.PopupSliderUI;
 import com.mastfrog.swing.slider.RadialSliderUI;
+import com.mastfrog.swing.slider.StringConverter;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
-import org.netbeans.paint.api.components.StringConverter;
-import org.netbeans.paint.api.components.VerticalFlowLayout;
 import org.openide.awt.Mnemonics;
 import org.openide.util.NbBundle;
 import org.openide.util.NbBundle.Messages;
