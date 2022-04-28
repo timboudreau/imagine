@@ -90,7 +90,7 @@ final class TextWidget extends LabelWidget implements PropertyChangeListener, Te
     protected Rectangle calculateClientArea() {
         Font f = getFont();
         FontMetrics fm = getGraphics().getFontMetrics(f);
-        Dimension result = TextWrapLabelUI.doPaint(null, new Insets(0, 0, 0, 0), text.getText(), fm, text.getPaint(), f, 1.0);
+        Dimension result = TextWrapLabelUI.doPaint(80, getGraphics(), new Insets(0, 0, 0, 0), text.getText(), fm, text.getPaint(), f, 1.0);
         //XXX get AffineTransform from Text
         return new Rectangle(new Point(), result);
     }
@@ -112,7 +112,7 @@ final class TextWidget extends LabelWidget implements PropertyChangeListener, Te
             g.setComposite(layer.getComposite());
         }
         try {
-            TextWrapLabelUI.doPaint(getGraphics(), new Insets(0, 0, 0, 0), text.getText(), fm, text.getPaint(), f, 1.0);
+            TextWrapLabelUI.doPaint(80, getGraphics(), new Insets(0, 0, 0, 0), text.getText(), fm, text.getPaint(), f, 1.0);
         } finally {
             g.setComposite(old);
         }
