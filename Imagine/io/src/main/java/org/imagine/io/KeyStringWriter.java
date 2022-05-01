@@ -66,7 +66,9 @@ public final class KeyStringWriter implements KeyWriter<String> {
         int oldLength = sb.length();
         Strings.appendPaddedHex(value, sb);
         assert sb.length() == oldLength + 8 :
-                "8 characters should always be inserted for an int";
+                "16 characters should always be inserted for an int"
+                + " but " + (sb.length() - oldLength) + " were: "
+                + " '" + sb.subSequence(oldLength, sb.length()) + "'";
         return this;
     }
 

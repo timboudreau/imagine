@@ -127,36 +127,6 @@
         <module>help-annotation-processors</module>
         <module>help-system-impl</module>
     </modules>
-    <repositories>
-        <repository>
-            <id>netbeans</id>
-            <name>NetBeans</name>
-            <url>http://bits.netbeans.org/maven2/</url>
-        </repository>
-        <repository>
-            <!-- XXX should not be needed -->
-            <id>central</id>
-            <name>central</name>
-            <url>https://repo.maven.apache.org/maven2/</url>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>never</updatePolicy>
-            </releases>
-        </repository>
-        <repository>
-            <id>timboudreau-builds</id>
-            <name>timboudreau.com builds</name>
-            <url>https://timboudreau.com/maven/</url>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>never</updatePolicy>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>never</updatePolicy>
-            </snapshots>
-        </repository>
-    </repositories>
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -403,7 +373,7 @@
             <dependency>
                 <groupId>com.mastfrog</groupId>
                 <artifactId>util-strings</artifactId>
-                <version>${mastfrog.version}</version>
+                <version>${mastfrog.strings.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.activation</groupId>
@@ -658,6 +628,7 @@
         <batik.version>1.14</batik.version>
         <brandingToken>imagine</brandingToken>
         <mastfrog.version>2.8.0</mastfrog.version>
+        <mastfrog.strings.version>2.8.0.1</mastfrog.strings.version>
         <nbcluster>imagine</nbcluster>
         <netbeans.run.params>${netbeans.run.params.ide}</netbeans.run.params>
         <netbeans.run.params.ide/>
