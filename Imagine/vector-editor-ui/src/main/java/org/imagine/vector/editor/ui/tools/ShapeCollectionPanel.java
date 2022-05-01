@@ -121,7 +121,6 @@ final class ShapeCollectionPanel extends JPanel implements LookupListener, ListS
 
         private boolean maybeShowPopup(MouseEvent e) {
             if (e.isPopupTrigger()) {
-                System.out.println("got popup trigger");
                 ShapeElement target = itemForEvent(e);
                 if (target != null) {
                     JPopupMenu menu = popupProvider.apply(target);
@@ -252,7 +251,6 @@ final class ShapeCollectionPanel extends JPanel implements LookupListener, ListS
         }
         if (!updating) {
             ShapeElement el = list.getSelectedValue();
-            System.out.println("Change selection to " + (el == null ? "<none>" : el.getName()));
             onChangeSelection.accept(el);
         }
     }
@@ -307,9 +305,6 @@ final class ShapeCollectionPanel extends JPanel implements LookupListener, ListS
                         PooledTransform.withScaleInstance(scaleX, scaleY, xs -> {
                             xl.preConcatenate(xs);
                             Rectangle2D transf = xl.createTransformedShape(r).getBounds2D();
-                            System.out.println("Changed " + GeometryStrings.toString(r)
-                                + " to " + GeometryStrings.toString(transf));
-
                             Shape xf = xl.createTransformedShape(shape);
                             g.setColor(c.getForeground());
 //                            g.transform(xl);

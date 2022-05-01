@@ -147,7 +147,6 @@ final class VectorLayer extends AbstractLayerImplementation {
     protected boolean paint(RenderingGoal goal, Graphics2D g, Rectangle bounds,
             boolean showSelection, Zoom zoom, AspectRatio ratio) {
         if (bounds != null && goal == RenderingGoal.THUMBNAIL) {
-            System.out.println("vl tn bounds " + GeometryStrings.toString(bounds));
             if (bounds.isEmpty()) {
                 return false;
             }

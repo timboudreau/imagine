@@ -391,7 +391,6 @@ public class DesignWidgetManager implements DesignerControl {
                 Rectangle scrolled = view.getVisibleRect();
                 double offX = cx - scrolled.getCenterX();
                 double offY = cy - scrolled.getCenterY();
-//                System.out.println("adjust scroll by " + offX + "," + offY);
                 scrolled.translate((int) Math.round(offX), (int) Math.round(offY));
                 view.scrollRectToVisible(scrolled);
             }
@@ -472,7 +471,6 @@ public class DesignWidgetManager implements DesignerControl {
     @Override
     public void updateSelection(ShapeElement el) {
         if (el == null) {
-            System.out.println("clearing selection");
             scene.validate();
             selectionLookup.updateLookups(Lookup.EMPTY);
             scene.setFocusedWidget(widget);
@@ -481,7 +479,6 @@ public class DesignWidgetManager implements DesignerControl {
         }
         Widget w = widget.find(el);
         if (w != null && scene.getFocusedWidget() != w) {
-            System.out.println("updating selection to " + el.getName());
             selectionLookup.updateLookups(w.getLookup());
             scene.setFocusedWidget(w);
             scene.validate();
@@ -837,8 +834,6 @@ public class DesignWidgetManager implements DesignerControl {
                     return ConnectorState.ACCEPT;
                 }
             }
-//            System.out.println("PAINT REJECT " + point + " " + transferable
-//                + " evt " + EventQueue.getCurrentEvent());
             return ConnectorState.REJECT;
         }
 
@@ -948,7 +943,6 @@ public class DesignWidgetManager implements DesignerControl {
                 return;
             }
             onDrag(w, original, current);
-//            System.out.println("onEndDrag " + original + " / " + current);
             try {
                 withShapeInfo(w, original, current, true, (e, osw) -> {
                     // Clears the temporary shape copy we used for
@@ -1062,7 +1056,6 @@ public class DesignWidgetManager implements DesignerControl {
 
                 SnapPoints<ShapeSnapPointEntry> snapper = pts.get();
 
-//                System.out.println("SNAP " + prev + " / " + scratch + " / " + next);
                 // See if that snaps anywhere
                 Point2D got = snapper.snapExclusive(prev, scratch,
                         next, gridSize, kinds, thresholds);
@@ -1089,7 +1082,6 @@ public class DesignWidgetManager implements DesignerControl {
             ShapeControlPoint e = w.getLookup().lookup(ShapeControlPoint.class);
             assert e != null : "No shape control point in lookup of " + w;
             if (!e.isValid()) {
-//                System.err.println("Abort dragging invalid control point");
                 abortAllDragOperations();
                 return;
             }
@@ -1239,7 +1231,6 @@ public class DesignWidgetManager implements DesignerControl {
             ShapeControlPoint e = w.getLookup().lookup(ShapeControlPoint.class);
             assert e != null : "No shape control point in lookup of " + w;
             if (!e.isValid()) {
-//                System.err.println("Abort dragging invalid control point");
                 abortAllDragOperations();
                 return;
             }

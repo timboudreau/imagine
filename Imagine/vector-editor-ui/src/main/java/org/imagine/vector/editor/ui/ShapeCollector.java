@@ -52,7 +52,6 @@ public class ShapeCollector implements Consumer<Primitive>, VectorRepaintHandle 
 
     @Override
     public void accept(Primitive t) {
-        System.out.println("SC accept " + t);
         t.as(Attribute.class, attr -> {
             t.as(Background.class, bg -> {
                 clear.set(bg);

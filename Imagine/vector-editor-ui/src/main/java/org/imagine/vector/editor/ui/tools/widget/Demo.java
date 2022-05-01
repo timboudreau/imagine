@@ -193,7 +193,6 @@ public class Demo {
             100, 10,
             100, 100,};
         Polygon2D p2d = new Polygon2D(pts);
-        System.out.println("POLY NORM " + p2d.isNormalized());
         p2d.reverse();
         p2d.normalize();
 

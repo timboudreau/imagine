@@ -191,8 +191,6 @@ public class VectorSurface extends SurfaceImplementation implements SnapPointsSu
                             handle.repaintArea(rect);
                         }
                     });
-                } else {
-                    System.out.println("No items painted");
                 }
 
             } finally {

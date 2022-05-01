@@ -195,8 +195,6 @@ public class OneShapeWidget extends Widget {
             Point2D myLoc = getLocation();
             viewPoint.translate(myLoc.getX(), myLoc.getY());
             localLocation = viewPoint;
-        } else {
-            System.out.println("wrong dist " + viewPoint.distance(localLocation) + ", " + viewPoint);
         }
         scr.width = scr.height = 0;
         element().addToBounds(scr);
