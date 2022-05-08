@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>org.imagine</groupId>
         <artifactId>Imagine</artifactId>
-        <version>2.0-dev</version>
+        <version>2.1-dev</version>
     </parent>
     <artifactId>help-system</artifactId>
     <packaging>nbm</packaging>
+
     <build>
         <plugins>
             <plugin>
@@ -32,14 +36,14 @@
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-api-annotations-common</artifactId>
         </dependency>
-<!--        <dependency>
+<!--         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-windows</artifactId>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-awt</artifactId>
-        </dependency>-->
+        </dependency> -->
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util</artifactId>
@@ -48,10 +52,10 @@
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util-lookup</artifactId>
         </dependency>
-<!--        <dependency>
+<!--         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>markdown-grammar</artifactId>
-        </dependency>-->
+        </dependency> -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -67,10 +71,10 @@
             <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
         </dependency>
-<!--        <dependency>
+<!--         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>help-annotation-processors</artifactId>
             <scope>test</scope>
-        </dependency>-->
+        </dependency> -->
     </dependencies>
 </project>
