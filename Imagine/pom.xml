@@ -631,8 +631,8 @@
         <brandingToken>imagine</brandingToken>
         <junit.version>4.13.1</junit.version>
         <junit5.version>5.7.0</junit5.version>
-        <mastfrog.strings.version>2.8.0.1</mastfrog.strings.version>
-        <mastfrog.version>2.8.0</mastfrog.version>
+        <mastfrog.strings.version>${mastfrog.version}</mastfrog.strings.version>
+        <mastfrog.version>2.8.3</mastfrog.version>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <nbcluster>imagine</nbcluster>
