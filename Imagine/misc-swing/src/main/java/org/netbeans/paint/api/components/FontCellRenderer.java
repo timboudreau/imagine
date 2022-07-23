@@ -27,6 +27,8 @@ import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.UIManager;
 import com.mastfrog.geometry.util.PooledTransform;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 /**
  *
@@ -90,25 +92,46 @@ public final class FontCellRenderer implements ListCellRenderer {
             String[] names = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
             Font[] result = new Font[names.length];
             for (int i = 0; i < names.length; i++) {
-                Font f = new Font(names[i], Font.PLAIN, 14);
+                Font f = new Font(names[i], Font.PLAIN, fontSize());
                 result[i] = f;
             }
             return result;
         }
 
+        static Integer FONT_SIZE = null;
+
         static int fontSize() {
-            Object o = System.getProperty("uiFontSize");
-            if (o instanceof Integer) {
-                return (Integer) o;
+            if (FONT_SIZE != null) {
+                return FONT_SIZE;
+            }
+            String o = System.getProperty("uiFontSize");
+            int result = 13;
+            if (o != null) {
+                try {
+                    result = Integer.parseInt(o);
+                    return FONT_SIZE = result;
+                } catch (NumberFormatException nfe) {
+
+                }
             }
             Font f = UIManager.getFont("controlFont");
             if (f == null) {
                 f = UIManager.getFont("Label.font");
             }
             if (f != null) {
-                return f.getSize();
+                result = f.getSize();
             }
-            return 13;
+
+            UIManager.addPropertyChangeListener(new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent evt) {
+                    if ("lookAndFeel".equals(evt.getPropertyName())) {
+                        FONT_SIZE = null;
+                        UIManager.removePropertyChangeListener(this);
+                    }
+                }
+            });
+            return FONT_SIZE = result;
         }
 
         FontImages() {
@@ -126,10 +149,13 @@ public final class FontCellRenderer implements ListCellRenderer {
             maxHeight = maxWidth = Integer.MIN_VALUE;
             int maxAscent = Integer.MIN_VALUE;
             BufferedImage img = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(1, 1, Transparency.OPAQUE);
-            Graphics2D g = img.createGraphics();
+            // Ensure if we are using high dpi scaling, that gets applied to the image's graphics - don't
+            // assume BufferedImage.createGraphics() will do the right thing - on Mac OS it will result in
+            // 2x scaling
+            Graphics2D g = GraphicsEnvironment.getLocalGraphicsEnvironment().createGraphics(img);
             try {
                 for (int i = 0; i < fonts.length; i++) {
-                    Font f = new Font(names[i], Font.PLAIN, 16);
+                    Font f = new Font(names[i], Font.PLAIN, fontSize());
                     fonts[i] = f;
                     g.setFont(f);
                     FontMetrics fm = g.getFontMetrics(f);
@@ -154,8 +180,6 @@ public final class FontCellRenderer implements ListCellRenderer {
             g = img.createGraphics();
             int y = 0;
             try {
-//                g.setColor(Color.WHITE);
-//                g.fillRect(0, 0, img.getWidth(), img.getHeight());
                 g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
                 g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
                 g.setColor(UIManager.getColor("textText"));
@@ -170,7 +194,7 @@ public final class FontCellRenderer implements ListCellRenderer {
                         }
                     }
                     if (problematic) {
-                        g.setFont(new Font("Times New Roman", Font.ITALIC, 14));
+                        g.setFont(new Font("Times New Roman", Font.ITALIC, fontSize()));
                         FontMetrics fm = g.getFontMetrics();
                         widths[i] = fm.stringWidth(names[i]);
                         heights[i] = fm.getHeight();
@@ -226,8 +250,6 @@ public final class FontCellRenderer implements ListCellRenderer {
                     if (image.getHeight() < getHeight()) {
                         xform = PooledTransform.getTranslateInstance(
                                 0, (getHeight() - image.getHeight()) / 2, null);
-//                        xform = AffineTransform.getTranslateInstance(
-//                                0, (getHeight() - image.getHeight()) / 2);
                     }
                     if (selectionBackground != null) {
                         g.setColor(selectionBackground);

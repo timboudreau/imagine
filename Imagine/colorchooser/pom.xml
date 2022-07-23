@@ -10,13 +10,18 @@
         <groupId>org.imagine</groupId>
         <version>2.1-dev</version>
     </parent>
-    <artifactId>colorchooser</artifactId>
+    <artifactId>colorchooser-wrapper</artifactId>
     <packaging>nbm</packaging>
     <name>Color Chooser Library Wrapper</name>
     <dependencies>
         <dependency>
+            <groupId>com.mastfrog</groupId>
+            <artifactId>colorchooser</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-api-annotations-common</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -42,6 +47,7 @@
                 <artifactId>nbm-maven-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
+                    <moduleType>autoload</moduleType>
                     <publicPackages>
                         <publicPackage>net.java.dev.colorchooser</publicPackage>
                     </publicPackages>
