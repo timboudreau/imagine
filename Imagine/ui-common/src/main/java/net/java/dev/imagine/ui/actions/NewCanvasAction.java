@@ -13,6 +13,7 @@
  */
 package net.java.dev.imagine.ui.actions;
 
+import com.mastfrog.swing.FlexEmptyBorder;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -32,7 +33,6 @@ import javax.swing.UIManager;
 import net.java.dev.imagine.ui.common.BackgroundStyle;
 import net.java.dev.imagine.ui.common.ImageEditorFactory;
 import net.java.dev.imagine.ui.components.NewPicturePanel;
-import org.netbeans.paint.api.components.FlexEmptyBorder;
 import org.netbeans.paint.api.editing.LayerFactory;
 import org.openide.DialogDescriptor;
 import org.openide.DialogDisplayer;

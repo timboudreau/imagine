@@ -1,5 +1,6 @@
 package org.netbeans.paint.toolconfigurationui;
 
+import com.mastfrog.swing.FlexEmptyBorder;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.MissingResourceException;
@@ -12,7 +13,6 @@ import net.dev.java.imagine.api.tool.Tool;
 import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.CustomizerProvider;
 import org.imagine.editor.api.ContextLog;
-import org.netbeans.paint.api.components.FlexEmptyBorder;
 import com.mastfrog.swing.layout.OneComponentLayout;
 import org.netbeans.paint.api.components.SharedLayoutRootPanel;
 import org.openide.awt.ActionID;

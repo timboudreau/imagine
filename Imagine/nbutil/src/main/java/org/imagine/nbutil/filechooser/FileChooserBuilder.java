@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.imagine.nbutil.filechooser;
 
 /**
@@ -10,6 +5,8 @@ package org.imagine.nbutil.filechooser;
  * @author Tim Boudreau
  */
 import com.mastfrog.function.QuadConsumer;
+import com.mastfrog.swing.FlexEmptyBorder;
+import com.mastfrog.swing.FlexEmptyBorder.Side;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.FileDialog;
@@ -54,7 +51,6 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 import javax.swing.filechooser.FileView;
 import org.imagine.nbutil.ComponentUtils;
-import org.imagine.nbutil.filechooser.FlexEmptyBorder.Side;
 import org.openide.awt.Mnemonics;
 import org.openide.util.BaseUtilities;
 import org.openide.util.NbBundle.Messages;

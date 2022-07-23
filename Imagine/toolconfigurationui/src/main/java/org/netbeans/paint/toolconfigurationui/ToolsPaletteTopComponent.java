@@ -1,5 +1,6 @@
 package org.netbeans.paint.toolconfigurationui;
 
+import com.mastfrog.swing.FlexEmptyBorder;
 import com.mastfrog.util.strings.Strings;
 import java.awt.Component;
 import java.awt.Container;
@@ -29,7 +30,6 @@ import net.dev.java.imagine.api.tool.SelectedTool;
 import net.dev.java.imagine.api.tool.Tool;
 import net.dev.java.imagine.spi.tool.Tools;
 import com.mastfrog.geometry.util.PooledTransform;
-import org.netbeans.paint.api.components.FlexEmptyBorder;
 import com.mastfrog.swing.layout.OneComponentLayout;
 import com.mastfrog.swing.layout.TilingLayout;
 import com.mastfrog.swing.layout.VerticalFlowLayout;

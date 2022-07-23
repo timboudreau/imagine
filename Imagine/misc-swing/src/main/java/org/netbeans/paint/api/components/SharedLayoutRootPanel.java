@@ -1,5 +1,6 @@
 package org.netbeans.paint.api.components;
 
+import com.mastfrog.swing.FlexEmptyBorder;
 import com.mastfrog.swing.layout.VerticalFlowLayout;
 import java.awt.Color;
 import java.awt.Component;

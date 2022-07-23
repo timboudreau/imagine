@@ -1,10 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.netbeans.paint.api.components;
 
+import static java.util.Collections.synchronizedSet;
+import java.util.Set;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import org.openide.util.WeakSet;
@@ -17,7 +14,7 @@ import org.openide.util.WeakSet;
 public final class WeakChangeSupport {
 
     private final Object source;
-    private WeakSet<ChangeListener> listeners;
+    private Set<ChangeListener> listeners;
 
     public WeakChangeSupport(Object source) {
         this.source = source;
@@ -29,7 +26,7 @@ public final class WeakChangeSupport {
 
     public void addChangeListener(ChangeListener cl) {
         if (listeners == null) {
-            listeners = new WeakSet<>();
+            listeners = synchronizedSet(new WeakSet<>());
         }
         listeners.add(cl);
     }

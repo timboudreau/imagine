@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <project
-         xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -14,11 +14,18 @@
     <packaging>nbm-application</packaging>
     <name>Imagine - NB App</name>
     <description>An Extensible Image Editor</description>
+    <properties>
+        <!-- Batik has two versions of xml-apis in its closure.  Sigh. -->
+        <enforcer.skip>true</enforcer.skip>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.netbeans.cluster</groupId>
             <artifactId>platform</artifactId>
             <type>pom</type>
+            <!-- You will be warned that this duplicates info from dep mgmt - 
+            but because of the exclusions, at runtime, this entry is
+            not matched against the dep mgmt entry.  Also sigh. -->
             <version>${netbeans.version}</version>
             <exclusions>
                 <exclusion>
@@ -75,7 +82,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
-<!--          <dependency>
+        <!--          <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util-ui-svg</artifactId>
             <version>${netbeans.version}</version>
@@ -88,7 +95,7 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>inspectors</artifactId>
         </dependency>
-<!--   To run NbModuleSuite functional tests in src/test/java, use nbjunit (assumes RELEASE70 or later):
+        <!--   To run NbModuleSuite functional tests in src/test/java, use nbjunit (assumes RELEASE70 or later):
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-modules-nbjunit</artifactId>
@@ -98,7 +105,7 @@
         
         
         -->
-<!--   To use Jelly in your functional tests, add or replace with:
+        <!--   To use Jelly in your functional tests, add or replace with:
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-modules-jellytools-platform</artifactId>
@@ -144,7 +151,7 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>svg-io</artifactId>
         </dependency>
-<!--          <dependency>
+        <!--          <dependency>
             <groupId>org.netbeans.contrib</groupId>
             <artifactId>org-netbeans-modules-paintcatcher</artifactId>
             <version>1.5</version>
@@ -195,7 +202,7 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>layers.raster</artifactId>
         </dependency>
-<!--          <dependency>
+        <!--          <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>vectorlayers</artifactId>
         </dependency>  -->
@@ -210,9 +217,9 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>paintui2</artifactId>
-<!--  <artifactId>paintui</artifactId>  -->
+            <!--  <artifactId>paintui</artifactId>  -->
         </dependency>
-<!--          <dependency>
+        <!--          <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>imagecachediagnostics</artifactId>
             <version>${project.version}</version>
@@ -229,7 +236,7 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>vector-editor-ui</artifactId>
         </dependency>
-<!--          <dependency>
+        <!--          <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>layers.text.widget</artifactId>
         </dependency>  -->
@@ -265,7 +272,7 @@
                     <brandingToken>imagine</brandingToken>
                 </configuration>
             </plugin>
-<!--   To run NbModuleSuite in integration-test phase:
+            <!--   To run NbModuleSuite in integration-test phase:
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

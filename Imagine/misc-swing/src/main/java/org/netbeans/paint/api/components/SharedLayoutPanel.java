@@ -1,5 +1,6 @@
 package org.netbeans.paint.api.components;
 
+import com.mastfrog.swing.fontsui.FontComboBoxModel;
 import com.mastfrog.swing.slider.RadialSliderUI;
 import com.mastfrog.swing.slider.PopupSliderUI;
 import com.mastfrog.function.state.Dbl;
@@ -466,7 +467,6 @@ public class SharedLayoutPanel extends JPanel implements LayoutDataProvider {
         jp.add(p);
 
         JComboBox fonts = new JComboBox(new FontComboBoxModel());
-        fonts.setRenderer(FontCellRenderer.instance());
         two = new JLabel("The Fonts");
         p = new SharedLayoutPanel(two);
         p.add(fonts);
