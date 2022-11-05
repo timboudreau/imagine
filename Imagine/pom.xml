@@ -629,16 +629,16 @@
         <antlr.version>4.9.3</antlr.version>
         <batik.version>1.14</batik.version>
         <brandingToken>imagine</brandingToken>
-        <junit.version>4.13.1</junit.version>
-        <junit5.version>5.7.0</junit5.version>
+        <junit.version>4.13.2</junit.version>
+        <junit5.version>5.9.1</junit5.version>
         <mastfrog.strings.version>${mastfrog.version}</mastfrog.strings.version>
-        <mastfrog.version>2.8.3</mastfrog.version>
+        <mastfrog.version>2.9.1</mastfrog.version>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <nbcluster>imagine</nbcluster>
         <netbeans.run.params>${netbeans.run.params.ide}</netbeans.run.params>
         <netbeans.run.params.ide/>
-        <netbeans.version>RELEASE113</netbeans.version>
+        <netbeans.version>RELEASE140</netbeans.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 </project>
