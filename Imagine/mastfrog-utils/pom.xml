@@ -26,6 +26,9 @@
                         <publicPackage>com.mastfrog.abstractions.list</publicPackage>
                         <publicPackage>com.mastfrog.function</publicPackage>
                         <publicPackage>com.mastfrog.function.state</publicPackage>
+                        <publicPackage>com.mastfrog.function.misc</publicPackage>
+                        <publicPackage>com.mastfrog.function.optional</publicPackage>
+                        <publicPackage>com.mastfrog.function.threadlocal</publicPackage>
                         <publicPackage>com.mastfrog.function.throwing</publicPackage>
                         <publicPackage>com.mastfrog.function.throwing.io</publicPackage>
                         <publicPackage>com.mastfrog.geometry</publicPackage>
@@ -38,6 +41,8 @@
                         <publicPackage>com.mastfrog.swing.label</publicPackage>
                         <publicPackage>com.mastfrog.swing.layout</publicPackage>
                         <publicPackage>com.mastfrog.swing.slider</publicPackage>
+                        <publicPackage>com.mastfrog.swing.fontsui</publicPackage>
+                        <publicPackage>com.mastfrog.swing.smoothscroll</publicPackage>
                         <publicPackage>com.mastfrog.util.cache</publicPackage>
                         <publicPackage>com.mastfrog.util.collections</publicPackage>
                         <publicPackage>com.mastfrog.util.search</publicPackage>

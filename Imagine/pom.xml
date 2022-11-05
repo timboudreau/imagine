@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <project
-         xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.imagine</groupId>
     <artifactId>Imagine</artifactId>
     <version>2.1-dev</version>
     <packaging>pom</packaging>
-    <name>Imagine - NB App Parent</name>
+    <name>Imagine - Parent</name>
 
     <build>
         <pluginManagement>
@@ -16,23 +16,23 @@
                 <plugin>
                     <groupId>org.apache.netbeans.utilities</groupId>
                     <artifactId>nbm-maven-plugin</artifactId>
-                    <version>4.5</version>
+                    <version>4.8</version>
                     <extensions>true</extensions>
                     <configuration>
                         <branding.token>${nbcluster}</branding.token>
                         <brandingToken>${nbcluster}</brandingToken>
                         <cluster>${nbcluster}</cluster>
-<!--                             <licenseName>Apache-2.0</licenseName>
+                        <!--                             <licenseName>Apache-2.0</licenseName>
                         <licenseFile>${project.parent.relativePath}/../LICENSE</licenseFile>     -->
                         <requiresRestart>false</requiresRestart>
-<!--     <finalName>${project.artifactId}</finalName>     -->
+                        <!--     <finalName>${project.artifactId}</finalName>     -->
                         <moduleType>autoload</moduleType>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.2.0</version>
+                    <version>3.2.2</version>
                     <configuration>
                         <!-- to have the jar plugin pickup the nbm generated manifest -->
                         <archive>
@@ -44,30 +44,30 @@
                     <!-- NetBeans 6.9+ requires JDK 6 -->
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.1</version>
+                    <version>3.10.1</version>
                     <configuration>
                         <showWarnings>true</showWarnings>
-                        <source>1.8</source>
-                        <target>1.8</target>
+                        <source>11</source>
+                        <target>11</target>
+                        <release>11</release>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.2.0</version>
+                    <version>3.4.0</version>
                     <configuration>
                         <overview>${basedir}/src/main/javadoc/overview.html</overview>
                         <quiet>true</quiet>
                         <doclint>none</doclint>
-<!-- Force to source level 8 to avoid complaints about some dependencies being modular while this project isn't -->
-                        <source>8</source>
+                        <!-- Force to source level 8 to avoid complaints about some dependencies being modular while this project isn't -->
+                        <source>11</source>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-<!--     <version>2.22.1</version>     -->
-                    <version>3.0.0-M4</version>
+                    <version>3.0.0-M7</version>
                     <configuration>
                         <parallel>all</parallel>
                         <parallelMavenExecution>true</parallelMavenExecution>
@@ -85,8 +85,53 @@
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>3.1.0</version>
+                </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+
+                    <execution>
+
+                        <id>enforce-versions</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>>=3.6.0</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>>=11</version>
+                                </requireJavaVersion>
+                                <DependencyConvergence/>
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+
+                                        <!-- <exclude>commons-logging:commons-logging</exclude> -->
+                                        <!-- <exclude>org.slf4j:slf4j-simple</exclude> -->
+
+                                    </excludes>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+
+                    </execution>
+
+                </executions>
+
+            </plugin>            
+        </plugins>
     </build>
     <modules>
         <!--     <module>customizers2</module>     -->
@@ -355,7 +400,7 @@
             <dependency>
                 <groupId>com.mastfrog</groupId>
                 <artifactId>swing-miscellaneous</artifactId>
-                <version>${mastfrog.version}</version>
+                <version>${mastfrog.swing.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.mastfrog</groupId>
@@ -375,7 +420,7 @@
             <dependency>
                 <groupId>com.mastfrog</groupId>
                 <artifactId>util-strings</artifactId>
-                <version>${mastfrog.strings.version}</version>
+                <version>${mastfrog.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.activation</groupId>
@@ -629,10 +674,12 @@
         <antlr.version>4.9.3</antlr.version>
         <batik.version>1.14</batik.version>
         <brandingToken>imagine</brandingToken>
+        <colorchooser.version>1.4</colorchooser.version>
         <junit.version>4.13.2</junit.version>
         <junit5.version>5.9.1</junit5.version>
         <mastfrog.strings.version>${mastfrog.version}</mastfrog.strings.version>
         <mastfrog.version>2.9.1</mastfrog.version>
+        <mastfrog.swing.version>${mastfrog.version}</mastfrog.swing.version>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <nbcluster>imagine</nbcluster>

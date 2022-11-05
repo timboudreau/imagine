@@ -1,6 +1,8 @@
 package net.java.dev.imagine.toolcustomizers;
 
 import com.mastfrog.swing.layout.VerticalFlowLayout;
+import com.mastfrog.swing.FlexEmptyBorder;
+import com.mastfrog.swing.FlexEmptyBorder.Side;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -40,8 +42,6 @@ import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import net.dev.java.imagine.api.tool.aspects.ShapePreview;
 import org.imagine.utils.java2d.GraphicsUtils;
-import org.netbeans.paint.api.components.FlexEmptyBorder;
-import org.netbeans.paint.api.components.FlexEmptyBorder.Side;
 import com.mastfrog.swing.slider.PopupSliderUI;
 import com.mastfrog.swing.slider.RadialSliderUI;
 import com.mastfrog.swing.slider.StringConverter;

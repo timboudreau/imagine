@@ -1,5 +1,7 @@
 package org.imagine.svg.io;
 
+import com.mastfrog.swing.FlexEmptyBorder;
+import com.mastfrog.swing.layout.VerticalFlowLayout;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -23,8 +25,6 @@ import org.apache.batik.svggen.SVGGeneratorContext;
 import org.imagine.editor.api.Zoom;
 import org.imagine.nbutil.filechooser.FileChooserBuilder;
 import org.imagine.nbutil.filechooser.FileKinds;
-import org.netbeans.paint.api.components.FlexEmptyBorder;
-import com.mastfrog.swing.layout.VerticalFlowLayout;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionRegistration;
@@ -131,7 +131,7 @@ public final class ExportSVGAction implements ActionListener {
         SVGGeneratorContext ctx = SVGGeneratorContext.createDefault(document);
 
         ctx.setPrecision(12);
-        
+
         ctx.setEmbeddedFontsOn(!textAsShapes);
 
         ExtSvgGraphics2D graphics = new ExtSvgGraphics2D(ctx, textAsShapes);
@@ -139,7 +139,7 @@ public final class ExportSVGAction implements ActionListener {
         graphics.setExtensionHandler(new GradientExtensionHandler());
         graphics.setSVGCanvasSize(pictureSize());
         picture.paint(RenderingGoal.PRODUCTION, graphics, null, false, Zoom.ONE_TO_ONE);
-        try (Writer writer = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(file), 1024), UTF_8)) {
+        try ( Writer writer = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(file), 1024), UTF_8)) {
             graphics.stream(writer, useCSS, false);
         } catch (IOException ex) {
             Exceptions.printStackTrace(ex);

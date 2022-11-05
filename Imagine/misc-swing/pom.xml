@@ -65,7 +65,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>colorchooser</artifactId>
+            <artifactId>colorchooser-wrapper</artifactId>
         </dependency>
 <!-- Temporary workaround for maven reporting a bad pom which isn't, which blocks transitive deps from mastfrog-utils -->
         <dependency>

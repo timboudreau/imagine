@@ -1,5 +1,7 @@
 package org.netbeans.paint.api.components.dialog;
 
+import com.mastfrog.swing.FlexEmptyBorder;
+import com.mastfrog.swing.FlexEmptyBorder.Side;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.EventQueue;
@@ -33,8 +35,6 @@ import javax.swing.JRootPane;
 import javax.swing.JWindow;
 import javax.swing.KeyStroke;
 import static javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE;
-import org.netbeans.paint.api.components.FlexEmptyBorder;
-import org.netbeans.paint.api.components.FlexEmptyBorder.Side;
 import org.openide.util.Utilities;
 
 /**

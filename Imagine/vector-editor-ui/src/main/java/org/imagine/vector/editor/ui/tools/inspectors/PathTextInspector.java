@@ -5,6 +5,7 @@
  */
 package org.imagine.vector.editor.ui.tools.inspectors;
 
+import com.mastfrog.swing.fontsui.FontComboBoxModel;
 import java.awt.Component;
 import java.awt.Font;
 import java.util.Objects;
@@ -19,7 +20,6 @@ import net.java.dev.imagine.api.vector.elements.PathText;
 import org.imagine.inspectors.spi.InspectorFactory;
 import org.imagine.vector.editor.ui.spi.ShapeElement;
 import org.imagine.vector.editor.ui.spi.ShapesCollection;
-import org.netbeans.paint.api.components.FontComboBoxModel;
 import com.mastfrog.swing.slider.PopupSliderUI;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
 import com.mastfrog.swing.layout.VerticalFlowLayout;

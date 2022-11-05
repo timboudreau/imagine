@@ -216,6 +216,7 @@ public class HelpAnnotationProcessor extends AbstractProcessor {
             generate(res);
 //            }
         } catch (Exception | Error ex) {
+            ex.printStackTrace(System.out);
             ex.printStackTrace(System.err);
             utils.fail(ex.toString(), lastElement);
         }
@@ -1181,7 +1182,10 @@ public class HelpAnnotationProcessor extends AbstractProcessor {
     }
 
     static String typeOrPackageNameOf(Element el) {
-        while (!(el instanceof TypeElement) && !(el instanceof PackageElement)) {
+        if (el == null) {
+            return "";
+        }
+        while (el != null && !(el instanceof TypeElement) && !(el instanceof PackageElement)) {
             el = el.getEnclosingElement();
         }
         if (el == null) {

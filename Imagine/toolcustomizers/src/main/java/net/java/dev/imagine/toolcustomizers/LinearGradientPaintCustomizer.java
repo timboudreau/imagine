@@ -1,5 +1,9 @@
 package net.java.dev.imagine.toolcustomizers;
 
+import com.mastfrog.geometry.EqPointDouble;
+import com.mastfrog.geometry.util.PooledTransform;
+import com.mastfrog.swing.FlexEmptyBorder;
+import static com.mastfrog.swing.FlexEmptyBorder.Side.TOP;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -26,9 +30,6 @@ import net.dev.java.imagine.api.tool.aspects.Customizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizer;
 import net.dev.java.imagine.api.tool.aspects.ListenableCustomizerSupport;
 import org.imagine.editor.api.AspectRatio;
-import com.mastfrog.geometry.EqPointDouble;
-import com.mastfrog.geometry.util.PooledTransform;
-import org.netbeans.paint.api.components.FlexEmptyBorder;
 import org.netbeans.paint.api.components.SharedLayoutPanel;
 import org.netbeans.paint.api.components.SharedLayoutRootPanel;
 import org.netbeans.paint.api.components.TitledPanel2;
@@ -175,7 +176,7 @@ public class LinearGradientPaintCustomizer extends ListenableCustomizerSupport<L
     @Override
     public JComponent getComponent() {
         NestingPanel panel = new NestingPanel();
-        panel.setBorder(new FlexEmptyBorder(FlexEmptyBorder.Side.TOP));
+        panel.setBorder(new FlexEmptyBorder(TOP));
         FractionsAndColorsEditor fAndC = new FractionsAndColorsEditor(params.fractions, params.colors);
         AspectRatio ratio = Utilities.actionsGlobalContext().lookup(AspectRatio.class);
         if (ratio == null) {

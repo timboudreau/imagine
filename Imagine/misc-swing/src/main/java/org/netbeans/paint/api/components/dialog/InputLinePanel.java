@@ -1,5 +1,6 @@
 package org.netbeans.paint.api.components.dialog;
 
+import com.mastfrog.swing.FlexEmptyBorder;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
@@ -23,7 +24,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
-import org.netbeans.paint.api.components.FlexEmptyBorder;
 import org.openide.util.Exceptions;
 
 /**

@@ -1,11 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package net.java.dev.imagine.toolcustomizers;
 
+import com.mastfrog.swing.FlexEmptyBorder;
+import static com.mastfrog.swing.FlexEmptyBorder.Side.TOP;
 import java.awt.Container;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -13,7 +9,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
-import org.netbeans.paint.api.components.FlexEmptyBorder;
 import org.netbeans.paint.api.components.LayoutDataProvider;
 import org.netbeans.paint.api.components.SharedLayoutData;
 import com.mastfrog.swing.layout.VerticalFlowLayout;
@@ -30,7 +25,7 @@ class NestingPanel extends JPanel implements SharedLayoutData {
 
     NestingPanel() {
         super(new VerticalFlowLayout());
-        setBorder(new FlexEmptyBorder(FlexEmptyBorder.Side.TOP));
+        setBorder(new FlexEmptyBorder(TOP));
     }
 
     JLabel addHeadingLabel(String title) {
