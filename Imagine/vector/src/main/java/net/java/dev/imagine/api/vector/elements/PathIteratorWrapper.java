@@ -51,6 +51,7 @@ import static net.java.dev.imagine.api.vector.design.ControlPointKind.CUBIC_CURV
 import net.java.dev.imagine.api.vector.util.Pt;
 import com.mastfrog.geometry.Angle;
 import com.mastfrog.geometry.Axis;
+import com.mastfrog.geometry.DimensionDouble;
 import com.mastfrog.geometry.EnhancedShape;
 import com.mastfrog.geometry.EqLine;
 import com.mastfrog.geometry.EqPointDouble;
@@ -929,6 +930,11 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
                 }
             }
             return result;
+        }
+
+        @Override
+        public DimensionDouble size() {
+            throw new UnsupportedOperationException("Implement me");
         }
     }
 

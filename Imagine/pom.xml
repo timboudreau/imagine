@@ -190,6 +190,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>colorchooser</artifactId>
+                <version>${colorchooser.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>colorchooser-wrapper</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

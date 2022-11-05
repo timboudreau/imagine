@@ -17,6 +17,7 @@
         <dependency>
             <groupId>com.mastfrog</groupId>
             <artifactId>colorchooser</artifactId>
+            <version>${colorchooser.version}</version>
         </dependency>
         <dependency>
             <groupId>org.netbeans.api</groupId>
