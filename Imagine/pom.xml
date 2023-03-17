@@ -32,7 +32,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.2.2</version>
+                    <version>3.3.0</version>
                     <configuration>
                         <!-- to have the jar plugin pickup the nbm generated manifest -->
                         <archive>
@@ -44,7 +44,7 @@
                     <!-- NetBeans 6.9+ requires JDK 6 -->
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.10.1</version>
+                    <version>3.11.0</version>
                     <configuration>
                         <showWarnings>true</showWarnings>
                         <source>11</source>
@@ -55,7 +55,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.4.0</version>
+                    <version>3.5.0</version>
                     <configuration>
                         <overview>${basedir}/src/main/javadoc/overview.html</overview>
                         <quiet>true</quiet>
@@ -67,7 +67,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.0.0-M7</version>
+                    <version>3.0.0-M9</version>
                     <configuration>
                         <parallel>all</parallel>
                         <parallelMavenExecution>true</parallelMavenExecution>
@@ -676,14 +676,14 @@
     </dependencyManagement>
 
     <properties>
-        <antlr.version>4.10.1</antlr.version>
-        <batik.version>1.14</batik.version>
+        <antlr.version>4.12.0</antlr.version>
+        <batik.version>1.16</batik.version>
         <brandingToken>imagine</brandingToken>
-        <colorchooser.version>1.4</colorchooser.version>
+        <colorchooser.version>1.5</colorchooser.version>
         <junit.version>4.13.2</junit.version>
-        <junit5.version>5.8.2</junit5.version>
-        <mastfrog.version>2.8.3</mastfrog.version>
-        <mastfrog.swing.version>2.8.3.3</mastfrog.swing.version>
+        <junit5.version>5.9.2</junit5.version>
+        <mastfrog.version>2.9.7</mastfrog.version>
+        <mastfrog.swing.version>${mastfrog.version}</mastfrog.swing.version>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <nbcluster>imagine</nbcluster>

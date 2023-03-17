@@ -51,10 +51,13 @@ import static net.java.dev.imagine.api.vector.design.ControlPointKind.CUBIC_CURV
 import net.java.dev.imagine.api.vector.util.Pt;
 import com.mastfrog.geometry.Angle;
 import com.mastfrog.geometry.Axis;
+import com.mastfrog.geometry.DimensionDouble;
 import com.mastfrog.geometry.EnhancedShape;
 import com.mastfrog.geometry.EqLine;
 import com.mastfrog.geometry.EqPointDouble;
 import com.mastfrog.geometry.util.GeometryUtils;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import net.java.dev.imagine.api.vector.Vectors;
 
 /**
@@ -927,6 +930,32 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
                 if (segments[i].type != SEG_CLOSE) {
                     result++;
                 }
+            }
+            return result;
+        }
+
+        @Override
+        public DimensionDouble size() {
+            DimensionDouble result = new DimensionDouble();
+            double minX = Double.MAX_VALUE;
+            double maxX = -Double.MAX_VALUE;
+            double minY = Double.MAX_VALUE;
+            double maxY = -Double.MAX_VALUE;
+            for (Segment seg : segments) {
+                if (seg.type != SEG_CLOSE) {
+                    double x = seg.physicalX();
+                    double y = seg.physicalX();
+                    minX = min(minX, x);
+                    maxX = max(maxX, x);
+                    minY = min(minY, y);
+                    maxY = max(maxY, y);
+                }
+            }
+            if (minX < maxX) {
+                result.width = maxX - minX;
+            }
+            if (minY < maxY) {
+                result.height = maxY - minY;
             }
             return result;
         }
