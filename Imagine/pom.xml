@@ -689,7 +689,7 @@
         <nbcluster>imagine</nbcluster>
         <netbeans.run.params>${netbeans.run.params.ide}</netbeans.run.params>
         <netbeans.run.params.ide/>
-        <netbeans.version>RELEASE126</netbeans.version>
+        <netbeans.version>RELEASE140</netbeans.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 </project>
