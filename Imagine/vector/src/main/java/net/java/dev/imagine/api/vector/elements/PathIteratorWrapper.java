@@ -52,10 +52,12 @@ import net.java.dev.imagine.api.vector.util.Pt;
 import com.mastfrog.geometry.Angle;
 import com.mastfrog.geometry.Axis;
 import com.mastfrog.geometry.DimensionDouble;
+import com.mastfrog.geometry.EnhRectangle2D;
 import com.mastfrog.geometry.EnhancedShape;
 import com.mastfrog.geometry.EqLine;
 import com.mastfrog.geometry.EqPointDouble;
 import com.mastfrog.geometry.util.GeometryUtils;
+import java.awt.Rectangle;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import net.java.dev.imagine.api.vector.Vectors;
@@ -958,6 +960,62 @@ public final class PathIteratorWrapper implements Strokable, Fillable, Volume, A
                 result.height = maxY - minY;
             }
             return result;
+        }
+
+        @Override
+        public Rectangle getBounds() {
+            return getBounds2D().getBounds();
+        }
+
+        @Override
+        public Rectangle2D getBounds2D() {
+            EnhRectangle2D result = new EnhRectangle2D();
+            for (Segment s : segments) {
+                if (!s.isClose()) {
+                    result.add(s.physicalPoint());
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public boolean contains(double x, double y) {
+            return getBounds2D().contains(x, y);
+        }
+
+        @Override
+        public boolean contains(Point2D p) {
+            return contains(p.getX(), p.getY());
+        }
+
+        @Override
+        public boolean intersects(double x, double y, double w, double h) {
+            return getBounds2D().intersects(x, y, w, h);
+        }
+
+        @Override
+        public boolean intersects(Rectangle2D r) {
+            return getBounds2D().intersects(r);
+        }
+
+        @Override
+        public boolean contains(double x, double y, double w, double h) {
+            return getBounds2D().intersects(x, y, w, h);
+        }
+
+        @Override
+        public boolean contains(Rectangle2D r) {
+            return getBounds2D().contains(r);
+        }
+
+        @Override
+        public PathIterator getPathIterator(AffineTransform at) {
+            return PathIteratorWrapper.this.getPathIterator(at);
+        }
+
+        @Override
+        public PathIterator getPathIterator(AffineTransform at, double flatness) {
+            return PathIteratorWrapper.this.getPathIterator(at);
         }
     }
 
